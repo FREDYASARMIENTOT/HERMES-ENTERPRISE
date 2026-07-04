@@ -1,0 +1,9 @@
+# Archivos generados localmente por ejecución del Kernel Enterprise.
+logs/
+configuracion/kernel.enterprise.json
+pruebas/salida-temporal/
+
+# Secretos y variables de entorno locales.
+.env
+*.secret.*
+secrets/

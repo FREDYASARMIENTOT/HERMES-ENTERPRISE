@@ -129,6 +129,90 @@ $EspecificacionesDocumentos = @(
             PropositoDocumento = "Servir como punto de entrada a la biblioteca técnica versionada del proyecto."
             ContenidoInicialDocumento = $DescripcionBibliotecaDocumental
             ReferenciasCruzadas = $ReferenciasCruzadasBase
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-KERNEL" `
+        -TituloDocumento "Kernel Enterprise" `
+        -RutaRelativaSalida "documentacion\KERNEL.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el núcleo operativo que coordina configuración, módulos, dependencias, eventos, logging y runtime."
+            AlcanceDocumento = "Infraestructura base del Kernel; no incluye todavía Azure Foundry, MCP, memoria, agentes ni herramientas externas."
+            ContenidoInicialDocumento = "El Kernel Enterprise se implementa en motor/kernel y se inicia mediante scripts/Start-HermesEnterprise.ps1."
+            ReferenciasCruzadas = "- Runtime: documentacion/RUNTIME.md`n- Configuración: documentacion/CONFIGURATION.md`n- Registro de módulos: documentacion/MODULE_REGISTRY.md`n- EventBus: documentacion/EVENT_BUS.md`n- Logger: documentacion/LOGGER.md`n- Bootstrap: documentacion/BOOTSTRAP.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-RUNTIME" `
+        -TituloDocumento "Runtime Enterprise" `
+        -RutaRelativaSalida "documentacion\RUNTIME.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el ciclo de vida del Runtime del Kernel Enterprise."
+            AlcanceDocumento = "Estados Creado, EnEjecucion y Detenido, con publicación de eventos de ciclo de vida."
+            ContenidoInicialDocumento = "El Runtime se implementa en motor/runtime/Runtime.ps1 y se orquesta desde el Kernel."
+            ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- EventBus: documentacion/EVENT_BUS.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-CONFIGURATION" `
+        -TituloDocumento "Configuration Manager" `
+        -RutaRelativaSalida "documentacion\CONFIGURATION.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar la administración centralizada de configuración del Kernel Enterprise."
+            AlcanceDocumento = "Configuración JSON local idempotente, sin secretos y preparada para evolución futura."
+            ContenidoInicialDocumento = "El administrador se implementa en motor/configuracion/ConfigurationManager.ps1."
+            ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- Bootstrap: documentacion/BOOTSTRAP.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-MODULE-REGISTRY" `
+        -TituloDocumento "Module Registry" `
+        -RutaRelativaSalida "documentacion\MODULE_REGISTRY.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el registro de módulos desacoplados del Kernel Enterprise."
+            AlcanceDocumento = "Registro idempotente de nombre, versión, ruta, capacidades y estado de módulos."
+            ContenidoInicialDocumento = "El registro se implementa en motor/registro/ModuleRegistry.ps1."
+            ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- Runtime: documentacion/RUNTIME.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-EVENT-BUS" `
+        -TituloDocumento "Event Bus" `
+        -RutaRelativaSalida "documentacion\EVENT_BUS.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar la comunicación desacoplada por eventos dentro del Kernel Enterprise."
+            AlcanceDocumento = "Suscripción y publicación de eventos en memoria para infraestructura inicial."
+            ContenidoInicialDocumento = "El bus de eventos se implementa en motor/eventos/EventBus.ps1."
+            ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- Runtime: documentacion/RUNTIME.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-LOGGER" `
+        -TituloDocumento "Logger Enterprise" `
+        -RutaRelativaSalida "documentacion\LOGGER.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el logging estructurado JSONL del Kernel Enterprise."
+            AlcanceDocumento = "Registro local de eventos con timestamp, componente, nivel, mensaje, correlationId y datos."
+            ContenidoInicialDocumento = "El logger se implementa en motor/logging/Logger.ps1."
+            ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- Observabilidad futura: documentacion/README.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-BOOTSTRAP" `
+        -TituloDocumento "Bootstrap Enterprise" `
+        -RutaRelativaSalida "documentacion\BOOTSTRAP.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el proceso de arranque ordenado del Kernel Enterprise."
+            AlcanceDocumento = "Carga de contexto, configuración, registro, dependencias, logger, event bus y runtime."
+            ContenidoInicialDocumento = "El bootstrap se implementa en motor/bootstrap/Bootstrap.ps1 y se expone con scripts/Start-HermesEnterprise.ps1."
+            ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- Configuration: documentacion/CONFIGURATION.md`n- Runtime: documentacion/RUNTIME.md"
         })
 )
 

@@ -27,7 +27,7 @@ function New-HermesEnterpriseConfigurationManager {
         $ConfiguracionInicial = [ordered]@{
             Proyecto = "HERMES-ENTERPRISE"
             Kernel = [ordered]@{
-                Version = "0.3.0"
+                Version = "0.4.0"
                 Entorno = "Desarrollo"
                 ModulosAutoCarga = @()
             }

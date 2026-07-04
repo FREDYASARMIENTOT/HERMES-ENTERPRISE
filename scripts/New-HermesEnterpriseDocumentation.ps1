@@ -213,6 +213,90 @@ $EspecificacionesDocumentos = @(
             AlcanceDocumento = "Carga de contexto, configuración, registro, dependencias, logger, event bus y runtime."
             ContenidoInicialDocumento = "El bootstrap se implementa en motor/bootstrap/Bootstrap.ps1 y se expone con scripts/Start-HermesEnterprise.ps1."
             ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- Configuration: documentacion/CONFIGURATION.md`n- Runtime: documentacion/RUNTIME.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-PLUGIN-FRAMEWORK" `
+        -TituloDocumento "Enterprise Plugin Framework" `
+        -RutaRelativaSalida "documentacion\PLUGIN_FRAMEWORK.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el marco de extensibilidad por plugins desacoplados del Kernel Enterprise."
+            AlcanceDocumento = "Discovery, manifests, contratos, dependencias, ciclo de vida, provider registry y plugin de ejemplo."
+            ContenidoInicialDocumento = "El framework se implementa en motor/plugins, motor/discovery, motor/manifest, motor/lifecycle, motor/contracts, motor/dependencygraph, motor/providers y motor/validation."
+            ReferenciasCruzadas = "- Plugin Manifest: documentacion/PLUGIN_MANIFEST.md`n- Plugin Contracts: documentacion/PLUGIN_CONTRACTS.md`n- Plugin Lifecycle: documentacion/PLUGIN_LIFECYCLE.md`n- Plugin Discovery: documentacion/PLUGIN_DISCOVERY.md`n- Plugin Manager: documentacion/PLUGIN_MANAGER.md`n- Provider Registry: documentacion/PROVIDER_REGISTRY.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-PLUGIN-MANIFEST" `
+        -TituloDocumento "Plugin Manifest" `
+        -RutaRelativaSalida "documentacion\PLUGIN_MANIFEST.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el contrato plugin.json usado por plugins Enterprise."
+            AlcanceDocumento = "Nombre, versión, autor, Kernel mínimo, dependencias, eventos, servicios, configuración y permisos."
+            ContenidoInicialDocumento = "La carga se implementa en motor/manifest/ManifestLoader.ps1 y se valida con HelloPlugin."
+            ReferenciasCruzadas = "- Plugin Framework: documentacion/PLUGIN_FRAMEWORK.md`n- HelloPlugin: plugins/HelloPlugin/plugin.json"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-PLUGIN-CONTRACTS" `
+        -TituloDocumento "Plugin Contracts" `
+        -RutaRelativaSalida "documentacion\PLUGIN_CONTRACTS.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar contratos lógicos IPlugin, IProvider, ITool, IAgent e IExtension en PowerShell."
+            AlcanceDocumento = "Validación basada en funciones requeridas porque PowerShell no define interfaces clásicas para scripts."
+            ContenidoInicialDocumento = "El contrato IPlugin exige Install, Initialize, Start, Pause, Resume, Stop y Dispose por convención de nombres."
+            ReferenciasCruzadas = "- Lifecycle: documentacion/PLUGIN_LIFECYCLE.md`n- Contracts: motor/contracts/PluginContracts.ps1"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-PLUGIN-LIFECYCLE" `
+        -TituloDocumento "Plugin Lifecycle" `
+        -RutaRelativaSalida "documentacion\PLUGIN_LIFECYCLE.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el ciclo de vida estándar de plugins Enterprise."
+            AlcanceDocumento = "Install, Initialize, Start, Pause, Resume, Stop y Dispose."
+            ContenidoInicialDocumento = "El gestor se implementa en motor/lifecycle/LifecycleManager.ps1."
+            ReferenciasCruzadas = "- Plugin Manager: documentacion/PLUGIN_MANAGER.md`n- HelloPlugin: plugins/HelloPlugin/HelloPlugin.ps1"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-PLUGIN-DISCOVERY" `
+        -TituloDocumento "Plugin Discovery" `
+        -RutaRelativaSalida "documentacion\PLUGIN_DISCOVERY.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el descubrimiento automático de plugins por manifiestos plugin.json."
+            AlcanceDocumento = "Búsqueda recursiva bajo plugins/ y creación de objetos PluginDescubierto."
+            ContenidoInicialDocumento = "El discovery se implementa en motor/discovery/PluginDiscovery.ps1."
+            ReferenciasCruzadas = "- Plugin Manifest: documentacion/PLUGIN_MANIFEST.md`n- Plugin Manager: documentacion/PLUGIN_MANAGER.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-PLUGIN-MANAGER" `
+        -TituloDocumento "Plugin Manager" `
+        -RutaRelativaSalida "documentacion\PLUGIN_MANAGER.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el administrador que descubre, valida, ordena, carga e inicializa plugins."
+            AlcanceDocumento = "Orquesta discovery, dependency graph, version validator, contracts, lifecycle y provider registry."
+            ContenidoInicialDocumento = "El administrador se implementa en motor/plugins/PluginManager.ps1 y se integra al Kernel."
+            ReferenciasCruzadas = "- Kernel: documentacion/KERNEL.md`n- Provider Registry: documentacion/PROVIDER_REGISTRY.md"
+        }),
+    (New-HermesEnterpriseDocumentSpecification `
+        -IdentificadorDocumento "DOC-PROVIDER-REGISTRY" `
+        -TituloDocumento "Provider Registry" `
+        -RutaRelativaSalida "documentacion\PROVIDER_REGISTRY.md" `
+        -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
+        -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
+        -ValoresAdicionalesPlantilla @{
+            PropositoDocumento = "Documentar el registro de proveedores aportados por plugins."
+            AlcanceDocumento = "Registro inicial de proveedores en memoria para desacoplar futuros Azure, OpenAI, MCP, Ollama y otros."
+            ContenidoInicialDocumento = "El registro se implementa en motor/providers/ProviderRegistry.ps1."
+            ReferenciasCruzadas = "- Plugin Manager: documentacion/PLUGIN_MANAGER.md`n- HelloPlugin: plugins/HelloPlugin/README.md"
         })
 )
 

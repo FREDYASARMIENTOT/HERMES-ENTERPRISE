@@ -21,6 +21,7 @@ function Test-HermesEnterpriseKernel {
     if ($null -eq $KernelEnterprise.Logger) { $ErroresValidacionKernel.Add("Logger no inicializado.") }
     if ($null -eq $KernelEnterprise.EventBus) { $ErroresValidacionKernel.Add("EventBus no inicializado.") }
     if ($null -eq $KernelEnterprise.RegistroModulos) { $ErroresValidacionKernel.Add("ModuleRegistry no inicializado.") }
+    if ($null -eq $KernelEnterprise.PluginManager) { $ErroresValidacionKernel.Add("PluginManager no inicializado.") }
 
     return [pscustomobject][ordered]@{
         EsValido = ($ErroresValidacionKernel.Count -eq 0)

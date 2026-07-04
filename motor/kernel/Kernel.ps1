@@ -25,6 +25,7 @@ function New-HermesEnterpriseKernel {
         Logger = $null
         EventBus = $null
         Runtime = $null
+        PluginManager = $null
     }
 }
 
@@ -47,14 +48,18 @@ function Start-HermesEnterpriseKernel {
     $KernelEnterprise.Logger = New-HermesEnterpriseLogger -RutaArchivoLog $RutaLogKernel -NombreComponente "Kernel"
     $KernelEnterprise.EventBus = New-HermesEnterpriseEventBus
     $KernelEnterprise.Runtime = New-HermesEnterpriseRuntime -EventBusKernel $KernelEnterprise.EventBus
+    $KernelEnterprise.PluginManager = New-HermesEnterprisePluginManager -RutaRaizRepositorio $KernelEnterprise.ContextoKernel.RutaRaizRepositorio -VersionKernelActual $KernelEnterprise.ContextoKernel.VersionKernel
 
     Register-HermesEnterpriseService -ContenedorDependencias $KernelEnterprise.ContenedorDependencias -NombreServicio "ConfigurationManager" -InstanciaServicio $KernelEnterprise.AdministradorConfiguracion | Out-Null
     Register-HermesEnterpriseService -ContenedorDependencias $KernelEnterprise.ContenedorDependencias -NombreServicio "ModuleRegistry" -InstanciaServicio $KernelEnterprise.RegistroModulos | Out-Null
     Register-HermesEnterpriseService -ContenedorDependencias $KernelEnterprise.ContenedorDependencias -NombreServicio "Logger" -InstanciaServicio $KernelEnterprise.Logger | Out-Null
     Register-HermesEnterpriseService -ContenedorDependencias $KernelEnterprise.ContenedorDependencias -NombreServicio "EventBus" -InstanciaServicio $KernelEnterprise.EventBus | Out-Null
     Register-HermesEnterpriseService -ContenedorDependencias $KernelEnterprise.ContenedorDependencias -NombreServicio "Runtime" -InstanciaServicio $KernelEnterprise.Runtime | Out-Null
+    Register-HermesEnterpriseService -ContenedorDependencias $KernelEnterprise.ContenedorDependencias -NombreServicio "PluginManager" -InstanciaServicio $KernelEnterprise.PluginManager | Out-Null
 
     Register-HermesEnterpriseModule -RegistroModulos $KernelEnterprise.RegistroModulos -NombreModulo "Kernel" -VersionModulo $KernelEnterprise.ContextoKernel.VersionKernel -RutaModulo "motor/kernel" -CapacidadesModulo @("Bootstrap", "Runtime", "Servicios") | Out-Null
+
+    Initialize-HermesEnterprisePlugins -AdministradorPlugins $KernelEnterprise.PluginManager | Out-Null
 
     Start-HermesEnterpriseRuntime -RuntimeKernel $KernelEnterprise.Runtime | Out-Null
     Write-HermesEnterpriseLogEvent -LoggerKernel $KernelEnterprise.Logger -Nivel "INFO" -Mensaje "Kernel Enterprise iniciado" -DatosEvento @{ VersionKernel = $KernelEnterprise.ContextoKernel.VersionKernel } | Out-Null

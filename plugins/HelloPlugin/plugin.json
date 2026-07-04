@@ -1,0 +1,23 @@
+{
+  "Nombre": "HelloPlugin",
+  "Version": "0.4.0",
+  "Autor": "Fredy Alejandro Sarmiento Torres",
+  "KernelMinimo": "0.4.0",
+  "ScriptPrincipal": "HelloPlugin.ps1",
+  "Dependencias": [],
+  "Eventos": [
+    "HelloPlugin.Installed",
+    "HelloPlugin.Initialized",
+    "HelloPlugin.Started",
+    "HelloPlugin.Stopped",
+    "HelloPlugin.Disposed"
+  ],
+  "Servicios": [
+    "HelloService"
+  ],
+  "Proveedores": [
+    "HelloProvider"
+  ],
+  "Configuracion": "plugin.settings.json",
+  "Permisos": []
+}

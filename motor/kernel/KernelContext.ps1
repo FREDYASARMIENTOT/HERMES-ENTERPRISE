@@ -25,7 +25,7 @@ function New-HermesEnterpriseKernelContext {
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$VersionKernel = "0.3.0"
+        [string]$VersionKernel = "0.4.0"
     )
 
     # Normalizar la ruta raíz permite que todos los componentes trabajen con rutas absolutas.

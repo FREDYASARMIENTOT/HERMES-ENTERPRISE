@@ -1,8 +1,8 @@
-# HERMES-ENTERPRISE
+# Índice de Documentación Enterprise
 
 | Campo | Valor |
 |---|---|
-| NombreDocumento | HERMES-ENTERPRISE |
+| NombreDocumento | Índice de Documentación Enterprise |
 | Proyecto | HERMES-ENTERPRISE |
 | Version | 1.0.0 |
 | AutorPrincipal | Fredy Alejandro Sarmiento Torres |
@@ -15,28 +15,16 @@
 ## Tabla de contenido
 
 - [Propósito](#proposito)
-- [Alcance](#alcance)
-- [Contenido inicial](#contenido-inicial)
+- [Biblioteca documental](#biblioteca-documental)
 - [Referencias cruzadas](#referencias-cruzadas)
-
----
-
-## Navegación
-
-- [Índice de documentación](README.md)
-- [Documento siguiente](documentacion/PROJECT_CHARTER.md)
 
 ---
 
 ## Propósito
 
-Presentar la plataforma empresarial de ingeniería para agentes inteligentes.
+Servir como punto de entrada a la biblioteca técnica versionada del proyecto.
 
-## Alcance
-
-Este README es generado por el motor documental y será enriquecido progresivamente.
-
-## Contenido inicial
+## Biblioteca documental
 
 La biblioteca documental de HERMES-ENTERPRISE será generada desde plantillas reutilizables,
 metadatos centralizados y especificaciones declarativas. Esta fase crea únicamente la
@@ -53,6 +41,5 @@ posteriores.
 
 ---
 
-> Documento generado automáticamente por el Motor Generador de Documentación Enterprise.
-> No editar manualmente contenido generado; modificar plantillas o especificaciones.
+> Índice generado automáticamente por el Motor Generador de Documentación Enterprise.
 

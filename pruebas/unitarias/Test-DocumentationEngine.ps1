@@ -113,4 +113,45 @@ Assert-HermesEnterpriseCondition `
     -CondicionEvaluada ($ContenidoDocumentoPrueba.Contains("## Tabla de contenido")) `
     -MensajeError "El builder no generó tabla de contenido."
 
+# -----------------------------------------------------------------------------------------
+# Validar que la plantilla especializada de Bootstrap puede renderizar una especificación
+# ejecutable con las secciones Enterprise que convierten el documento en contrato de arranque.
+# -----------------------------------------------------------------------------------------
+
+$EspecificacionBootstrapPrueba = New-HermesEnterpriseDocumentSpecification `
+    -IdentificadorDocumento "DOC-BOOTSTRAP-TEST" `
+    -TituloDocumento "Bootstrap Enterprise" `
+    -RutaRelativaSalida "documentacion\BOOTSTRAP.md" `
+    -RutaRelativaPlantilla "plantillas\BootstrapEnterprise.md.tpl" `
+    -NombresSeccionesDocumento @("Propósito", "Alcance", "Secuencia de inicialización", "Contratos de Bootstrap", "Estados del ciclo de arranque", "Eventos publicados", "Métricas y telemetría", "Recuperación ante fallos", "Contenido inicial", "Referencias cruzadas") `
+    -ValoresAdicionalesPlantilla @{
+        PropositoDocumento = "Validar Bootstrap como fase de nacimiento del sistema."
+        AlcanceDocumento = "Prueba unitaria local."
+        SecuenciaInicializacion = "Secuencia controlada."
+        ContratosBootstrap = "Contrato controlado."
+        EstadosCicloArranque = "READY."
+        EventosPublicados = "Bootstrap.Completed."
+        MetricasTelemetria = "bootstrap.total.duration."
+        RecuperacionFallos = "Abort."
+        ContenidoInicialDocumento = "Contenido controlado de Bootstrap."
+        ReferenciasCruzadas = "Kernel."
+    }
+
+$ContenidoPlantillaBootstrapPrueba = Get-Content -Path (Join-Path -Path $RutaRaizRepositorio -ChildPath "plantillas\BootstrapEnterprise.md.tpl") -Raw
+$ContenidoBootstrapPrueba = New-HermesEnterpriseDocumentContent `
+    -EspecificacionDocumento $EspecificacionBootstrapPrueba `
+    -ContenidoPlantillaMarkdown $ContenidoPlantillaBootstrapPrueba
+
+Assert-HermesEnterpriseCondition `
+    -CondicionEvaluada ($ContenidoBootstrapPrueba.Contains("## Contratos de Bootstrap")) `
+    -MensajeError "La plantilla de Bootstrap no generó la sección de contratos."
+
+Assert-HermesEnterpriseCondition `
+    -CondicionEvaluada ($ContenidoBootstrapPrueba.Contains("## Métricas y telemetría")) `
+    -MensajeError "La plantilla de Bootstrap no generó la sección de métricas y telemetría."
+
+Assert-HermesEnterpriseCondition `
+    -CondicionEvaluada ($ContenidoBootstrapPrueba.Contains("## Recuperación ante fallos")) `
+    -MensajeError "La plantilla de Bootstrap no generó la sección de recuperación ante fallos."
+
 Write-Host "Pruebas del motor documental completadas correctamente." -ForegroundColor Green

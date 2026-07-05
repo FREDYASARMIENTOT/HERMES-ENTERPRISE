@@ -8,6 +8,41 @@
 
 ---
 
+## ADR-0010: Observabilidad mínima del Plugin Framework
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+El Plugin Framework ya cuenta con discovery, manifiestos, SemVer, ciclo de vida, Sandbox v1 y política explícita de fallas. Antes de integrar proveedores reales, la Fase 2.5 requiere que un desarrollador pueda consultar el estado operativo de plugins sin modificar el Kernel.
+
+### Decisión
+
+Agregar observabilidad local al Plugin Framework mediante:
+
+- `HoraInicio`, `HoraFin` y `DuracionMilisegundos` en el contexto de ciclo de vida del plugin.
+- Consulta `Get-HermesEnterprisePluginObservability` en `PluginManager`.
+- Reporte de totales de plugins cargados, `Faulted`, deshabilitados y acción de política aplicada.
+- Detalle por plugin con estado, sandbox, política, tiempos y cantidad de errores.
+
+### Límites
+
+- No se modifica comportamiento del Kernel.
+- No se agrega recuperación automática.
+- No se agrega retry.
+- No se integran proveedores reales, IA, Azure Foundry ni MCP.
+- No se cambia `plugin.json`.
+
+### Verificación
+
+- `pruebas/unitarias/Test-PluginObservability.ps1`
+- `pruebas/unitarias/Test-PluginFaultPolicy.ps1`
+- `pruebas/unitarias/Test-PluginManager.ps1`
+
+---
+
 ## ADR-0009: Política explícita de manejo de plugins Faulted
 
 ### Estado

@@ -78,3 +78,36 @@ function Get-HermesEnterprisePlugin {
     }
     return $null
 }
+
+function Get-HermesEnterprisePluginObservability {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][psobject]$AdministradorPlugins)
+
+    $PluginsObservados = New-Object System.Collections.Generic.List[object]
+    foreach ($NombrePlugin in $AdministradorPlugins.PluginsCargados.Keys) {
+        $ContextoPlugin = $AdministradorPlugins.PluginsCargados[$NombrePlugin]
+        $PluginsObservados.Add([pscustomobject][ordered]@{
+            NombrePlugin = $ContextoPlugin.NombrePlugin
+            EstadoActual = $ContextoPlugin.EstadoActual
+            EstadoSandbox = $ContextoPlugin.EstadoSandbox
+            AccionFallaPlugin = $ContextoPlugin.AccionFallaPlugin
+            PluginDeshabilitado = [bool]$ContextoPlugin.PluginDeshabilitado
+            HoraInicio = $ContextoPlugin.HoraInicio
+            HoraFin = $ContextoPlugin.HoraFin
+            DuracionMilisegundos = $ContextoPlugin.DuracionMilisegundos
+            ErroresSandbox = $ContextoPlugin.ErroresSandbox.Count
+        }) | Out-Null
+    }
+
+    $Plugins = $PluginsObservados.ToArray()
+    $PluginsFaulted = @($Plugins | Where-Object { $_.EstadoActual -eq "Faulted" })
+    $PluginsDeshabilitados = @($Plugins | Where-Object { $_.PluginDeshabilitado })
+
+    return [pscustomobject][ordered]@{
+        TotalPluginsCargados = $Plugins.Count
+        TotalPluginsFaulted = $PluginsFaulted.Count
+        TotalPluginsDeshabilitados = $PluginsDeshabilitados.Count
+        AccionFallaPlugin = $AdministradorPlugins.PoliticaFallaPlugin.AccionPorDefecto
+        Plugins = $Plugins
+    }
+}

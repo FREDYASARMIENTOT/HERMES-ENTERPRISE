@@ -26,6 +26,9 @@ function New-HermesEnterprisePluginLifecycleContext {
         EstadoSandbox = "Created"
         AccionFallaPlugin = "Continue"
         PluginDeshabilitado = $false
+        HoraInicio = $null
+        HoraFin = $null
+        DuracionMilisegundos = 0
         EstadosEjecutados = New-Object System.Collections.Generic.List[string]
         ErroresSandbox = New-Object System.Collections.Generic.List[object]
         ServiciosRegistrados = @{}
@@ -46,6 +49,7 @@ function Invoke-HermesEnterprisePluginLifecycle {
     $NombrePlugin = $PluginDescubierto.Manifest.Nombre
 
     $EtapaSandbox = "Install"
+    $ContextoPlugin.HoraInicio = Get-Date
 
     try {
         # Sandbox v1: aislamiento lógico mínimo. El plugin se ejecuta en el mismo proceso,
@@ -79,6 +83,9 @@ function Invoke-HermesEnterprisePluginLifecycle {
 
         Invoke-HermesEnterprisePluginFaultPolicy -ContextoPlugin $ContextoPlugin -PoliticaFallaPlugin $PoliticaFallaPlugin | Out-Null
     }
+
+    $ContextoPlugin.HoraFin = Get-Date
+    $ContextoPlugin.DuracionMilisegundos = [int]([datetime]$ContextoPlugin.HoraFin - [datetime]$ContextoPlugin.HoraInicio).TotalMilliseconds
 
     return $ContextoPlugin
 }

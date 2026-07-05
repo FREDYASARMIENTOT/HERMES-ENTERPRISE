@@ -275,3 +275,36 @@ Criterios de aceptación:
 | Requisito | Componente | Prueba | Documento |
 |---|---|---|---|
 | RF-009 | motor/lifecycle/PluginFaultPolicy.ps1, motor/lifecycle/LifecycleManager.ps1, motor/plugins/PluginManager.ps1 | pruebas/unitarias/Test-PluginFaultPolicy.ps1, pruebas/unitarias/Test-PluginSandbox.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |
+
+---
+
+## 13. Alcance Fase 2.5: Observabilidad del Plugin Framework
+
+La Fase 2.5 agrega consultas de observabilidad local para responder el estado operativo del framework de plugins sin modificar el comportamiento del Kernel.
+
+### RF-010: Consulta de observabilidad de plugins
+
+El sistema debe exponer una consulta que permita conocer:
+
+- Plugins cargados.
+- Plugins en estado `Faulted`.
+- Plugins deshabilitados.
+- Política de falla aplicada.
+- Hora de inicio del ciclo de vida por plugin.
+- Hora de fin del ciclo de vida por plugin.
+- Duración del ciclo de vida por plugin.
+
+Criterios de aceptación:
+
+- La consulta debe operar sobre el `PluginManager` existente.
+- La consulta no debe iniciar, detener, recuperar ni reintentar plugins.
+- La consulta debe mantener compatibilidad con Sandbox v1 y Plugin Fault Policy.
+- No se debe modificar el formato de `plugin.json` ni contratos públicos del Kernel.
+
+---
+
+## 14. Trazabilidad Fase 2.5
+
+| Requisito | Componente | Prueba | Documento |
+|---|---|---|---|
+| RF-010 | motor/plugins/PluginManager.ps1, motor/lifecycle/LifecycleManager.ps1 | pruebas/unitarias/Test-PluginObservability.ps1, pruebas/unitarias/Test-PluginFaultPolicy.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |

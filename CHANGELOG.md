@@ -2,6 +2,21 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.5.5] - 2026-07-04
+
+### Agregado
+
+- Fase 2.5: observabilidad mínima del Plugin Framework.
+- Nueva consulta `Get-HermesEnterprisePluginObservability` para reportar plugins cargados, `Faulted`, deshabilitados y política aplicada.
+- Registro de `HoraInicio`, `HoraFin` y `DuracionMilisegundos` por ciclo de vida de plugin.
+- Prueba unitaria `Test-PluginObservability.ps1` para validar estado, política, errores y tiempos.
+
+### Compatibilidad
+
+- No se modifica comportamiento del Kernel.
+- No se incorpora recovery automático, retry, proveedores reales, IA, Azure Foundry ni MCP.
+- No se modifica el formato actual de `plugin.json`.
+
 ## [0.5.4] - 2026-07-04
 
 ### Agregado

@@ -8,6 +8,53 @@
 
 ---
 
+## ADR-0013: Observabilidad y seguridad de logs del Azure Foundry Provider
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+El Azure Foundry Provider ya se conecta a Azure AI Foundry, ejecuta health checks, descubre deployments y envía chat completions. Antes de agregar capacidades avanzadas, la Fase 4.5 requiere hacer el provider observable y operable: trazabilidad de peticiones, métricas de latencia/tokens/costo, manejo centralizado de errores HTTP y garantía de que los logs nunca contengan secretos.
+
+### Decisión
+
+Agregar `motor/providers/AzureFoundryTelemetry.ps1` con:
+
+- Generación de `CorrelationId` por operación.
+- Sanitización de datos antes de escribir en logs (redacción de api-key, token, authorization, secret, password, credential).
+- Estimación de costo por modelo basada en tokens de entrada/salida.
+- Registro unificado de: deployment, latencia, tokens, costo, modelo, estado y error.
+
+Modificar `AzureFoundryRest.ps1` para devolver respuestas unificadas `{ Success, StatusCode, Data, LatenciaMs, Error, CorrelationId }` y centralizar el manejo de errores HTTP.
+
+Integrar telemetría en `AzureFoundryHealth`, `AzureFoundryDeployment` y `AzureFoundryChat`.
+
+Extender `Write-HermesEnterpriseLogEvent` para aceptar `CorrelationId` opcional manteniendo compatibilidad.
+
+Crear `pruebas/unitarias/Test-AzureFoundryProviderTelemetry.ps1` para validar sanitización, métricas y secreto-safe logs.
+
+### Consecuencias positivas
+
+- Trazabilidad end-to-end de cada petición.
+- Logs listos para auditoría y debugging sin exponer credenciales.
+- Base sólida para Streaming, Tool Calling y MCP.
+
+### Límites
+
+- No se implementa Streaming ni Responses API avanzada.
+- No se implementa Tool Calling, Agents, MCP ni Embeddings.
+- El costo es una estimación simplificada; no reemplaza la facturación de Azure.
+
+### Verificación
+
+- `pruebas/unitarias/Test-AzureFoundryProviderTelemetry.ps1`
+- `pruebas/unitarias/Test-AzureFoundryProviderConnection.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+
+---
+
 ## ADR-0012: Refactorización arquitectónica del Azure Foundry Provider
 
 ### Estado

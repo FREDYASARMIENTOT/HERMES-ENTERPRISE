@@ -2,6 +2,25 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.6.4] - 2026-07-05
+
+### Agregado
+
+- Fase 4.5: observabilidad y seguridad de logs del Azure Foundry Provider.
+- `CorrelationId` por operación para trazabilidad end-to-end.
+- Nuevo módulo `motor/providers/AzureFoundryTelemetry.ps1`.
+- Registro de métricas: deployment, latencia, tokens de entrada/salida, costo estimado, modelo y estado.
+- Sanitización de secretos en logs (api-key, token, authorization, password, secret, credential).
+- Respuesta unificada del cliente REST: `{ Success, StatusCode, Data, LatenciaMs, Error, CorrelationId }`.
+- Manejo centralizado de errores HTTP en `AzureFoundryRest.ps1`.
+- `Write-HermesEnterpriseLogEvent` ahora acepta `CorrelationId` opcional manteniendo compatibilidad.
+- Nueva prueba `Test-AzureFoundryProviderTelemetry.ps1` valida latencia, tokens, costo y secreto-safe logs.
+
+### Compatibilidad
+
+- No se modifican contratos públicos del Kernel, Plugin Framework ni Provider Framework.
+- No se implementa Streaming, Responses API avanzada, Tool Calling, Agents, MCP ni Embeddings.
+
 ## [0.6.3] - 2026-07-05
 
 ### Agregado

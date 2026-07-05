@@ -37,6 +37,20 @@ El Provider Framework gestiona el ciclo de vida de providers externos sin acopla
 | `motor/providers/AzureFoundryHealth.ps1` | Health check e interpretación de códigos HTTP. |
 | `motor/providers/AzureFoundryDeployment.ps1` | Descubrimiento y descripción de deployments. |
 | `motor/providers/AzureFoundryChat.ps1` | Envío de conversaciones a un deployment. |
+| `motor/providers/AzureFoundryTelemetry.ps1` | CorrelationId, métricas, costo estimado y sanitización de logs. |
+
+## Telemetría
+
+Cada operación del provider genera:
+
+- `CorrelationId`: identificador único de trazabilidad.
+- `LatenciaMs`: duración de la llamada.
+- `TokensEntrada` / `TokensSalida`: uso del modelo.
+- `CostoEstimadoUSD`: estimación simplificada por modelo.
+- `Deployment` y `Modelo`: contexto de la operación.
+- `Estado` y `Error`: resultado de la operación.
+
+Los logs se escriben mediante Logger Enterprise y nunca contienen credenciales, tokens ni API keys.
 
 ## Contrato público estable
 

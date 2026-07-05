@@ -51,8 +51,15 @@ function Write-HermesEnterpriseLogEvent {
         [string]$Mensaje,
 
         [Parameter(Mandatory = $false)]
-        [hashtable]$DatosEvento = @{}
+        [hashtable]$DatosEvento = @{},
+
+        [Parameter(Mandatory = $false)]
+        [string]$CorrelationId = ""
     )
+
+    if ([string]::IsNullOrWhiteSpace($CorrelationId)) {
+        $CorrelationId = [guid]::NewGuid().ToString()
+    }
 
     # Construir evento estructurado; profundidad 10 permite registrar datos anidados simples.
     $EventoLog = [ordered]@{
@@ -60,7 +67,7 @@ function Write-HermesEnterpriseLogEvent {
         Componente      = $LoggerKernel.NombreComponente
         Nivel           = $Nivel
         Mensaje         = $Mensaje
-        CorrelationId   = [guid]::NewGuid().ToString()
+        CorrelationId   = $CorrelationId
         Datos           = $DatosEvento
     }
 

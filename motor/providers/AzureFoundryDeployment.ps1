@@ -13,6 +13,7 @@ Set-StrictMode -Version Latest
 $RutaDirectorioAzureFoundryDeployment = Split-Path -Parent $PSCommandPath
 . (Join-Path $RutaDirectorioAzureFoundryDeployment "..\security\CredentialResolver.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryDeployment "AzureFoundryRest.ps1")
+. (Join-Path $RutaDirectorioAzureFoundryDeployment "AzureFoundryTelemetry.ps1")
 
 $SCRIPT:HermesEnterpriseAzureFoundryApiVersionDefault = "2024-10-21"
 
@@ -53,40 +54,38 @@ function Get-AzureFoundryDeploymentList {
         [Parameter(Mandatory = $false)][string]$ApiVersion = $SCRIPT:HermesEnterpriseAzureFoundryApiVersionDefault
     )
 
-    $ModoSimulado = Test-HermesEnterpriseAzureFoundrySimulationMode
-    if ($ModoSimulado) {
-        return $DeploymentsSimulados
-    }
-
-    $Credencial = Get-HermesEnterpriseAzureFoundryCredential
-    if (-not $Credencial.TieneCredenciales) {
-        return Get-HermesEnterpriseAzureFoundryDeploymentsFromManagementApi
-    }
-
-    $Uri = Build-HermesEnterpriseAzureFoundryRequestUri -Endpoint $Credencial.Endpoint -Ruta "/openai/models" -ApiVersion $ApiVersion
+    $CorrelationId = New-HermesEnterpriseAzureFoundryCorrelationId
+    $HoraInicio = Get-Date
+    $Estado = "OK"
+    $ErrorMensaje = ""
 
     try {
-        $Respuesta = Invoke-HermesEnterpriseAzureFoundryRestMethod -Uri $Uri -Credencial $Credencial -Metodo "GET"
-        $DeploymentsMapeados = New-Object System.Collections.Generic.List[object]
-
-        foreach ($Modelo in $Respuesta.data) {
-            $DeploymentsMapeados.Add([pscustomobject][ordered]@{
-                Nombre = $Modelo.id
-                Modelo = $Modelo.id
-                Capacidades = @("Chat")
-                MaxTokens = if ($Modelo.PSObject.Properties.Match("max_tokens")) { $Modelo.max_tokens } else { 0 }
-                Estado = "Healthy"
-            }) | Out-Null
+        $ModoSimulado = Test-HermesEnterpriseAzureFoundrySimulationMode
+        if ($ModoSimulado) {
+            return $DeploymentsSimulados
         }
 
-        return $DeploymentsMapeados.ToArray()
-    }
-    catch {
         $DeploymentsDesdeManagementApi = Get-HermesEnterpriseAzureFoundryDeploymentsFromManagementApi
         if ($DeploymentsDesdeManagementApi.Count -gt 0) {
             return $DeploymentsDesdeManagementApi
         }
-        throw "No se pudieron obtener deployments desde el endpoint de datos ni desde Azure Management API. Error: $($_.Exception.Message)"
+
+        throw "No se pudieron obtener deployments desde Azure Management API."
+    }
+    catch {
+        $Estado = "Error"
+        $ErrorMensaje = $_.Exception.Message
+        throw
+    }
+    finally {
+        Write-HermesEnterpriseAzureFoundryTelemetry `
+            -LoggerKernel $ContextoProvider.Logger `
+            -CorrelationId $CorrelationId `
+            -NombreOperacion "GetDeployments" `
+            -HoraInicio $HoraInicio `
+            -HoraFin (Get-Date) `
+            -Estado $Estado `
+            -ErrorMensaje $ErrorMensaje | Out-Null
     }
 }
 

@@ -60,12 +60,9 @@ function Test-HermesEnterpriseAzureFoundryCredential {
             TieneCredenciales = $true
             Error = $null
         }
-        try {
-            Invoke-HermesEnterpriseAzureFoundryRestMethod -Uri $Uri -Credencial $CredencialAd -Metodo "GET" | Out-Null
+        $ResultadoAd = Invoke-HermesEnterpriseAzureFoundryRestMethod -Uri $Uri -Credencial $CredencialAd -Metodo "GET" -CorrelationId (New-HermesEnterpriseAzureFoundryCorrelationId)
+        if ($ResultadoAd.Success) {
             return $CredencialAd
-        }
-        catch {
-            # Azure AD no funciona para este recurso; continuar con API Key.
         }
     }
 
@@ -89,19 +86,17 @@ function Test-HermesEnterpriseAzureFoundryCredential {
             TieneCredenciales = $true
             Error = $null
         }
-        try {
-            Invoke-HermesEnterpriseAzureFoundryRestMethod -Uri $Uri -Credencial $CredencialKey -Metodo "GET" | Out-Null
+        $ResultadoKey = Invoke-HermesEnterpriseAzureFoundryRestMethod -Uri $Uri -Credencial $CredencialKey -Metodo "GET" -CorrelationId (New-HermesEnterpriseAzureFoundryCorrelationId)
+        if ($ResultadoKey.Success) {
             return $CredencialKey
         }
-        catch {
-            return [pscustomobject][ordered]@{
-                Endpoint = $Endpoint
-                ApiKey = $ApiKey
-                Tipo = "api-key"
-                Origen = "$OrigenApiKey + AzureKeyVault"
-                TieneCredenciales = $false
-                Error = $_.Exception.Message
-            }
+        return [pscustomobject][ordered]@{
+            Endpoint = $Endpoint
+            ApiKey = $ApiKey
+            Tipo = "api-key"
+            Origen = "$OrigenApiKey + AzureKeyVault"
+            TieneCredenciales = $false
+            Error = $ResultadoKey.Error
         }
     }
 

@@ -4,8 +4,8 @@ Proyecto : HERMES-ENTERPRISE
 Archivo  : AzureFoundryHealth.ps1
 Autor    : Fredy Alejandro Sarmiento Torres
 Propósito:
-    Health check de Azure AI Foundry. Interpreta códigos HTTP y permite fallback a
-    Azure Management API cuando el endpoint de datos requiere RBAC adicional.
+    Health check de Azure AI Foundry. Interpreta códigos HTTP, permite fallback a
+    Azure Management API y registra telemetría de latencia.
 ====================================================================================================
 #>
 Set-StrictMode -Version Latest
@@ -14,6 +14,7 @@ $RutaDirectorioAzureFoundryHealth = Split-Path -Parent $PSCommandPath
 . (Join-Path $RutaDirectorioAzureFoundryHealth "..\security\CredentialResolver.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryHealth "AzureFoundryRest.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryHealth "AzureFoundryDeployment.ps1")
+. (Join-Path $RutaDirectorioAzureFoundryHealth "AzureFoundryTelemetry.ps1")
 
 $SCRIPT:HermesEnterpriseAzureFoundryApiVersionDefault = "2024-10-21"
 
@@ -65,6 +66,11 @@ function Invoke-AzureFoundryHealthCheck {
         [Parameter(Mandatory = $false)][string]$ApiVersion = $SCRIPT:HermesEnterpriseAzureFoundryApiVersionDefault
     )
 
+    $CorrelationId = New-HermesEnterpriseAzureFoundryCorrelationId
+    $HoraInicio = Get-Date
+    $EstadoTelemetry = "OK"
+    $ErrorMensaje = ""
+
     $ModoSimulado = Test-HermesEnterpriseAzureFoundrySimulationMode
     if ($ModoSimulado) {
         $ContextoProvider.Health = [pscustomobject][ordered]@{
@@ -72,57 +78,70 @@ function Invoke-AzureFoundryHealthCheck {
             Mensaje = "Provider Healthy (modo simulado)."
             UltimaVerificacion = (Get-Date).ToString("o")
         }
+        Write-HermesEnterpriseAzureFoundryTelemetry `
+            -LoggerKernel $ContextoProvider.Logger `
+            -CorrelationId $CorrelationId `
+            -NombreOperacion "HealthCheck" `
+            -HoraInicio $HoraInicio `
+            -HoraFin (Get-Date) `
+            -Estado $EstadoTelemetry | Out-Null
         return $ContextoProvider.Health
     }
 
     $Credencial = Get-HermesEnterpriseAzureFoundryCredential
     $Uri = Build-HermesEnterpriseAzureFoundryRequestUri -Endpoint $Credencial.Endpoint -Ruta "/openai/models" -ApiVersion $ApiVersion
+    $Resultado = Invoke-HermesEnterpriseAzureFoundryRestMethod -Uri $Uri -Credencial $Credencial -Metodo "GET" -CorrelationId $CorrelationId
 
-    try {
-        Invoke-HermesEnterpriseAzureFoundryRestMethod -Uri $Uri -Credencial $Credencial -Metodo "GET" | Out-Null
+    if ($Resultado.Success) {
         $ContextoProvider.Health = [pscustomobject][ordered]@{
             Estado = "Healthy"
             Mensaje = "Provider Healthy."
             UltimaVerificacion = (Get-Date).ToString("o")
-            CodigoEstadoHttp = 200
+            CodigoEstadoHttp = $Resultado.StatusCode
+            LatenciaMs = $Resultado.LatenciaMs
+            CorrelationId = $CorrelationId
         }
     }
-    catch {
-        $CodigoEstado = 0
-        if ($_.Exception.Response) {
-            $CodigoEstado = [int]$_.Exception.Response.StatusCode
-        }
-        elseif ($_.Exception -match "\((\d{3})\)") {
-            $CodigoEstado = [int]$Matches[1]
-        }
+    else {
+        $CodigoEstado = $Resultado.StatusCode
+        $ErrorMensaje = $Resultado.Error
 
         if ($CodigoEstado -in @(401, 403)) {
             $DeploymentsDesdeManagementApi = Get-HermesEnterpriseAzureFoundryDeploymentsFromManagementApi
             if ($DeploymentsDesdeManagementApi.Count -gt 0) {
+                $EstadoTelemetry = "Partial"
                 $ContextoProvider.Health = [pscustomobject][ordered]@{
                     Estado = "Healthy"
                     Mensaje = "Provider Healthy (autenticación vía Azure Management API; endpoint de datos requiere RBAC adicional)."
                     UltimaVerificacion = (Get-Date).ToString("o")
                     CodigoEstadoHttp = $CodigoEstado
+                    LatenciaMs = $Resultado.LatenciaMs
+                    CorrelationId = $CorrelationId
                 }
             }
             else {
-                $Health = Resolve-HermesEnterpriseAzureFoundryHealthFromStatusCode -CodigoEstadoHttp $CodigoEstado -MensajeAdicional $_.Exception.Message
+                $EstadoTelemetry = "Error"
+                $Health = Resolve-HermesEnterpriseAzureFoundryHealthFromStatusCode -CodigoEstadoHttp $CodigoEstado -MensajeAdicional $Resultado.Error
                 $ContextoProvider.Health = [pscustomobject][ordered]@{
                     Estado = $Health.Estado
                     Mensaje = $Health.Mensaje
                     UltimaVerificacion = (Get-Date).ToString("o")
                     CodigoEstadoHttp = $Health.CodigoEstadoHttp
+                    LatenciaMs = $Resultado.LatenciaMs
+                    CorrelationId = $CorrelationId
                 }
             }
         }
         else {
-            $Health = Resolve-HermesEnterpriseAzureFoundryHealthFromStatusCode -CodigoEstadoHttp $CodigoEstado -MensajeAdicional $_.Exception.Message
+            $EstadoTelemetry = "Error"
+            $Health = Resolve-HermesEnterpriseAzureFoundryHealthFromStatusCode -CodigoEstadoHttp $CodigoEstado -MensajeAdicional $Resultado.Error
             $ContextoProvider.Health = [pscustomobject][ordered]@{
                 Estado = $Health.Estado
                 Mensaje = $Health.Mensaje
                 UltimaVerificacion = (Get-Date).ToString("o")
                 CodigoEstadoHttp = $Health.CodigoEstadoHttp
+                LatenciaMs = $Resultado.LatenciaMs
+                CorrelationId = $CorrelationId
             }
         }
     }
@@ -133,6 +152,15 @@ function Invoke-AzureFoundryHealthCheck {
     elseif ($ContextoProvider.Adapter.EstadoActual -eq "Ready" -and $ContextoProvider.Health.Estado -eq "Healthy") {
         Move-HermesEnterpriseProviderAdapterState -ProviderAdapter $ContextoProvider.Adapter -NuevoEstado "Healthy" | Out-Null
     }
+
+    Write-HermesEnterpriseAzureFoundryTelemetry `
+        -LoggerKernel $ContextoProvider.Logger `
+        -CorrelationId $CorrelationId `
+        -NombreOperacion "HealthCheck" `
+        -HoraInicio $HoraInicio `
+        -HoraFin (Get-Date) `
+        -Estado $EstadoTelemetry `
+        -ErrorMensaje $ErrorMensaje | Out-Null
 
     return $ContextoProvider.Health
 }

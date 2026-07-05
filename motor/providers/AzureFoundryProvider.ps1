@@ -33,6 +33,8 @@ $RutaDirectorioAzureFoundryProvider = Split-Path -Parent $PSCommandPath
 . (Join-Path $RutaDirectorioAzureFoundryProvider "ProviderDescriptor.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryProvider "ProviderDiagnostics.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryProvider "..\security\CredentialResolver.ps1")
+. (Join-Path $RutaDirectorioAzureFoundryProvider "..\logging\Logger.ps1")
+. (Join-Path $RutaDirectorioAzureFoundryProvider "AzureFoundryTelemetry.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryProvider "AzureFoundryRest.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryProvider "AzureFoundryHealth.ps1")
 . (Join-Path $RutaDirectorioAzureFoundryProvider "AzureFoundryDeployment.ps1")
@@ -101,7 +103,9 @@ function Test-HermesEnterpriseAzureFoundryProviderSimulationMode {
 function New-HermesEnterpriseAzureFoundryProvider {
     [CmdletBinding()]
     [OutputType([pscustomobject])]
-    param()
+    param(
+        [Parameter(Mandatory = $false)][psobject]$LoggerKernel = $null
+    )
 
     $AdministradorConfiguracion = New-HermesEnterpriseProviderConfigurationManager
     Register-HermesEnterpriseProviderConfigurationSchema `
@@ -129,6 +133,13 @@ function New-HermesEnterpriseAzureFoundryProvider {
     $Adapter.LimitesIncluidos.CredencialesReales = $false
     $Adapter.LimitesIncluidos.IA = $true
 
+    $LoggerEfectivo = $LoggerKernel
+    if ($null -eq $LoggerEfectivo) {
+        $RutaRaizRepositorio = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSCommandPath))
+        $RutaLogProvider = Join-Path $RutaRaizRepositorio "logs\AzureFoundryProvider.log"
+        $LoggerEfectivo = New-HermesEnterpriseLogger -RutaArchivoLog $RutaLogProvider -NombreComponente "AzureFoundryProvider"
+    }
+
     return [pscustomobject][ordered]@{
         NombreProvider = $SCRIPT:HermesEnterpriseAzureFoundryProviderNombre
         VersionProvider = $SCRIPT:HermesEnterpriseAzureFoundryProviderVersion
@@ -146,6 +157,7 @@ function New-HermesEnterpriseAzureFoundryProvider {
         HoraInicioInicializacion = $null
         HoraFinInicializacion = $null
         UltimaConfiguracion = $null
+        Logger = $LoggerEfectivo
     }
 }
 

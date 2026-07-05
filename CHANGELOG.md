@@ -2,6 +2,32 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.6.3] - 2026-07-05
+
+### Agregado
+
+- Fase 4.4: refactorización arquitectónica del Azure Foundry Provider.
+- Nuevos módulos de seguridad:
+  - `motor/security/AzureAdResolver.ps1`
+  - `motor/security/KeyVaultResolver.ps1`
+  - `motor/security/CredentialResolver.ps1`
+- Nuevos módulos de provider:
+  - `motor/providers/AzureFoundryRest.ps1`
+  - `motor/providers/AzureFoundryHealth.ps1`
+  - `motor/providers/AzureFoundryDeployment.ps1`
+  - `motor/providers/AzureFoundryChat.ps1`
+- `AzureFoundryProvider.ps1` ahora es exclusivamente un orquestador.
+- Documentación: ADR-0012 en `ARCHITECTURE_DECISIONS.md` y nuevo `PROVIDER_FRAMEWORK.md`.
+
+### Corregido
+
+- Sin cambios funcionales; comportamiento observable idéntico.
+
+### Compatibilidad
+
+- No se modifican contratos públicos del Kernel, Plugin Framework ni Provider Framework.
+- No se implementa Streaming, Responses API, Tool Calling, Agents, MCP ni Embeddings.
+
 ## [0.6.2] - 2026-07-05
 
 ### Agregado

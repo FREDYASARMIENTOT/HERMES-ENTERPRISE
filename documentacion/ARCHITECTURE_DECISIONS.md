@@ -8,6 +8,50 @@
 
 ---
 
+## ADR-0012: Refactorización arquitectónica del Azure Foundry Provider
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+El AzureFoundryProvider creció acumulando responsabilidades: autenticación, resolución de credenciales, llamadas REST, health check, deployments, chat, fallback a Azure AD y Key Vault. La Fase 4.4 requiere separar esas responsabilidades sin cambiar el comportamiento observable.
+
+### Decisión
+
+Convertir `AzureFoundryProvider.ps1` en un orquestador puro y mover responsabilidades a módulos especializados:
+
+- `motor/security/AzureAdResolver.ps1`: token de Azure AD.
+- `motor/security/KeyVaultResolver.ps1`: lectura de secretos de Azure Key Vault.
+- `motor/security/CredentialResolver.ps1`: decisión de origen de credenciales y prueba de autenticación.
+- `motor/providers/AzureFoundryRest.ps1`: cliente REST (URI, GET, POST, JSON).
+- `motor/providers/AzureFoundryHealth.ps1`: health check e interpretación de códigos HTTP.
+- `motor/providers/AzureFoundryDeployment.ps1`: descubrimiento y descripción de deployments.
+- `motor/providers/AzureFoundryChat.ps1`: envío de conversaciones.
+
+Los nombres de funciones públicas del provider se mantienen sin cambios.
+
+### Consecuencias positivas
+
+- Cada módulo tiene una única responsabilidad.
+- Facilita agregar Streaming, Tool Calling, MCP y Agentes en fases posteriores.
+- El orquestador no depende directamente de `az` ni de Key Vault.
+
+### Límites
+
+- No se agrega funcionalidad nueva.
+- No se modifica comportamiento observable.
+- No se cambian contratos públicos del Provider Framework ni del Kernel.
+
+### Verificación
+
+- `pruebas/unitarias/Test-AzureFoundryProvider.ps1`
+- `pruebas/unitarias/Test-AzureFoundryProviderConnection.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+
+---
+
 ## ADR-0011: Reporte consolidado de madurez del Plugin Framework
 
 ### Estado

@@ -180,3 +180,46 @@ function Get-HermesEnterpriseProviderObservability {
         }
     }
 }
+
+function Get-HermesEnterpriseProviderFrameworkMaturityReport {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][psobject]$AdministradorProviders,
+        [Parameter(Mandatory = $false)][ValidateNotNullOrEmpty()][string]$VersionFramework = "0.3.3"
+    )
+
+    $ObservabilidadProviders = Get-HermesEnterpriseProviderObservability -AdministradorProviders $AdministradorProviders
+    $InfraestructuraBaseCertificada = (
+        $ObservabilidadProviders.TotalProvidersRegistrados -ge 1 -and
+        $ObservabilidadProviders.TotalProvidersUnhealthy -eq 0 -and
+        $ObservabilidadProviders.TotalProvidersConfigurationInvalid -eq 0
+    )
+
+    return [pscustomobject][ordered]@{
+        NombreComponente = "Enterprise Provider Framework"
+        EstadoMadurez = if ($InfraestructuraBaseCertificada) { "InfraestructuraBaseCertificada" } else { "RequiereEstabilizacion" }
+        VersionFramework = $VersionFramework
+        TotalProvidersRegistrados = $ObservabilidadProviders.TotalProvidersRegistrados
+        TotalProvidersInicializados = $ObservabilidadProviders.TotalProvidersInicializados
+        TotalProvidersUnhealthy = $ObservabilidadProviders.TotalProvidersUnhealthy
+        TotalProvidersConfigurationInvalid = $ObservabilidadProviders.TotalProvidersConfigurationInvalid
+        Capacidades = [pscustomobject][ordered]@{
+            ProviderContract = $true
+            ProviderContext = $true
+            ProviderRegistry = $true
+            ProviderManager = $true
+            ConfigurationValidation = $true
+            Health = $true
+            Observability = $true
+        }
+        LimitesIncluidos = $ObservabilidadProviders.LimitesIncluidos
+        PruebasRecomendadas = @(
+            "pruebas/unitarias/Test-ProviderFramework.ps1",
+            "pruebas/unitarias/Test-ProviderManagerValidation.ps1",
+            "pruebas/unitarias/Test-ProviderObservability.ps1",
+            "pruebas/unitarias/Test-ProviderFrameworkMaturity.ps1",
+            "scripts/Test-HermesEnterprise.ps1"
+        )
+        ProximaFaseRecomendada = "AdapterScaffoldingSinProvidersReales"
+    }
+}

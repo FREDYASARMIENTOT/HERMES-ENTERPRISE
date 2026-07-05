@@ -8,6 +8,43 @@
 
 ---
 
+## ADR-0008: Sandbox v1 de plugins por aislamiento lógico de errores
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+El Plugin Framework ya descubre, valida, ordena y ejecuta plugins. La Fase 2.3 requiere evitar que un plugin defectuoso detenga al PluginManager o al Kernel sin introducir todavía un sandbox pesado.
+
+### Decisión
+
+Agregar Sandbox v1 en `motor/lifecycle/LifecycleManager.ps1` mediante `try/catch` alrededor del ciclo de vida del plugin.
+
+Cuando una etapa falla:
+
+- El contexto del plugin queda con `EstadoActual = Faulted`.
+- El contexto del plugin queda con `EstadoSandbox = Faulted`.
+- El error se conserva en `ErroresSandbox` con etapa, tipo y mensaje.
+- El PluginManager continúa con los demás plugins.
+
+### Límites
+
+- No se aíslan procesos.
+- No se crean runspaces, jobs, AppDomains ni contenedores.
+- No se ejecuta PowerShell separado.
+- No se cambia `plugin.json`.
+- No se modifican contratos públicos del Kernel.
+
+### Verificación
+
+- `pruebas/unitarias/Test-PluginSandbox.ps1`
+- `pruebas/unitarias/Test-Lifecycle.ps1`
+- `pruebas/unitarias/Test-PluginManager.ps1`
+
+---
+
 ## ADR-0007: Validación SemVer estricta para plugins
 
 ### Estado

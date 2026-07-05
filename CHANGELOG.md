@@ -2,6 +2,20 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.5.3] - 2026-07-04
+
+### Agregado
+
+- Fase 2.3: Sandbox v1 inicial para aislamiento lógico de errores de plugins.
+- Estado `Faulted` y registro diagnóstico `ErroresSandbox` en el contexto de ciclo de vida del plugin.
+- Prueba unitaria `Test-PluginSandbox.ps1` para validar que un plugin defectuoso no detiene la carga de otros plugins válidos.
+
+### Compatibilidad
+
+- No se incorpora aislamiento por procesos, runspaces, jobs, contenedores ni PowerShell separado.
+- No se modifica el formato actual de `plugin.json`.
+- No se modifica Bootstrap, Kernel público, Runtime, Logger, EventBus, Dependency Container ni Service Locator.
+
 ## [0.5.2] - 2026-07-04
 
 ### Agregado

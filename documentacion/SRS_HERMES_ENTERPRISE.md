@@ -219,3 +219,29 @@ Criterios de aceptación:
 | Requisito | Componente | Prueba | Documento |
 |---|---|---|---|
 | RF-007 | motor/validation/VersionValidator.ps1, motor/manifest/ManifestLoader.ps1 | pruebas/unitarias/Test-VersionValidator.ps1, pruebas/unitarias/Test-Manifest.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md |
+
+---
+
+## 9. Alcance Fase 2.3: Sandbox v1 de plugins
+
+La Fase 2.3 agrega aislamiento lógico mínimo para errores de plugins sin introducir aislamiento por procesos ni cambiar contratos públicos del Kernel.
+
+### RF-008: Plugin Sandbox v1
+
+El sistema debe capturar errores durante el ciclo de vida de un plugin y conservar diagnóstico local en el contexto del plugin.
+
+Criterios de aceptación:
+
+- Un error en un plugin no debe detener la inicialización del PluginManager.
+- Los demás plugins válidos deben continuar cargando normalmente.
+- El plugin defectuoso debe quedar registrado con estado `Faulted`.
+- El contexto debe incluir `EstadoSandbox` y `ErroresSandbox`.
+- No se deben modificar `plugin.json`, Bootstrap, Kernel público, Runtime, Logger, EventBus, Dependency Container ni Service Locator.
+
+---
+
+## 10. Trazabilidad Fase 2.3
+
+| Requisito | Componente | Prueba | Documento |
+|---|---|---|---|
+| RF-008 | motor/lifecycle/LifecycleManager.ps1 | pruebas/unitarias/Test-PluginSandbox.ps1, pruebas/unitarias/Test-Lifecycle.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |

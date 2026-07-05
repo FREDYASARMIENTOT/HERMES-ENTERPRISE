@@ -22,7 +22,9 @@ function New-HermesEnterprisePluginLifecycleContext {
         Manifest = $PluginDescubierto.Manifest
         RutaDirectorioPlugin = $PluginDescubierto.RutaDirectorioPlugin
         EstadoActual = "Created"
+        EstadoSandbox = "Created"
         EstadosEjecutados = New-Object System.Collections.Generic.List[string]
+        ErroresSandbox = New-Object System.Collections.Generic.List[object]
         ServiciosRegistrados = @{}
         ProveedoresRegistrados = @{}
     }
@@ -39,13 +41,37 @@ function Invoke-HermesEnterprisePluginLifecycle {
     $ContextoPlugin = New-HermesEnterprisePluginLifecycleContext -PluginDescubierto $PluginDescubierto
     $NombrePlugin = $PluginDescubierto.Manifest.Nombre
 
-    & "Install-$NombrePlugin" $ContextoPlugin | Out-Null
-    & "Initialize-$NombrePlugin" $ContextoPlugin | Out-Null
-    & "Start-$NombrePlugin" $ContextoPlugin | Out-Null
+    $EtapaSandbox = "Install"
 
-    if (-not $MantenerIniciado.IsPresent) {
-        & "Stop-$NombrePlugin" $ContextoPlugin | Out-Null
-        & "Dispose-$NombrePlugin" $ContextoPlugin | Out-Null
+    try {
+        # Sandbox v1: aislamiento lógico mínimo. El plugin se ejecuta en el mismo proceso,
+        # pero cualquier error del ciclo de vida queda capturado en el contexto del plugin
+        # para evitar que un plugin defectuoso detenga al PluginManager o al Kernel.
+        $ContextoPlugin.EstadoSandbox = "Running"
+
+        & "Install-$NombrePlugin" $ContextoPlugin | Out-Null
+        $EtapaSandbox = "Initialize"
+        & "Initialize-$NombrePlugin" $ContextoPlugin | Out-Null
+        $EtapaSandbox = "Start"
+        & "Start-$NombrePlugin" $ContextoPlugin | Out-Null
+
+        if (-not $MantenerIniciado.IsPresent) {
+            $EtapaSandbox = "Stop"
+            & "Stop-$NombrePlugin" $ContextoPlugin | Out-Null
+            $EtapaSandbox = "Dispose"
+            & "Dispose-$NombrePlugin" $ContextoPlugin | Out-Null
+        }
+
+        $ContextoPlugin.EstadoSandbox = "Healthy"
+    }
+    catch {
+        $ContextoPlugin.EstadoActual = "Faulted"
+        $ContextoPlugin.EstadoSandbox = "Faulted"
+        $ContextoPlugin.ErroresSandbox.Add([pscustomobject][ordered]@{
+            Etapa = $EtapaSandbox
+            TipoError = $_.Exception.GetType().FullName
+            Mensaje = $_.Exception.Message
+        }) | Out-Null
     }
 
     return $ContextoPlugin

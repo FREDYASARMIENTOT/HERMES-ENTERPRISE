@@ -8,6 +8,59 @@
 
 ---
 
+## ADR-0006: Smoke Test Enterprise como certificado de madurez del Kernel
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+Después de consolidar Bootstrap, Kernel, Runtime, PluginManager, Logger, EventBus, Health Monitor y Metrics, HERMES-ENTERPRISE necesita demostrar que los componentes funcionan como sistema integrado antes de iniciar fases de robustez avanzada o proveedores de IA.
+
+### Decisión
+
+Crear una prueba de integración completa:
+
+```powershell
+pruebas/integracion/Test-FullKernel.ps1
+```
+
+Crear un script público de ejecución:
+
+```powershell
+scripts/Test-HermesEnterprise.ps1
+```
+
+Agregar funciones auxiliares no disruptivas en `motor/kernel/KernelValidator.ps1`:
+
+```powershell
+Test-HermesEnterpriseKernelReady
+Get-HermesEnterpriseKernelSummary
+```
+
+La prueba integral valida arranque, servicios registrados, plugins, logger, eventos, health, métricas, documentación idempotente y shutdown.
+
+### Consecuencias positivas
+
+- HERMES-ENTERPRISE obtiene una línea base certificada del núcleo.
+- Las fases futuras podrán detectar regresiones de integración rápidamente.
+- Se mantiene la estrategia incremental sin introducir IA ni proveedores externos.
+
+### Límites
+
+- La prueba no reemplaza pruebas unitarias.
+- La prueba no valida comportamiento de proveedores de IA.
+- La prueba no agrega sandbox de plugins; eso queda para Fase 2.
+
+### Verificación
+
+- `pruebas/integracion/Test-FullKernel.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+- Suite completa en `pruebas/unitarias/Test-*.ps1`
+
+---
+
 ## ADR-0005: Observabilidad interna incremental del Kernel
 
 ### Estado

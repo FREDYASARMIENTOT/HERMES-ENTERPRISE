@@ -2,6 +2,20 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.5.4] - 2026-07-04
+
+### Agregado
+
+- Fase 2.4: política explícita de manejo de plugins en estado `Faulted`.
+- Nuevo componente `PluginFaultPolicy` con acciones permitidas `Continue`, `Disable` y `Abort`.
+- Prueba unitaria `Test-PluginFaultPolicy.ps1` para validar las tres acciones sin recovery automático.
+
+### Compatibilidad
+
+- La acción predeterminada es `Continue`, conservando el comportamiento de Sandbox v1.
+- No se incorpora retry, recovery automático, hot reload, auto restart, procesos, runspaces, jobs ni contenedores.
+- No se modifica el formato actual de `plugin.json` ni contratos públicos del Kernel.
+
 ## [0.5.3] - 2026-07-04
 
 ### Agregado

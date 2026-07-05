@@ -245,3 +245,33 @@ Criterios de aceptación:
 | Requisito | Componente | Prueba | Documento |
 |---|---|---|---|
 | RF-008 | motor/lifecycle/LifecycleManager.ps1 | pruebas/unitarias/Test-PluginSandbox.ps1, pruebas/unitarias/Test-Lifecycle.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |
+
+---
+
+## 11. Alcance Fase 2.4: Política de plugins Faulted
+
+La Fase 2.4 define una política explícita para decidir qué hacer cuando un plugin queda en estado `Faulted`.
+
+### RF-009: Plugin Fault Policy
+
+El sistema debe exponer una política con acciones permitidas:
+
+- `Continue`.
+- `Disable`.
+- `Abort`.
+
+Criterios de aceptación:
+
+- `Continue` debe mantener compatibilidad y permitir continuar con otros plugins.
+- `Disable` debe marcar el plugin defectuoso como deshabilitado sin implementar recuperación automática.
+- `Abort` debe detener explícitamente la inicialización cuando un plugin falla.
+- La política no debe incorporar retry, recovery automático, hot reload, auto restart ni aislamiento pesado.
+- No se debe modificar el formato de `plugin.json` ni contratos públicos del Kernel.
+
+---
+
+## 12. Trazabilidad Fase 2.4
+
+| Requisito | Componente | Prueba | Documento |
+|---|---|---|---|
+| RF-009 | motor/lifecycle/PluginFaultPolicy.ps1, motor/lifecycle/LifecycleManager.ps1, motor/plugins/PluginManager.ps1 | pruebas/unitarias/Test-PluginFaultPolicy.ps1, pruebas/unitarias/Test-PluginSandbox.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |

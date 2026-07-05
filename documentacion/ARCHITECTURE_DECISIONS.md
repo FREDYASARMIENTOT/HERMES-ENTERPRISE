@@ -8,6 +8,43 @@
 
 ---
 
+## ADR-0009: Política explícita de manejo de plugins Faulted
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+Sandbox v1 ya evita que un plugin defectuoso detenga la carga de otros plugins. La Fase 2.4 requiere hacer explícita la decisión operativa ante un plugin en estado `Faulted` sin implementar todavía recovery, retry ni aislamiento pesado.
+
+### Decisión
+
+Agregar `motor/lifecycle/PluginFaultPolicy.ps1` como componente pequeño con tres acciones permitidas:
+
+- `Continue`: conservar el comportamiento actual y continuar con otros plugins.
+- `Disable`: marcar el plugin defectuoso como deshabilitado para diagnóstico y operación posterior.
+- `Abort`: detener explícitamente la inicialización ante una falla de plugin.
+
+La política se conecta al `LifecycleManager` y al `PluginManager`. La acción predeterminada es `Continue` para mantener compatibilidad.
+
+### Límites
+
+- No se implementa retry.
+- No se implementa recovery automático.
+- No se implementa hot reload ni auto restart.
+- No se agregan procesos, runspaces, jobs ni contenedores.
+- No se cambia `plugin.json`.
+- No se modifican contratos públicos del Kernel.
+
+### Verificación
+
+- `pruebas/unitarias/Test-PluginFaultPolicy.ps1`
+- `pruebas/unitarias/Test-PluginSandbox.ps1`
+- `pruebas/unitarias/Test-PluginManager.ps1`
+
+---
+
 ## ADR-0008: Sandbox v1 de plugins por aislamiento lógico de errores
 
 ### Estado

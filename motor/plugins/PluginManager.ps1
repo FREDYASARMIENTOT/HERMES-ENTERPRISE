@@ -19,19 +19,22 @@ $RutaDirectorioMotor = Split-Path -Parent $RutaDirectorioPluginManager
 . (Join-Path $RutaDirectorioMotor "contracts\PluginContracts.ps1")
 . (Join-Path $RutaDirectorioMotor "providers\ProviderRegistry.ps1")
 . (Join-Path $RutaDirectorioMotor "plugins\PluginLoader.ps1")
+. (Join-Path $RutaDirectorioMotor "lifecycle\PluginFaultPolicy.ps1")
 . (Join-Path $RutaDirectorioMotor "lifecycle\LifecycleManager.ps1")
 
 function New-HermesEnterprisePluginManager {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string]$RutaRaizRepositorio,
-        [Parameter(Mandatory = $false)][ValidateNotNullOrEmpty()][string]$VersionKernelActual = "0.4.0"
+        [Parameter(Mandatory = $false)][ValidateNotNullOrEmpty()][string]$VersionKernelActual = "0.4.0",
+        [Parameter(Mandatory = $false)][ValidateSet("Continue", "Disable", "Abort")][string]$AccionFallaPlugin = "Continue"
     )
 
     return [pscustomobject][ordered]@{
         RutaRaizRepositorio = $RutaRaizRepositorio
         RutaDirectorioPlugins = Join-Path $RutaRaizRepositorio "plugins"
         VersionKernelActual = $VersionKernelActual
+        PoliticaFallaPlugin = New-HermesEnterprisePluginFaultPolicy -AccionPorDefecto $AccionFallaPlugin
         PluginsCargados = @{}
         ProveedorRegistry = New-HermesEnterpriseProviderRegistry
     }
@@ -52,7 +55,7 @@ function Initialize-HermesEnterprisePlugins {
         $ResultadoContrato = Test-HermesEnterprisePluginContract -NombrePlugin $PluginDescubierto.Manifest.Nombre
         if (-not $ResultadoContrato.EsValido) { throw "Plugin $($PluginDescubierto.Manifest.Nombre) no cumple contrato: $($ResultadoContrato.FuncionesFaltantes -join ', ')" }
 
-        $ContextoPlugin = Invoke-HermesEnterprisePluginLifecycle -PluginDescubierto $PluginDescubierto -MantenerIniciado
+        $ContextoPlugin = Invoke-HermesEnterprisePluginLifecycle -PluginDescubierto $PluginDescubierto -MantenerIniciado -PoliticaFallaPlugin $AdministradorPlugins.PoliticaFallaPlugin
         $AdministradorPlugins.PluginsCargados[$PluginDescubierto.Manifest.Nombre] = $ContextoPlugin
 
         foreach ($NombreProveedor in $ContextoPlugin.ProveedoresRegistrados.Keys) {

@@ -12,6 +12,7 @@ Set-StrictMode -Version Latest
 $RutaDirectorioLifecycleManager = Split-Path -Parent $PSCommandPath
 $RutaDirectorioMotorLifecycle = Split-Path -Parent $RutaDirectorioLifecycleManager
 . (Join-Path $RutaDirectorioMotorLifecycle "plugins\PluginLoader.ps1")
+. (Join-Path $RutaDirectorioMotorLifecycle "lifecycle\PluginFaultPolicy.ps1")
 
 function New-HermesEnterprisePluginLifecycleContext {
     [CmdletBinding()]
@@ -23,6 +24,8 @@ function New-HermesEnterprisePluginLifecycleContext {
         RutaDirectorioPlugin = $PluginDescubierto.RutaDirectorioPlugin
         EstadoActual = "Created"
         EstadoSandbox = "Created"
+        AccionFallaPlugin = "Continue"
+        PluginDeshabilitado = $false
         EstadosEjecutados = New-Object System.Collections.Generic.List[string]
         ErroresSandbox = New-Object System.Collections.Generic.List[object]
         ServiciosRegistrados = @{}
@@ -34,7 +37,8 @@ function Invoke-HermesEnterprisePluginLifecycle {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][psobject]$PluginDescubierto,
-        [Parameter(Mandatory = $false)][switch]$MantenerIniciado
+        [Parameter(Mandatory = $false)][switch]$MantenerIniciado,
+        [Parameter(Mandatory = $false)][psobject]$PoliticaFallaPlugin = (New-HermesEnterprisePluginFaultPolicy -AccionPorDefecto "Continue")
     )
 
     Import-HermesEnterprisePluginScript -RutaScriptPlugin $PluginDescubierto.RutaScriptPlugin | Out-Null
@@ -72,6 +76,8 @@ function Invoke-HermesEnterprisePluginLifecycle {
             TipoError = $_.Exception.GetType().FullName
             Mensaje = $_.Exception.Message
         }) | Out-Null
+
+        Invoke-HermesEnterprisePluginFaultPolicy -ContextoPlugin $ContextoPlugin -PoliticaFallaPlugin $PoliticaFallaPlugin | Out-Null
     }
 
     return $ContextoPlugin

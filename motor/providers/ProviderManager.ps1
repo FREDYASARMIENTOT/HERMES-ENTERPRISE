@@ -4,7 +4,8 @@ Proyecto : HERMES-ENTERPRISE
 Archivo  : ProviderManager.ps1
 Autor    : Fredy Alejandro Sarmiento Torres
 Propósito:
-    Administra registro, inicialización, estado y apagado de providers sin realizar llamadas HTTP.
+    Administra registro, validación local, health, inicialización, estado y apagado de providers
+    sin realizar llamadas HTTP ni integrar proveedores reales.
 ====================================================================================================
 #>
 Set-StrictMode -Version Latest
@@ -47,6 +48,15 @@ function Initialize-HermesEnterpriseProvider {
     $ContextoProvider = Get-HermesEnterpriseProvider -ProveedorRegistry $AdministradorProviders.ProviderRegistry -NombreProveedor $NombreProvider
     if ($null -eq $ContextoProvider) { throw "Provider no registrado: $NombreProvider" }
 
+    $ResultadoValidacion = Test-HermesEnterpriseManagedProviderConfiguration -AdministradorProviders $AdministradorProviders -NombreProvider $NombreProvider
+    if (-not $ResultadoValidacion.EsValida) {
+        $ContextoProvider.Estado = "ConfigurationInvalid"
+        $ContextoProvider.Health.Estado = "Unhealthy"
+        $ContextoProvider.Health.UltimaVerificacion = (Get-Date).ToString("o")
+        $ContextoProvider.Health.Mensaje = $ResultadoValidacion.Errores -join "; "
+        throw "Configuracion invalida para provider ${NombreProvider}: $($ResultadoValidacion.Errores -join '; ')"
+    }
+
     $NombreFuncionInicializacion = "Initialize-$NombreProvider"
     if (-not (Get-Command -Name $NombreFuncionInicializacion -ErrorAction SilentlyContinue)) {
         throw "No existe la función requerida del provider: $NombreFuncionInicializacion"
@@ -87,4 +97,46 @@ function Get-HermesEnterpriseProviderState {
     $ContextoProvider = Get-HermesEnterpriseProvider -ProveedorRegistry $AdministradorProviders.ProviderRegistry -NombreProveedor $NombreProvider
     if ($null -eq $ContextoProvider) { return $null }
     return $ContextoProvider.Estado
+}
+
+function Test-HermesEnterpriseManagedProviderConfiguration {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][psobject]$AdministradorProviders,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string]$NombreProvider
+    )
+
+    $ContextoProvider = Get-HermesEnterpriseProvider -ProveedorRegistry $AdministradorProviders.ProviderRegistry -NombreProveedor $NombreProvider
+    if ($null -eq $ContextoProvider) { throw "Provider no registrado: $NombreProvider" }
+
+    $NombreFuncionValidacion = "ValidateConfiguration-$NombreProvider"
+    if (-not (Get-Command -Name $NombreFuncionValidacion -ErrorAction SilentlyContinue)) {
+        throw "No existe la función requerida del provider: $NombreFuncionValidacion"
+    }
+
+    $ResultadoValidacion = & $NombreFuncionValidacion -ContextoProvider $ContextoProvider
+    if ($ResultadoValidacion.EsValida) {
+        $ContextoProvider.Health.Estado = "Healthy"
+        $ContextoProvider.Health.Mensaje = "Configuracion validada localmente."
+    }
+    else {
+        $ContextoProvider.Estado = "ConfigurationInvalid"
+        $ContextoProvider.Health.Estado = "Unhealthy"
+        $ContextoProvider.Health.Mensaje = $ResultadoValidacion.Errores -join "; "
+    }
+
+    $ContextoProvider.Health.UltimaVerificacion = (Get-Date).ToString("o")
+    return $ResultadoValidacion
+}
+
+function Get-HermesEnterpriseProviderHealth {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][psobject]$AdministradorProviders,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string]$NombreProvider
+    )
+
+    $ContextoProvider = Get-HermesEnterpriseProvider -ProveedorRegistry $AdministradorProviders.ProviderRegistry -NombreProveedor $NombreProvider
+    if ($null -eq $ContextoProvider) { return $null }
+    return $ContextoProvider.Health
 }

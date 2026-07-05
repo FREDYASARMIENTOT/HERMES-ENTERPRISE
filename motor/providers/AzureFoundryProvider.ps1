@@ -763,7 +763,7 @@ function Invoke-AzureFoundryChat {
         messages = @(
             @{ role = "user"; content = $Mensaje }
         )
-        max_tokens = 50
+        max_completion_tokens = 50
     }
 
     $Respuesta = Invoke-HermesEnterpriseAzureFoundryProviderRestMethod -Uri $Uri -Credencial $Credencial -Metodo "POST" -Cuerpo $Cuerpo

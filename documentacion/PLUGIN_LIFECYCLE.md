@@ -9,7 +9,7 @@
 | Licencia | MIT |
 | RepositorioOficial | https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE |
 | ArquitecturaBase | Hermes Agent + Azure AI Foundry + MCP + A2A |
-| FechaGeneracion | 2026-07-04 |
+| FechaGeneracion | 2026-07-05 |
 | GeneradoPor | New-HermesEnterpriseDocumentation.ps1 |
 
 ## Tabla de contenido

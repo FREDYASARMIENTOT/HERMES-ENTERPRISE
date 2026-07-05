@@ -2,6 +2,22 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.6.2] - 2026-07-05
+
+### Agregado
+
+- Fase 4.3: primer Chat real con Azure AI Foundry.
+- `Invoke-AzureFoundryChat` envía mensaje a `ur-hermes-mini` y recibe respuesta del modelo `gpt-5-mini`.
+
+### Corregido
+
+- Parámetro de chat cambiado de `max_tokens` a `max_completion_tokens` para compatibilidad con modelos GPT-5.
+
+### Compatibilidad
+
+- No se implementa Streaming, Responses API, Tool Calling, Agents, MCP ni Embeddings.
+- No se persisten credenciales en archivos.
+
 ## [0.6.1] - 2026-07-05
 
 ### Agregado

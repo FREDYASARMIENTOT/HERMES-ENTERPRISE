@@ -138,10 +138,10 @@ $EspecificacionesDocumentos = @(
         -RutaRelativaPlantilla "plantillas\DocumentoBase.md.tpl" `
         -NombresSeccionesDocumento @("Propósito", "Alcance", "Contenido inicial", "Referencias cruzadas") `
         -ValoresAdicionalesPlantilla @{
-            PropositoDocumento = "Documentar el núcleo operativo que coordina configuración, módulos, dependencias, eventos, logging y runtime."
-            AlcanceDocumento = "Infraestructura base del Kernel; no incluye todavía Azure Foundry, MCP, memoria, agentes ni herramientas externas."
-            ContenidoInicialDocumento = "El Kernel Enterprise se implementa en motor/kernel y se inicia mediante scripts/Start-HermesEnterprise.ps1."
-            ReferenciasCruzadas = "- Runtime: documentacion/RUNTIME.md`n- Configuración: documentacion/CONFIGURATION.md`n- Registro de módulos: documentacion/MODULE_REGISTRY.md`n- EventBus: documentacion/EVENT_BUS.md`n- Logger: documentacion/LOGGER.md`n- Bootstrap: documentacion/BOOTSTRAP.md"
+            PropositoDocumento = "Documentar el núcleo operativo que coordina configuración, módulos, dependencias, eventos, logging, runtime, salud operativa y métricas internas."
+            AlcanceDocumento = "Infraestructura base del Kernel; incluye Health Monitor y métricas internas mínimas almacenadas mediante Logger Enterprise. No incluye todavía Azure Foundry, MCP, memoria persistente, agentes ni herramientas externas."
+            ContenidoInicialDocumento = "El Kernel Enterprise se implementa en motor/kernel y se inicia mediante scripts/Start-HermesEnterprise.ps1.`n`nComponentes de observabilidad agregados en Fase 1:`n`n- Health Monitor: motor/kernel/KernelHealth.ps1 expone Get-HermesEnterpriseKernelHealth para consultar EstadoRuntime, EstadoPlugins, EstadoLogger, EstadoEventBus, EstadoConfiguracion y EstadoMemoria.`n- Kernel Metrics: motor/kernel/KernelMetrics.ps1 expone Write-HermesEnterpriseKernelMetric para registrar HoraInicio, HoraFin, TiempoEjecucionMilisegundos, CantidadErrores, CantidadAdvertencias, UsoMemoriaBytes y Estado mediante Logger Enterprise.`n- Registro automático: Kernel registra KernelHealth y KernelMetrics en el contenedor de dependencias sin modificar contratos públicos existentes.`n- Métrica inicial: durante Start-HermesEnterpriseKernel se registra Kernel.Start como MetricaKernel."
+            ReferenciasCruzadas = "- Runtime: documentacion/RUNTIME.md`n- Configuración: documentacion/CONFIGURATION.md`n- Registro de módulos: documentacion/MODULE_REGISTRY.md`n- EventBus: documentacion/EVENT_BUS.md`n- Logger: documentacion/LOGGER.md`n- Bootstrap: documentacion/BOOTSTRAP.md`n- Health Monitor: motor/kernel/KernelHealth.ps1`n- Kernel Metrics: motor/kernel/KernelMetrics.ps1`n- Pruebas Health: pruebas/unitarias/Test-KernelHealth.ps1`n- Pruebas Metrics: pruebas/unitarias/Test-KernelMetrics.ps1"
         }),
     (New-HermesEnterpriseDocumentSpecification `
         -IdentificadorDocumento "DOC-RUNTIME" `

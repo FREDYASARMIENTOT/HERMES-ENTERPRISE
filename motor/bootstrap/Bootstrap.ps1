@@ -22,6 +22,8 @@ $RutaDirectorioMotor = Split-Path -Parent $RutaDirectorioBootstrap
 . (Join-Path $RutaDirectorioMotor "dependencias\ServiceLocator.ps1")
 . (Join-Path $RutaDirectorioMotor "runtime\Runtime.ps1")
 . (Join-Path $RutaDirectorioMotor "plugins\PluginManager.ps1")
+. (Join-Path $RutaDirectorioMotor "kernel\KernelHealth.ps1")
+. (Join-Path $RutaDirectorioMotor "kernel\KernelMetrics.ps1")
 . (Join-Path $RutaDirectorioMotor "kernel\Kernel.ps1")
 
 function Start-HermesEnterpriseBootstrap {

@@ -111,3 +111,49 @@ function Get-HermesEnterprisePluginObservability {
         Plugins = $Plugins
     }
 }
+
+function Get-HermesEnterprisePluginFrameworkMaturityReport {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][psobject]$AdministradorPlugins)
+
+    $ObservabilidadPlugins = Get-HermesEnterprisePluginObservability -AdministradorPlugins $AdministradorPlugins
+    $EsAptoParaProvidersReales = (
+        $ObservabilidadPlugins.TotalPluginsCargados -ge 1 -and
+        $ObservabilidadPlugins.TotalPluginsFaulted -eq 0 -and
+        $ObservabilidadPlugins.TotalPluginsDeshabilitados -eq 0
+    )
+
+    return [pscustomobject][ordered]@{
+        NombreComponente = "Enterprise Plugin Framework"
+        EstadoMadurez = if ($EsAptoParaProvidersReales) { "AptoParaProveedoresReales" } else { "RequiereEstabilizacion" }
+        VersionKernelActual = $AdministradorPlugins.VersionKernelActual
+        TotalPluginsCargados = $ObservabilidadPlugins.TotalPluginsCargados
+        TotalPluginsFaulted = $ObservabilidadPlugins.TotalPluginsFaulted
+        TotalPluginsDeshabilitados = $ObservabilidadPlugins.TotalPluginsDeshabilitados
+        AccionFallaPlugin = $ObservabilidadPlugins.AccionFallaPlugin
+        Capacidades = [pscustomobject][ordered]@{
+            Discovery = $true
+            Manifest = $true
+            SemVer = $true
+            Lifecycle = $true
+            SandboxV1 = $true
+            FaultPolicy = $true
+            Observability = $true
+            ProviderRegistry = $true
+        }
+        LimitesIncluidos = [pscustomobject][ordered]@{
+            ProvidersReales = $false
+            AzureFoundry = $false
+            MCP = $false
+            IA = $false
+            RecoveryAutomatico = $false
+        }
+        PruebasRecomendadas = @(
+            "pruebas/unitarias/Test-PluginManager.ps1",
+            "pruebas/unitarias/Test-PluginObservability.ps1",
+            "pruebas/unitarias/Test-PluginFrameworkMaturity.ps1",
+            "scripts/Test-HermesEnterprise.ps1"
+        )
+        ProximaFaseRecomendada = "IntegracionControladaDeProvidersReales"
+    }
+}

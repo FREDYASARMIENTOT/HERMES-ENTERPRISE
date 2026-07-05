@@ -2,6 +2,20 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.5.6] - 2026-07-04
+
+### Agregado
+
+- Fase 2.6: reporte consolidado de madurez y compatibilidad del Plugin Framework.
+- Nueva consulta `Get-HermesEnterprisePluginFrameworkMaturityReport` para certificar capacidades implementadas y límites explícitos.
+- Prueba unitaria `Test-PluginFrameworkMaturity.ps1` para validar estado de madurez, capacidades, límites y próxima fase recomendada.
+
+### Compatibilidad
+
+- No se modifica comportamiento del Kernel.
+- No se incorporan proveedores reales, Azure Foundry, IA, MCP, recovery automático ni retry.
+- No se modifica el formato actual de `plugin.json`.
+
 ## [0.5.5] - 2026-07-04
 
 ### Agregado

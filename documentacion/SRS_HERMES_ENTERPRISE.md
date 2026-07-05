@@ -308,3 +308,37 @@ Criterios de aceptación:
 | Requisito | Componente | Prueba | Documento |
 |---|---|---|---|
 | RF-010 | motor/plugins/PluginManager.ps1, motor/lifecycle/LifecycleManager.ps1 | pruebas/unitarias/Test-PluginObservability.ps1, pruebas/unitarias/Test-PluginFaultPolicy.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |
+
+---
+
+## 15. Alcance Fase 2.6: Madurez del Plugin Framework
+
+La Fase 2.6 cierra la madurez inicial del Plugin Framework con un reporte consolidado de estado y compatibilidad antes de integrar proveedores reales.
+
+### RF-011: Reporte de madurez del Plugin Framework
+
+El sistema debe exponer una consulta que consolide:
+
+- estado de madurez;
+- versión del Kernel evaluada;
+- totales de plugins cargados, `Faulted` y deshabilitados;
+- política de falla aplicada;
+- capacidades implementadas;
+- límites explícitos no implementados;
+- pruebas recomendadas;
+- próxima fase recomendada.
+
+Criterios de aceptación:
+
+- El reporte debe operar sobre el `PluginManager` existente.
+- El reporte debe ser de solo lectura.
+- El reporte debe declarar explícitamente que proveedores reales, Azure Foundry, IA, MCP y recovery automático no están implementados.
+- No se debe modificar comportamiento del Kernel ni formato `plugin.json`.
+
+---
+
+## 16. Trazabilidad Fase 2.6
+
+| Requisito | Componente | Prueba | Documento |
+|---|---|---|---|
+| RF-011 | motor/plugins/PluginManager.ps1 | pruebas/unitarias/Test-PluginFrameworkMaturity.ps1, pruebas/unitarias/Test-PluginObservability.ps1, scripts/Test-HermesEnterprise.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |

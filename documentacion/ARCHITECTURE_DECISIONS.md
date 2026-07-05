@@ -8,6 +8,47 @@
 
 ---
 
+## ADR-0011: Reporte consolidado de madurez del Plugin Framework
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+Después de incorporar observabilidad, política de fallas, Sandbox v1, SemVer, manifiestos y ciclo de vida, la Fase 2.6 requiere cerrar la madurez del Plugin Framework antes de incorporar proveedores reales.
+
+### Decisión
+
+Agregar `Get-HermesEnterprisePluginFrameworkMaturityReport` en `PluginManager` para consolidar:
+
+- estado de madurez del framework;
+- versión del Kernel evaluada;
+- totales de plugins cargados, `Faulted` y deshabilitados;
+- política de falla aplicada;
+- capacidades implementadas;
+- límites explícitos no implementados;
+- pruebas recomendadas;
+- próxima fase recomendada.
+
+El reporte es de solo lectura y usa la observabilidad ya existente.
+
+### Límites
+
+- No modifica comportamiento del Kernel.
+- No integra proveedores reales.
+- No incorpora Azure Foundry, IA ni MCP.
+- No incorpora recovery automático ni retry.
+- No cambia `plugin.json`.
+
+### Verificación
+
+- `pruebas/unitarias/Test-PluginFrameworkMaturity.ps1`
+- `pruebas/unitarias/Test-PluginObservability.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+
+---
+
 ## ADR-0010: Observabilidad mínima del Plugin Framework
 
 ### Estado

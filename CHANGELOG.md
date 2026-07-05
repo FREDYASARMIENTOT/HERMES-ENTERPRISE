@@ -2,6 +2,44 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.6.1] - 2026-07-05
+
+### Agregado
+
+- Fase 4.2: integración segura con Azure AI Foundry mediante Azure AD y Azure Key Vault.
+- Nueva prueba TDD `Test-AzureFoundryProviderConnection.ps1` para conexión real.
+- `AzureFoundryProvider` ahora resuelve secretos únicamente desde Azure Key Vault durante la ejecución.
+- Prioridad de autenticación: Azure AD (`az account get-access-token`) primero; si falla, API Key desde Key Vault.
+- Fallback a Azure Management API para descubrimiento de deployments cuando el endpoint de datos requiere RBAC adicional.
+- Deployments detectados en el recurso Modelo-IA-UR incluyen `ur-hermes-mini` y `ur-hermes-coder`.
+
+### Compatibilidad
+
+- No se escriben credenciales en `.env`, `config.yaml` ni archivos del proyecto.
+- No se implementa Chat, Responses, Streaming, Tool Calling, Agents, MCP ni Embeddings.
+- No se modifica comportamiento del Kernel ni del Plugin Framework.
+
+## [0.6.0] - 2026-07-05
+
+### Agregado
+
+- Fase 4: primer provider real `AzureFoundryProvider` conectado al Provider Framework.
+- Subfase 4.1: conexión, autenticación y descubrimiento automático de deployments.
+  - Deployments conocidos: `ur-hermes-mini`, `ur-hermes-coder`, `ur-ep-gpt-5.5`.
+  - Comandos públicos: `Connect-AzureFoundryProvider`, `Get-AzureFoundryDeployments`, `Get-AzureFoundryDeploymentDescription`.
+- Subfase 4.2: health check real contra `/openai/models` mediante `Invoke-AzureFoundryHealth`.
+  - Mapeo de códigos HTTP: 200 Healthy, 401 Invalid Key, 404 Deployment inexistente.
+- Subfase 4.3: primer chat completion mediante `Invoke-AzureFoundryChat`.
+- Modo simulado para pruebas offline cuando no existen credenciales reales.
+- Prueba unitaria `Test-AzureFoundryProvider.ps1` que certifica las tres subfases sin salir de red.
+- `Test-HermesEnterprise.ps1` ahora ejecuta además las pruebas del Provider Framework.
+
+### Compatibilidad
+
+- No se modifica comportamiento del Kernel ni del Plugin Framework.
+- No se incorpora Model Router, streaming, tool calling, agents ni recovery automático.
+- Las credenciales se leen únicamente de variables de entorno y nunca se almacenan en el contexto del provider.
+
 ## [0.5.6] - 2026-07-04
 
 ### Agregado

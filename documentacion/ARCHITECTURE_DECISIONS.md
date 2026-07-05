@@ -8,6 +8,47 @@
 
 ---
 
+## ADR-0007: Validación SemVer estricta para plugins
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+El Enterprise Plugin Framework ya valida compatibilidad mínima contra el Kernel. La Fase 2.2 requiere hacer explícito que las versiones de plugins usan SemVer de tres segmentos sin cambiar el formato existente de `plugin.json`.
+
+### Decisión
+
+Agregar validación estricta `Major.Minor.Patch` en `motor/validation/VersionValidator.ps1` mediante una comprobación de formato previa y conversión tipada con `[version]`.
+
+El `ManifestLoader` reutiliza la validación para los campos existentes:
+
+- `Version`.
+- `KernelMinimo`.
+
+No se agrega ningún campo nuevo al manifiesto.
+
+### Consecuencias positivas
+
+- Los errores de versión son más descriptivos.
+- Se evita aceptar versiones abreviadas ambiguas como `1.2`.
+- Los manifiestos actuales siguen siendo compatibles.
+
+### Límites
+
+- No se implementa sandbox ni recovery en esta decisión.
+- No se introduce proveedor externo ni IA.
+- No se modifica el contrato público del Kernel.
+
+### Verificación
+
+- `pruebas/unitarias/Test-VersionValidator.ps1`
+- `pruebas/unitarias/Test-Manifest.ps1`
+- `pruebas/unitarias/Test-PluginManager.ps1`
+
+---
+
 ## ADR-0006: Smoke Test Enterprise como certificado de madurez del Kernel
 
 ### Estado

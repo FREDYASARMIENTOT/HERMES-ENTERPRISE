@@ -188,3 +188,34 @@ Estas funciones no deben modificar el estado del Kernel. Solo deben consultar se
 | RF-004 | pruebas/integracion/Test-FullKernel.ps1 | pruebas/integracion/Test-FullKernel.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md |
 | RF-005 | scripts/Test-HermesEnterprise.ps1 | pruebas/integracion/Test-FullKernel.ps1 | CHANGELOG.md |
 | RF-006 | motor/kernel/KernelValidator.ps1 | pruebas/integracion/Test-FullKernel.ps1 | documentacion/ARCHITECTURE_DECISIONS.md |
+
+---
+
+## 7. Alcance Fase 2.2: Validación SemVer de plugins
+
+La Fase 2.2 fortalece la validación de versiones de plugins sin cambiar el formato actual de `plugin.json`.
+
+### RF-007: Validación SemVer Major.Minor.Patch
+
+El sistema debe validar explícitamente que las versiones de plugins y Kernel mínimo usen el formato:
+
+```text
+Major.Minor.Patch
+```
+
+Criterios de aceptación:
+
+- La validación debe usar `[version]` después de comprobar el formato estricto.
+- Versiones abreviadas como `1.2` deben rechazarse.
+- Versiones válidas como `1.2.3` deben exponer Major, Minor y Patch.
+- Los errores deben ser descriptivos.
+- Los manifiestos existentes con versión `0.4.0` deben seguir siendo compatibles.
+- No se deben modificar contratos públicos del Kernel ni el formato de `plugin.json`.
+
+---
+
+## 8. Trazabilidad Fase 2.2
+
+| Requisito | Componente | Prueba | Documento |
+|---|---|---|---|
+| RF-007 | motor/validation/VersionValidator.ps1, motor/manifest/ManifestLoader.ps1 | pruebas/unitarias/Test-VersionValidator.ps1, pruebas/unitarias/Test-Manifest.ps1, pruebas/unitarias/Test-PluginManager.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md |

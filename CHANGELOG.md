@@ -2,6 +2,20 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.5.2] - 2026-07-04
+
+### Agregado
+
+- Fase 2.2: validación SemVer explícita para plugins.
+- Validación `Major.Minor.Patch` mediante `[version]` y verificación previa de formato estricto.
+- Errores descriptivos para versiones de plugin o Kernel mínimo con formato inválido.
+
+### Compatibilidad
+
+- Se mantiene el formato actual de `plugin.json`.
+- No se modifican APIs públicas existentes del Kernel.
+- No se incorpora sandbox, recovery, Azure Foundry, IA, MCP, providers ni agentes.
+
 ## [0.5.1] - 2026-07-04
 
 ### Agregado

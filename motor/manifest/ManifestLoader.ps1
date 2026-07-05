@@ -9,6 +9,10 @@ Propósito:
 #>
 Set-StrictMode -Version Latest
 
+$RutaDirectorioManifestLoader = Split-Path -Parent $PSCommandPath
+$RutaDirectorioMotorManifest = Split-Path -Parent $RutaDirectorioManifestLoader
+. (Join-Path $RutaDirectorioMotorManifest "validation\VersionValidator.ps1")
+
 function Get-HermesEnterprisePluginManifest {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string]$RutaArchivoManifest)
@@ -27,6 +31,16 @@ function Get-HermesEnterprisePluginManifest {
         if (-not $ManifestPlugin.PSObject.Properties.Name.Contains($NombreCampoRequerido)) {
             throw "El manifiesto $RutaArchivoManifest no contiene el campo requerido: $NombreCampoRequerido"
         }
+    }
+
+    $ResultadoVersionPlugin = Test-HermesEnterpriseSemanticVersion -VersionSemantica $ManifestPlugin.Version -NombreCampo "Version"
+    if (-not $ResultadoVersionPlugin.EsValida) {
+        throw "El manifiesto $RutaArchivoManifest contiene una versión de plugin inválida: $($ResultadoVersionPlugin.Mensaje)"
+    }
+
+    $ResultadoVersionKernelMinimo = Test-HermesEnterpriseSemanticVersion -VersionSemantica $ManifestPlugin.KernelMinimo -NombreCampo "KernelMinimo"
+    if (-not $ResultadoVersionKernelMinimo.EsValida) {
+        throw "El manifiesto $RutaArchivoManifest contiene una versión mínima de Kernel inválida: $($ResultadoVersionKernelMinimo.Mensaje)"
     }
 
     return $ManifestPlugin

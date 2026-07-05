@@ -140,3 +140,43 @@ function Get-HermesEnterpriseProviderHealth {
     if ($null -eq $ContextoProvider) { return $null }
     return $ContextoProvider.Health
 }
+
+function Get-HermesEnterpriseProviderObservability {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][psobject]$AdministradorProviders)
+
+    $ProvidersObservados = New-Object System.Collections.Generic.List[object]
+    foreach ($NombreProvider in $AdministradorProviders.ProviderRegistry.ProveedoresRegistrados.Keys) {
+        $ContextoProvider = $AdministradorProviders.ProviderRegistry.ProveedoresRegistrados[$NombreProvider]
+        $ProvidersObservados.Add([pscustomobject][ordered]@{
+            NombreProvider = $ContextoProvider.NombreProvider
+            VersionProvider = $ContextoProvider.VersionProvider
+            Estado = $ContextoProvider.Estado
+            HealthEstado = $ContextoProvider.Health.Estado
+            HealthMensaje = $ContextoProvider.Health.Mensaje
+            UltimaVerificacionHealth = $ContextoProvider.Health.UltimaVerificacion
+            CapacidadesProvider = $ContextoProvider.CapacidadesProvider
+            EstaInicializado = $AdministradorProviders.ProvidersInicializados.ContainsKey($NombreProvider)
+        }) | Out-Null
+    }
+
+    $Providers = $ProvidersObservados.ToArray()
+    $ProvidersUnhealthy = @($Providers | Where-Object { $_.HealthEstado -eq "Unhealthy" })
+    $ProvidersConfigurationInvalid = @($Providers | Where-Object { $_.Estado -eq "ConfigurationInvalid" })
+
+    return [pscustomobject][ordered]@{
+        NombreComponente = "Enterprise Provider Framework"
+        TotalProvidersRegistrados = $Providers.Count
+        TotalProvidersInicializados = $AdministradorProviders.ProvidersInicializados.Count
+        TotalProvidersUnhealthy = $ProvidersUnhealthy.Count
+        TotalProvidersConfigurationInvalid = $ProvidersConfigurationInvalid.Count
+        Providers = $Providers
+        LimitesIncluidos = [pscustomobject][ordered]@{
+            ProvidersReales = $false
+            AzureFoundry = $false
+            HTTP = $false
+            IA = $false
+            CredencialesReales = $false
+        }
+    }
+}

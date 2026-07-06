@@ -17,11 +17,14 @@ function Get-HermesEnterpriseProjectInfo {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$Ruta
+        [string]$Ruta,
+
+        [Parameter(Mandatory = $false)]
+        [string]$NombreProyecto = ""
     )
 
     $RutaAbsoluta = [System.IO.Path]::GetFullPath($Ruta)
-    $NombreProyecto = Split-Path -Path $RutaAbsoluta -Leaf
+    $Nombre = if ([string]::IsNullOrWhiteSpace($NombreProyecto)) { Split-Path -Path $RutaAbsoluta -Leaf } else { $NombreProyecto }
 
-    return New-HermesEnterpriseProjectDescriptor -NombreProyecto $NombreProyecto -RutaLocal $RutaAbsoluta
+    return New-HermesEnterpriseProjectDescriptor -NombreProyecto $Nombre -RutaLocal $RutaAbsoluta
 }

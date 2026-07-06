@@ -3,6 +3,10 @@ logs/
 configuracion/kernel.enterprise.json
 pruebas/salida-temporal/
 
+# Sesiones locales de HERMES Enterprise.
+.hermes/sessions/
+.hermes/backup/
+
 # Secretos y variables de entorno locales.
 .env
 *.secret.*

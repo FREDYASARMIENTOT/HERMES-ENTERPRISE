@@ -15,8 +15,51 @@ $RutaDirectorioSessionManager = Split-Path -Parent $PSCommandPath
 . (Join-Path $RutaDirectorioSessionManager "SessionPersistence.ps1")
 . (Join-Path $RutaDirectorioSessionManager "SessionRecovery.ps1")
 . (Join-Path $RutaDirectorioSessionManager "SessionTelemetry.ps1")
-. (Join-Path $RutaDirectorioSessionManager "SessionWizard.ps1")
 . (Join-Path $RutaDirectorioSessionManager "..\providers\WorkspaceProvider.ps1")
+
+function New-HermesEnterpriseSessionFromContext {
+    [CmdletBinding()][OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory = $true)][string]$RutaRaizRepositorio,
+        [Parameter(Mandatory = $false)][psobject]$DeveloperContext = $null,
+        [Parameter(Mandatory = $false)][string]$NombreProyecto = "HermesProject",
+        [Parameter(Mandatory = $false)][string]$RutaWorkspace = "",
+        [Parameter(Mandatory = $false)][string]$ModeloIA = "ur-hermes-mini",
+        [Parameter(Mandatory = $false)][string]$ProveedorIA = "AzureFoundryProvider"
+    )
+
+    if ($null -ne $DeveloperContext) {
+        if (-not [string]::IsNullOrWhiteSpace($DeveloperContext.Proyecto.NombreProyecto)) {
+            $NombreProyecto = $DeveloperContext.Proyecto.NombreProyecto
+        }
+        if ($null -ne $DeveloperContext.Workspace -and -not [string]::IsNullOrWhiteSpace($DeveloperContext.Workspace.Ruta)) {
+            $RutaWorkspace = $DeveloperContext.Workspace.Ruta
+        }
+        if (-not [string]::IsNullOrWhiteSpace($DeveloperContext.Modelo)) {
+            $ModeloIA = $DeveloperContext.Modelo
+        }
+        if (-not [string]::IsNullOrWhiteSpace($DeveloperContext.Provider)) {
+            $ProveedorIA = $DeveloperContext.Provider
+        }
+    }
+
+    $IdentificadorSesion = [guid]::NewGuid().ToString("N").Substring(0, 12)
+    $Sesion = New-HermesEnterpriseSessionDescriptor `
+        -IdentificadorSesion $IdentificadorSesion `
+        -NombreProyecto $NombreProyecto `
+        -RutaWorkspace $RutaWorkspace `
+        -RepositorioGit (Test-HermesEnterpriseGitRepository -Ruta $RutaWorkspace) `
+        -BranchActual "main" `
+        -ProveedorIA $ProveedorIA `
+        -ModeloIA $ModeloIA `
+        -PluginsInstalados @() `
+        -ConfiguracionActiva @{} `
+        -EstadoSesion "Active"
+
+    $null = Write-HermesEnterpriseSessionEvent -SessionDescriptor $Sesion -Operacion "SessionCreatedFromContext" -Mensaje "Sesión creada automáticamente desde DeveloperContext."
+    $null = Save-HermesEnterpriseSession -RutaRaizRepositorio $RutaRaizRepositorio -SessionDescriptor $Sesion
+    return $Sesion
+}
 
 function New-HermesEnterpriseSession {
     [CmdletBinding()][OutputType([pscustomobject])]
@@ -27,7 +70,11 @@ function New-HermesEnterpriseSession {
         [Parameter(Mandatory = $false)][string]$ProveedorIA = "AzureFoundryProvider"
     )
     $RutaRaizRepositorio = (Resolve-Path $RutaBase).Path
-    return Start-HermesEnterpriseSessionWizard -RutaRaizRepositorio $RutaRaizRepositorio -NombreProyecto $NombreProyecto -RutaBase $RutaBase -ModeloIA $ModeloIA -ProveedorIA $ProveedorIA
+    $RutaWorkspace = Join-Path $RutaRaizRepositorio $NombreProyecto
+    if (-not (Test-Path $RutaWorkspace)) {
+        $null = New-Item -ItemType Directory -Path $RutaWorkspace -Force
+    }
+    return New-HermesEnterpriseSessionFromContext -RutaRaizRepositorio $RutaRaizRepositorio -NombreProyecto $NombreProyecto -RutaWorkspace $RutaWorkspace -ModeloIA $ModeloIA -ProveedorIA $ProveedorIA
 }
 
 function Open-HermesEnterpriseSession {

@@ -19,8 +19,9 @@ function Assert-HermesEnterpriseCondition {
 }
 
 . (Join-Path $RutaRaizRepositorio "motor\session\SessionManager.ps1")
+. (Join-Path $RutaRaizRepositorio "motor\context\EnvironmentInspector.ps1")
 
-$RutaTemporal = Join-Path $env:TEMP "HermesSessionTest_$(Get-Random)"
+$RutaTemporal = [System.IO.Path]::GetFullPath((Join-Path $env:TEMP "HermesSessionTest_$(Get-Random)"))
 New-Item -ItemType Directory -Path $RutaTemporal -Force | Out-Null
 
 # SessionDescriptor
@@ -45,12 +46,12 @@ Assert-HermesEnterpriseCondition (Test-Path $RutaBackup) "SessionRecovery no cre
 $Recuperada = Restore-HermesEnterpriseLatestSessionBackup -RutaRaizRepositorio $RutaTemporal
 Assert-HermesEnterpriseCondition ($Recuperada.IdentificadorSesion -eq "test-001") "SessionRecovery no recuperó sesión."
 
-# Wizard tool detection
+# Tool detection
 $Herramientas = Get-HermesEnterpriseInstalledTools
-Assert-HermesEnterpriseCondition ($Herramientas.PowerShell -eq $true) "SessionWizard no detectó PowerShell."
+Assert-HermesEnterpriseCondition ($Herramientas.PowerShell -eq $true) "EnvironmentInspector no detectó PowerShell."
 
 # SessionManager: create/open/close
-$Sesion = New-HermesEnterpriseSession -NombreProyecto "SessionManagerProject" -RutaBase $RutaTemporal
+$Sesion = New-HermesEnterpriseSessionFromContext -RutaRaizRepositorio $RutaTemporal -NombreProyecto "SessionManagerProject" -RutaWorkspace $RutaTemporal
 Assert-HermesEnterpriseCondition ($Sesion.NombreProyecto -eq "SessionManagerProject") "SessionManager no creó sesión."
 Assert-HermesEnterpriseCondition (Test-HermesEnterpriseSessionExists -RutaRaizRepositorio $RutaTemporal) "SessionManager no persistió sesión."
 

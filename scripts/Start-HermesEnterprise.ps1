@@ -19,7 +19,10 @@ param(
     [switch]$DevolverKernel,
 
     [Parameter(Mandatory = $false)]
-    [switch]$DevolverSesion
+    [switch]$DevolverSesion,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$DevolverContexto
 )
 
 Set-StrictMode -Version Latest
@@ -30,7 +33,7 @@ $RutaRaizRepositorio = Split-Path -Parent $RutaDirectorioScripts
 
 . (Join-Path $RutaRaizRepositorio "motor\bootstrap\Bootstrap.ps1")
 . (Join-Path $RutaRaizRepositorio "motor\kernel\KernelValidator.ps1")
-. (Join-Path $RutaRaizRepositorio "motor\session\SessionManager.ps1")
+. (Join-Path $RutaRaizRepositorio "motor\context\DeveloperContextManager.ps1")
 
 $KernelEnterprise = Start-HermesEnterpriseBootstrap -RutaRaizRepositorio $RutaRaizRepositorio -NombreEntorno $NombreEntorno
 $ResultadoValidacionKernel = Test-HermesEnterpriseKernel -KernelEnterprise $KernelEnterprise
@@ -39,23 +42,23 @@ if (-not $ResultadoValidacionKernel.EsValido) {
     throw "El Kernel Enterprise no superó la validación: $($ResultadoValidacionKernel.Errores -join '; ')"
 }
 
-$Sesion = Open-HermesEnterpriseSession -RutaRaizRepositorio $RutaRaizRepositorio
-if ($null -eq $Sesion) {
-    Write-Host "No se detectó sesión previa. Iniciando Session Wizard..." -ForegroundColor Yellow
-    $Sesion = New-HermesEnterpriseSession -NombreProyecto "HermesProject" -RutaBase $RutaRaizRepositorio
-}
-else {
-    Write-Host "Sesión recuperada: $($Sesion.IdentificadorSesion)" -ForegroundColor Green
-}
+$RutaWorkspace = $RutaRaizRepositorio
+$ContextManager = New-HermesEnterpriseDeveloperContextManager -RutaRaizRepositorio $RutaRaizRepositorio
+$DeveloperContext = $ContextManager.BuildContext("HermesProject", $RutaWorkspace)
+$DeveloperContext.EstadoKernel = $KernelEnterprise
 
 Write-Host "Hermes Enterprise Kernel iniciado correctamente." -ForegroundColor Green
 Write-Host "Estado  : $($KernelEnterprise.EstadoKernel)"
 Write-Host "Runtime : $($KernelEnterprise.Runtime.EstadoRuntime)"
-Write-Host "Sesión  : $($Sesion.IdentificadorSesion)"
-Write-Host "Proyecto: $($Sesion.NombreProyecto)"
+Write-Host "Sesión  : $($DeveloperContext.Session.IdentificadorSesion)"
+Write-Host "Proyecto: $($DeveloperContext.Proyecto.NombreProyecto)"
+
+if ($DevolverContexto.IsPresent) {
+    return $DeveloperContext
+}
 
 if ($DevolverSesion.IsPresent) {
-    return $Sesion
+    return $DeveloperContext.Session
 }
 
 if ($DevolverKernel.IsPresent) {

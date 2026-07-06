@@ -2,6 +2,31 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.8.0] - 2026-07-05
+
+### Agregado
+
+- Fase 6.0: Session Framework.
+- `motor/session/SessionDescriptor.ps1`: objeto raíz de sesión.
+- `motor/session/SessionManager.ps1`: orquestador del ciclo de vida de sesiones.
+- `motor/session/SessionLoader.ps1`: detección y carga de sesiones.
+- `motor/session/SessionPersistence.ps1`: persistencia JSON.
+- `motor/session/SessionRecovery.ps1`: respaldos y recuperación.
+- `motor/session/SessionTelemetry.ps1`: registro de eventos.
+- `motor/session/SessionWizard.ps1`: First Run Experience.
+- `pruebas/unitarias/Test-SessionFramework.ps1`: validación TDD del Session Framework.
+- Documentación: `documentacion/SESSION_FRAMEWORK.md` y `documentacion/FIRST_RUN_EXPERIENCE.md`.
+
+### Cambiado
+
+- `scripts/Start-HermesEnterprise.ps1` ahora recupera la sesión existente o ejecuta el Session Wizard automáticamente.
+- `scripts/Test-HermesEnterprise.ps1` incluye `Test-SessionFramework.ps1`.
+
+### Compatibilidad
+
+- Sin modificaciones al Kernel, Bootstrap, Runtime, EventBus, Logger, Plugin Framework, Provider Framework, Azure Foundry Provider, Workspace Provider ni Git Provider.
+- Smoke Test Enterprise y pruebas de aceptación continúan operativas.
+
 ## [0.7.0] - 2026-07-05
 
 ### Agregado

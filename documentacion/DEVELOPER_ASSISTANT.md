@@ -27,6 +27,10 @@ Publish-HermesEnterpriseDocumentation
 New-HermesEnterpriseCommit -Mensaje "feat: avance"
 ```
 
+## Session Framework
+
+A partir de la Fase 6, todas las interacciones operan dentro de una sesión gestionada por `motor/session/SessionManager.ps1`. Ver `documentacion/SESSION_FRAMEWORK.md` y `documentacion/FIRST_RUN_EXPERIENCE.md`.
+
 ## Scripts públicos
 
 - `scripts/Start-HermesEnterpriseDevelopmentSession.ps1`: inicia sesión cargando Kernel y providers.
@@ -35,6 +39,8 @@ New-HermesEnterpriseCommit -Mensaje "feat: avance"
 - `scripts/Invoke-HermesEnterpriseTests.ps1`: ejecuta smoke tests.
 - `scripts/Publish-HermesEnterpriseDocumentation.ps1`: publica documentación.
 - `scripts/New-HermesEnterpriseCommit.ps1`: prepara commit Git.
+
+El punto de entrada principal es `scripts/Start-HermesEnterprise.ps1`, que recupera la sesión existente o ejecuta el Session Wizard.
 
 ## Managers
 

@@ -8,6 +8,51 @@
 
 ---
 
+## ADR-0016: Session Framework como objeto raíz
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+Después de la Fase 5, HERMES Enterprise opera como asistente de desarrollo con múltiples managers y scripts. La Fase 6.0 requiere un objeto raíz que coordine el contexto del usuario sin modificar el Kernel ni los componentes maduros.
+
+### Decisión
+
+Introducir el Session Framework bajo `motor/session/`:
+
+- `SessionDescriptor.ps1`: objeto raíz portátil.
+- `SessionPersistence.ps1`: almacenamiento JSON en `.hermes/sessions/`.
+- `SessionLoader.ps1`: detección de sesión existente.
+- `SessionRecovery.ps1`: respaldos automáticos.
+- `SessionTelemetry.ps1`: historial de eventos.
+- `SessionWizard.ps1`: First Run Experience.
+- `SessionManager.ps1`: orquestador del ciclo de vida.
+
+Modificar `scripts/Start-HermesEnterprise.ps1` para que recupere la sesión existente o ejecute el Session Wizard.
+
+### Consecuencias positivas
+
+- Toda interacción opera dentro de un contexto de sesión explícito.
+- Los managers existientes pueden consumir la sesión sin duplicar información.
+- El punto de entrada del sistema es más simple para el usuario.
+
+### Límites
+
+- No se modifica Kernel, Bootstrap, Runtime, EventBus, Logger, Plugin Framework, Provider Framework, Azure Foundry Provider, Workspace Provider ni Git Provider.
+- GitHub sigue en modo MOCK.
+- Los comandos externos se preparan pero no se ejecutan automáticamente.
+
+### Verificación
+
+- `pruebas/unitarias/Test-SessionFramework.ps1`
+- `pruebas/aceptacion/Test-DeveloperWorkspaceFlow.ps1`
+- `scripts/Start-HermesEnterprise.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+
+---
+
 ## ADR-0015: HERMES Enterprise Developer Assistant
 
 ### Estado

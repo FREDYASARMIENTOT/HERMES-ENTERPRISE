@@ -342,3 +342,59 @@ Criterios de aceptación:
 | Requisito | Componente | Prueba | Documento |
 |---|---|---|---|
 | RF-011 | motor/plugins/PluginManager.ps1 | pruebas/unitarias/Test-PluginFrameworkMaturity.ps1, pruebas/unitarias/Test-PluginObservability.ps1, scripts/Test-HermesEnterprise.ps1 | documentacion/SRS_HERMES_ENTERPRISE.md, documentacion/ARCHITECTURE_DECISIONS.md |
+
+---
+
+## 17. Alcance Fase 6.0: Session Framework
+
+La Fase 6.0 convierte a la sesión de desarrollo en el objeto raíz del sistema, sin modificar el Kernel, Bootstrap, Runtime, EventBus, Logger, Plugin Framework, Provider Framework, Azure Foundry Provider, Workspace Provider ni Git Provider.
+
+### RF-012: Session Descriptor
+
+El sistema debe representar una sesión con los campos: IdentificadorSesion, NombreProyecto, RutaWorkspace, RepositorioGit, BranchActual, ProveedorIA, ModeloIA, PluginsInstalados, ConfiguracionActiva, FechaCreacion, UltimaActividad, VersionHermes, EstadoSesion, Usuario, Historial y Contexto.
+
+Criterios de aceptación:
+
+- El descriptor debe crearse mediante `New-HermesEnterpriseSessionDescriptor`.
+- El descriptor debe persistirse como JSON en `.hermes/sessions/`.
+- El descriptor debe recuperarse sin pérdida de información.
+
+### RF-013: Session Manager
+
+El sistema debe exponer operaciones para crear, abrir, cerrar, guardar, recuperar, cambiar proyecto/workspace/modelo/provider/rama y actualizar estado de una sesión.
+
+Criterios de aceptación:
+
+- Las operaciones deben estar disponibles en `motor/session/SessionManager.ps1`.
+- Cada operación debe registrar un evento en el historial de la sesión.
+- Los cambios deben persistirse automáticamente.
+
+### RF-014: First Run Experience
+
+Al ejecutar `Start-HermesEnterprise`, el sistema debe detectar si existe una sesión previa. Si no existe, debe ejecutar el Session Wizard para crear una sesión completamente funcional.
+
+Criterios de aceptación:
+
+- `scripts/Start-HermesEnterprise.ps1` debe cargar la sesión existente.
+- Si no hay sesión, debe ejecutar `Start-HermesEnterpriseSessionWizard`.
+- El wizard debe detectar herramientas instaladas, crear proyecto, inicializar Git, crear README y guardar el descriptor.
+
+### RF-015: Integración con managers
+
+Workspace Manager, Git Manager, GitHub Manager, VS Code Manager, Azure Foundry Provider, Plugin Manager, Documentation Manager y Testing Manager deben poder consumir el Session Descriptor como contexto.
+
+Criterios de aceptación:
+
+- No debe duplicarse información entre la sesión y los managers.
+- Los managers existentes deben seguir operando sin modificaciones de su contrato público.
+
+---
+
+## 18. Trazabilidad Fase 6.0
+
+| Requisito | Componente | Prueba | Documento |
+|---|---|---|---|
+| RF-012 | motor/session/SessionDescriptor.ps1, motor/session/SessionPersistence.ps1 | pruebas/unitarias/Test-SessionFramework.ps1 | documentacion/SESSION_FRAMEWORK.md |
+| RF-013 | motor/session/SessionManager.ps1 | pruebas/unitarias/Test-SessionFramework.ps1 | documentacion/SESSION_FRAMEWORK.md |
+| RF-014 | motor/session/SessionWizard.ps1, scripts/Start-HermesEnterprise.ps1 | pruebas/unitarias/Test-SessionFramework.ps1, scripts/Start-HermesEnterprise.ps1 | documentacion/FIRST_RUN_EXPERIENCE.md |
+| RF-015 | motor/session/SessionManager.ps1 | pruebas/aceptacion/Test-DeveloperWorkspaceFlow.ps1 | documentacion/DEVELOPER_ASSISTANT.md |

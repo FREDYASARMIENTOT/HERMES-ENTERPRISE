@@ -34,7 +34,16 @@ $PruebasUnitariasRequeridas = @(
     "Test-AzureFoundryProviderConnection.ps1",
     "Test-AzureFoundryProviderTelemetry.ps1",
     "Test-GitHubWorkspace.ps1",
-    "Test-SessionFramework.ps1"
+    "Test-SessionFramework.ps1",
+    "Test-DeveloperContext.ps1",
+    "Test-WorkspaceInspector.ps1",
+    "Test-ProjectInspector.ps1",
+    "Test-GitInspector.ps1",
+    "Test-GitHubInspector.ps1",
+    "Test-EnvironmentInspector.ps1",
+    "Test-DeveloperContextManager.ps1",
+    "Test-FirstRunWizard.ps1",
+    "Test-ProjectWizard.ps1"
 )
 
 Write-Host "Ejecutando Smoke Test Enterprise del Kernel..." -ForegroundColor Cyan

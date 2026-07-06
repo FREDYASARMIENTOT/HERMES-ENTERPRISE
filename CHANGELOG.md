@@ -2,6 +2,21 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.7.0] - 2026-07-05
+
+### Agregado
+
+- Fase 5.0: GitHub Workspace Provider (infraestructura local).
+- `motor/providers/GitHubProvider.ps1` con contrato Enterprise y operaciones MOCK.
+- `motor/providers/WorkspaceProvider.ps1` para proyectos locales, Git y VS Code.
+- `motor/providers/ProjectDescriptor.ps1` descriptor portable de proyecto.
+- `pruebas/unitarias/Test-GitHubWorkspace.ps1` para validar TDD del provider.
+
+### Compatibilidad
+
+- Sin modificaciones al Kernel, Runtime, Bootstrap, Logger, EventBus, Plugin Framework ni Azure Foundry.
+- Sin llamadas a GitHub API, CLI, tokens ni repositorios reales.
+
 ## [0.6.4] - 2026-07-05
 
 ### Agregado

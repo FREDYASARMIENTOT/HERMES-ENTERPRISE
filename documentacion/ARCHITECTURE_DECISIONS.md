@@ -8,6 +8,39 @@
 
 ---
 
+## ADR-0014: GitHub Workspace Provider Fase 5.0
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+HERMES-ENTERPRISE requiere una línea evolutiva para automatizar el ciclo de vida del desarrollo de software sin romper la arquitectura existente.
+
+### Decisión
+
+Agregar providers independientes bajo `motor/providers/`:
+
+- `GitHubProvider.ps1`: orquestador con contrato Enterprise y operaciones MOCK.
+- `WorkspaceProvider.ps1`: gestión local de proyectos, Git y VS Code.
+- `ProjectDescriptor.ps1`: descriptor portable sin dependencias externas.
+
+Las operaciones Git y VS Code se preparan mediante wrappers pero no se ejecutan automáticamente.
+
+### Límites
+
+- No se usa GitHub API, CLI ni credenciales reales.
+- No se crean repositorios reales en GitHub.
+- No se modifica Kernel, Runtime, Bootstrap, Logger, EventBus, Plugin Framework ni Azure Foundry.
+
+### Verificación
+
+- `pruebas/unitarias/Test-GitHubWorkspace.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+
+---
+
 ## ADR-0013: Observabilidad y seguridad de logs del Azure Foundry Provider
 
 ### Estado

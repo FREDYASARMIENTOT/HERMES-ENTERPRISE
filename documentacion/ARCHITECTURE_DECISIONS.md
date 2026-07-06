@@ -8,6 +8,45 @@
 
 ---
 
+## ADR-0015: HERMES Enterprise Developer Assistant
+
+### Estado
+
+Aceptada.
+
+### Contexto
+
+El Kernel, Plugin Framework y Provider Framework están maduros. La Fase 5 cambia el objetivo: dejar de construir infraestructura aislada y comenzar a usar HERMES como asistente de desarrollo operativo dentro de VS Code.
+
+### Decisión
+
+Refactorizar providers existentes y agregar scripts públicos para exponer un flujo de trabajo completo:
+
+- Separar `WorkspaceProvider.ps1` en `ProjectManager.ps1`, `GitManager.ps1` y `VSCodeManager.ps1`.
+- Completar `GitHubProvider.ps1` con `GitHubManagers.ps1` para Repository, Branch, Commit, Pull, Push, Clone y Workspace.
+- Crear scripts en `scripts/` para sesión de desarrollo, proyectos, VS Code, pruebas, documentación y commits.
+- Crear prueba de aceptación end-to-end en `pruebas/aceptacion/Test-DeveloperWorkspaceFlow.ps1`.
+
+### Consecuencias positivas
+
+- HERMES pasa de framework a herramienta operativa.
+- Los comandos Git y VS Code quedan encapsulados y reutilizables.
+- El flujo end-to-end es verificable.
+
+### Límites
+
+- GitHub sigue en modo MOCK.
+- No se modifica Kernel, Runtime, Bootstrap, Logger, EventBus, Plugin Framework ni Azure Foundry.
+- Los comandos externos se preparan pero no se ejecutan automáticamente.
+
+### Verificación
+
+- `pruebas/unitarias/Test-GitHubWorkspace.ps1`
+- `pruebas/aceptacion/Test-DeveloperWorkspaceFlow.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+
+---
+
 ## ADR-0014: GitHub Workspace Provider Fase 5.0
 
 ### Estado

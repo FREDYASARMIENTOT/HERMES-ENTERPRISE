@@ -6,16 +6,33 @@ Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este 
 
 ### Agregado
 
-- Fase 5.0: GitHub Workspace Provider (infraestructura local).
-- `motor/providers/GitHubProvider.ps1` con contrato Enterprise y operaciones MOCK.
-- `motor/providers/WorkspaceProvider.ps1` para proyectos locales, Git y VS Code.
-- `motor/providers/ProjectDescriptor.ps1` descriptor portable de proyecto.
-- `pruebas/unitarias/Test-GitHubWorkspace.ps1` para validar TDD del provider.
+- Fase 5: HERMES Enterprise Developer Assistant.
+- Scripts públicos de desarrollo:
+  - `scripts/Start-HermesEnterpriseDevelopmentSession.ps1`
+  - `scripts/New-HermesEnterpriseProject.ps1`
+  - `scripts/Open-HermesEnterpriseProject.ps1`
+  - `scripts/Invoke-HermesEnterpriseTests.ps1`
+  - `scripts/Publish-HermesEnterpriseDocumentation.ps1`
+  - `scripts/New-HermesEnterpriseCommit.ps1`
+- Managers especializados:
+  - `motor/providers/ProjectManager.ps1`
+  - `motor/providers/GitManager.ps1`
+  - `motor/providers/VSCodeManager.ps1`
+  - `motor/providers/GitHubManagers.ps1`
+- `WorkspaceProvider.ps1` refactorizado como orquestador.
+- `GitHubProvider.ps1` ahora importa GitHubManagers con operaciones Repository, Branch, Commit, Pull, Push, Clone y Workspace.
+- Prueba de aceptación end-to-end: `pruebas/aceptacion/Test-DeveloperWorkspaceFlow.ps1`.
+- Documentación: `documentacion/DEVELOPER_ASSISTANT.md`.
+
+### Cambiado
+
+- `WorkspaceProvider.ps1` delega en ProjectManager, GitManager y VSCodeManager.
+- `Test-GitHubWorkspace.ps1` actualizado para validar managers refactorizados.
 
 ### Compatibilidad
 
 - Sin modificaciones al Kernel, Runtime, Bootstrap, Logger, EventBus, Plugin Framework ni Azure Foundry.
-- Sin llamadas a GitHub API, CLI, tokens ni repositorios reales.
+- GitHub permanece en modo MOCK.
 
 ## [0.6.4] - 2026-07-05
 

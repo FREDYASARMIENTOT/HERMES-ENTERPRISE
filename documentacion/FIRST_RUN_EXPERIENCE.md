@@ -2,22 +2,21 @@
 
 ## Propósito
 
-Cuando el usuario ejecuta `Start-HermesEnterprise` y no existe una sesión previa, HERMES Enterprise inicia automáticamente el Session Wizard para crear una sesión funcional.
+La primera vez que el usuario ejecuta HERMES Enterprise, el sistema configura las preferencias globales mediante el **First Run Wizard**. Este wizard **no crea proyectos**; su única responsabilidad es establecer el entorno base del desarrollador.
 
 ## Flujo
 
 ```text
 Start-HermesEnterprise
-¿Existe sesión?
-  SI → Cargar sesión
-  NO → Ejecutar Session Wizard
-         → Detectar herramientas
-         → Seleccionar workspace
-         → Crear proyecto
-         → Inicializar Git
-         → Crear README
-         → Configurar modelo por defecto
-         → Guardar Session Descriptor
+├── ¿Primera ejecución?
+│   └── FirstRunWizard
+│       → Idioma
+│       → Proveedor IA
+│       → Modelo por defecto
+│       → Preferencias
+│       → Ubicación por defecto
+│       → GitHub
+└── Continuar con Developer Context
 ```
 
 ## Herramientas detectadas
@@ -35,12 +34,27 @@ Start-HermesEnterprise
 
 - Modelo: `ur-hermes-mini`
 - Proveedor: `AzureFoundryProvider`
-- Rama: `main`
+- Idioma: `es`
+- Ubicación por defecto: `%USERPROFILE%\HermesProjects`
+
+## Project Wizard
+
+Cuando no existe un proyecto, HERMES ejecuta el **Project Wizard** independiente. Este wizard pregunta:
+
+1. Crear proyecto
+2. Abrir proyecto existente
+3. Clonar repositorio
 
 ## Resultado
 
-Al finalizar el wizard, el usuario tiene una sesión persistida y el sistema continúa con el arranque del Kernel.
+Al finalizar los wizards, HERMES construye el `DeveloperContext` y continúa con el arranque del Kernel.
 
 ## Punto de entrada
 
 `scripts/Start-HermesEnterprise.ps1`
+
+## Archivos relacionados
+
+- `motor/wizards/FirstRunWizard.ps1`
+- `motor/wizards/ProjectWizard.ps1`
+- `documentacion/DEVELOPER_CONTEXT.md`

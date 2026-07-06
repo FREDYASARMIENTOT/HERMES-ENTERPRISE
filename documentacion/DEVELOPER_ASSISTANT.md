@@ -29,7 +29,15 @@ New-HermesEnterpriseCommit -Mensaje "feat: avance"
 
 ## Session Framework
 
-A partir de la Fase 6, todas las interacciones operan dentro de una sesión gestionada por `motor/session/SessionManager.ps1`. Ver `documentacion/SESSION_FRAMEWORK.md` y `documentacion/FIRST_RUN_EXPERIENCE.md`.
+A partir de la Fase 6, todas las interacciones operan dentro de una sesión gestionada por `motor/session/SessionManager.ps1`. A partir de la Fase 7, la sesión es un componente interno administrado automáticamente por el Developer Context Framework.
+
+Ver `documentacion/DEVELOPER_CONTEXT.md`, `documentacion/SESSION_FRAMEWORK.md` y `documentacion/FIRST_RUN_EXPERIENCE.md`.
+
+## Developer Context Framework
+
+A partir de la Fase 7, el punto de entrada principal es el `DeveloperContext`. `scripts/Start-HermesEnterprise.ps1` construye el contexto a partir del entorno real del desarrollador (workspace, proyecto, Git, GitHub, provider, plugins) y luego inicia el Kernel.
+
+Los inspectores bajo `motor/context/` son de solo lectura y reconstruyen el contexto cada vez. La única persistencia sigue siendo la Session.
 
 ## Scripts públicos
 
@@ -40,7 +48,7 @@ A partir de la Fase 6, todas las interacciones operan dentro de una sesión gest
 - `scripts/Publish-HermesEnterpriseDocumentation.ps1`: publica documentación.
 - `scripts/New-HermesEnterpriseCommit.ps1`: prepara commit Git.
 
-El punto de entrada principal es `scripts/Start-HermesEnterprise.ps1`, que recupera la sesión existente o ejecuta el Session Wizard.
+El punto de entrada principal es `scripts/Start-HermesEnterprise.ps1`, que construye el DeveloperContext y lo entrega al Kernel.
 
 ## Managers
 

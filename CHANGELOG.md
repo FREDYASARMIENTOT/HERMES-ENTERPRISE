@@ -2,6 +2,44 @@
 
 Todas las notas de cambio relevantes de HERMES-ENTERPRISE se documentan en este archivo.
 
+## [0.9.0] - 2026-07-05
+
+### Agregado
+
+- Fase 7.0: Developer Context Framework.
+- `motor/context/DeveloperContext.ps1`: objeto raíz del contexto del desarrollador.
+- `motor/context/DeveloperContextManager.ps1`: administración automática de DeveloperContext y Session.
+- `motor/context/ContextBuilder.ps1`: orquestación de inspectores.
+- `motor/context/WorkspaceInspector.ps1`: descubrimiento de workspace (solo lectura).
+- `motor/context/ProjectInspector.ps1`: descubrimiento de proyecto (solo lectura).
+- `motor/context/GitInspector.ps1`: descubrimiento de estado Git (solo lectura).
+- `motor/context/GitHubInspector.ps1`: descubrimiento de GitHub en modo MOCK (solo lectura).
+- `motor/context/EnvironmentInspector.ps1`: descubrimiento de variables de entorno y preferencias (solo lectura).
+- `motor/wizards/FirstRunWizard.ps1`: configuración de preferencias globales sin crear proyectos.
+- `motor/wizards/ProjectWizard.ps1`: asistente para crear, abrir o clonar proyectos.
+- Pruebas unitarias TDD para todos los componentes del Developer Context.
+- Documentación: `documentacion/DEVELOPER_CONTEXT.md`.
+
+### Cambiado
+
+- `scripts/Start-HermesEnterprise.ps1` ya no inicia directamente una Session; construye un DeveloperContext y lo entrega al Kernel.
+- `motor/session/SessionManager.ps1` ahora recibe un DeveloperContext y crea/recupera Session automáticamente.
+- `motor/session/SessionWizard.ps1` eliminado; sus responsabilidades divididas en FirstRunWizard y ProjectWizard.
+- `scripts/Test-HermesEnterprise.ps1` incluye todas las pruebas del Developer Context Framework.
+- `pruebas/aceptacion/Test-DeveloperWorkspaceFlow.ps1` valida el flujo completo con DeveloperContext, Session y Kernel.
+- `documentacion/SESSION_FRAMEWORK.md`, `documentacion/FIRST_RUN_EXPERIENCE.md`, `documentacion/DEVELOPER_ASSISTANT.md`, `documentacion/ARCHITECTURE_DECISIONS.md` y `documentacion/SRS_HERMES_ENTERPRISE.md` actualizados.
+
+### Corregido
+
+- `Get-HermesEnterpriseSessionList` y `Test-HermesEnterpriseSessionExists` ahora devuelven colecciones estables cuando existe una única sesión.
+
+### Compatibilidad
+
+- Sin modificaciones al Kernel, Bootstrap, Runtime, EventBus, Logger, Plugin Framework, Provider Framework, Azure Foundry Provider, Workspace Provider ni Git Provider.
+- La Session sigue funcionando sin cambios funcionales; ahora es un componente interno.
+- GitHub permanece en modo MOCK.
+- Smoke Test Enterprise y pruebas de aceptación continúan operativas.
+
 ## [0.8.0] - 2026-07-05
 
 ### Agregado

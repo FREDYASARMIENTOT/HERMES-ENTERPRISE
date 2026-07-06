@@ -8,11 +8,62 @@
 
 ---
 
-## ADR-0016: Session Framework como objeto raíz
+## ADR-0017: Developer Context Framework
 
 ### Estado
 
 Aceptada.
+
+### Contexto
+
+Después de la Fase 6.0, la Session se convirtió en el objeto raíz del sistema. Sin embargo, esto genera un acoplamiento innecesario: todo componente (Workspace, Git, GitHub, Provider, Plugins) depende de la sesión, cuando en realidad la sesión debería ser solo una pieza más del entorno del desarrollador.
+
+### Decisión
+
+Introducir el Developer Context Framework bajo `motor/context/`:
+
+- `DeveloperContext.ps1`: objeto raíz que contiene Workspace, Proyecto, Git, GitHub, Provider, Modelo, Plugins, Session, Preferencias, VariablesEntorno y EstadoKernel.
+- `WorkspaceInspector.ps1`, `ProjectInspector.ps1`, `GitInspector.ps1`, `GitHubInspector.ps1`, `EnvironmentInspector.ps1`: inspectores de solo lectura.
+- `ContextBuilder.ps1`: orquesta inspectores para construir el contexto.
+- `DeveloperContextManager.ps1`: obtiene o crea el DeveloperContext, administrando la Session automáticamente.
+- `motor/wizards/FirstRunWizard.ps1` y `motor/wizards/ProjectWizard.ps1`: reemplazan al Session Wizard.
+
+Modificar `scripts/Start-HermesEnterprise.ps1` para que construya el DeveloperContext antes de iniciar el Kernel.
+
+### Consecuencias positivas
+
+- El punto de entrada del sistema es el entorno real del desarrollador, no una sesión abstracta.
+- La Session se vuelve un componente interno administrado automáticamente.
+- Se prepara la arquitectura para múltiples proyectos, providers y plugins sin tocar el Kernel.
+- Los inspectores son de solo lectura y no ejecutan operaciones destructivas.
+
+### Límites
+
+- No se modifica Kernel, Bootstrap, Runtime, EventBus, Logger, Plugin Framework, Provider Framework, Azure Foundry Provider, Workspace Provider ni Git Provider.
+- GitHub sigue en modo MOCK.
+- No se persisten DeveloperContext; solo se reconstruyen.
+- No se almacenan secretos en el DeveloperContext.
+
+### Verificación
+
+- `pruebas/unitarias/Test-DeveloperContext.ps1`
+- `pruebas/unitarias/Test-WorkspaceInspector.ps1`
+- `pruebas/unitarias/Test-ProjectInspector.ps1`
+- `pruebas/unitarias/Test-GitInspector.ps1`
+- `pruebas/unitarias/Test-GitHubInspector.ps1`
+- `pruebas/unitarias/Test-EnvironmentInspector.ps1`
+- `pruebas/unitarias/Test-DeveloperContextManager.ps1`
+- `pruebas/aceptacion/Test-DeveloperWorkspaceFlow.ps1`
+- `scripts/Start-HermesEnterprise.ps1`
+- `scripts/Test-HermesEnterprise.ps1`
+
+---
+
+## ADR-0016: Session Framework como objeto raíz
+
+### Estado
+
+Reemplazada por ADR-0017.
 
 ### Contexto
 
@@ -35,7 +86,7 @@ Modificar `scripts/Start-HermesEnterprise.ps1` para que recupere la sesión exis
 ### Consecuencias positivas
 
 - Toda interacción opera dentro de un contexto de sesión explícito.
-- Los managers existientes pueden consumir la sesión sin duplicar información.
+- Los managers existentes pueden consumir la sesión sin duplicar información.
 - El punto de entrada del sistema es más simple para el usuario.
 
 ### Límites

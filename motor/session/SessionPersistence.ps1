@@ -59,8 +59,8 @@ function Load-HermesEnterpriseSession {
 }
 
 function Get-HermesEnterpriseSessionList {
-    [CmdletBinding()][OutputType([pscustomobject[]])]
+    [CmdletBinding()][OutputType([string[]])]
     param([Parameter(Mandatory=$true)][string]$RutaRaizRepositorio)
     $Ruta = Get-HermesEnterpriseSessionDirectory -RutaRaizRepositorio $RutaRaizRepositorio
-    return Get-ChildItem -Path $Ruta -Filter "*.json" | Select-Object -ExpandProperty BaseName
+    return @(Get-ChildItem -Path $Ruta -Filter "*.json" | Select-Object -ExpandProperty BaseName)
 }

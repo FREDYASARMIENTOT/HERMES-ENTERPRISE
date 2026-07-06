@@ -14,7 +14,7 @@ $RutaDirectorioSessionLoader = Split-Path -Parent $PSCommandPath
 function Test-HermesEnterpriseSessionExists {
     [CmdletBinding()][OutputType([bool])]
     param([Parameter(Mandatory=$true)][string]$RutaRaizRepositorio)
-    $Sesiones = Get-HermesEnterpriseSessionList -RutaRaizRepositorio $RutaRaizRepositorio
+    $Sesiones = @(Get-HermesEnterpriseSessionList -RutaRaizRepositorio $RutaRaizRepositorio)
     return ($null -ne $Sesiones -and $Sesiones.Count -gt 0)
 }
 

@@ -1,13 +1,27 @@
-# Archivos generados localmente por ejecución del Kernel Enterprise.
+##################################################
+# Secrets
+##################################################
+
+.env
+.env.*
+*.key
+*.pem
+*.pfx
+*.cer
+
+##################################################
+# Local Settings
+##################################################
+
+.local
+.settings
+.vscode/
+
+##################################################
+# HERMES Enterprise - archivos generados localmente
+##################################################
 logs/
 configuracion/kernel.enterprise.json
 pruebas/salida-temporal/
-
-# Sesiones locales de HERMES Enterprise.
 .hermes/sessions/
 .hermes/backup/
-
-# Secretos y variables de entorno locales.
-.env
-*.secret.*
-secrets/

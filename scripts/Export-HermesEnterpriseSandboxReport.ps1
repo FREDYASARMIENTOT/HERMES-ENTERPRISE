@@ -58,7 +58,7 @@ function Export-HermesEnterpriseSandboxReport {
             @{ Nombre = "UserGuide.md"; Existe = (Test-Path (Join-Path $RutaAbsoluta "UserGuide.md")); Estado = if (Test-Path (Join-Path $RutaAbsoluta "UserGuide.md")) { "OK" } else { "FAIL" } }
             @{ Nombre = "SandboxInstructions.ps1"; Existe = (Test-Path (Join-Path $RutaAbsoluta "SandboxInstructions.ps1")); Estado = if (Test-Path (Join-Path $RutaAbsoluta "SandboxInstructions.ps1")) { "OK" } else { "FAIL" } }
         )
-        EstadoGeneral = if (Test-Path $RutaMetadata -and (Test-Path (Join-Path $RutaAbsoluta "Workspace")) -and (Test-Path $RutaReports)) { "PASSED" } else { "FAILED" }
+        EstadoGeneral = if ((Test-Path $RutaMetadata) -and (Test-Path (Join-Path $RutaAbsoluta "Workspace")) -and (Test-Path $RutaReports)) { "PASSED" } else { "FAILED" }
     }
 
     $AcceptanceReport = [pscustomobject][ordered]@{

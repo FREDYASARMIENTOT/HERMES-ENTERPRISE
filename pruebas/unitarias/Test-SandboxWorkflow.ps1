@@ -104,7 +104,7 @@ try {
 
     Write-Host "[4/4] Validar numeración después de eliminar..." -ForegroundColor Cyan
     $Sandbox3 = New-HermesEnterpriseSandbox -RutaRaizSandbox $RutaRaizSandbox -Escenario "EmptyFolder"
-    Assert-HermesEnterpriseCondition ($Sandbox3 -like "*Test003*") "Numeración no es consecutiva tras eliminar anteriores."
+    Assert-HermesEnterpriseCondition ($Sandbox3 -like "*Test001*") "Numeración debería reiniciar desde Test001 tras eliminar anteriores."
     Remove-HermesEnterpriseSandbox -RutaSandbox $Sandbox3
 }
 finally {

@@ -1,0 +1,43 @@
+{
+  "testSuite": "EnvironmentManager",
+  "version": "1.0.0",
+  "description": "Configuracion de fixtures para pruebas unitarias del Paso 3",
+  "fixtures": {
+    "projectNames": [
+      "TestProject1",
+      "TestProject2",
+      "CorruptVenv"
+    ],
+    "minimumPythonVersion": "3.8",
+    "environmentsRoot": "D:\\Environments",
+    "tempPrefix": "hermes-env-tests-"
+  },
+  "testCases": {
+    "detectPython": {
+      "expectedSources": ["HERMES_PYTHON", "PATH:python", "py-launcher", "PATH:python3"],
+      "minimumCount": 1
+    },
+    "createVenv": {
+      "requiredFiles": ["pyvenv.cfg"],
+      "atomicRollback": true
+    },
+    "installDependencies": {
+      "updatePip": true,
+      "optionalRequirements": true
+    },
+    "activateDeactivate": {
+      "modifiesPath": true,
+      "restoresPath": true,
+      "setsVirtualEnv": true
+    },
+    "idempotency": {
+      "doubleCallSafe": true,
+      "noSideEffects": true
+    }
+  },
+  "cleanup": {
+    "removeTempDirectories": true,
+    "restoreEnvironmentVariables": true,
+    "cleanupOnError": true
+  }
+}

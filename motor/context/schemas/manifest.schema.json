@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CONTEXT_MANIFEST",
+  "description": "Manifiesto de archivos de contexto con prioridad de carga",
+  "type": "object",
+  "required": ["priority", "optional"],
+  "properties": {
+    "priority": {
+      "type": "array",
+      "description": "Archivos que DEBEN cargarse siempre",
+      "items": {
+        "type": "object",
+        "required": ["file", "reason"],
+        "properties": {
+          "file": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "optional": {
+      "type": "array",
+      "description": "Archivos que PUEDEN cargarse según necesidad",
+      "items": {
+        "type": "object",
+        "required": ["file", "reason", "whenToLoad"],
+        "properties": {
+          "file": { "type": "string" },
+          "reason": { "type": "string" },
+          "whenToLoad": { "type": "string" }
+        }
+      }
+    },
+    "totalEstimatedTokens": {
+      "type": "number",
+      "description": "Total estimado de tokens para todos los archivos"
+    },
+    "loadingStrategy": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["progressive", "all-at-once"] },
+        "description": { "type": "string" }
+      }
+    },
+    "workerInstructions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Instrucciones para el Worker sobre cómo usar este manifiesto"
+    }
+  }
+}

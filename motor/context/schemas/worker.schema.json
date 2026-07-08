@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WORKER_CONTEXT",
+  "description": "Contrato estructurado para ejecución de Workers",
+  "type": "object",
+  "required": ["project", "version", "branch", "commit", "phase", "step"],
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Nombre del proyecto"
+    },
+    "version": {
+      "type": "string",
+      "description": "Versión del proyecto"
+    },
+    "branch": {
+      "type": "string",
+      "description": "Rama Git actual"
+    },
+    "commit": {
+      "type": "string",
+      "description": "Hash del commit actual"
+    },
+    "phase": {
+      "type": "number",
+      "description": "Fase actual del proyecto"
+    },
+    "step": {
+      "type": "number",
+      "description": "Paso actual dentro de la fase"
+    },
+    "completed_modules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Lista de módulos completados"
+    },
+    "pending_modules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Lista de módulos pendientes"
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "python_path": { "type": "string" },
+        "venv_path": { "type": "string" },
+        "python_version": { "type": "string" }
+      }
+    },
+    "working_directory": {
+      "type": "string",
+      "description": "Directorio de trabajo actual"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp de generación"
+    }
+  }
+}

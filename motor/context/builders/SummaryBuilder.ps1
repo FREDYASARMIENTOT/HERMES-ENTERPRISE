@@ -31,6 +31,11 @@
     }
     $result = Build-WorkerSummary -ExecutionData $execData -OutputPath "D:\HERMES-ENTERPRISE\.hermes\context"
 #>
+
+# Importar helpers centralizados
+. "$PSScriptRoot\..\helpers\DurationHelpers.ps1"
+. "$PSScriptRoot\..\helpers\TokenHelpers.ps1"
+
 function Build-WorkerSummary {
     [CmdletBinding()]
     param(
@@ -141,7 +146,7 @@ $($ExecutionData.NextStep)
     $content | Set-Content -Path $filePath -Encoding UTF8
     
     # Calcular tokens estimados
-    $tokens = Estimate-Tokens -FilePath $filePath
+    $tokens = Estimate-Tokens -Content (Get-Content -Path $filePath -Raw)
     
     return [PSCustomObject]@{
         Path = $filePath
@@ -149,29 +154,3 @@ $($ExecutionData.NextStep)
         IsValid = (Test-Path $filePath)
     }
 }
-
-function Calculate-Duration {
-    param(
-        [string]$Start,
-        [string]$End
-    )
-    
-    try {
-        $startTime = [DateTime]::Parse($Start)
-        $endTime = [DateTime]::Parse($End)
-        $duration = $endTime - $startTime
-        return "{0:hh\:mm\:ss}" -f $duration
-    } catch {
-        return "N/A"
-    }
-}
-
-function Estimate-Tokens {
-    param([string]$FilePath)
-    
-    $content = Get-Content $FilePath -Raw
-    # Estimación: 1 token ~= 4 caracteres (aproximación conservadora)
-    return [math]::Ceiling($content.Length / 4)
-}
-
-Export-ModuleMember -Function Build-WorkerSummary

@@ -122,4 +122,4 @@ memoryVersion: $($BootstrapState.MemoryVersion)
     }
 }
 
-Export-ModuleMember -Function Build-ProjectMemory
+

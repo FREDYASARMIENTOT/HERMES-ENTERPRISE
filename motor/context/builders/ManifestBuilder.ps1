@@ -12,9 +12,14 @@
 .OUTPUTS
     PSCustomObject con Path, Tokens, IsValid
 .EXAMPLE
-    $result = Build-ContextManifest -ProjectRoot "D:\HERMES-ENTERPRISE" -OutputPath "D:\HERMES-ENTERPRISE\.hermes\context"
+    $result = Build-Manifest -ProjectRoot "D:\HERMES-ENTERPRISE" -OutputPath "D:\HERMES-ENTERPRISE\.hermes\context"
 #>
-function Build-ContextManifest {
+
+# Importar helpers centralizados
+. "$PSScriptRoot\..\helpers\GitHelpers.ps1"
+. "$PSScriptRoot\..\helpers\TokenHelpers.ps1"
+
+function Build-Manifest {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -34,7 +39,7 @@ function Build-ContextManifest {
         $priority += [PSCustomObject]@{
             file = "CURRENT_STATE.md"
             reason = "Estado actual del proyecto, fase y paso"
-            tokens = Estimate-Tokens $currentStatePath
+            tokens = Estimate-Tokens -Content (Get-Content $currentStatePath -Raw)
         }
     }
     
@@ -43,7 +48,7 @@ function Build-ContextManifest {
         $priority += [PSCustomObject]@{
             file = "NEXT_TASK.md"
             reason = "Siguiente tarea a ejecutar con criterios de aceptación"
-            tokens = Estimate-Tokens $nextTaskPath
+            tokens = Estimate-Tokens -Content (Get-Content $nextTaskPath -Raw)
         }
     }
     
@@ -52,7 +57,7 @@ function Build-ContextManifest {
         $priority += [PSCustomObject]@{
             file = "PROJECT_INDEX.json"
             reason = "Indice maestro de módulos, documentación y pruebas"
-            tokens = Estimate-Tokens $projectIndexPath
+            tokens = Estimate-Tokens -Content (Get-Content $projectIndexPath -Raw)
         }
     }
     
@@ -61,7 +66,7 @@ function Build-ContextManifest {
         $priority += [PSCustomObject]@{
             file = "WORKER_CONTEXT.json"
             reason = "Contrato estructurado para ejecución del Worker"
-            tokens = Estimate-Tokens $workerContextPath
+            tokens = Estimate-Tokens -Content (Get-Content $workerContextPath -Raw)
         }
     }
     
@@ -71,7 +76,7 @@ function Build-ContextManifest {
         $optional += [PSCustomObject]@{
             file = "SUMMARY.md"
             reason = "Resumen de ejecución anterior (útil para continuar trabajo)"
-            tokens = Estimate-Tokens $summaryPath
+            tokens = Estimate-Tokens -Content (Get-Content $summaryPath -Raw)
             whenToLoad = "Cuando se necesita entender qué se hizo previamente"
         }
     }
@@ -81,7 +86,7 @@ function Build-ContextManifest {
         $optional += [PSCustomObject]@{
             file = "PROJECT_MEMORY.md"
             reason = "Memoria del proyecto: decisiones, ADR, convenciones"
-            tokens = Estimate-Tokens $memoryPath
+            tokens = Estimate-Tokens -Content (Get-Content $memoryPath -Raw)
             whenToLoad = "Cuando se necesitan decisiones arquitectónicas o convenciones"
         }
     }
@@ -95,7 +100,7 @@ function Build-ContextManifest {
         schemaVersion = "1.0"
         generatedAt = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
         generator = "ManifestBuilder"
-        commit = Get-GitCommitHash $ProjectRoot
+        commit = Get-GitCommitHash -ProjectPath $ProjectRoot
         
         loadingStrategy = [PSCustomObject]@{
             mode = "progressive"
@@ -131,24 +136,3 @@ function Build-ContextManifest {
         IsValid = (Test-Path $manifestPath)
     }
 }
-
-function Estimate-Tokens {
-    param([string]$filePath)
-    
-    $content = Get-Content $filePath -Raw
-    # Estimación: 1 token ~= 4 caracteres (aproximación conservadora)
-    return [math]::Ceiling($content.Length / 4)
-}
-
-function Get-GitCommitHash {
-    param([string]$projectRoot)
-    
-    try {
-        $hash = git -C $projectRoot rev-parse HEAD 2>$null
-        return if ($hash) { $hash } else { "unknown" }
-    } catch {
-        return "unknown"
-    }
-}
-
-Export-ModuleMember -Function Build-ContextManifest

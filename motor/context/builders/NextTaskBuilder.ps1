@@ -1,21 +1,17 @@
 <#
 .SYNOPSIS
-    NextTaskBuilder - Genera NEXT_TASK.md con la próxima tarea a ejecutar
+    NextTaskBuilder - Genera NEXT_TASK.md
 .DESCRIPTION
-    Crea un documento que especifica claramente qué debe hacer el Worker
-    a continuación, incluyendo objetivo, entradas, salidas, criterios de
-    aceptación y condiciones de rollback.
-.BUDGET
-    Maximo 200 lineas.
-.INPUTS
-    - BootstrapState: Estado actual con próximo objetivo definido
-    - OutputPath: Ruta donde se generará NEXT_TASK.md
-.OUTPUTS
-    PSCustomObject con Path, Tokens, IsValid
-.EXAMPLE
-    $state = Get-BootstrapState
-    $result = Build-NextTask -BootstrapState $state -OutputPath "D:\HERMES-ENTERPRISE\.hermes\context"
+    Genera próxima tarea con objetivo, entradas, salidas, archivos
+    permitidos/prohibidos y criterios de aceptación.
+.NOTES
+    Fase 3.5B - Namespace Cleanup
+    Depende de ContextHelpers.ps1
 #>
+
+# Cargar helpers centralizados
+. (Join-Path $PSScriptRoot '..\helpers\ContextHelpers.ps1')
+
 function Build-NextTask {
     [CmdletBinding()]
     param(
@@ -31,102 +27,115 @@ function Build-NextTask {
         throw "BootstrapState debe contener ProximoObjetivo"
     }
     
-    # Obtener información de Git
-    $commitHash = Get-GitCommitHash -OutputPath $OutputPath
+    # Calcular ProjectPath desde OutputPath (robusto, funciona aunque el directorio no exista)
+    # OutputPath es siempre: <ProjectPath>\.hermes\context
+    $parent1 = Split-Path -Path $OutputPath -Parent     # D:\HERMES-ENTERPRISE\.hermes
+    $projectPath = Split-Path -Path $parent1 -Parent    # D:\HERMES-ENTERPRISE
+    
+    # Obtener commit hash desde helpers centralizados
+    $commitHash = Get-GitCommitHash -ProjectPath $projectPath
+    $branch = Get-GitBranch -ProjectPath $projectPath
     
     # Construir contenido de NEXT_TASK.md
     $content = @"
 ---
-contextVersion: 1
-bootstrapVersion: $($BootstrapState.BootstrapVersion)
-generatedAt: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-generator: NextTaskBuilder
-commit: $commitHash
+project: $($BootstrapState.ProjectName)
+version: $($BootstrapState.BootstrapVersion)
+phase: $(if ($BootstrapState.CurrentPhase) { $BootstrapState.CurrentPhase } else { "N/A" })
+step: $(if ($BootstrapState.CurrentStep) { $BootstrapState.CurrentStep } else { "N/A" })
+git_commit: $commitHash
+git_branch: $(Get-GitBranch -ProjectPath $OutputPath)
+generated_at: $(Get-Date -Format "yyyy-MM-dd")
 ---
 
-# Próxima Tarea
+# Next Task
 
-## Objetivo
+## Objective
 $($BootstrapState.ProximoObjetivo)
 
-## Entradas Requeridas
+## Inputs
 "@
 
-    # Agregar entradas
-    if ($BootstrapState.EntradasRequeridas.Count -gt 0) {
-        $BootstrapState.EntradasRequeridas | ForEach-Object {
-            $content += "`n- $_"
+    # Agregar inputs
+    if ($BootstrapState.EntradasRequeridas) {
+        foreach ($input in $BootstrapState.EntradasRequeridas) {
+            $content += "`n- $input"
         }
     } else {
-        $content += "`n- (Ninguna entrada específica requerida)"
-    }
-    
-    $content += "`n`n## Salidas Esperadas"
-    
-    # Agregar salidas
-    if ($BootstrapState.SalidasEsperadas.Count -gt 0) {
-        $BootstrapState.SalidasEsperadas | ForEach-Object {
-            $content += "`n- $_"
-        }
-    } else {
-        $content += "`n- (Ninguna salida específica definida)"
-    }
-    
-    $content += "`n`n## Archivos a Crear/Modificar"
-    
-    if ($BootstrapState.ArchivosAccion.Count -gt 0) {
-        $BootstrapState.ArchivosAccion | ForEach-Object {
-            $content += "`n- ``$_``"
-        }
-    } else {
-        $content += "`n- (A determinar durante la ejecución)"
+        $content += "`n- BootstrapState actualizado"
     }
     
     $content += @"
 
-
-## Criterios de Aceptación
+## Expected Outputs
 "@
 
-    if ($BootstrapState.CriteriosAceptacion.Count -gt 0) {
-        $BootstrapState.CriteriosAceptacion | ForEach-Object {
-            $content += "`n- [ ] $_"
+    # Agregar outputs
+    if ($BootstrapState.SalidasEsperadas) {
+        foreach ($output in $BootstrapState.SalidasEsperadas) {
+            $content += "`n- $output"
         }
     } else {
-        $content += "`n- [ ] Todos los tests unitarios pasan"
-        $content += "`n- [ ] Verificación ad-hoc exitosa"
-        $content += "`n- [ ] Documentación actualizada"
-        $content += "`n- [ ] Commit realizado con mensaje descriptivo"
+        $content += "`n- Módulo implementado y verificado"
     }
     
     $content += @"
 
+## Allowed Files
+"@
 
-## Pruebas Requeridas
-- [ ] Tests unitarios para todos los componentes nuevos
-- [ ] Pruebas de integración si aplica
-- [ ] Verificación ad-hoc con script temporal
-- [ ] Validación de presupuestos de líneas cumplidos
+    # Agregar archivos permitidos
+    if ($BootstrapState.ArchivosPermitidos) {
+        foreach ($file in $BootstrapState.ArchivosPermitidos) {
+            $content += "`n- $file"
+        }
+    } else {
+        $content += "`n- motor/context/builders/*"
+    }
+    
+    $content += @"
 
-## Condiciones de Rollback
-Si la implementación:
-- Rompe componentes existentes (BootstrapState, BootstrapWizard, EnvironmentManager)
-- No pasa las pruebas unitarias
-- Viola las restricciones de archivos prohibidos
-- Produce errores en la verificación ad-hoc
+## Forbidden Files
+"@
 
-**Acción:** Revertir con ``git revert HEAD`` y corregir antes de reintentar.
+    # Agregar archivos prohibidos
+    if ($BootstrapState.ArchivosProhibidos) {
+        foreach ($file in $BootstrapState.ArchivosProhibidos) {
+            $content += "`n- $file"
+        }
+    } else {
+        $content += "`n- motor/bootstrap/engine/BootstrapState.ps1
+- motor/bootstrap/engine/BootstrapWizard.ps1
+- motor/bootstrap/engine/environment/EnvironmentManager.ps1"
+    }
+    
+    $content += @"
 
-## Commit Esperado
-\`\`\`
+## Required Tests
+- Tests unitarios pasan (100%)
+- Verificación ad-hoc exitosa
+- Sin errores de parseo
+- Sin colisiones de nombres de funciones
+
+## Acceptance Criteria
+"@
+
+    # Agregar criterios de aceptación
+    if ($BootstrapState.CriteriosAceptacion) {
+        foreach ($criterion in $BootstrapState.CriteriosAceptacion) {
+            $content += "`n- [ ] $criterion"
+        }
+    } else {
+        $content += "`n- [ ] Código implementado según contrato
+- [ ] Tests pasan
+- [ ] Sin warnings de parseo
+- [ ] Documentación actualizada"
+    }
+    
+    $content += @"
+
+## Commit Message
 feat: $($BootstrapState.MensajeCommit)
-\`\`\`
-
-## Notas Adicionales
-- Mantener KISS/DRY en la implementación
-- Seguir patrones establecidos por componentes anteriores
-- No modificar archivos prohibidos bajo ninguna circunstancia
-- Limpiar recursos temporales después de verificación
 "@
     
     # Escribir archivo con encabezado YAML
@@ -140,7 +149,7 @@ feat: $($BootstrapState.MensajeCommit)
     $content | Set-Content -Path $filePath -Encoding UTF8
     
     # Calcular tokens estimados
-    $tokens = Estimate-Tokens -FilePath $filePath
+    $tokens = Estimate-Tokens -Content $content
     
     return [PSCustomObject]@{
         Path = $filePath
@@ -148,25 +157,3 @@ feat: $($BootstrapState.MensajeCommit)
         IsValid = (Test-Path $filePath)
     }
 }
-
-function Get-GitCommitHash {
-    param([string]$OutputPath)
-    
-    try {
-        $projectRoot = Split-Path $OutputPath -Parent
-        $hash = git -C $projectRoot rev-parse HEAD 2>$null
-        return if ($hash) { $hash } else { "unknown" }
-    } catch {
-        return "unknown"
-    }
-}
-
-function Estimate-Tokens {
-    param([string]$FilePath)
-    
-    $content = Get-Content $FilePath -Raw
-    # Estimación: 1 token ~= 4 caracteres (aproximación conservadora)
-    return [math]::Ceiling($content.Length / 4)
-}
-
-Export-ModuleMember -Function Build-NextTask

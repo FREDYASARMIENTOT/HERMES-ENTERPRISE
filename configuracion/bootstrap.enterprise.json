@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "nombre": "Bootstrap Enterprise Configuration",
+    "version": "1.0.0",
+    "sprint": "Paso 1 - Contratos"
+  },
+  "rutas": {
+    "proyectos": "D:\\Proyectos_VSCode",
+    "environments": "D:\\Environments",
+    "hermesRoot": "D:\\HERMES-ENTERPRISE"
+  },
+  "defaults": {
+    "githubOwner": "FREDYASARMIENTOT",
+    "branchPrincipal": "main"
+  },
+  "validacion": {
+    "nombreProyectoRegex": "^[A-Za-z][A-Za-z0-9_-]{2,63}$"
+  }
+}

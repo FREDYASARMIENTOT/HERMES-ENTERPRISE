@@ -96,4 +96,4 @@ function Test-ContextContract {
     }
 }
 
-Export-ModuleMember -Function New-ContextContract, Test-ContextContract
+

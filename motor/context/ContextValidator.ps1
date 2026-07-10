@@ -163,4 +163,4 @@ function Estimate-Tokens {
     return [math]::Ceiling($content.Length / 4)
 }
 
-Export-ModuleMember -Function Invoke-ContextValidation
+

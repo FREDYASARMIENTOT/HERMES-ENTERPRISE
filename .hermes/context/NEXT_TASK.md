@@ -1,26 +1,28 @@
 ---
 project: HERMES-ENTERPRISE
-version: 0.18.0
-phase: 4
-step: BootstrapOrchestrator
-commit: 3c91283
+version: 0.19.0
+phase: 5
+step: StartHermesProject
+commit: pending
 branch: main
 generated_at: 2026-07-10
 ---
 
-# Paso 4 — BootstrapOrchestrator.ps1
+# Paso 5 — Start-HermesProject.ps1
 
 ## Objetivo
-Motor de orquestación completo del Bootstrap Engine.
+Entry point público del framework. Invoca BootstrapOrchestrator.
 
 ## Entry point
-motor/bootstrap/engine/BootstrapOrchestrator.ps1
+motor/bootstrap/Start-HermesProject.ps1
 
 ## Input
-Lectura lazy del Context Package:
-  1. SESSION_HANDOFF.json (~100 tokens)
-  2. CURRENT_STATE.md     (~120 tokens)
-  3. PUBLIC_API.json      (~150 tokens) — solo si se necesita firma exacta
+Parámetros de línea de comandos:
+  -ProjectPath  : string (obligatorio)
+  -Force        : switch (opcional)
 
 ## Cadena de invocación
-BootstrapOrchestrator → BootstrapWizard → EnvironmentManager → ContextEngine → Builders → Helpers
+Start-HermesProject → BootstrapOrchestrator → todos los managers
+
+## Salida
+Reporte de ejecución con métricas y estado final.

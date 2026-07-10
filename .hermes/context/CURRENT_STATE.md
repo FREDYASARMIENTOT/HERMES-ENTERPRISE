@@ -1,28 +1,29 @@
 ---
 project: HERMES-ENTERPRISE
-version: 0.18.0
-phase: 3.5C
+version: 0.19.0
+phase: 4
 phase_status: completed
-commit: 3c91283
+next_phase: 5
+commit: pending
 branch: main
-generated_at: 2026-07-10
 ---
 
 # Estado
+
+BootstrapOrchestrator implementado y verificado (Paso 4).
 
 | Componente              | Estado       |
 | ----------------------- | ------------ |
 | BootstrapState          | ✅ Completado |
 | BootstrapWizard         | ✅ Completado |
 | EnvironmentManager      | ✅ Completado |
+| BootstrapOrchestrator   | ✅ Completado |
 | ContextEngine           | ✅ Completado |
-| Builders (7)            | ✅ Completado |
-| Helpers (7 archivos)    | ✅ Completado |
-| ContextContract         | ✅ Completado |
-| Contract Tests          | ✅ Completado |
-| Session Handoff         | ✅ Completado |
+| Contract Tests          | ✅ 40/40 PASS |
+| Orchestrator Tests      | ✅ 25/25 PASS |
 
 # Paso siguiente
 
-**Paso 4 — BootstrapOrchestrator.ps1**
+**Paso 5 — Start-HermesProject.ps1**
 
+Entry point público que invoca BootstrapOrchestrator.

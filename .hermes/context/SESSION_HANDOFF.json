@@ -1,13 +1,13 @@
 {
-  "phase": "3.5C",
+  "phase": "4",
   "status": "completed",
-  "next": "Paso4",
-  "entry_point": "motor/bootstrap/engine/BootstrapOrchestrator.ps1",
+  "next": "Paso5",
+  "entry_point": "motor/bootstrap/Start-HermesProject.ps1",
   "read_order": ["CURRENT_STATE.md", "NEXT_TASK.md", "PUBLIC_API.json"],
-  "last_commit": "493e8f5",
+  "last_commit": "pending",
   "branch": "main",
-  "api_version": "1.0",
+  "api_version": "1.1",
   "working_tree": "clean",
-  "phase_completed": ["1", "2", "3", "3.5A", "3.5B", "3.5C"],
+  "phase_completed": ["1", "2", "3", "3.5A", "3.5B", "3.5C", "4"],
   "do_not_touch": ["BootstrapState.ps1", "BootstrapWizard.ps1", "EnvironmentManager.ps1", "motor/context/builders/*", "motor/context/helpers/*", "PUBLIC_API.json"]
 }

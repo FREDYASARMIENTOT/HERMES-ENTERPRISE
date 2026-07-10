@@ -1,393 +1,489 @@
 <#
 .SYNOPSIS
-    BootstrapOrchestrator - Coordinador puro del flujo de bootstrap
-.DESCRIPTION
-    Paso 4: Orquestación sin lógica de negocio.
-    Invoca los 7 pasos del bootstrap en orden estricto:
-    1. BootstrapState (inicializa estado)
-    2. BootstrapWizard (interacción usuario)
-    3. EnvironmentManager (valida/configura entorno)
-    4. GitManager (git init o valida repo)
-    5. ContextEngine (genera Context Package)
-    6. VSCodeManager (abre workspace si aplica)
-    7. BootstrapReport (resume ejecución)
+    BootstrapOrchestrator - Coordinador puro del flujo de bootstrap (V2)
 
-    NO contiene lógica de negocio. Solo coordina.
+.DESCRIPTION
+    Consume contratos:
+      - BootstrapRequest (Hermes.Bootstrap.Request)
+      - BootstrapState  (Hermes.Bootstrap.BootstrapState)
+
+    Coordina los pasos sin lógica de negocio:
+      1. BootstrapState   (registra arranque)
+      2. BootstrapWizard  (interacción usuario, opcional)
+      3. EnvironmentManager (valida entorno)
+      4. GitManager       (init o validación repo)
+      5. ContextEngine    (Context Package)
+      6. VSCodeManager    (abre workspace si aplica)
+      7. New-BootstrapReport (resume ejecución)
+
+    No contiene lógica de negocio. Solo coordina.
+
 .NOTES
     Proyecto: HERMES-ENTERPRISE
-    Fase    : 4 - BootstrapOrchestrator
-    Tamaño  : ~150 líneas (solo coordinación)
+    Sprint  : 5.3 - V2 (BootstrapRequest + BootstrapState)
+    Tamaño  : ~310 líneas (coordinación pura)
 #>
 
 Set-StrictMode -Version Latest
 
-# ─────────────────────────────────────────────────────────────────
-# EVENTOS (publicación simple sin EventBus externo)
-# ─────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# EVENTOS (sin EventBus externo)
+# ─────────────────────────────────────────────────────────────────────────────
 
 function Publish-BootstrapEvent {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('Started','Step.Started','Step.Completed','Completed','Failed')]
-        [string]$EventType,
+        [ValidateSet('Started', 'Step.Started', 'Step.Completed', 'Completed', 'Failed')]
+        [string]$EventoTipo,
 
         [Parameter()]
-        [hashtable]$Properties = @{}
+        [hashtable]$Propiedades = @{}
     )
 
-    $event = @{
-        EventType  = $EventType
+    $evento = @{
+        EventType  = $EventoTipo
         Timestamp  = [DateTime]::UtcNow
-        Properties = $Properties
+        Properties = $Propiedades
     }
 
-    # Log a Logger si está disponible
     if (Get-Command 'Write-HermesLog' -ErrorAction SilentlyContinue) {
-        Write-HermesLog -Level 'Info' -Message "Bootstrap.Event: $EventType" -Properties $Properties
+        Write-HermesLog -Level 'Info' -Message "Bootstrap.Event: $EventoTipo" -Properties $Propiedades
     }
 
-    return $event
+    return $evento
 }
 
-# ─────────────────────────────────────────────────────────────────
-# INVOCADORES DE PASOS (wrappers sobre módulos existentes)
-# ─────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
 
-function Invoke-BootstrapStateStep {
+function Get-BootstrapContextPath {
+    <#
+    .SYNOPSIS
+        Deriva la ruta del Context Package desde BootstrapRequest.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
-        [string]$ContextPath,
-        [switch]$Force
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Request
     )
 
+    return (Join-Path $Request.RutaProyecto '.hermes\context')
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INVOCADORES DE PASOS (wrappers sobre módulos existentes)
+# Todos reciben State + Request y retornan StepResult.
+# ─────────────────────────────────────────────────────────────────────────────
+
+function Invoke-BootstrapStateStep {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][PSCustomObject]$State,
+        [Parameter(Mandatory)][PSCustomObject]$Request
+    )
+
+    $resultado = [PSCustomObject]@{
+        Paso     = 'BootstrapState'
+        Success  = $true
+        Data     = $null
+        Error    = $null
+        Duracion = [TimeSpan]::Zero
+    }
+
     try {
-        $result = [PSCustomObject]@{
-            Step     = 'BootstrapState'
-            Success  = $true
-            Data     = $null
-            Error    = $null
-            Duration = [TimeSpan]::Zero
+        # BootstrapState ya viene construido por New-BootstrapStateFromRequest.
+        # Se asegura de que tenga la ruta del proyecto derivada del Request.
+        if (-not $State.PSObject.Properties['RutaProyecto']) {
+            $State | Add-Member -MemberType NoteProperty -Name 'RutaProyecto' -Value $Request.RutaProyecto -Force
         }
 
-        # BootstrapState ya existe - solo lo inicializamos
-        if (Test-Path (Join-Path $ContextPath 'SESSION_HANDOFF.json')) {
-            $result.Data = Get-Content (Join-Path $ContextPath 'SESSION_HANDOFF.json') | ConvertFrom-Json
-        } else {
-            $result.Data = New-HermesBootstrapState
-        }
-
-        return $result
+        $resultado.Data = $State
+        return $resultado
     } catch {
-        $result.Success = $false
-        $result.Error = $_.Exception.Message
-        return $result
+        $resultado.Success = $false
+        $resultado.Error   = $_.Exception.Message
+        return $resultado
     }
 }
 
 function Invoke-BootstrapWizardStep {
+    [CmdletBinding()]
     param(
-        [PSObject]$State,
+        [Parameter(Mandatory)][PSCustomObject]$State,
+        [Parameter(Mandatory)][PSCustomObject]$Request,
         [switch]$Force
     )
 
+    $resultado = [PSCustomObject]@{
+        Paso     = 'BootstrapWizard'
+        Success  = $true
+        Data     = $null
+        Error    = $null
+        Duracion = [TimeSpan]::Zero
+    }
+
     try {
-        $result = [PSCustomObject]@{
-            Step     = 'BootstrapWizard'
-            Success  = $true
-            Data     = $null
-            Error    = $null
-            Duration = [TimeSpan]::Zero
+        # En modo automatizado se salta el wizard (Request ya contiene la decisión del usuario).
+        if ($Force -or -not (Get-Command 'Start-BootstrapWizard' -ErrorAction SilentlyContinue)) {
+            $resultado.Data = $State
+            return $resultado
         }
 
-        # BootstrapWizard existe - invocar si hay interacción requerida
-        if (-not $Force -and (Get-Command 'Start-BootstrapWizard' -ErrorAction SilentlyContinue)) {
-            $result.Data = Start-BootstrapWizard -State $State
-        } else {
-            $result.Data = $State
-        }
-
-        return $result
+        $resultado.Data = Start-BootstrapWizard -State $State -Request $Request
+        return $resultado
     } catch {
-        $result.Success = $false
-        $result.Error = $_.Exception.Message
-        return $result
+        $resultado.Success = $false
+        $resultado.Error   = $_.Exception.Message
+        return $resultado
     }
 }
 
 function Invoke-EnvironmentManagerStep {
+    [CmdletBinding()]
     param(
-        [PSObject]$ProjectDescriptor
+        [Parameter(Mandatory)][PSCustomObject]$State,
+        [Parameter(Mandatory)][PSCustomObject]$Request
     )
 
+    $resultado = [PSCustomObject]@{
+        Paso     = 'EnvironmentManager'
+        Success  = $true
+        Data     = $null
+        Error    = $null
+        Duracion = [TimeSpan]::Zero
+    }
+
     try {
-        $result = [PSCustomObject]@{
-            Step     = 'EnvironmentManager'
-            Success  = $true
-            Data     = $null
-            Error    = $null
-            Duration = [TimeSpan]::Zero
-        }
-
-        # EnvironmentManager existe
         if (Get-Command 'Invoke-EnvironmentManager' -ErrorAction SilentlyContinue) {
-            $result.Data = Invoke-EnvironmentManager -ProjectDescriptor $ProjectDescriptor
+            $resultado.Data = Invoke-EnvironmentManager -State $State -Request $Request
         } else {
-            $result.Data = $ProjectDescriptor
+            $resultado.Data = $State
         }
-
-        return $result
+        return $resultado
     } catch {
-        $result.Success = $false
-        $result.Error = $_.Exception.Message
-        return $result
+        $resultado.Success = $false
+        $resultado.Error   = $_.Exception.Message
+        return $resultado
     }
 }
 
 function Invoke-GitManagerStep {
+    [CmdletBinding()]
     param(
-        [string]$ProjectPath,
-        [switch]$IsNewProject
+        [Parameter(Mandatory)][PSCustomObject]$State,
+        [Parameter(Mandatory)][PSCustomObject]$Request
     )
 
-    try {
-        $result = [PSCustomObject]@{
-            Step     = 'GitManager'
-            Success  = $true
-            Data     = $null
-            Error    = $null
-            Duration = [TimeSpan]::Zero
-        }
+    $resultado = [PSCustomObject]@{
+        Paso     = 'GitManager'
+        Success  = $true
+        Data     = $null
+        Error    = $null
+        Duracion = [TimeSpan]::Zero
+    }
 
-        # GitManager existe en motor/providers/
+    try {
+        $rutaProyecto = $Request.RutaProyecto
+        $esNuevoRepo  = ($Request.AccionRepositorio -eq 'Nuevo') -or [bool]$Request.CrearNuevoRepositorio
+
         if (Get-Command 'Initialize-GitRepository' -ErrorAction SilentlyContinue) {
-            if ($IsNewProject) {
-                $result.Data = Initialize-GitRepository -Path $ProjectPath
+            if ($esNuevoRepo) {
+                $resultado.Data = Initialize-GitRepository -Path $rutaProyecto
             } else {
-                $result.Data = Validate-GitRepository -Path $ProjectPath
+                $resultado.Data = Validate-GitRepository -Path $rutaProyecto
             }
         } else {
-            $result.Data = [PSCustomObject]@{ GitInitialized = $true; Path = $ProjectPath }
+            $resultado.Data = [PSCustomObject]@{ GitInicializado = $true; Ruta = $rutaProyecto }
         }
-
-        return $result
+        return $resultado
     } catch {
-        $result.Success = $false
-        $result.Error = $_.Exception.Message
-        return $result
+        $resultado.Success = $false
+        $resultado.Error   = $_.Exception.Message
+        return $resultado
     }
 }
 
 function Invoke-ContextEngineStep {
+    [CmdletBinding()]
     param(
-        [string]$ContextPath
+        [Parameter(Mandatory)][PSCustomObject]$State,
+        [Parameter(Mandatory)][PSCustomObject]$Request
     )
 
+    $resultado = [PSCustomObject]@{
+        Paso     = 'ContextEngine'
+        Success  = $true
+        Data     = $null
+        Error    = $null
+        Duracion = [TimeSpan]::Zero
+    }
+
     try {
-        $result = [PSCustomObject]@{
-            Step     = 'ContextEngine'
-            Success  = $true
-            Data     = $null
-            Error    = $null
-            Duration = [TimeSpan]::Zero
-        }
+        $rutaContexto = Get-BootstrapContextPath -Request $Request
 
-        # ContextEngine existe en motor/context/
         if (Get-Command 'Invoke-ContextEngine' -ErrorAction SilentlyContinue) {
-            $result.Data = Invoke-ContextEngine -ContextPath $ContextPath
+            $resultado.Data = Invoke-ContextEngine -ContextPath $rutaContexto
         } else {
-            $result.Data = @()
+            $resultado.Data = @()
         }
-
-        return $result
+        return $resultado
     } catch {
-        $result.Success = $false
-        $result.Error = $_.Exception.Message
-        return $result
+        $resultado.Success = $false
+        $resultado.Error   = $_.Exception.Message
+        return $resultado
     }
 }
 
 function Invoke-VSCodeManagerStep {
+    [CmdletBinding()]
     param(
-        [string]$ProjectPath,
-        [switch]$OpenWorkspace
+        [Parameter(Mandatory)][PSCustomObject]$State,
+        [Parameter(Mandatory)][PSCustomObject]$Request
     )
+
+    $resultado = [PSCustomObject]@{
+        Paso     = 'VSCodeManager'
+        Success  = $true
+        Data     = $null
+        Error    = $null
+        Duracion = [TimeSpan]::Zero
+    }
 
     try {
-        $result = [PSCustomObject]@{
-            Step     = 'VSCodeManager'
-            Success  = $true
-            Data     = $null
-            Error    = $null
-            Duration = [TimeSpan]::Zero
-        }
+        $rutaProyecto = $Request.RutaProyecto
+        $abrir        = [bool]$Request.AbrirVSCode
 
-        # VSCodeManager existe en motor/providers/
-        if ($OpenWorkspace -and (Get-Command 'Open-VSCodeWorkspace' -ErrorAction SilentlyContinue)) {
-            $result.Data = Open-VSCodeWorkspace -Path $ProjectPath
+        if ($abrir -and (Get-Command 'Open-VSCodeWorkspace' -ErrorAction SilentlyContinue)) {
+            $resultado.Data = Open-VSCodeWorkspace -Path $rutaProyecto
         } else {
-            $result.Data = [PSCustomObject]@{ WorkspaceOpened = $false; Path = $ProjectPath }
+            $resultado.Data = [PSCustomObject]@{ WorkspaceAbierto = $false; Ruta = $rutaProyecto }
         }
-
-        return $result
+        return $resultado
     } catch {
-        $result.Success = $false
-        $result.Error = $_.Exception.Message
-        return $result
+        $resultado.Success = $false
+        $resultado.Error   = $_.Exception.Message
+        return $resultado
     }
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REPORTE
+# ─────────────────────────────────────────────────────────────────────────────
 
 function New-BootstrapReport {
+    [CmdletBinding()]
     param(
-        [System.Collections.ArrayList]$StepResults,
-        [TimeSpan]$TotalDuration,
-        [string[]]$Errors
+        [System.Collections.ArrayList]$ResultadosPasos,
+        [TimeSpan]$DuracionTotal,
+        [System.Collections.ArrayList]$Errores
     )
 
+    $listaErrores = @()
+    if ($null -ne $Errores -and $Errores.Count -gt 0) {
+        $listaErrores = $Errores.ToArray()
+    }
+
+    $pasosExitosos = @($ResultadosPasos | Where-Object { $_.Success }).Count
+    $pasosFallidos = @($ResultadosPasos | Where-Object { -not $_.Success }).Count
+
     return [PSCustomObject]@{
-        Success        = ($Errors.Count -eq 0)
-        StepsExecuted  = ($StepResults | Where-Object Success).Count
-        StepsFailed    = ($StepResults | Where-Object { -not $_.Success }).Count
-        TotalDuration  = $TotalDuration
-        Errors         = $Errors
-        Steps          = $StepResults
-        GeneratedAt    = [DateTime]::UtcNow
+        Success       = ($listaErrores.Count -eq 0)
+        PasosExitosos = $pasosExitosos
+        PasosFallidos = $pasosFallidos
+        DuracionTotal = $DuracionTotal
+        Errores       = $listaErrores
+        Pasos         = $ResultadosPasos
+        GeneradoEn    = [DateTime]::UtcNow
     }
 }
 
-# ─────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # ORQUESTADOR PRINCIPAL
-# ─────────────────────────────────────────────────────────────────
+# Entrada: BootstrapRequest + BootstrapState
+# Salida : BootstrapReport + BootstrapState actualizado
+# ─────────────────────────────────────────────────────────────────────────────
 
 function Invoke-BootstrapOrchestrator {
     <#
     .SYNOPSIS
-        Coordina el flujo completo de bootstrap en 7 pasos
-    .PARAMETER ProjectPath
-        Ruta raíz del proyecto
-    .PARAMETER ContextPath
-        Ruta a .hermes/context/ (default: $ProjectPath\.hermes\context)
+        Coordina el flujo completo de bootstrap consumiendo:
+        - BootstrapRequest (Hermes.Bootstrap.Request)
+        - BootstrapState  (Hermes.Bootstrap.BootstrapState)
+
+    .DESCRIPTION
+        Ejecuta los 6 pasos del motor de bootstrap en orden estricto,
+        publicando eventos en cada fase. No contiene lógica de negocio:
+        solo delega en los managers existentes pasando los contratos.
+
+    .PARAMETER BootstrapRequest
+        Objeto BootstrapRequest previamente validado (tipo: Hermes.Bootstrap.Request).
+
+    .PARAMETER BootstrapState
+        BootstrapState inicial construido por New-BootstrapStateFromRequest
+        (tipo: Hermes.Bootstrap.BootstrapState).
+
     .PARAMETER Force
-        Saltar confirmaciones (CI/automatización)
+        Modo automatizado: salta confirmaciones y wizard interactivo.
+
     .OUTPUTS
-        PSCustomObject con Success, ProjectPath, ContextPackage, Duration, NextStep, Errors
+        PSCustomObject con Reporte (BootstrapReport) y BootstrapState actualizado.
+
     .EXAMPLE
-        Invoke-BootstrapOrchestrator -ProjectPath "C:\Projects\MyApp"
+        $request = New-BootstrapRequest -NombreProyecto 'Demo' -RutaProyecto 'C:\Proyectos\Demo' -AbrirVSCode $false
+        $state   = New-BootstrapStateFromRequest -Request $request
+        $report  = Invoke-BootstrapOrchestrator -BootstrapRequest $request -BootstrapState $state
     #>
     [CmdletBinding()]
+    [OutputType([PSCustomObject])]
     param(
         [Parameter(Mandatory)]
-        [string]$ProjectPath,
+        [ValidateNotNull()]
+        [ValidateScript({
+            if ($_.PSObject.TypeNames[0] -ne 'Hermes.Bootstrap.Request') {
+                throw "El parámetro BootstrapRequest debe ser del tipo 'Hermes.Bootstrap.Request'"
+            }
+            return $true
+        })]
+        [PSCustomObject]$BootstrapRequest,
 
-        [Parameter()]
-        [string]$ContextPath = (Join-Path $ProjectPath '.hermes\context'),
+        [Parameter(Mandatory)]
+        [ValidateNotNull()]
+        [ValidateScript({
+            if ($_.PSObject.TypeNames[0] -ne 'Hermes.Bootstrap.BootstrapState') {
+                throw "El parámetro BootstrapState debe ser del tipo 'Hermes.Bootstrap.BootstrapState'"
+            }
+            return $true
+        })]
+        [PSCustomObject]$BootstrapState,
 
         [Parameter()]
         [switch]$Force
     )
 
-    $totalStart = [DateTime]::UtcNow
-    $stepResults = [System.Collections.ArrayList]::new()
-    $errors = [System.Collections.ArrayList]::new()
+    $inicioTotal   = [DateTime]::UtcNow
+    $resultados    = [System.Collections.ArrayList]::new()
+    $errores       = [System.Collections.ArrayList]::new()
+    $estadoActual  = $BootstrapState
 
-    Publish-BootstrapEvent -EventType 'Started' -Properties @{ ProjectPath = $ProjectPath } | Out-Null
+    Publish-BootstrapEvent -EventoTipo 'Started' -Propiedades @{
+        RutaProyecto   = $BootstrapRequest.RutaProyecto
+        NombreProyecto = $BootstrapRequest.NombreProyecto
+    } | Out-Null
 
     try {
         # Paso 1: BootstrapState
-        Publish-BootstrapEvent -EventType 'Step.Started' -Properties @{ Step = 'BootstrapState' } | Out-Null
-        $step1Start = [DateTime]::UtcNow
-        $step1Result = Invoke-BootstrapStateStep -ContextPath $ContextPath -Force:$Force
-        $step1Result.Duration = [DateTime]::UtcNow - $step1Start
-        $null = $stepResults.Add($step1Result)
-        if (-not $step1Result.Success) {
-            $null = $errors.Add("BootstrapState failed: $($step1Result.Error)")
-            Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Step = 'BootstrapState'; Error = $step1Result.Error } | Out-Null
+        Publish-BootstrapEvent -EventoTipo 'Step.Started' -Propiedades @{ Paso = 'BootstrapState' } | Out-Null
+        $inicioPaso = [DateTime]::UtcNow
+        $paso1      = Invoke-BootstrapStateStep -State $estadoActual -Request $BootstrapRequest
+        $paso1.Duracion = [DateTime]::UtcNow - $inicioPaso
+        $null = $resultados.Add($paso1)
+
+        if ($paso1.Success) {
+            $estadoActual = $paso1.Data
+            Publish-BootstrapEvent -EventoTipo 'Step.Completed' -Propiedades @{ Paso = 'BootstrapState'; Duracion = $paso1.Duracion } | Out-Null
         } else {
-            Publish-BootstrapEvent -EventType 'Step.Completed' -Properties @{ Step = 'BootstrapState'; Duration = $step1Result.Duration } | Out-Null
+            $null = $errores.Add("BootstrapState falló: $($paso1.Error)")
+            Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Paso = 'BootstrapState'; Error = $paso1.Error } | Out-Null
         }
 
         # Paso 2: BootstrapWizard
-        Publish-BootstrapEvent -EventType 'Step.Started' -Properties @{ Step = 'BootstrapWizard' } | Out-Null
-        $step2Start = [DateTime]::UtcNow
-        $wizardData = $step1Result.Data
-        $step2Result = Invoke-BootstrapWizardStep -State $wizardData -Force:$Force
-        $step2Result.Duration = [DateTime]::UtcNow - $step2Start
-        $null = $stepResults.Add($step2Result)
-        if (-not $step2Result.Success) {
-            $null = $errors.Add("BootstrapWizard failed: $($step2Result.Error)")
-            Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Step = 'BootstrapWizard'; Error = $step2Result.Error } | Out-Null
-        } elseif ($step2Result.Data -and $step2Result.Data.Cancelled) {
-            $null = $errors.Add("User cancelled bootstrap")
-            Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Step = 'BootstrapWizard'; Error = 'UserCancelled' } | Out-Null
+        Publish-BootstrapEvent -EventoTipo 'Step.Started' -Propiedades @{ Paso = 'BootstrapWizard' } | Out-Null
+        $inicioPaso = [DateTime]::UtcNow
+        $paso2      = Invoke-BootstrapWizardStep -State $estadoActual -Request $BootstrapRequest -Force:$Force
+        $paso2.Duracion = [DateTime]::UtcNow - $inicioPaso
+        $null = $resultados.Add($paso2)
+
+        if ($paso2.Success) {
+            $estadoActual = $paso2.Data
+            Publish-BootstrapEvent -EventoTipo 'Step.Completed' -Propiedades @{ Paso = 'BootstrapWizard'; Duracion = $paso2.Duracion } | Out-Null
+        } elseif ($paso2.Data -and $paso2.Data.Cancelled) {
+            $null = $errores.Add("Usuario canceló el bootstrap")
+            Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Paso = 'BootstrapWizard'; Error = 'UsuarioCancelo' } | Out-Null
         } else {
-            Publish-BootstrapEvent -EventType 'Step.Completed' -Properties @{ Step = 'BootstrapWizard'; Duration = $step2Result.Duration } | Out-Null
+            $null = $errores.Add("BootstrapWizard falló: $($paso2.Error)")
+            Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Paso = 'BootstrapWizard'; Error = $paso2.Error } | Out-Null
         }
 
         # Paso 3: EnvironmentManager
-        Publish-BootstrapEvent -EventType 'Step.Started' -Properties @{ Step = 'EnvironmentManager' } | Out-Null
-        $step3Start = [DateTime]::UtcNow
-        $projectDesc = $step2Result.Data
-        $step3Result = Invoke-EnvironmentManagerStep -ProjectDescriptor $projectDesc
-        $step3Result.Duration = [DateTime]::UtcNow - $step3Start
-        $null = $stepResults.Add($step3Result)
-        if (-not $step3Result.Success) {
-            $null = $errors.Add("EnvironmentManager failed: $($step3Result.Error)")
-            Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Step = 'EnvironmentManager'; Error = $step3Result.Error } | Out-Null
+        Publish-BootstrapEvent -EventoTipo 'Step.Started' -Propiedades @{ Paso = 'EnvironmentManager' } | Out-Null
+        $inicioPaso = [DateTime]::UtcNow
+        $paso3      = Invoke-EnvironmentManagerStep -State $estadoActual -Request $BootstrapRequest
+        $paso3.Duracion = [DateTime]::UtcNow - $inicioPaso
+        $null = $resultados.Add($paso3)
+
+        if ($paso3.Success) {
+            $estadoActual = $paso3.Data
+            Publish-BootstrapEvent -EventoTipo 'Step.Completed' -Propiedades @{ Paso = 'EnvironmentManager'; Duracion = $paso3.Duracion } | Out-Null
         } else {
-            Publish-BootstrapEvent -EventType 'Step.Completed' -Properties @{ Step = 'EnvironmentManager'; Duration = $step3Result.Duration } | Out-Null
+            $null = $errores.Add("EnvironmentManager falló: $($paso3.Error)")
+            Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Paso = 'EnvironmentManager'; Error = $paso3.Error } | Out-Null
         }
 
         # Paso 4: GitManager
-        Publish-BootstrapEvent -EventType 'Step.Started' -Properties @{ Step = 'GitManager' } | Out-Null
-        $step4Start = [DateTime]::UtcNow
-        $isNew = ($step2Result.Data -and $step2Result.Data.IsNewProject)
-        $step4Result = Invoke-GitManagerStep -ProjectPath $ProjectPath -IsNewProject:$isNew
-        $step4Result.Duration = [DateTime]::UtcNow - $step4Start
-        $null = $stepResults.Add($step4Result)
-        if (-not $step4Result.Success) {
-            $null = $errors.Add("GitManager failed: $($step4Result.Error)")
-            Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Step = 'GitManager'; Error = $step4Result.Error } | Out-Null
+        Publish-BootstrapEvent -EventoTipo 'Step.Started' -Propiedades @{ Paso = 'GitManager' } | Out-Null
+        $inicioPaso = [DateTime]::UtcNow
+        $paso4      = Invoke-GitManagerStep -State $estadoActual -Request $BootstrapRequest
+        $paso4.Duracion = [DateTime]::UtcNow - $inicioPaso
+        $null = $resultados.Add($paso4)
+
+        if ($paso4.Success) {
+            Publish-BootstrapEvent -EventoTipo 'Step.Completed' -Propiedades @{ Paso = 'GitManager'; Duracion = $paso4.Duracion } | Out-Null
         } else {
-            Publish-BootstrapEvent -EventType 'Step.Completed' -Properties @{ Step = 'GitManager'; Duration = $step4Result.Duration } | Out-Null
+            $null = $errores.Add("GitManager falló: $($paso4.Error)")
+            Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Paso = 'GitManager'; Error = $paso4.Error } | Out-Null
         }
 
         # Paso 5: ContextEngine
-        Publish-BootstrapEvent -EventType 'Step.Started' -Properties @{ Step = 'ContextEngine' } | Out-Null
-        $step5Start = [DateTime]::UtcNow
-        $step5Result = Invoke-ContextEngineStep -ContextPath $ContextPath
-        $step5Result.Duration = [DateTime]::UtcNow - $step5Start
-        $null = $stepResults.Add($step5Result)
-        if (-not $step5Result.Success) {
-            $null = $errors.Add("ContextEngine failed: $($step5Result.Error)")
-            Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Step = 'ContextEngine'; Error = $step5Result.Error } | Out-Null
+        Publish-BootstrapEvent -EventoTipo 'Step.Started' -Propiedades @{ Paso = 'ContextEngine' } | Out-Null
+        $inicioPaso = [DateTime]::UtcNow
+        $paso5      = Invoke-ContextEngineStep -State $estadoActual -Request $BootstrapRequest
+        $paso5.Duracion = [DateTime]::UtcNow - $inicioPaso
+        $null = $resultados.Add($paso5)
+
+        if ($paso5.Success) {
+            Publish-BootstrapEvent -EventoTipo 'Step.Completed' -Propiedades @{ Paso = 'ContextEngine'; Duracion = $paso5.Duracion } | Out-Null
         } else {
-            Publish-BootstrapEvent -EventType 'Step.Completed' -Properties @{ Step = 'ContextEngine'; Duration = $step5Result.Duration } | Out-Null
+            $null = $errores.Add("ContextEngine falló: $($paso5.Error)")
+            Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Paso = 'ContextEngine'; Error = $paso5.Error } | Out-Null
         }
 
         # Paso 6: VSCodeManager
-        Publish-BootstrapEvent -EventType 'Step.Started' -Properties @{ Step = 'VSCodeManager' } | Out-Null
-        $step6Start = [DateTime]::UtcNow
-        $openVsCode = ($projectDesc -and $projectDesc.OpenInVSCode)
-        $step6Result = Invoke-VSCodeManagerStep -ProjectPath $ProjectPath -OpenWorkspace:$openVsCode
-        $step6Result.Duration = [DateTime]::UtcNow - $step6Start
-        $null = $stepResults.Add($step6Result)
-        if (-not $step6Result.Success) {
-            $null = $errors.Add("VSCodeManager failed: $($step6Result.Error)")
-            Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Step = 'VSCodeManager'; Error = $step6Result.Error } | Out-Null
+        Publish-BootstrapEvent -EventoTipo 'Step.Started' -Propiedades @{ Paso = 'VSCodeManager' } | Out-Null
+        $inicioPaso = [DateTime]::UtcNow
+        $paso6      = Invoke-VSCodeManagerStep -State $estadoActual -Request $BootstrapRequest
+        $paso6.Duracion = [DateTime]::UtcNow - $inicioPaso
+        $null = $resultados.Add($paso6)
+
+        if ($paso6.Success) {
+            Publish-BootstrapEvent -EventoTipo 'Step.Completed' -Propiedades @{ Paso = 'VSCodeManager'; Duracion = $paso6.Duracion } | Out-Null
         } else {
-            Publish-BootstrapEvent -EventType 'Step.Completed' -Properties @{ Step = 'VSCodeManager'; Duration = $step6Result.Duration } | Out-Null
+            $null = $errores.Add("VSCodeManager falló: $($paso6.Error)")
+            Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Paso = 'VSCodeManager'; Error = $paso6.Error } | Out-Null
         }
-
     } catch {
-        $null = $errors.Add("Critical error in orchestrator: $($_.Exception.Message)")
+        $null = $errores.Add("Error crítico en orquestador: $($_.Exception.Message)")
     }
 
-    $totalDuration = [DateTime]::UtcNow - $totalStart
-    $report = New-BootstrapReport -StepResults $stepResults -TotalDuration $totalDuration -Errors $errors.ToArray()
+    # Construir reporte
+    $duracionTotal = [DateTime]::UtcNow - $inicioTotal
+    $reporte       = New-BootstrapReport -ResultadosPasos $resultados -DuracionTotal $duracionTotal -Errores $errores
 
-    if ($report.Success) {
-        Publish-BootstrapEvent -EventType 'Completed' -Properties @{ Duration = $totalDuration; Steps = $report.StepsExecuted } | Out-Null
+    # Actualizar estado final del motor
+    $estadoActual | Add-Member -MemberType NoteProperty -Name 'EstadoFinal'   -Value $(if ($reporte.Success) { 'Completado' } else { 'Fallido' }) -Force
+    $estadoActual | Add-Member -MemberType NoteProperty -Name 'FinishedAt'    -Value ([DateTime]::UtcNow.ToString('o')) -Force
+    $estadoActual | Add-Member -MemberType NoteProperty -Name 'ReporteErrores'-Value $reporte.Errores -Force
+
+    if ($reporte.Success) {
+        Publish-BootstrapEvent -EventoTipo 'Completed' -Propiedades @{ Duracion = $duracionTotal; Pasos = $reporte.PasosExitosos } | Out-Null
     } else {
-        Publish-BootstrapEvent -EventType 'Failed' -Properties @{ Duration = $totalDuration; Errors = $report.Errors.Count } | Out-Null
+        Publish-BootstrapEvent -EventoTipo 'Failed' -Propiedades @{ Duracion = $duracionTotal; Errores = $reporte.Errores.Count } | Out-Null
     }
 
-    return $report
+    return [PSCustomObject]@{
+        Reporte        = $reporte
+        BootstrapState = $estadoActual
+    }
 }

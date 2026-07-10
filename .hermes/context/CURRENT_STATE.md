@@ -1,54 +1,49 @@
-# CURRENT STATE
+# HERMES ENTERPRISE - Estado Actual
 
-## Project Overview
-HERMES Enterprise: PowerShell framework for autonomous AI software engineering.
+## Fase del Proyecto
 
-## Current Phase
-**Paso 4.5** (in progress) — Capa de Solicitud de Bootstrap
+**Iteración completada**: 4.5B (Bootstrap Engine - Capa DTO/State)
 
-## Architecture Decision
-Separación de responsabilidades:
-- **BootstrapRequest** (DTO): captura datos del usuario
-- **BootstrapState** (estado): estado interno del motor
-- **ConvertToBootstrapState**: traduce DTO a estado
+**Estado del Bootstrap Engine**: Implementado y verificado (11/11 tests ad-hoc)
 
-Esto permite múltiples interfaces (CLI, VS Code, API) sin modificar el motor.
+## Arquitectura del Bootstrap Engine
 
-## Components Status
+### Componentes Implementados
 
-### ✅ Frozen (Paso 4 completado)
-- BootstrapState.ps1 (contrato puro)
-- BootstrapWizard.ps1 (pregunta NombreProyecto)
-- BootstrapOrchestrador.ps1 (coordinador)
-- EnvironmentManager.ps1
-- ContextEngine.ps1 + builders + helpers
-- Session Handoff (6 archivos en .hermes/context/)
+1. **BootstrapRequest.ps1** (motor/bootstrap/request/)
+   - DTO inmutable que captura intención del usuario
+   - Valida datos en construcción (nombre, ruta, opciones)
+   - Propiedades: nombre, ruta, crearGitRepo, crearEnvironment, framework
 
-### 🚧 In Progress (Paso 4.5)
-- BootstrapRequest.ps1 (por crear)
-- BootstrapRequestBuilder.ps1 (por crear)
-- ConvertToBootstrapState.ps1 (por crear)
-- Test-BootstrapRequest.ps1 (por crear)
-- BootstrapRequest.spec.md (por crear)
+2. **New-BootstrapStateFromRequest.ps1** (motor/bootstrap/engine/)
+   - Convierte BootstrapRequest → BootstrapState
+   - Inicializa estado con ID, timestamps y metadatos
+   - Responsable único de construcción del estado inicial
 
-## Next Objective
-Implementar Paso 4.5 siguiendo la arquitectura propuesta:
-1. Crear BootstrapRequest.ps1 (DTO inmutable)
-2. Crear BootstrapRequestBuilder.ps1 (pregunta al usuario, construye DTO)
-3. Crear ConvertToBootstrapState.ps1 (DTO → estado)
-4. Crear Test-BootstrapRequest.ps1 (validación)
-5. Crear BootstrapRequest.spec.md (documentación <200 líneas)
-6. Verificar: tests PASS, working tree clean, commit atómico
+3. **BootstrapState.ps1** (motor/bootstrap/engine/)
+   - Estado interno del motor
+   - Propiedades: ID, estado, timestamp, resultados, errores
+   - Componente congelado (no modificar)
 
-## Constraints
-- NO modificar componentes congelados
-- Usar español en nombres
-- Comentarios solo en lógica crítica
-- Funciones con responsabilidad única
-- Reutilizar componentes existentes cuando sea posible
+4. **BootstrapOrchestrator.ps1** (motor/bootstrap/engine/)
+   - Coordina ejecución del bootstrap completo
+   - Ejecuta managers en secuencia
+   - **Nota**: Requiere refactoring para consumir BootstrapRequest directamente
 
-## Verification Required
-- Tests unitarios: PASS
-- Working tree: clean
-- Commit atómico
-- Script temporal limpiado
+### Componentes Pendientes
+
+- **Sprint 5.3**: Refactorizar BootstrapOrchestrador para aceptar parámetros `-BootstrapRequest` y `-BootstrapState`
+  - Eliminar parámetro `-ProjectPath`
+  - Eliminar parámetro `-ContextPath`
+  - Integrar con New-BootstrapStateFromRequest
+
+## Documentación Consolidada
+
+- **Contratos arquitectónicos**: `documentacion/bootstrap-engine/contratos-arquitectonicos.md`
+- **Flujo de ejecución**: `documentacion/bootstrap-engine/BOOTSTRAP_SEQUENCE.md`
+
+## Próximas Acciones
+
+1. Refactorizar BootstrapOrchestrador (Sprint 5.3)
+2. Implementar flujo completo con BootstrapRequest
+3. Actualizar pruebas unitarias del motor

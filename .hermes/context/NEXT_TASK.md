@@ -1,34 +1,44 @@
-# NEXT TASK
+# Task: Sprint 5.3 - BootstrapOrchestrator V2
 
-## Step
-**Paso 4.5** — Capa de Solicitud de Bootstrap
+## Objective
 
-## Goal
-Implementar separación DTO/State para evitar mezcla de responsabilidades.
+Refactorizar `BootstrapOrchestrador` para consumir el nuevo contrato `BootstrapRequest + BootstrapState` en lugar de los parámetros tradicionales (`-ProjectPath` y `-ContextPath`).
 
-## Files to Create (in order)
-1. `motor/bootstrap/engine/BootstrapRequest.ps1` — DTO inmutable
-2. `motor/bootstrap/engine/BootstrapRequestBuilder.ps1` — pregunta al usuario, construye DTO
-3. `motor/bootstrap/engine/ConvertToBootstrapState.ps1` — traduce DTO a estado
-4. `pruebas/unitarias/bootstrap/Test-BootstrapRequest.ps1` — validación
-5. `documentacion/bootstrap-engine/BootstrapRequest.spec.md` — documentación <200 líneas
+## Acceptance Criteria
 
-## Verification
-- Tests unitarios: PASS
-- Working tree: clean
-- Commit atómico
-- Script temporal limpiado
+### Funcionalidad
+- [ ] `Invoke-BootstrapOrchestrador` acepta parámetros `-BootstrapRequest` y `-BootstrapState`
+- [ ] Elimina parámetro `-ProjectPath`
+- [ ] Elimina parámetro `-ContextPath`
+- [ ] Integra con `New-BootstrapStateFromRequest` para inicializar estado
+- [ ] Actualiza `BootstrapState` con metadatos: `BootstrapRequestId`, `TimestampInicio`, `TimestampFin`
+- [ ] Mantiene SRP (Single Responsibility Principle) como coordinador
+- [ ] No introduce nueva lógica de negocio
 
-## Constraints
-- NO modificar componentes congelados
-- Usar español en nombres
-- Comentarios solo en lógica crítica
-- Funciones con responsabilidad única
+### Restricciones
+- [ ] NO modificar `BootstrapState.ps1` (congelado)
+- [ ] NO modificar `BootstrapRequest.ps1` (congelado)
+- [ ] NO modificar `New-BootstrapStateFromRequest.ps1`
+- [ ] Usar español para comentarios
+- [ ] Comentarios solo en lógica crítica
 
-## Exit Criteria
-- BootstrapRequest: DTO con propiedades inmutables
-- BootstrapRequestBuilder: pregunta usuario, construye DTO
-- ConvertToBootstrapState: traduce DTO a estado
-- Tests: validación de DTO + conversión
-- Spec: documentación técnica <200 líneas
-- Git: commit limpio, working tree sin cambios
+### Verificación
+- [ ] Working tree limpio
+- [ ] Commit atómico
+- [ ] Pruebas existentes pasan
+- [ ] Sin romper contracts documentados
+
+## Contexto
+
+- **Documentación**: `documentacion/bootstrap-engine/contratos-arquitectonicos.md`
+- **Flujo**: `documentacion/bootstrap-engine/BOOTSTRAP_SEQUENCE.md`
+- **Componentes congelados**: Ver `CURRENT_STATE.md`
+- **Principios**: Regla de Oro, 1 commit = 1 responsabilidad
+
+## Notas
+
+Este sprint mantiene el patrón de iteraciones pequeñas y verificables. La meta es que el orquestador consuma el DTO y devuelva el estado finalizado, completando el flujo:
+
+```
+Usuario → BootstrapRequest → New-BootstrapStateFromRequest → BootstrapOrchestrador → BootstrapState final
+```

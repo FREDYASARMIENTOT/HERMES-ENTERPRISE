@@ -1,45 +1,67 @@
 {
   "project": "HERMES-ENTERPRISE",
-  "version": "0.18.0",
-  "phase": "4",
-  "subphase": "4.5",
-  "phaseName": "Capa de Solicitud de Bootstrap",
-  "status": "inProgress",
-  "createdAt": "2026-07-10T00:00:00Z",
-  "lastCommit": "Pendiente",
-  "nextStep": {
-    "step": "Paso 4.5",
-    "goal": "Implementar capa de solicitud (DTO + Builder + Converter)",
-    "dependencies": []
-  },
-  "entryFiles": [
-    ".hermes/context/CURRENT_STATE.md",
-    ".hermes/context/NEXT_TASK.md",
-    ".hermes/context/PUBLIC_API.json"
-  ],
   "contextPackage": {
-    "description": "6 archivos en .hermes/context/",
-    "totalTokens": "~450 tokens",
-    "loadOrder": [
-      ".hermes/context/SESSION_HANDOFF.json",
-      ".hermes/context/CURRENT_STATE.md",
-      ".hermes/context/PUBLIC_API.json"
+    "version": "4.5B",
+    "lastUpdated": "2026-01-10",
+    "estimatedTokens": 11200
+  },
+  "bootstrapEngine": {
+    "status": "completed",
+    "completedIterations": [
+      {
+        "iteration": "4.5A",
+        "description": "Diseño contractual DTO/State",
+        "status": "completed"
+      },
+      {
+        "iteration": "4.5A.1", 
+        "description": "Validación de secuencia de ejecución",
+        "status": "completed"
+      },
+      {
+        "iteration": "4.5B",
+        "description": "Implementación de New-BootstrapStateFromRequest",
+        "status": "completed",
+        "verification": "11/11 PASS (ad-hoc)"
+      }
     ]
   },
-  "frozenComponents": [
-    "motor/bootstrap/engine/BootstrapState.ps1",
-    "motor/bootstrap/engine/BootstrapWizard.ps1",
-    "motor/bootstrap/engine/BootstrapOrchestrator.ps1",
-    "motor/context/ContextEngine.ps1",
-    "motor/context/builders/*.ps1",
-    "motor/context/helpers/*.ps1"
-  ],
-  "warnings": [
-    "Estimate-Tokens duplicado (ContextValidator.ps1:158 vs TokenHelpers.ps1)",
-    "Build-Manifest no invocado desde ContextEngine.ps1",
-    "ParseHelpers/PathHelpers sin uso"
-  ],
-  "warningsDetectedAt": "Fase 3.5C",
-  "architectureRefactorApplied": true,
-  "refactorNotes": "Paso 4.5 introduce separación DTO/State para evitar mezcla de responsabilidades"
+  "documentation": {
+    "consolidatedContracts": {
+      "status": "completed",
+      "singleSource": "documentacion/bootstrap-engine/contratos-arquitectonicos.md"
+    },
+    "bootstrapSequence": {
+      "status": "completed",
+      "file": "documentacion/bootstrap-engine/BOOTSTRAP_SEQUENCE.md"
+    }
+  },
+  "nextSprint": {
+    "sprint": "5.3",
+    "goal": "Adaptar BootstrapOrchestrator para consumir BootstrapRequest",
+    "description": "Refactorizar el orquestador existente para aceptar el nuevo contrato de solicitud",
+    "acceptanceCriteria": [
+      "Invoke-BootstrapOrchestrator acepta parámetros -BootstrapRequest y -BootstrapState",
+      "Elimina parámetro -ProjectPath",
+      "Elimina parámetro -ContextPath",
+      "No introduce nueva lógica de negocio",
+      "Mantiene SRP como coordinador",
+      "Actualiza BootstrapState con metadatos: BootstrapRequestId, TimestampInicio, TimestampFin",
+      "Working tree limpio",
+      "Commit atómico",
+      "Sin modificar BootstrapState.ps1"
+    ],
+    "contextLoad": [
+      "BOOTSTRAP_SEQUENCE.md",
+      "contratos-arquitectonicos.md",
+      "New-BootstrapStateFromRequest.ps1"
+    ]
+  },
+  "principles": [
+    "Un commit = una responsabilidad",
+    "Componentes congelados no se modifican",
+    "Documentación antes de código",
+    "Verificación ad-hoc antes de commit",
+    "Regla de Oro: Antes de implementar, definir contrato"
+  ]
 }

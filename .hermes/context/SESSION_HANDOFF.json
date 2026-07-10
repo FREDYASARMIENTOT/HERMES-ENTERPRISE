@@ -1,43 +1,13 @@
 {
-  "schemaVersion": "1.0",
   "phase": "3.5C",
   "status": "completed",
-  "next_goal": "BootstrapOrchestrator",
+  "next": "Paso4",
   "entry_point": "motor/bootstrap/engine/BootstrapOrchestrator.ps1",
-  "read_order": [
-    ".hermes/context/CURRENT_STATE.md",
-    ".hermes/context/NEXT_TASK.md",
-    ".hermes/context/PUBLIC_API.json"
-  ],
-  "last_commit": "3c91283",
+  "read_order": ["CURRENT_STATE.md", "NEXT_TASK.md", "PUBLIC_API.json"],
+  "last_commit": "493e8f5",
   "branch": "main",
   "api_version": "1.0",
   "working_tree": "clean",
   "phase_completed": ["1", "2", "3", "3.5A", "3.5B", "3.5C"],
-  "do_not_touch": [
-    "motor/bootstrap/engine/BootstrapState.ps1",
-    "motor/bootstrap/engine/BootstrapWizard.ps1",
-    "motor/bootstrap/engine/environment/EnvironmentManager.ps1",
-    "motor/context/builders/*",
-    "motor/context/helpers/*",
-    ".hermes/context/PUBLIC_API.json"
-  ],
-  "contract_test": {
-    "total": 40,
-    "passed": 40,
-    "failed": 0,
-    "warnings": 4,
-    "exit_code": 0
-  },
-  "warnings": [
-    "Estimate-Tokens duplicado en motor/context/ContextValidator.ps1:158 vs. helpers/TokenHelpers.ps1 (drift menor, no bloquea Paso 4)",
-    "Build-Manifest no invocado desde ContextEngine.ps1 (builder declarado en API pero no llamado — revisar si es intencional)",
-    "ParseHelpers no referenciado por ningún builder (helper declarado en API sin uso)",
-    "PathHelpers no referenciado por ningún builder (helper declarado en API sin uso)"
-  ],
-  "documentation_moved": {
-    "ArchitectureReport.md": "documentacion/arquitectura/ArchitectureReport.md",
-    "BuilderContract.md": "documentacion/contratos/BuilderContract.md",
-    "CONTINUATION-3-5C.md": "documentacion/sesiones/CONTINUATION-3-5C.md"
-  }
+  "do_not_touch": ["BootstrapState.ps1", "BootstrapWizard.ps1", "EnvironmentManager.ps1", "motor/context/builders/*", "motor/context/helpers/*", "PUBLIC_API.json"]
 }

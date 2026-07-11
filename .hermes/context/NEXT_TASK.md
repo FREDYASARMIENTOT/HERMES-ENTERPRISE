@@ -1,51 +1,106 @@
-# Fase 6 — Provider Framework
+# NEXT_TASK — HERMES-ENTERPRISE
+## Próxima tarea: Fase 6 — Capabilities
 
-## Objetivo
+---
 
-Diseñar e implementar el Provider Framework que permita a BootstrapOrchestrator consumir providers específicos (Azure, AWS, Local, etc.) en lugar de ejecutar lógica hardcoded.
+## Objetivo General
 
-## Componentes a diseñar
+Construir el sistema de Capabilities que permita a Hermes Enterprise consumir proveedores externos
+(Azure, GitHub, Docker, Data Factory, etc.) **sin modificar** el Bootstrap Engine.
 
-1. **ProviderContract.ps1**
-   - DTO que define la interfaz de cualquier Provider
-   - Métodos: Inicializar, Validar, Ejecutar, ObtenerResultado
+Las Capabilities son módulos desacoplados, registrables dinámicamente, con contratos estrictos.
 
-2. **ProviderRegistry.ps1**
-   - Registra providers disponibles
-   - Resuelve provider por nombre/tipo
+---
 
-3. **AzureProvider.ps1** (primer provider)
-   - Implementa ProviderContract
-   - Conecta con Azure Data Factory, Storage, etc.
+## Siguiente Sprint Propuesto
 
-4. **BootstrapOrchestrator V2**
-   - Adaptar para consumir providers en lugar de managers hardcoded
-   - Mantener BootstrapRequest + BootstrapState como entrada/salida
+### Sprint 6.0 — Capability Contract (Design Lock)
 
-## Flujo esperado
+**Objetivo**: Definir formalmente qué es una Capability y cuál es su contrato.
+
+**Entregables (solo documentación)**:
+- `.hermes/specs/CAPABILITY_CONTRACT.md`
+- `.hermes/specs/CAPABILITY_SEQUENCE.md`
+
+**NO hacer**:
+- ❌ Implementar código
+- ❌ Crear Providers, Plugins, Builders
+- ❌ Modificar Bootstrap Engine
+- ❌ Crear tests
+- ❌ Hacer commits
+
+---
+
+## Definición Propuesta de Capability
+
+Una Capability es un módulo ejecutable que:
+
+1. Tiene un nombre único.
+2. Declara requisitos (input contract).
+3. Produce recursos (output artifacts).
+4. No interactúa con el usuario final.
+5. Se registra en un CapabilityRegistry.
+6. Es invocada por BootstrapOrchestrator V2 (posteriormente).
+7. NO conoce BootstrapRequest ni BootstrapState.
+8. NO conoce otros Providers.
+
+---
+
+## Secuencia esperada (Fase 6)
 
 ```
-BootstrapRequest (con tipo de provider: Azure | AWS | Local)
+Usuario
   ↓
-ProviderRegistry.Resolver
+Start-HermesProject
   ↓
-Provider específico (ej: AzureProvider)
+ProjectArchitecture (con CapacidadesSeleccionadas)
   ↓
-Provider.Ejecutar
+BootstrapRequest
   ↓
-BootstrapState actualizado con resultados del provider
+BootstrapState
+  ↓
+BootstrapOrchestrator V2 (adapta para consumir Capabilities)
+  ↓
+CapabilityRegistry.Resolve
+  ↓
+Capability.Execute
+  ↓
+Resultado consolidado
 ```
 
-## Restricciones de diseño
+---
 
-- NO modificar BootstrapRequest, BootstrapState, New-BootstrapStateFromRequest
-- NO crear código en Fase 6 hasta tener diseño completo congelado
-- Un provider = una responsabilidad
-- Providers deben ser intercambiables sin modificar orquestador
+## Prioridad de Capabilities
 
-## Criterios de éxito
+1. **Azure Resource Discovery** (ya existe parcialmente en pruebas — revisar)
+2. **GitHub Repository Management**
+3. **Docker Build / Push**
+4. **Azure Data Factory Pipelines**
+5. **Azure Storage**
+6. **App Service Deployment**
 
-- ProviderContract definido y documentado
-- AzureProvider implementa contrato completo
-- BootstrapOrchestrator consume providers dinámicamente
-- Tests unitarios validan intercambio de providers
+---
+
+## Criterios de Éxito para cada Capability
+
+- ✅ Contrato documentado (`<CAPABILITY>_CONTRACT.md`)
+- ✅ Secuencia documentada (`<CAPABILITY>_SEQUENCE.md`)
+- ✅ Test unitario
+- ✅ Verificación ad-hoc
+- ✅ Sin modificar componentes congelados
+- ✅ Sin lógica duplicada
+- ✅ Commit atómico
+
+---
+
+## Reglas Permanentes
+
+- **No romper el Bootstrap Engine.**
+- **Una Capability = un archivo de implementación + un test + una verificación.**
+- **Capabilities nunca se invocan desde el Entry Point.**
+- **Capabilities nunca escriben en BootstrapState directamente.**
+- **Todo se devuelve como resultado de la ejecución (no efectos secundarios).**
+
+---
+
+Esperando aprobación explícita para iniciar Sprint 6.0.

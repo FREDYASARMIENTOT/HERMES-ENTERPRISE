@@ -1,80 +1,114 @@
-# HERMES ENTERPRISE - Estado Actual
+# CURRENT_STATE — HERMES-ENTERPRISE
+## Versión del Framework: 1.0.0-bootstrap
+## Última actualización: 2026-07-10
 
-## Fase del Proyecto
+---
 
-**Fase completada**: 5 (Bootstrap Engine - Request/State/Orchestrator)
+## Estado General
 
-**Estado del Bootstrap Engine**: Fase 5 cerrada (BootstrapOrchestrator pendiente de adaptar a Provider V2)
+**Fase actual**: 5 — Bootstrap Engine v1.0 ✅ COMPLETADO
 
-## Arquitectura del Bootstrap Engine
+**Release**: Bootstrap Engine v1.0 cerrado y listo para producción conceptual.
 
-### Componentes Implementados y Congelados
+---
 
-1. **BootstrapRequest.ps1** (motor/bootstrap/request/)
-   - DTO inmutable que captura intención del usuario
-   - Valida datos en construcción (nombre, ruta, opciones)
-   - Propiedades: nombre, ruta, crearGitRepo, crearEnvironment, framework
+## Arquitectura Bootstrap Engine v1.0
 
-2. **New-BootstrapStateFromRequest.ps1** (motor/bootstrap/engine/)
-   - Convierte BootstrapRequest → BootstrapState
-   - Inicializa estado con ID, timestamps y metadatos
-   - Responsable único de construcción del estado inicial
+El motor de bootstrap está completamente estable. Los contratos están congelados.
+El flujo de creación de proyectos ya está definido end-to-end.
 
-3. **BootstrapState.ps1** (motor/bootstrap/engine/)
-   - Estado interno del motor
-   - Propiedades: ID, estado, timestamp, resultados, errores
-   - Componente congelado (no modificar)
-
-4. **BootstrapOrchestrator.ps1** (motor/bootstrap/engine/)
-   - Coordina ejecución del bootstrap completo
-   - Consume BootstrapRequest + BootstrapState
-   - Ejecuta 6 pasos: BootstrapState → BootstrapWizard → EnvironmentManager → GitManager → ContextEngine → VSCodeManager
-   - Retorna BootstrapReport + BootstrapState actualizado
-   - **Estado**: Pendiente de adaptación a Provider V2 (Fase 6)
-
-### Entry Point Público
-
-5. **Start-HermesProject.ps1** (motor/bootstrap/)
-   - Único punto de invocación visible fuera del motor
-   - Acepta parámetros mínimos: `NombreProyecto` (string) + `RutaProyecto`
-   - Construye BootstrapRequest automáticamente
-   - Delega en `New-BootstrapStateFromRequest` → `Invoke-BootstrapOrchestrator`
-   - Retorna estructura de salida:
-     - `Success` (bool)
-     - `BootstrapReport` (objeto con detalles de ejecución)
-     - `BootstrapState` (estado final del proyecto)
-     - `ProximaAccion` (string con recomendación: "Continuar en VSCode" o "Proyecto creado sin workspace")
-
-## Flujo Completo
+### Flujo Oficial
 
 ```
-Usuario → Start-HermesProject (entry point)
+Usuario
   ↓
-BootstrapRequest (DTO inmutable)
+Start-HermesProject           (Entry Point único)
   ↓
-New-BootstrapStateFromRequest (conversión)
+ProjectArchitecture           (Contrato arquitectónico - Sprint 5.4)
   ↓
-BootstrapState (estado interno)
+New-BootstrapRequestFromProjectArchitecture (Converter - Sprint 5.5)
   ↓
-Invoke-BootstrapOrchestrator (coordinación)
+BootstrapRequest              (DTO inmutable)
   ↓
-6 pasos: BootstrapState → BootstrapWizard → EnvironmentManager → GitManager → ContextEngine → VSCodeManager
+BootstrapState                (Estado interno - CONGELADO)
   ↓
-BootstrapReport + BootstrapState actualizado
+BootstrapOrchestrator         (Coordinador - CONGELADO)
 ```
 
-## Verificación
+### Componentes Congelados
 
-- Sprint 5.3: 5/5 tests ad-hoc pasados (orquestador V2 consume Request + State)
-- Fase 5 cerrada: contratos congelados validados
+NO MODIFICAR sin aprobación explícita del arquitecto:
 
-## Documentación Consolidada
+- `motor/bootstrap/request/BootstrapRequest.ps1`
+- `motor/bootstrap/engine/BootstrapState.ps1`
+- `motor/bootstrap/engine/New-BootstrapStateFromRequest.ps1`
+- `motor/bootstrap/engine/BootstrapOrchestrator.ps1`
+- `motor/bootstrap/engine/BootstrapWizard.ps1`
+- `motor/bootstrap/engine/environment/EnvironmentManager.ps1`
 
-- **Contratos arquitectónicos**: `documentacion/bootstrap-engine/contratos-arquitectonicos.md`
-- **Flujo de ejecución**: `documentacion/bootstrap-engine/BOOTSTRAP_SEQUENCE.md`
+### Componentes Implementados (no congelados)
 
-## Próximas Acciones (Fase 6)
+- `motor/bootstrap/request/New-BootstrapRequestFromProjectArchitecture.ps1` (Sprint 5.5)
+- `motor/bootstrap/request/BootstrapRequestBuilder.ps1` (legacy, pendiente de revisión)
+- `motor/bootstrap/Start-HermesProject.ps1` (reimplementado Sprint 5.6)
 
-1. Diseñar Provider Framework (contratos, secuencia, validaciones)
-2. Adaptar BootstrapOrchestrator para consumir Providers
-3. Implementar Provider V2 (Azure, AWS, Local, etc.)
+---
+
+## Contratos Documentados
+
+Ubicación: `.hermes/specs/`
+
+1. **PROJECT_ARCHITECTURE_CONTRACT.md** — Define cómo se describe un proyecto antes de crearlo.
+2. **PROJECT_STRUCTURE_SEQUENCE.md** — Secuencia de creación desde el usuario hasta el proyecto generado.
+3. Todos los proyectos poseen obligatoriamente `FrontEnd/` y `BackEnd/` aunque estén vacíos.
+
+---
+
+## Documentación de Skills
+
+- `.hermes/skills/hermes-enterprise-development/SKILL.md` — Metodología completa de desarrollo del framework.
+- Contiene reglas arquitectónicas, de sprint, de calidad, convenciones y lecciones aprendidas.
+
+---
+
+## Estado del Context Package
+
+Los tres archivos del Context Package están sincronizados con el estado real del repo:
+
+- `CURRENT_STATE.md` — este documento
+- `NEXT_TASK.md` — próxima tarea (Fase 6 — Capabilities)
+- `SESSION_HANDOFF.json` — metadata de handoff entre sesiones
+
+---
+
+## Métricas
+
+| Indicador | Valor |
+|-----------|-------|
+| Sprint de cierre | 5.7 |
+| Commits totales Bootstrap | ~25 |
+| Componentes congelados | 6 |
+| Contratos documentados | 2 |
+| Tests unitarios | 5 archivos (ver `pruebas/unitarias/`) |
+| Skills documentadas | 1 |
+
+---
+
+## Lecciones Clave Consolidadas
+
+1. ProjectArchitecture SIEMPRE precede a BootstrapRequest.
+2. Start-HermesProject es el único Entry Point público.
+3. Bootstrap Engine nunca conoce Azure.
+4. Providers nunca conocen Bootstrap.
+5. Capabilities nunca interactúan directamente con el usuario.
+6. Scope Lock obligatorio en cada Sprint.
+7. Un Sprint = una responsabilidad, un Commit = un artefacto.
+8. Toda implementación requiere test, verificación ad-hoc y limpieza.
+
+---
+
+## Listo para Fase 6
+
+Bootstrap Engine v1.0 está completamente estabilizado.
+Las próximas capacidades (Azure, GitHub, Docker, Data Factory, etc.) llegarán como módulos desacoplados.
+El motor es independiente de cualquiera de ellas.

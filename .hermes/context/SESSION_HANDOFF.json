@@ -1,53 +1,106 @@
 {
-  "session_id": "sprint-5.3c",
-  "status": "ready",
-  "completed_at": "2026-07-10T18:00:00Z",
-  "sprint_number": "5.3C",
-  "sprint_title": "Cierre Fase 5",
-  "description": "Sincronización de estado del repositorio para cierre completo de Fase 5 (Bootstrap Engine)",
-  "current_phase": 6,
-  "workingTree": "CleanExpected",
-  "head_commit": "0579a870fbacf057483504f8e1df4d6956c81626",
-  "components_congelados": [
-    "BootstrapRequest.ps1",
-    "BootstrapState.ps1",
-    "New-BootstrapStateFromRequest.ps1",
-    "BootstrapWizard.ps1",
-    "EnvironmentManager.ps1"
-  ],
-  "components_pendientes_fase6": [
-    "BootstrapOrchestrator.ps1 (adaptar a Provider V2)"
-  ],
-  "artifacts_created": [],
-  "tests_passed": {
-    "total": 5,
-    "passed": 5,
-    "failed": 0,
-    "test_names": [
-      "BootstrapRequest type validation",
-      "BootstrapState type validation",
-      "Invoke-BootstrapOrchestrator accepts contracts",
-      "Returns BootstrapReport + BootstrapState",
-      "Start-HermesProject entry point publico funcional"
-    ]
+  "$schema": "./schemas/SESSION_HANDOFF_SCHEMA.json",
+  "version": "1.0.0",
+  "generated_at": "2026-07-10T16:20:00-05:00",
+  "generated_by": "hermes-agent (Sprint 5.7)",
+  "status": "release-complete",
+
+  "repo": {
+    "path": "D:\\HERMES-ENTERPRISE",
+    "branch": "main",
+    "last_commit_message": "chore(release): Bootstrap Engine v1.0 completed (Sprint 5.7)",
+    "working_tree_clean": true,
+    "untracked_files": 0,
+    "total_commits": "verificar con `git rev-list --count HEAD`"
   },
-  "next_actions": [
+
+  "framework_version": "1.0.0-bootstrap",
+  "current_phase": 5,
+  "current_phase_name": "Bootstrap Engine",
+  "current_phase_status": "COMPLETED",
+  "next_phase": 6,
+  "next_phase_name": "Capabilities",
+  "next_phase_status": "NOT_STARTED",
+  "next_sprint": "6.0 — Capability Contract (Design Lock)",
+
+  "components_frozen": [
+    "motor/bootstrap/request/BootstrapRequest.ps1",
+    "motor/bootstrap/request/BootstrapRequestBuilder.ps1",
+    "motor/bootstrap/engine/BootstrapState.ps1",
+    "motor/bootstrap/engine/BootstrapOrchestrator.ps1",
+    "motor/bootstrap/engine/BootstrapWizard.ps1",
+    "motor/bootstrap/engine/environment/EnvironmentManager.ps1",
+    "motor/bootstrap/engine/New-BootstrapStateFromRequest.ps1"
+  ],
+
+  "components_implemented_in_phase_5": [
     {
-      "action": "Diseñar Provider Framework (Fase 6)",
-      "sprint": "6.0",
-      "priority": "high"
+      "file": "motor/bootstrap/request/New-BootstrapRequestFromProjectArchitecture.ps1",
+      "responsibility": "Convierte ProjectArchitecture en BootstrapRequest",
+      "sprint": "5.5",
+      "status": "STABLE"
     },
     {
-      "action": "Implementar ProviderContract (Fase 6)",
-      "sprint": "6.1",
-      "priority": "high"
-    },
-    {
-      "action": "Implementar AzureProvider (Fase 6)",
-      "sprint": "6.2",
-      "priority": "medium"
+      "file": "motor/bootstrap/Start-HermesProject.ps1",
+      "responsibility": "Unico Entry Point publico (interactivo + NonInteractive)",
+      "sprint": "5.6 (+ rewrite 5.7)",
+      "status": "STABLE"
     }
   ],
-  "notes": "Fase 5 cerrada. BootstrapOrchestrator pendiente de adaptar a Provider V2 en Fase 6. No modificar componentes congelados.",
-  "verification_script": null
+
+  "contracts_documented": [
+    ".hermes/specs/PROJECT_ARCHITECTURE_CONTRACT.md",
+    ".hermes/specs/PROJECT_STRUCTURE_SEQUENCE.md"
+  ],
+
+  "skills_documented": [
+    ".hermes/skills/hermes-enterprise-development/SKILL.md"
+  ],
+
+  "verification_status": {
+    "last_adhoc_check": "2026-07-10",
+    "result": "ALL_10_PASS",
+    "script_used": "hermes-verify-sprint-5.7.ps1",
+    "cleanup_done": true
+  },
+
+  "key_architecture_decisions": [
+    "ProjectArchitecture SIEMPRE precede a BootstrapRequest.",
+    "Every project has FrontEnd/ and BackEnd/ (even if empty).",
+    "Start-HermesProject is the ONLY public Entry Point.",
+    "Bootstrap Engine NEVER knows Azure (or any provider).",
+    "Providers NEVER know Bootstrap.",
+    "Capabilities NEVER interact directly with the end-user.",
+    "One Sprint = one responsibility.",
+    "One Commit = one artifact.",
+    "Every implementation requires: unit test + ad-hoc verification + temp script cleanup."
+  ],
+
+  "session_handoff_protocol": {
+    "on_resuming_session": [
+      "1. Leer .hermes/context/CURRENT_STATE.md",
+      "2. Leer .hermes/context/NEXT_TASK.md",
+      "3. Validar que git status sea limpio",
+      "4. Confirmar con usuario antes de iniciar Sprint 6.0"
+    ],
+    "warnings_for_next_session": [
+      "NO tocar componentes congelados (ver lista arriba)",
+      "NO implementar Azure/GitHub/Docker antes del Sprint 6.0 formal",
+      "NO ampliar scope del diseño sin aprobacion explicita"
+    ]
+  },
+
+  "metrics": {
+    "sprints_completed_in_phase_5": 4,
+    "sprints_in_phase_5": [
+      "5.4 — Project Architecture (Design Lock)",
+      "5.5 — ProjectArchitecture → BootstrapRequest (converter)",
+      "5.6 — Start-HermesProject entry point rewrite",
+      "5.7 — Bootstrap Engine v1.0 release"
+    ],
+    "contracts_created": 2,
+    "components_frozen": 7,
+    "skills_created": 1,
+    "test_files_created_in_phase_5": 2
+  }
 }

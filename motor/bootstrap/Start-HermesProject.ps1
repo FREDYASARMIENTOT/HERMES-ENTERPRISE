@@ -13,9 +13,8 @@ Set-StrictMode -Version Latest
     Compatible PowerShell 5.1+ y 7+
 #>
 
-[CmdletBinding()]
 param(
-    [Parameter(Position=0, HelpMessage='Nombre del proyecto.')] 
+    [Parameter(Position=0, HelpMessage='Nombre del proyecto.')]
     [Alias('NombreDeProyecto')]
     [string] $NombreDeProyecto = ''
 )

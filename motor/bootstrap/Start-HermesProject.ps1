@@ -257,6 +257,28 @@ NO se realizará ninguna operación.
 }
 
 # Ejecutar la función principal si el script fue invocado directamente
-if ($MyInvocation.InvocationName -ne '.') {
+
+function Get-NextProyectoTestName {
+    param([string]$Prefix = 'ProyectoTest', [string]$SandboxRoot = '.\sandbox')
+    $existing = @()
+    if (Test-Path $SandboxRoot) {
+        $existing = Get-ChildItem -Path $SandboxRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }
+    }
+    $pattern = "$Prefix([0-9]{3})$"
+    $max = 0
+    foreach ($n in $existing) {
+        if ($n -match $pattern) {
+            $num = [int]$matches[1]
+            if ($num -gt $max) { $max = $num }
+        }
+    }
+    $next = $max + 1
+    return "$Prefix{0:d3}" -f $next
+}
+
+if ($PSCommandPath) {
+    if ([string]::IsNullOrWhiteSpace($NombreDeProyecto)) {
+        $NombreDeProyecto = Get-NextProyectoTestName -Prefix 'ProyectoTest' -SandboxRoot (Join-Path (Get-Location) 'sandbox')
+    }
     Start-HermesProject -NombreDeProyecto $NombreDeProyecto
 }

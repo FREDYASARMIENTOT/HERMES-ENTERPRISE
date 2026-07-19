@@ -1,5 +1,3 @@
-Set-StrictMode -Version Latest
-
 <#
 .SYNOPSIS
     Start-HermesProject - crea estructura local y ambiente para un nuevo proyecto Hermes.
@@ -14,10 +12,11 @@ Set-StrictMode -Version Latest
 #>
 
 param(
-    [Parameter(Position=0, HelpMessage='Nombre del proyecto.')]
-    [Alias('NombreDeProyecto')]
-    [string] $NombreDeProyecto = ''
+    [Parameter(Mandatory=$true, Position=0, HelpMessage='Nombre del proyecto.')]
+    [string]$NombreDeProyecto
 )
+
+Set-StrictMode -Version Latest
 
 function Write-Info { param($m) Write-Host $m -ForegroundColor Blue }
 function Write-Warn { param($m) Write-Host $m -ForegroundColor Yellow }
@@ -66,7 +65,7 @@ function Test-ProjectName {
 }
 
 function New-LocalProject {
-    param([string]$Nombre, [string]$SandboxRoot = '.\sandbox')
+    param([string]$Nombre, [string]$SandboxRoot = '.\\sandbox')
     $projectPath = Join-Path -Path $SandboxRoot -ChildPath $Nombre
     if (Test-Path $projectPath) {
         Write-Warn "La carpeta $projectPath ya existe. No se sobreescribirá."
@@ -84,16 +83,10 @@ function New-LocalProject {
     }
 
     # Archivos iniciales (si no existen)
-    $files = @{
+    $files = @{ 
         'README.md' = "# $Nombre`n`nProyecto generado por Hermes."
         'LICENSE' = "MIT License"
-        '.gitignore' = @(
-            ".venv/",
-            "__pycache__/",
-            "*.pyc",
-            ".env",
-            ".vscode/"
-        ) -join "`n"
+        '.gitignore' = @(".venv/","__pycache__/","*.pyc",".env",".vscode/") -join "`n"
         '.env.example' = "ENV_EXAMPLE=valor_de_ejemplo"
         'requirements.txt' = ""
     }
@@ -153,7 +146,7 @@ function New-PythonEnvironment {
             return $null
         }
         # Intentar actualizar pip
-        $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\pip.exe' } else { 'bin/pip' })
+        $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\\pip.exe' } else { 'bin/pip' })
         if (Test-Path $pipExe) {
             & $pipExe install --upgrade pip setuptools wheel | Out-Null
             Write-Success "pip actualizado en el environment."
@@ -177,7 +170,7 @@ function Install-Dependencies {
     }
 
     $venvPath = Join-Path $ProjectPath '.venv'
-    $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\pip.exe' } else { 'bin/pip' })
+    $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\\pip.exe' } else { 'bin/pip' })
     if (-not (Test-Path $pipExe)) {
         Write-Warn "pip no disponible; no se instalarán dependencias."
     } else {
@@ -199,12 +192,12 @@ function Write-Summary {
         [string]$VenvPath,
         [bool]$GitInit
     )
-    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "========" -ForegroundColor Cyan
     Write-Success "Proyecto: $Nombre"
     Write-Info "Ruta local: $ProjectPath"
     if ($VenvPath) { Write-Info "VirtualEnv: $VenvPath" } else { Write-Warn "VirtualEnv: NO CREADO" }
     if ($GitInit) { Write-Success "Git: Inicializado" } else { Write-Warn "Git: NO inicializado" }
-    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "========" -ForegroundColor Cyan
 }
 
 function Start-HermesProject {
@@ -259,7 +252,7 @@ NO se realizará ninguna operación.
 # Ejecutar la función principal si el script fue invocado directamente
 
 function Get-NextProyectoTestName {
-    param([string]$Prefix = 'ProyectoTest', [string]$SandboxRoot = '.\sandbox')
+    param([string]$Prefix = 'ProyectoTest', [string]$SandboxRoot = '.\\sandbox')
     $existing = @()
     if (Test-Path $SandboxRoot) {
         $existing = Get-ChildItem -Path $SandboxRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }

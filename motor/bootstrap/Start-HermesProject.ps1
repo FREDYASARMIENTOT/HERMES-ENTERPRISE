@@ -129,37 +129,45 @@ function New-GitRepository {
 
 function New-PythonEnvironment {
     param([string]$ProjectPath)
-    # Buscar python
-    $python = (Get-Command python -ErrorAction SilentlyContinue) ? 'python' : $null
-    if (-not $python) {
-        Write-Warn "python no encontrado en PATH. Saltando creación de environment."
+    $pythonCmd = (Get-Command python -ErrorAction SilentlyContinue).Source
+    if (-not $pythonCmd) {
+        Write-Warn "python no encontrado."
         return $null
     }
 
     $venvPath = Join-Path $ProjectPath '.venv'
-    Push-Location $ProjectPath
-    try {
-        Write-Info "Creando environment Python en $venvPath"
-        & $python -m venv $venvPath
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warn "Fallo al crear virtualenv (exitcode $LASTEXITCODE)."
-            return $null
-        }
-        # Intentar actualizar pip
-        $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\\pip.exe' } else { 'bin/pip' })
-        if (Test-Path $pipExe) {
-            & $pipExe install --upgrade pip setuptools wheel | Out-Null
-            Write-Success "pip actualizado en el environment."
-        } else {
-            Write-Warn "pip no encontrado dentro del venv."
-        }
-        return $venvPath
-    } catch {
-        Write-Warn "Error creando environment: $($_.Exception.Message)"
-        return $null
-    } finally {
-        Pop-Location
+    Write-Info "Creando venv: $venvPath"
+
+    # Invocación directa y simple
+    & $pythonCmd -m venv $venvPath 2>&1 | Out-String | Write-Verbose
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo al crear venv. ExitCode: $LASTEXITCODE"
     }
+
+    # Linealización del path de pip (sin if dentro de expresiones)
+    $pipName = 'bin/pip'
+    if ($IsWindows) { $pipName = 'Scripts\\pip.exe' }
+    $pipExe = Join-Path $venvPath $pipName
+
+    Write-Host "Verificando pip en: $pipExe"
+    # 1. Definir la ruta del ejecutable python dentro del venv
+    $venvPython = Join-Path $venvPath ($IsWindows ? 'Scripts\\python.exe' : 'bin/python')
+
+    # 2. Actualizar pip usando el módulo -m (Obligatorio para evitar errores de autoprotección)
+    if (Test-Path $venvPython) {
+        Write-Info "Actualizando pip, setuptools, wheel..."
+        & $venvPython -m pip install --upgrade pip setuptools wheel | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Success "pip actualizado correctamente."
+        } else {
+            Write-Warn "Advertencia: pip no pudo actualizarse (ExitCode: $LASTEXITCODE)."
+        }
+    } else {
+        Write-Warn "python no encontrado en venv, omitiendo actualización de pip."
+    }
+
+    return $venvPath
 }
 
 function Install-Dependencies {

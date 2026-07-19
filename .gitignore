@@ -25,3 +25,9 @@ configuracion/kernel.enterprise.json
 pruebas/salida-temporal/
 .hermes/sessions/
 .hermes/backup/
+
+# Artifacts y env
+.venv/
+sandbox/
+.verification/
+README.md

@@ -43,6 +43,22 @@ metadatos centralizados y especificaciones declarativas. Esta fase crea únicame
 infraestructura del generador; el contenido extenso se incorporará de forma controlada en fases
 posteriores.
 
+## Bootstrap & Provisioner
+
+El bootstrap principal ahora es modular y se encuentra en:
+
+- `motor/bootstrap/Start-HermesProject.ps1` (orquestador)
+- `motor/bootstrap/functions/` (módulos de provisión: Git, Python, Validation, Templates, Reporting)
+
+Uso rápido (modo local):
+
+```
+pwsh -NoProfile -File ./motor/bootstrap/Start-HermesProject.ps1 -NombreDeProyecto "MyProject"
+```
+
+Nota de seguridad: el repositorio fue marcado por GitHub secret-scanning. Antes de hacer push al remoto
+rota cualquier clave expuesta y limpia el historial con `git-filter-repo` o usa la resolución de GitHub.
+
 ## Referencias cruzadas
 
 - README principal: README.md

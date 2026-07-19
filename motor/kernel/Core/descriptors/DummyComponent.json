@@ -1,0 +1,6 @@
+{
+  "id": "DummyComponent",
+  "version": "1.0",
+  "requires": [],
+  "capabilities": ["Test"]
+}

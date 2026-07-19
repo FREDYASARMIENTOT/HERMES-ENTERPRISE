@@ -1,0 +1,32 @@
+--- ERROR FORENSE ---
+Mensaje: The term 'if' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+Línea:   181
+Stack:   at Install-Dependencies, D:\HERMES-ENTERPRISE\motor\bootstrap\Start-HermesProject.ps1: line 181
+at Start-HermesProject, D:\HERMES-ENTERPRISE\motor\bootstrap\Start-HermesProject.ps1: line 242
+at <ScriptBlock>, D:\HERMES-ENTERPRISE\motor\bootstrap\Start-HermesProject.ps1: line 294
+at <ScriptBlock>, <No file>: line 1
+Info:    
+MyCommand             : 
+BoundParameters       : {}
+UnboundArguments      : {}
+ScriptLineNumber      : 181
+OffsetInLine          : 36
+HistoryId             : 1
+ScriptName            : D:\HERMES-ENTERPRISE\motor\bootstrap\Start-HermesProject.ps1
+Line                  :     $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\\pip.exe' } else { 'bin/pip' })
+                        
+Statement             : if
+PositionMessage       : At D:\HERMES-ENTERPRISE\motor\bootstrap\Start-HermesProject.ps1:181 char:36
+                        +     $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\\pip.ex …
+                        +                                    ~~
+PSScriptRoot          : D:\HERMES-ENTERPRISE\motor\bootstrap
+PSCommandPath         : D:\HERMES-ENTERPRISE\motor\bootstrap\Start-HermesProject.ps1
+InvocationName        : if
+PipelineLength        : 0
+PipelinePosition      : 0
+ExpectingInput        : False
+CommandOrigin         : Internal
+DisplayScriptPosition : 
+
+

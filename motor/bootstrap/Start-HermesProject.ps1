@@ -178,7 +178,9 @@ function Install-Dependencies {
     }
 
     $venvPath = Join-Path $ProjectPath '.venv'
-    $pipExe = Join-Path $venvPath (if ($IsWindows) { 'Scripts\\pip.exe' } else { 'bin/pip' })
+    $pipName = 'bin/pip'
+    if ($IsWindows) { $pipName = 'Scripts\\pip.exe' }
+    $pipExe = Join-Path $venvPath $pipName
     if (-not (Test-Path $pipExe)) {
         Write-Warn "pip no disponible; no se instalarán dependencias."
     } else {
@@ -253,8 +255,18 @@ NO se realizará ninguna operación.
         }
 
     } catch {
-        Write-ErrorAndExit ("Excepción: " + $_.Exception.Message) 1
-    }
+    $err = $_
+    $report = @"
+--- ERROR FORENSE ---
+Mensaje: $($err.Exception.Message)
+Línea:   $($err.InvocationInfo.ScriptLineNumber)
+Stack:   $($err.ScriptStackTrace)
+Info:    $($err.InvocationInfo | Format-List * -Force | Out-String)
+"@
+    $report | Out-File 'D:/HERMES-ENTERPRISE/.verification/final_error_dump.txt' -Encoding utf8NoBOM
+    Write-Error "ERROR FORENSE: Ver final_error_dump.txt"
+    throw $err
+}
 }
 
 # Ejecutar la función principal si el script fue invocado directamente

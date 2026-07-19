@@ -31,3 +31,11 @@ pruebas/salida-temporal/
 sandbox/
 .verification/
 README.md
+.verification/
+*.log
+tmp/
+cache/
+__pycache__/
+*.pyc
+*.tmp
+.vscode/settings.json

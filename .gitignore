@@ -1,41 +1,34 @@
-##################################################
-# Secrets
-##################################################
-
-.env
-.env.*
-*.key
-*.pem
-*.pfx
-*.cer
-
-##################################################
-# Local Settings
-##################################################
-
-.local
-.settings
-.vscode/
-
-##################################################
-# HERMES Enterprise - archivos generados localmente
-##################################################
-logs/
-configuracion/kernel.enterprise.json
-pruebas/salida-temporal/
-.hermes/sessions/
-.hermes/backup/
-
-# Artifacts y env
-.venv/
-sandbox/
-.verification/
-README.md
-.verification/
+# Logs
+reports/logs/
 *.log
-tmp/
-cache/
+
+# Runtime
+.hermes/cache/
+.hermes/tmp/
+.hermes/runtime/
+
+# Python
 __pycache__/
 *.pyc
+
+# PowerShell
+*.ps1xml
+
+# VS Code
+.vscode/
+
+# Visual Studio
+.vs/
+
+# Build
+bin/
+obj/
+
+# Temporary
 *.tmp
-.vscode/settings.json
+*.bak
+*.old
+
+# OS
+Thumbs.db
+.DS_Store

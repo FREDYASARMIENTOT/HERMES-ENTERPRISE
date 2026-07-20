@@ -1,0 +1,15 @@
+{
+  "Sprint": "Builder++++++",
+  "Status": "IN_PROGRESS",
+  "GoldenPath": {
+    "EngineResolution": "PASS",
+    "Adapter": "PASS",
+    "SchedulerInvocation": "PENDING",
+    "ProjectCreation": "PENDING",
+    "GitInitialization": "PENDING",
+    "GitHubProvision": "PENDING",
+    "InitialPush": "PENDING"
+  },
+  "CurrentBlocker": "Instrumentation visibility",
+  "NextTask": "Verify Adapter to Scheduler execution"
+}

@@ -1,12 +1,35 @@
-function Initialize-Git {
-    param([string]$ProjectPath)
-    Set-Location $ProjectPath
-    if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Write-Warn "git no disponible"; return $false }
-    if (-not (Test-Path (Join-Path $ProjectPath '.git'))) {
-        git init | Out-Null
-        git add . | Out-Null
-        git commit -m "chore: initial commit" --author="Hermes <hermes@example.local>" | Out-Null
+function Test-GitInstallation {
+    try {
+        git --version > $null
         return $true
+    } catch {
+        return $false
     }
-    return $false
+}
+
+function Get-GitStatusPorcelain {
+    git status --porcelain
+}
+
+function Get-CurrentBranch {
+    git rev-parse --abbrev-ref HEAD
+}
+
+function Get-LocalHead {
+    git rev-parse HEAD
+}
+
+function Fetch-Origin {
+    git fetch origin
+}
+
+function Get-RemoteHead {
+    git rev-parse origin/main
+}
+
+function Get-AheadBehind {
+    git rev-list --left-right --count HEAD...origin/main | ForEach-Object {
+        $parts = $_ -split "\t"
+        return @{behind=$parts[0]; ahead=$parts[1]}
+    }
 }

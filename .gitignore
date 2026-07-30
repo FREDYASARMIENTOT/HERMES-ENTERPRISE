@@ -47,3 +47,4 @@ pruebas/salida-temporal/
 # Reports generated
 reports/*.xml
 reports/*.jsonl
+# sandbox/Local/ (repo anidado, no trackear)  

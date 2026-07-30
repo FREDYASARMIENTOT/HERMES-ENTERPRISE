@@ -1,0 +1,7 @@
+# Backup original
+Copy-Item -Path 'D:/HERMES-ENTERPRISE/tools/WorkspaceResolver.psm1' -Destination 'D:/HERMES-ENTERPRISE/reports/backups/WorkspaceResolver.psm1.bak' -Force
+# Read, fix ResolveWorkspace to ensure $path and $mode always assigned
+$content = Get-Content 'D:/HERMES-ENTERPRISE/tools/WorkspaceResolver.psm1' -Raw
+$fixed = $content -replace "\[psobject\]ResolveWorkspace\(\[string\]\$argWorkspace, \[switch\]\$sandboxMode\) \{[\s\S]*?return \@\{ Workspace=\$path; Mode=\$mode; Reason=\$reason \}\s*\}", '[psobject]ResolveWorkspace([string]$argWorkspace, [switch]$sandboxMode) {`n        # Order: Hermes.config.json -> env HERMES_WORKSPACE -> argument -> default`n        $candidate = $null`n        $reason = $null`n        if ($this.Config -and $this.Config.WorkspaceRoot) { $candidate = $this.Config.WorkspaceRoot; $reason="Hermes.config.json" }`n        if ($env:HERMES_WORKSPACE) { $candidate = $env:HERMES_WORKSPACE; $reason="Environment variable HERMES_WORKSPACE" }`n        if ($argWorkspace) { $candidate = $argWorkspace; $reason="Argument" }`n        if (-not $candidate) { $candidate = "D:/Proyectos"; $reason="Default" }`n        if ($sandboxMode.IsPresent) { $mode="Sandbox"; $path = $this.Config.SandboxRoot } else { $mode="Produccion"; $path = $candidate }`n        return @{ Workspace=$path; Mode=$mode; Reason=$reason }`n    }'
+Set-Content -Path 'D:/HERMES-ENTERPRISE/tools/WorkspaceResolver.psm1' -Value $fixed -Encoding utf8
+Write-Output 'WorkspaceResolver patched'

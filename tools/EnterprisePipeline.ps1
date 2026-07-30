@@ -1,28 +1,37 @@
+<#
+EnterprisePipeline adapter - lightweight, safe, and documented
+Behavior: loads Invoke-EnterprisePipeline from tools if present or returns error code
+#>
 param(
     [Parameter(Mandatory=$false)][psobject]$Contexto
 )
 
-# Adapter: delegate to Scheduler's Invoke-EnterprisePipeline
 $adapterRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-# Scheduler expected under tools\Scheduler.ps1 (observed location)
 $schedulerPath = Join-Path -Path $adapterRoot -ChildPath 'Scheduler.ps1'
-Write-HermesLog "Adapter: Loading Scheduler from $schedulerPath"
-if (-not (Test-Path $schedulerPath)) {
-    # Also try relative to repo motor path
-    $alt = Join-Path -Path (Join-Path $adapterRoot '..') -ChildPath 'motor\bootstrap\engine\BootstrapOrchestrator.ps1'
-    Write-HermesLog "Adapter: Scheduler not found at $schedulerPath, trying $alt"
-    if (Test-Path $alt) {
-        # If orchestrator exists, just load it (best-effort)
-        . $alt
-        Write-HermesLog "Adapter: Loaded BootstrapOrchestrator at $alt"
-    } else {
-        Write-HermesLog "Adapter: Scheduler not found at $schedulerPath and orchestrator not found at $alt"
-        Write-Output "[Adapter] Scheduler not found at $schedulerPath and orchestrator not found at $alt"
-        return 1
-    }
-} else {
+$alt = Join-Path -Path (Join-Path $adapterRoot '..') -ChildPath 'motor\bootstrap\engine\BootstrapOrchestrator.ps1'
+
+# Prefer local Invoke-EnterprisePipeline implementation
+$invokePath = Join-Path -Path $adapterRoot -ChildPath 'Invoke-EnterprisePipeline.ps1'
+if (Test-Path $invokePath) { . $invokePath }
+
+# Logging helper
+function Write-HermesLog {
+    param([string]$Message)
+    $logPath = Join-Path -Path (Split-Path -Parent $PSScriptRoot) -ChildPath 'hermes.log'
+    Add-Content -Path $logPath -Value ("$(Get-Date -Format o) | $Message")
+}
+
+# Try to load scheduler or orchestrator
+if (Test-Path $schedulerPath) {
     . $schedulerPath
     Write-HermesLog "Adapter: Loaded Scheduler at $schedulerPath"
+} elseif (Test-Path $alt) {
+    . $alt
+    Write-HermesLog "Adapter: Loaded BootstrapOrchestrator at $alt"
+} else {
+    Write-HermesLog "Adapter: Scheduler not found at $schedulerPath and orchestrator not found at $alt"
+    Write-Output "[Adapter] Scheduler not found at $schedulerPath and orchestrator not found at $alt"
+    return 1
 }
 
 # Delegate call

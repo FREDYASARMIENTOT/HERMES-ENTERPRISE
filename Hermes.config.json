@@ -1,0 +1,11 @@
+{
+  "FrameworkRoot": "D:/HERMES-ENTERPRISE",
+  "WorkspaceRoot": "D:/Proyectos",
+  "SandboxRoot": "D:/HERMES-ENTERPRISE/sandbox",
+  "TemplatesRoot": "D:/HERMES-ENTERPRISE/templates",
+  "SkillsRoot": "D:/HERMES-ENTERPRISE/skills",
+  "TestsRoot": "D:/HERMES-ENTERPRISE/tests",
+  "LogsRoot": "D:/HERMES-ENTERPRISE/logs",
+  "ReportsRoot": "D:/HERMES-ENTERPRISE/reports",
+  "DefaultProvisionTarget": "Local"
+}

@@ -1,11 +1,13 @@
 # Logs
 reports/logs/
 *.log
+logs/
 
 # Runtime
 .hermes/cache/
 .hermes/tmp/
 .hermes/runtime/
+.hermes/sessions/
 
 # Python
 __pycache__/
@@ -32,3 +34,16 @@ obj/
 # OS
 Thumbs.db
 .DS_Store
+
+# Hermes Bootstrap Context
+motor/.hermes/
+
+# Test artifacts
+pruebas/salida-temporal/
+
+# Environment files
+.env
+
+# Reports generated
+reports/*.xml
+reports/*.jsonl

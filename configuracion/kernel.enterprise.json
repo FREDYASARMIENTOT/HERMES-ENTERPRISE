@@ -1,0 +1,8 @@
+{
+  "Proyecto": "HERMES-ENTERPRISE",
+  "Kernel": {
+    "Version": "0.3.0",
+    "Entorno": "Desarrollo",
+    "ModulosAutoCarga": []
+  }
+}

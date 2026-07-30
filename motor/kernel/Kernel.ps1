@@ -10,9 +10,24 @@ Propósito:
 
 Set-StrictMode -Version Latest
 
+# Cargar la clase Context (WP-010) si está disponible
+. "$PSScriptRoot\Context.ps1"
+
 function New-HermesEnterpriseKernel {
     [CmdletBinding()]
-    param([Parameter(Mandatory = $true)][psobject]$ContextoKernel)
+    param(
+        [Parameter(Mandatory = $true)]
+        [psobject]$ContextoKernel
+    )
+
+    # Validar que el contexto es una instancia de Context o un pscustomobject compatible
+    if ($ContextoKernel -is [Context]) {
+        if ($ContextoKernel.IsDisposed()) {
+            throw [System.InvalidOperationException]"El contexto proporcionado ya ha sido descartado (disposed)."
+        }
+    } elseif ($null -eq $ContextoKernel) {
+        throw [System.ArgumentNullException]"El parámetro ContextoKernel no puede ser nulo."
+    }
 
     return [pscustomobject][ordered]@{
         ContextoKernel = $ContextoKernel
@@ -40,8 +55,22 @@ function Start-HermesEnterpriseKernel {
         return $KernelEnterprise
     }
 
-    $RutaConfiguracionKernel = Join-Path $KernelEnterprise.ContextoKernel.RutaConfiguracion "kernel.enterprise.json"
-    $RutaLogKernel = Join-Path $KernelEnterprise.ContextoKernel.RutaLogs "kernel.enterprise.jsonl"
+    # Resolver propiedades del contexto (compatible con clase Context y pscustomobject legacy)
+    $ctx = $KernelEnterprise.ContextoKernel
+    if ($ctx -is [Context]) {
+        $resolvedRutaConfiguracion = $ctx.GetConfigurationPath()
+        $resolvedRutaLogs = $ctx.GetLogsPath()
+        $resolvedRutaRaizRepositorio = $ctx.GetRepositoryRoot()
+        $resolvedVersionKernel = $ctx.GetVersion()
+    } else {
+        $resolvedRutaConfiguracion = $ctx.RutaConfiguracion
+        $resolvedRutaLogs = $ctx.RutaLogs
+        $resolvedRutaRaizRepositorio = $ctx.RutaRaizRepositorio
+        $resolvedVersionKernel = $ctx.VersionKernel
+    }
+
+    $RutaConfiguracionKernel = Join-Path $resolvedRutaConfiguracion "kernel.enterprise.json"
+    $RutaLogKernel = Join-Path $resolvedRutaLogs "kernel.enterprise.jsonl"
 
     # --- Inicialización de subsistemas con try/catch individual ---
     try {
@@ -101,7 +130,7 @@ function Start-HermesEnterpriseKernel {
     }
 
     try {
-        $KernelEnterprise.PluginManager = New-HermesEnterprisePluginManager -RutaRaizRepositorio $KernelEnterprise.ContextoKernel.RutaRaizRepositorio -VersionKernelActual $KernelEnterprise.ContextoKernel.VersionKernel
+        $KernelEnterprise.PluginManager = New-HermesEnterprisePluginManager -RutaRaizRepositorio $resolvedRutaRaizRepositorio -VersionKernelActual $resolvedVersionKernel
     } catch {
         Write-Error "[Kernel] Error al crear PluginManager: $($_.Exception.Message)"
         $KernelEnterprise.ErroresArranque += @{ Subsistema = "PluginManager"; Error = $_.Exception.Message }
@@ -166,7 +195,7 @@ function Start-HermesEnterpriseKernel {
 
     # --- Registro de módulo ---
     try {
-        Register-HermesEnterpriseModule -RegistroModulos $KernelEnterprise.RegistroModulos -NombreModulo "Kernel" -VersionModulo $KernelEnterprise.ContextoKernel.VersionKernel -RutaModulo "motor/kernel" -CapacidadesModulo @("Bootstrap", "Runtime", "Servicios") | Out-Null
+        Register-HermesEnterpriseModule -RegistroModulos $KernelEnterprise.RegistroModulos -NombreModulo "Kernel" -VersionModulo $resolvedVersionKernel -RutaModulo "motor/kernel" -CapacidadesModulo @("Bootstrap", "Runtime", "Servicios") | Out-Null
     } catch {
         Write-Error "[Kernel] Error al registrar módulo Kernel: $($_.Exception.Message)"
         $KernelEnterprise.ErroresArranque += @{ Subsistema = "Register.Module"; Error = $_.Exception.Message }
@@ -207,13 +236,13 @@ function Start-HermesEnterpriseKernel {
     }
 
     try {
-        Write-HermesEnterpriseLogEvent -LoggerKernel $KernelEnterprise.Logger -Nivel "INFO" -Mensaje "Kernel Enterprise iniciado" -DatosEvento @{ VersionKernel = $KernelEnterprise.ContextoKernel.VersionKernel; ErroresArranque = $CantidadErrores } | Out-Null
+        Write-HermesEnterpriseLogEvent -LoggerKernel $KernelEnterprise.Logger -Nivel "INFO" -Mensaje "Kernel Enterprise iniciado" -DatosEvento @{ VersionKernel = $resolvedVersionKernel; ErroresArranque = $CantidadErrores } | Out-Null
     } catch {
         Write-Error "[Kernel] Error al escribir log de inicio: $($_.Exception.Message)"
     }
 
     try {
-        Publish-HermesEnterpriseEvent -EventBusKernel $KernelEnterprise.EventBus -NombreEvento "Kernel.Iniciado" -DatosEvento @{ VersionKernel = $KernelEnterprise.ContextoKernel.VersionKernel; ErroresArranque = $CantidadErrores } | Out-Null
+        Publish-HermesEnterpriseEvent -EventBusKernel $KernelEnterprise.EventBus -NombreEvento "Kernel.Iniciado" -DatosEvento @{ VersionKernel = $resolvedVersionKernel; ErroresArranque = $CantidadErrores } | Out-Null
     } catch {
         Write-Error "[Kernel] Error al publicar evento de inicio: $($_.Exception.Message)"
     }

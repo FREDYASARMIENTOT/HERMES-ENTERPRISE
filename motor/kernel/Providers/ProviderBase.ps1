@@ -88,16 +88,18 @@ function Initialize-ProviderBase {
         [hashtable]$ProviderConfig
     )
 
-    $Provider.ProviderConfig = $ProviderConfig
-    $Provider.Status = 'Initialized'
+    process {
+        $Provider.ProviderConfig = $ProviderConfig
+        $Provider.Status = 'Initialized'
 
-    $null = $Provider.Events.Add(@{
-        Timestamp = (Get-Date).ToString('o')
-        EventType = 'Initialize'
-        Status    = 'Initialized'
-    })
+        $null = $Provider.Events.Add(@{
+            Timestamp = (Get-Date).ToString('o')
+            EventType = 'Initialize'
+            Status    = 'Initialized'
+        })
 
-    return $Provider
+        return $Provider
+    }
 }
 
 <#
@@ -114,29 +116,31 @@ function Test-ProviderBaseValidation {
         [psobject]$Provider
     )
 
-    $isValid = $true
+    process {
+        $isValid = $true
 
-    if ([string]::IsNullOrEmpty($Provider.Id)) {
-        $null = $Provider.Errors.Add('Provider Id cannot be null or empty')
-        $isValid = $false
+        if ([string]::IsNullOrEmpty($Provider.Id)) {
+            $null = $Provider.Errors.Add('Provider Id cannot be null or empty')
+            $isValid = $false
+        }
+
+        if ([string]::IsNullOrEmpty($Provider.Name)) {
+            $null = $Provider.Errors.Add('Provider Name cannot be null or empty')
+            $isValid = $false
+        }
+
+        if ([string]::IsNullOrEmpty($Provider.Version)) {
+            $null = $Provider.Errors.Add('Provider Version cannot be null or empty')
+            $isValid = $false
+        }
+
+        if ([string]::IsNullOrEmpty($Provider.ProviderType)) {
+            $null = $Provider.Errors.Add('ProviderType cannot be null or empty')
+            $isValid = $false
+        }
+
+        return $isValid
     }
-
-    if ([string]::IsNullOrEmpty($Provider.Name)) {
-        $null = $Provider.Errors.Add('Provider Name cannot be null or empty')
-        $isValid = $false
-    }
-
-    if ([string]::IsNullOrEmpty($Provider.Version)) {
-        $null = $Provider.Errors.Add('Provider Version cannot be null or empty')
-        $isValid = $false
-    }
-
-    if ([string]::IsNullOrEmpty($Provider.ProviderType)) {
-        $null = $Provider.Errors.Add('ProviderType cannot be null or empty')
-        $isValid = $false
-    }
-
-    return $isValid
 }
 
 <#
@@ -154,23 +158,25 @@ function Connect-ProviderBase {
         [psobject]$Provider
     )
 
-    if ($Provider.Status -ne 'Initialized') {
-        $null = $Provider.Errors.Add("Cannot connect provider from status '$($Provider.Status)'. Expected 'Initialized'.")
-        return $false
+    process {
+        if ($Provider.Status -ne 'Initialized') {
+            $null = $Provider.Errors.Add("Cannot connect provider from status '$($Provider.Status)'. Expected 'Initialized'.")
+            return $false
+        }
+
+        $Provider.ConnectionAttempts++
+        $Provider.Status = 'Running'
+        $Provider.IsConnected = $true
+        $Provider.LastConnection = (Get-Date).ToString('o')
+
+        $null = $Provider.Events.Add(@{
+            Timestamp = (Get-Date).ToString('o')
+            EventType = 'Connect'
+            Status    = 'Running'
+        })
+
+        return $true
     }
-
-    $Provider.ConnectionAttempts++
-    $Provider.Status = 'Running'
-    $Provider.IsConnected = $true
-    $Provider.LastConnection = (Get-Date).ToString('o')
-
-    $null = $Provider.Events.Add(@{
-        Timestamp = (Get-Date).ToString('o')
-        EventType = 'Connect'
-        Status    = 'Running'
-    })
-
-    return $true
 }
 
 <#
@@ -187,20 +193,22 @@ function Disconnect-ProviderBase {
         [psobject]$Provider
     )
 
-    if (-not $Provider.IsConnected) {
+    process {
+        if (-not $Provider.IsConnected) {
+            return $Provider
+        }
+
+        $Provider.Status = 'Stopped'
+        $Provider.IsConnected = $false
+
+        $null = $Provider.Events.Add(@{
+            Timestamp = (Get-Date).ToString('o')
+            EventType = 'Disconnect'
+            Status    = 'Stopped'
+        })
+
         return $Provider
     }
-
-    $Provider.Status = 'Stopped'
-    $Provider.IsConnected = $false
-
-    $null = $Provider.Events.Add(@{
-        Timestamp = (Get-Date).ToString('o')
-        EventType = 'Disconnect'
-        Status    = 'Stopped'
-    })
-
-    return $Provider
 }
 
 <#
@@ -221,18 +229,20 @@ function Set-ProviderBaseFaulted {
         [string]$ErrorMessage
     )
 
-    $Provider.Status = 'Faulted'
-    $Provider.IsConnected = $false
-    $null = $Provider.Errors.Add($ErrorMessage)
+    process {
+        $Provider.Status = 'Faulted'
+        $Provider.IsConnected = $false
+        $null = $Provider.Errors.Add($ErrorMessage)
 
-    $null = $Provider.Events.Add(@{
-        Timestamp    = (Get-Date).ToString('o')
-        EventType    = 'Faulted'
-        Status       = 'Faulted'
-        ErrorMessage = $ErrorMessage
-    })
+        $null = $Provider.Events.Add(@{
+            Timestamp    = (Get-Date).ToString('o')
+            EventType    = 'Faulted'
+            Status       = 'Faulted'
+            ErrorMessage = $ErrorMessage
+        })
 
-    return $Provider
+        return $Provider
+    }
 }
 
 <#
@@ -247,16 +257,18 @@ function Get-ProviderBaseStatus {
         [psobject]$Provider
     )
 
-    return [pscustomobject][ordered]@{
-        Id                = $Provider.Id
-        Name              = $Provider.Name
-        Version           = $Provider.Version
-        ProviderType      = $Provider.ProviderType
-        Status            = $Provider.Status
-        IsConnected       = $Provider.IsConnected
-        ErrorCount        = $Provider.Errors.Count
-        ConnectionAttempts = $Provider.ConnectionAttempts
-        LastConnection    = $Provider.LastConnection
+    process {
+        return [pscustomobject][ordered]@{
+            Id                = $Provider.Id
+            Name              = $Provider.Name
+            Version           = $Provider.Version
+            ProviderType      = $Provider.ProviderType
+            Status            = $Provider.Status
+            IsConnected       = $Provider.IsConnected
+            ErrorCount        = $Provider.Errors.Count
+            ConnectionAttempts = $Provider.ConnectionAttempts
+            LastConnection    = $Provider.LastConnection
+        }
     }
 }
 

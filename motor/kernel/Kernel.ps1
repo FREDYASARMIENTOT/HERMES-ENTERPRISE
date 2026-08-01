@@ -247,7 +247,7 @@ function Stop-HermesEnterpriseKernel {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][psobject]$KernelEnterprise)
 
-    if ($KernelEnterprise.EstadoKernel -ne "Detenido" -and $KernelEnterprise.EstadoKernel -ne $null) {
+    if ($KernelEnterprise.EstadoKernel -ne "Detenido" -and $null -ne $KernelEnterprise.EstadoKernel) {
         if ($null -ne $KernelEnterprise.Runtime) {
             try {
                 Stop-HermesEnterpriseRuntime -RuntimeKernel $KernelEnterprise.Runtime | Out-Null

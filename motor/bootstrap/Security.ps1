@@ -21,6 +21,8 @@ function Validate-PAT {
     try {
         $status = gh auth status 2>&1
         if ($status -match 'Logged in to github.com') { return $true }
-    } catch { # SuppressExpected }
+    } catch {
+        Write-Debug "GitHub auth check failed (expected if not logged in)"
+    }
     return $false
 }

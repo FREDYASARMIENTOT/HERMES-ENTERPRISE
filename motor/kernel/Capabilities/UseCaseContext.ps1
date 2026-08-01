@@ -84,19 +84,21 @@ function Test-UseCaseContextValid {
         [psobject]$UseCaseContext
     )
 
-    $isValid = $true
+    process {
+        $isValid = $true
 
-    if ([string]::IsNullOrEmpty($UseCaseContext.UseCaseName)) {
-        $null = $UseCaseContext.Errors.Add('UseCaseName cannot be null or empty')
-        $isValid = $false
+        if ([string]::IsNullOrEmpty($UseCaseContext.UseCaseName)) {
+            $null = $UseCaseContext.Errors.Add('UseCaseName cannot be null or empty')
+            $isValid = $false
+        }
+
+        if ($null -eq $UseCaseContext.RequiredCapabilities -or $UseCaseContext.RequiredCapabilities.Count -eq 0) {
+            $null = $UseCaseContext.Errors.Add('At least one RequiredCapability must be specified')
+            $isValid = $false
+        }
+
+        return $isValid
     }
-
-    if ($null -eq $UseCaseContext.RequiredCapabilities -or $UseCaseContext.RequiredCapabilities.Count -eq 0) {
-        $null = $UseCaseContext.Errors.Add('At least one RequiredCapability must be specified')
-        $isValid = $false
-    }
-
-    return $isValid
 }
 
 <#
@@ -111,14 +113,16 @@ function Get-UseCaseContextStatus {
         [psobject]$UseCaseContext
     )
 
-    return [pscustomobject][ordered]@{
-        UseCaseId           = $UseCaseContext.UseCaseId
-        UseCaseName         = $UseCaseContext.UseCaseName
-        Status              = $UseCaseContext.Status
-        RequiredCapabilities = $UseCaseContext.RequiredCapabilities -join ', '
-        ExecutionTimeMs     = $UseCaseContext.ExecutionTimeMs
-        ErrorCount          = $UseCaseContext.Errors.Count
-        PipelineSteps       = $UseCaseContext.PipelineStack.Count
+    process {
+        return [pscustomobject][ordered]@{
+            UseCaseId            = $UseCaseContext.UseCaseId
+            UseCaseName          = $UseCaseContext.UseCaseName
+            Status               = $UseCaseContext.Status
+            RequiredCapabilities = $UseCaseContext.RequiredCapabilities -join ', '
+            ExecutionTimeMs      = $UseCaseContext.ExecutionTimeMs
+            ErrorCount           = $UseCaseContext.Errors.Count
+            PipelineSteps        = $UseCaseContext.PipelineStack.Count
+        }
     }
 }
 

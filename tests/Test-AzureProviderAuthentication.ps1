@@ -29,10 +29,10 @@ function Write-TestResult {
     )
     
     if ($Passed) {
-        Write-Host "✓ $TestName" -ForegroundColor Green
+        Write-Host "OK: $TestName" -ForegroundColor Green
     }
     else {
-        Write-Host "✗ $TestName - $Message" -ForegroundColor Red
+        Write-Host "FALLO: $TestName - $Message" -ForegroundColor Red
     }
     return $Passed
 }
@@ -41,9 +41,9 @@ function Write-TestResult {
 # PRUEBAS DE VALIDACIÓN
 # ═══════════════════════════════════════════════════════════════════════════
 
-Write-Host "`n═══════════════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "`n======================================================================" -ForegroundColor Cyan
 Write-Host "TEST: AzureProviderAuthentication - Sprint 6.2" -ForegroundColor Cyan
-Write-Host "═══════════════════════════════════════════════════════════════════════════`n" -ForegroundColor Cyan
+Write-Host "======================================================================`n" -ForegroundColor Cyan
 
 $testResults = @()
 
@@ -53,7 +53,7 @@ $testResults += Write-TestResult -TestName "T1: Archivo AzureProviderAuthenticat
     -Message "Archivo no encontrado en $componentPath"
 
 if (-not (Test-Path $componentPath)) {
-    Write-Host "`n✗ Pruebas no pueden continuar sin el archivo principal." -ForegroundColor Red
+    Write-Host "`nFALLO: Pruebas no pueden continuar sin el archivo principal." -ForegroundColor Red
     exit 1
 }
 
@@ -170,16 +170,16 @@ $testResults += Write-TestResult -TestName "T12: No modifica Kernel" `
 $totalTests = $testResults.Count
 $passedTests = ($testResults | Where-Object { $_ }).Count
 
-Write-Host "`n═══════════════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "`n======================================================================" -ForegroundColor Cyan
 Write-Host "RESULTADO: $passedTests/$totalTests pruebas pasaron" -ForegroundColor Cyan
-Write-Host "═══════════════════════════════════════════════════════════════════════════`n" -ForegroundColor Cyan
+Write-Host "======================================================================`n" -ForegroundColor Cyan
 
 if ($passedTests -eq $totalTests) {
-    Write-Host "✓ AzureProviderAuthentication cumple con todos los criterios de Sprint 6.2" -ForegroundColor Green
+    Write-Host "OK: AzureProviderAuthentication cumple con todos los criterios de Sprint 6.2" -ForegroundColor Green
     exit 0
 }
 else {
     $failedCount = $totalTests - $passedTests
-    Write-Host "✗ $failedCount prueba(s) fallaron. Revisar scope lock y estructura." -ForegroundColor Red
+    Write-Host "FALLO: $failedCount prueba(s) fallaron. Revisar scope lock y estructura." -ForegroundColor Red
     exit 1
 }

@@ -14,7 +14,7 @@ function Verify-Sync {
 function Report-Sync {
     param($OutPath)
     $c = Compare-LocalRemote
-    $status = (Verify-Sync) ? 'SINCRONIZADO' : 'DESINCRONIZADO'
+    $status = if (Verify-Sync) { 'SINCRONIZADO' } else { 'DESINCRONIZADO' }
     $content = "# Git Sync Report`nLocal: $($c.local)`nRemote: $($c.remote)`nEstado: $status`n"
     Set-Content -Path $OutPath -Value $content -Force
     return $OutPath

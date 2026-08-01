@@ -69,7 +69,7 @@ function Write-HermesEnterpriseKernelMetric {
             $null = $metricsCollector.Metricas.Add($metric)
             $metricsCollector.EventosRegistrados++
         } catch {
-            # Colector no registrado aún, ignorar
+            Write-Debug "KernelMetrics collector not registered yet: $_"
         }
     }
 

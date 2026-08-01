@@ -27,9 +27,9 @@ function Assert-HermesEnterpriseCondition {
 
 # Verificar que existe acceso a Azure AD o Key Vault antes de continuar.
 $TokenAzureAD = $null
-try { $TokenAzureAD = az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv 2>$null } catch { }
+try { $TokenAzureAD = az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv 2>$null } catch { Write-Debug "Azure AD token unavailable" }
 $PuedeUsarKeyVault = $false
-try { $null = az keyvault secret show --vault-name kv-hermes-enterprise-ur --name AzureOpenAI-Endpoint --query value -o tsv 2>$null; $PuedeUsarKeyVault = $true } catch { }
+try { $null = az keyvault secret show --vault-name kv-hermes-enterprise-ur --name AzureOpenAI-Endpoint --query value -o tsv 2>$null; $PuedeUsarKeyVault = $true } catch { Write-Debug "Key Vault access unavailable" }
 
 Assert-HermesEnterpriseCondition ((-not [string]::IsNullOrWhiteSpace($TokenAzureAD)) -or $PuedeUsarKeyVault) "No hay acceso a Azure AD ni a Azure Key Vault. La prueba requiere autenticación real."
 

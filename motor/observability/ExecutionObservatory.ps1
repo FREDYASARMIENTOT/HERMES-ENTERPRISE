@@ -55,7 +55,7 @@ function Start-HermesEnterpriseObservatory {
                 Stop-HermesEnterpriseObservatory
             }
         } catch {
-            # Suppress expected timer callback errors
+            Write-Debug "Observatory timer callback error (expected): $_"
         }
     })
     $script:ObsTimer.Start()
@@ -110,7 +110,7 @@ function Stop-HermesEnterpriseObservatory {
             Pop-Location
         }
     } catch {
-        # Suppress expected git command errors outside a repo
+        Write-Debug "Git command error (expected outside a repo): $_"
     }
 
     # orphaned processes

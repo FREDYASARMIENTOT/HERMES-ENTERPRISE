@@ -37,7 +37,7 @@ $ProviderNoSaludable = New-HermesEnterpriseProviderContext -NombreProvider "Unhe
 Register-HermesEnterpriseManagedProvider -AdministradorProviders $AdministradorProviders -ContextoProvider $ProviderObservable | Out-Null
 Register-HermesEnterpriseManagedProvider -AdministradorProviders $AdministradorProviders -ContextoProvider $ProviderNoSaludable | Out-Null
 Initialize-HermesEnterpriseProvider -AdministradorProviders $AdministradorProviders -NombreProvider "ObservableProvider" | Out-Null
-try { Initialize-HermesEnterpriseProvider -AdministradorProviders $AdministradorProviders -NombreProvider "UnhealthyProvider" | Out-Null } catch { }
+try { Initialize-HermesEnterpriseProvider -AdministradorProviders $AdministradorProviders -NombreProvider "UnhealthyProvider" | Out-Null } catch { Write-Debug "UnhealthyProvider initialization failed as expected" }
 
 $ObservabilidadProviders = Get-HermesEnterpriseProviderObservability -AdministradorProviders $AdministradorProviders
 

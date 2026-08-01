@@ -46,9 +46,9 @@ Assert-HermesEnterpriseCondition ($Costo -gt 0) "Costo estimado no es positivo."
 
 # Prueba 3: telemetría real si hay acceso a Azure.
 $HayAccesoAzure = $false
-try { if (-not [string]::IsNullOrWhiteSpace((az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv 2>$null))) { $HayAccesoAzure = $true } } catch { }
+try { if (-not [string]::IsNullOrWhiteSpace((az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv 2>$null))) { $HayAccesoAzure = $true } } catch { Write-Debug "Azure AD token unavailable for telemetry" }
 if (-not $HayAccesoAzure) {
-    try { if (-not [string]::IsNullOrWhiteSpace((az keyvault secret show --vault-name kv-hermes-enterprise-ur --name AzureOpenAI-Endpoint --query value -o tsv 2>$null))) { $HayAccesoAzure = $true } } catch { }
+    try { if (-not [string]::IsNullOrWhiteSpace((az keyvault secret show --vault-name kv-hermes-enterprise-ur --name AzureOpenAI-Endpoint --query value -o tsv 2>$null))) { $HayAccesoAzure = $true } } catch { Write-Debug "Key Vault access unavailable for telemetry" }
 }
 
 if ($HayAccesoAzure) {

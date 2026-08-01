@@ -58,8 +58,8 @@ $($BootstrapState.ProximoObjetivo)
 
     # Agregar inputs
     if ($BootstrapState.EntradasRequeridas) {
-        foreach ($input in $BootstrapState.EntradasRequeridas) {
-            $content += "`n- $input"
+        foreach ($inp in $BootstrapState.EntradasRequeridas) {
+            $content += "`n- $inp"
         }
     } else {
         $content += "`n- BootstrapState actualizado"

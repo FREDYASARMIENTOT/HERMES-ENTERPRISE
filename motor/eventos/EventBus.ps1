@@ -170,8 +170,8 @@ function Get-PipelineEvents {
     # Si no hay filtro, devolver todos los eventos de pipeline
     $allEvents = [System.Collections.ArrayList]@()
     foreach ($eventList in $EventBusKernel.PipelineEvents.Values) {
-        foreach ($event in $eventList) {
-            $null = $allEvents.Add($event)
+        foreach ($evt in $eventList) {
+            $null = $allEvents.Add($evt)
         }
     }
     return $allEvents

@@ -201,13 +201,13 @@ function Invoke-HermesEnterpriseRuntimeEngine {
     }
 
     # Crear contexto de ejecución compartido
-    $executionContext = New-EngineExecutionContext -EngineName $EngineName -ExecutionId $ExecutionId
+    $engineExecutionContext = New-EngineExecutionContext -EngineName $EngineName -ExecutionId $ExecutionId
 
     # Registrar contexto en Runtime
-    $null = $RuntimeKernel.ExecutionContexts.Add($executionContext)
+    $null = $RuntimeKernel.ExecutionContexts.Add($engineExecutionContext)
 
     # Ejecutar
-    $result = Execute-Engine -Engine $engine -ExecutionContext $executionContext -Parameters $Parameters
+    $result = Execute-Engine -Engine $engine -ExecutionContext $engineExecutionContext -Parameters $Parameters
 
     return $result
 }

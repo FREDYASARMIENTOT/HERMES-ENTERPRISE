@@ -471,13 +471,13 @@ class Context {
 
     # Encola un evento para publicación futura
     hidden [void] _EnqueueEvent([string] $EventName, [hashtable] $Payload) {
-        $event = @{
+        $evt = @{
             id        = [guid]::NewGuid()
             eventName = $EventName
             timestamp = [datetime]::UtcNow.ToString("o")
             source    = "Context"
             payload   = $Payload
         }
-        [void]$this._eventQueue.Add($event)
+        [void]$this._eventQueue.Add($evt)
     }
 }

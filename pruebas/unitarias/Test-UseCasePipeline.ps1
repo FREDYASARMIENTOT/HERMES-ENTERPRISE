@@ -93,8 +93,7 @@ function Invoke-UseCasePipeline {
     $UseCaseContext.StartedAt = $startTime.ToString('o')
 
     try {
-        $UseCaseContext.Status = 'Validated'
-        $UseCaseContext.Status = 'Executing'
+        $UseCaseContext.Status
 
         $resolved = Resolve-Capabilities -CapabilityRegistry $PipelineOrchestrator.CapabilityRegistry `
                                          -RequiredCapabilities $UseCaseContext.RequiredCapabilities
@@ -123,7 +122,6 @@ function Invoke-UseCasePipeline {
     }
     finally {
         $endTime = [datetime]::UtcNow
-        $UseCaseContext.CompletedAt = $endTime.ToString('o')
         $UseCaseContext.ExecutionTimeMs = [math]::Round(($endTime - $startTime).TotalMilliseconds, 2)
 
         $historyEntry = [pscustomobject][ordered]@{

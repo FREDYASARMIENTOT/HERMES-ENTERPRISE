@@ -84,17 +84,19 @@ function Initialize-EngineBase {
         [hashtable]$EngineContext
     )
 
-    $Engine.EngineContext = $EngineContext
-    $Engine.Status = 'Initialized'
+    process {
+        $Engine.EngineContext = $EngineContext
+        $Engine.Status = 'Initialized'
 
-    # Registrar evento de inicialización
-    $null = $Engine.EngineEvents.Add(@{
-        Timestamp = (Get-Date).ToString('o')
-        EventType = 'Initialize'
-        Status    = 'Initialized'
-    })
+        # Registrar evento de inicialización
+        $null = $Engine.EngineEvents.Add(@{
+            Timestamp = (Get-Date).ToString('o')
+            EventType = 'Initialize'
+            Status    = 'Initialized'
+        })
 
-    return $Engine
+        return $Engine
+    }
 }
 
 <#
@@ -113,24 +115,26 @@ function Test-EngineBaseValidation {
         [psobject]$Engine
     )
 
-    $isValid = $true
+    process {
+        $isValid = $true
 
-    if ([string]::IsNullOrEmpty($Engine.Id)) {
-        $null = $Engine.Errors.Add('Engine Id cannot be null or empty')
-        $isValid = $false
+        if ([string]::IsNullOrEmpty($Engine.Id)) {
+            $null = $Engine.Errors.Add('Engine Id cannot be null or empty')
+            $isValid = $false
+        }
+
+        if ([string]::IsNullOrEmpty($Engine.Name)) {
+            $null = $Engine.Errors.Add('Engine Name cannot be null or empty')
+            $isValid = $false
+        }
+
+        if ([string]::IsNullOrEmpty($Engine.Version)) {
+            $null = $Engine.Errors.Add('Engine Version cannot be null or empty')
+            $isValid = $false
+        }
+
+        return $isValid
     }
-
-    if ([string]::IsNullOrEmpty($Engine.Name)) {
-        $null = $Engine.Errors.Add('Engine Name cannot be null or empty')
-        $isValid = $false
-    }
-
-    if ([string]::IsNullOrEmpty($Engine.Version)) {
-        $null = $Engine.Errors.Add('Engine Version cannot be null or empty')
-        $isValid = $false
-    }
-
-    return $isValid
 }
 
 <#
@@ -148,20 +152,22 @@ function Start-EngineBase {
         [psobject]$Engine
     )
 
-    if ($Engine.Status -ne 'Initialized') {
-        $null = $Engine.Errors.Add("Cannot start engine from status '$($Engine.Status)'. Expected 'Initialized'.")
-        return $false
+    process {
+        if ($Engine.Status -ne 'Initialized') {
+            $null = $Engine.Errors.Add("Cannot start engine from status '$($Engine.Status)'. Expected 'Initialized'.")
+            return $false
+        }
+
+        $Engine.Status = 'Running'
+
+        $null = $Engine.EngineEvents.Add(@{
+            Timestamp = (Get-Date).ToString('o')
+            EventType = 'Start'
+            Status    = 'Running'
+        })
+
+        return $true
     }
-
-    $Engine.Status = 'Running'
-
-    $null = $Engine.EngineEvents.Add(@{
-        Timestamp = (Get-Date).ToString('o')
-        EventType = 'Start'
-        Status    = 'Running'
-    })
-
-    return $true
 }
 
 <#
@@ -179,19 +185,21 @@ function Stop-EngineBase {
         [psobject]$Engine
     )
 
-    if ($Engine.Status -eq 'Stopped') {
+    process {
+        if ($Engine.Status -eq 'Stopped') {
+            return $Engine
+        }
+
+        $Engine.Status = 'Stopped'
+
+        $null = $Engine.EngineEvents.Add(@{
+            Timestamp = (Get-Date).ToString('o')
+            EventType = 'Stop'
+            Status    = 'Stopped'
+        })
+
         return $Engine
     }
-
-    $Engine.Status = 'Stopped'
-
-    $null = $Engine.EngineEvents.Add(@{
-        Timestamp = (Get-Date).ToString('o')
-        EventType = 'Stop'
-        Status    = 'Stopped'
-    })
-
-    return $Engine
 }
 
 <#
@@ -212,17 +220,19 @@ function Set-EngineBaseFaulted {
         [string]$ErrorMessage
     )
 
-    $Engine.Status = 'Faulted'
-    $null = $Engine.Errors.Add($ErrorMessage)
+    process {
+        $Engine.Status = 'Faulted'
+        $null = $Engine.Errors.Add($ErrorMessage)
 
-    $null = $Engine.EngineEvents.Add(@{
-        Timestamp   = (Get-Date).ToString('o')
-        EventType   = 'Faulted'
-        Status      = 'Faulted'
-        ErrorMessage = $ErrorMessage
-    })
+        $null = $Engine.EngineEvents.Add(@{
+            Timestamp   = (Get-Date).ToString('o')
+            EventType   = 'Faulted'
+            Status      = 'Faulted'
+            ErrorMessage = $ErrorMessage
+        })
 
-    return $Engine
+        return $Engine
+    }
 }
 
 <#
@@ -237,14 +247,16 @@ function Get-EngineBaseStatus {
         [psobject]$Engine
     )
 
-    return [pscustomobject][ordered]@{
-        Id            = $Engine.Id
-        Name          = $Engine.Name
-        Version       = $Engine.Version
-        Status        = $Engine.Status
-        ErrorCount    = $Engine.Errors.Count
-        EventCount    = $Engine.EngineEvents.Count
-        LastEvent     = if ($Engine.EngineEvents.Count -gt 0) { $Engine.EngineEvents[-1] } else { $null }
+    process {
+        return [pscustomobject][ordered]@{
+            Id            = $Engine.Id
+            Name          = $Engine.Name
+            Version       = $Engine.Version
+            Status        = $Engine.Status
+            ErrorCount    = $Engine.Errors.Count
+            EventCount    = $Engine.EngineEvents.Count
+            LastEvent     = if ($Engine.EngineEvents.Count -gt 0) { $Engine.EngineEvents[-1] } else { $null }
+        }
     }
 }
 

@@ -4,7 +4,8 @@ Proyecto : HERMES-ENTERPRISE
 Archivo  : DependencyInjection.ps1
 Autor    : Fredy Alejandro Sarmiento Torres
 Propósito:
-    Contenedor de dependencias, ServiceLocator y registro de servicios.
+    Contenedor de dependencias del Kernel Enterprise.
+    Unifica registro y resolución de servicios sin ServiceLocator.
 ====================================================================================================
 #>
 
@@ -57,7 +58,30 @@ function Resolve-HermesEnterpriseService {
     return $ContenedorDependencias.Servicios[$NombreServicio]
 }
 
-function New-HermesEnterpriseServiceLocator {
+<#
+.SYNOPSIS
+    Verifica si un servicio está registrado en el contenedor.
+#>
+function Test-HermesEnterpriseServiceRegistered {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [psobject]$ContenedorDependencias,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$NombreServicio
+    )
+
+    return $ContenedorDependencias.Servicios.ContainsKey($NombreServicio)
+}
+
+<#
+.SYNOPSIS
+    Obtiene la lista de nombres de servicios registrados.
+#>
+function Get-HermesEnterpriseRegisteredServices {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -65,7 +89,13 @@ function New-HermesEnterpriseServiceLocator {
         [psobject]$ContenedorDependencias
     )
 
-    return [pscustomobject][ordered]@{
-        Contenedor = $ContenedorDependencias
-    }
+    return $ContenedorDependencias.Servicios.Keys
 }
+
+# =============================================================================
+# NOTA: New-HermesEnterpriseServiceLocator ha sido eliminado.
+# Se reemplaza por el uso directo del DependencyContainer (ContenedorDependencias)
+# vía Register-HermesEnterpriseService / Resolve-HermesEnterpriseService.
+# =============================================================================
+
+Export-ModuleMember -Function New-HermesEnterpriseDependencyContainer, Register-HermesEnterpriseService, Resolve-HermesEnterpriseService, Test-HermesEnterpriseServiceRegistered, Get-HermesEnterpriseRegisteredServices

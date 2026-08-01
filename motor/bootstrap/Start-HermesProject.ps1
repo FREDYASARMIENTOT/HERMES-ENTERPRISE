@@ -9,22 +9,22 @@ param(
 
 # Kernel Entrypoint - consolidated
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-# Load EventBus
-. (Join-Path $repoRoot '..\tools\Observabilidad.ps1')
-Start-EventBus
 
 # Ensure .hermes exists
 $hermesDir = Join-Path -Path $repoRoot -ChildPath '..\.hermes'
 if (-not (Test-Path $hermesDir)) { New-Item -ItemType Directory -Path $hermesDir | Out-Null }
 $bootstrapPath = Join-Path -Path $hermesDir -ChildPath 'BOOTSTRAP_CONTEXT.json'
+# Cargar contexto de bootstrap si existe
 if (Test-Path $bootstrapPath) {
     $json = Get-Content $bootstrapPath -Raw | ConvertFrom-Json
-    Escribir-ProgresoHermes -Evento 'Inicio' -Paso 'Start-HermesProject' -Detalle ("Contexto cargado: $($json.sprint) - $($json.objetivo)")
-    if ($json.ultimo_paso) { Escribir-ProgresoHermes -Evento 'Progreso' -Paso 'Start-HermesProject' -Detalle ("Reanudando desde: $($json.ultimo_paso)") }
+    Write-Host "[Start-HermesProject] Contexto cargado: $($json.sprint) - $($json.objetivo)"
+    if ($json.ultimo_paso) {
+        Write-Host "[Start-HermesProject] Reanudando desde: $($json.ultimo_paso)"
+    }
 } else {
     $initial = @{ sprint='A.27'; objetivo='Provision full'; estado='IN_PROGRESS'; ultimo_paso=$null; last_updated=(Get-Date).ToString('o') }
     $initial | ConvertTo-Json | Out-File -FilePath $bootstrapPath -Encoding utf8
-    Escribir-ProgresoHermes -Evento 'Inicio' -Paso 'Start-HermesProject' -Detalle 'Contexto inicial creado'
+    Write-Host "[Start-HermesProject] Contexto inicial creado"
 }
 
 # Persist context of invocation
@@ -33,4 +33,4 @@ $context | ConvertTo-Json | Out-File -FilePath (Join-Path $hermesDir 'LAST_INVOC
 
 # Call Engine
 $enginePath = Join-Path -Path $repoRoot -ChildPath '..\tools\EnterprisePipeline.ps1'
-if (Test-Path $enginePath) { & $enginePath -Contexto $context } else { Escribir-ProgresoHermes -Evento 'Fallo' -Paso 'Start-HermesProject' -Detalle 'Engine not found' }
+if (Test-Path $enginePath) { & $enginePath -Contexto $context } else { Write-Host "[Start-HermesProject] Engine not found at $enginePath" }

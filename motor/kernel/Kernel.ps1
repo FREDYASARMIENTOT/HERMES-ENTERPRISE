@@ -36,7 +36,6 @@ function New-HermesEnterpriseKernel {
         Configuracion = $null
         RegistroModulos = $null
         ContenedorDependencias = $null
-        LocalizadorServicios = $null
         Logger = $null
         EventBus = $null
         Runtime = $null
@@ -99,13 +98,6 @@ function Start-HermesEnterpriseKernel {
     } catch {
         Write-Error "[Kernel] Error al crear DependencyContainer: $($_.Exception.Message)"
         $KernelEnterprise.ErroresArranque += @{ Subsistema = "DependencyContainer"; Error = $_.Exception.Message }
-    }
-
-    try {
-        $KernelEnterprise.LocalizadorServicios = New-HermesEnterpriseServiceLocator -ContenedorDependencias $KernelEnterprise.ContenedorDependencias
-    } catch {
-        Write-Error "[Kernel] Error al crear ServiceLocator: $($_.Exception.Message)"
-        $KernelEnterprise.ErroresArranque += @{ Subsistema = "ServiceLocator"; Error = $_.Exception.Message }
     }
 
     try {

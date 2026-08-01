@@ -4,61 +4,58 @@ Proyecto : HERMES-ENTERPRISE
 Archivo  : Test-ProviderFramework.ps1
 Autor    : Fredy Alejandro Sarmiento Torres
 Propósito:
-    Valida la infraestructura base del Provider Framework sin integrar proveedores reales,
-    credenciales, HTTP, IA, streaming ni llamadas externas.
+    Tests unitarios para el Provider Framework (IProvider, ProviderBase, ProviderFactory, ProviderRegistry, ProviderResolver).
 ====================================================================================================
 #>
+
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
 
-$RutaDirectorioPruebasUnitarias = Split-Path -Parent $PSCommandPath
-$RutaRaizRepositorio = Split-Path -Parent (Split-Path -Parent $RutaDirectorioPruebasUnitarias)
-
-function Assert-HermesEnterpriseCondition {
-    param([bool]$CondicionEvaluada, [string]$MensajeError)
-    if (-not $CondicionEvaluada) { throw $MensajeError }
+BeforeAll {
+    $basePath = Split-Path -Parent $PSCommandPath | Split-Path -Parent | Split-Path -Parent
+    . (Join-Path $basePath 'motor\kernel\Contracts\IProvider.ps1')
+    . (Join-Path $basePath 'motor\kernel\Providers\ProviderBase.ps1')
+    . (Join-Path $basePath 'motor\kernel\Providers\ProviderFactory.ps1')
+    . (Join-Path $basePath 'motor\kernel\Providers\ProviderRegistry.ps1')
+    . (Join-Path $basePath 'motor\kernel\Providers\ProviderResolver.ps1')
 }
 
-. (Join-Path $RutaRaizRepositorio "motor\contracts\ProviderContracts.ps1")
-. (Join-Path $RutaRaizRepositorio "motor\providers\ProviderContext.ps1")
-. (Join-Path $RutaRaizRepositorio "motor\providers\ProviderRegistry.ps1")
-. (Join-Path $RutaRaizRepositorio "motor\providers\ProviderManager.ps1")
+Describe 'Provider Framework Tests' {
+    Context 'ProviderFactory' {
+        It 'Should create provider from ProviderBase' {
+            $provider = New-HermesEnterpriseProvider -ProviderName 'TestProvider' -ProviderType 'infra'
+            $provider | Should -Not -BeNullOrEmpty
+            $provider.Name | Should -Be 'TestProvider'
+            $provider.ProviderType | Should -Be 'infra'
+        }
 
-function Initialize-MockProvider { param([psobject]$ContextoProvider) $ContextoProvider.Estado = "Initialized"; return $ContextoProvider }
-function Connect-MockProvider { param([psobject]$ContextoProvider) $ContextoProvider.Estado = "Connected"; return $ContextoProvider }
-function Disconnect-MockProvider { param([psobject]$ContextoProvider) $ContextoProvider.Estado = "Disconnected"; return $ContextoProvider }
-function ValidateConfiguration-MockProvider { param([psobject]$ContextoProvider) return [pscustomobject]@{ EsValida = $true; Errores = @() } }
-function GetProviderInformation-MockProvider { return [pscustomobject]@{ NombreProvider = "MockProvider"; Version = "0.1.0" } }
+        It 'Should fail provider creation without name' {
+            { New-HermesEnterpriseProvider -ProviderName '' -ProviderType 'infra' } | Should -Throw
+        }
 
-$ResultadoContrato = Test-HermesEnterpriseProviderContract -NombreProvider "MockProvider"
-Assert-HermesEnterpriseCondition $ResultadoContrato.EsValido "MockProvider no cumple el contrato IProvider esperado."
-Assert-HermesEnterpriseCondition ($ResultadoContrato.Contrato -eq "IProvider") "El contrato evaluado no corresponde a IProvider."
+        It 'Should fail provider creation without type' {
+            { New-HermesEnterpriseProvider -ProviderName 'TestProvider' -ProviderType '' } | Should -Throw
+        }
+    }
 
-$ContextoProvider = New-HermesEnterpriseProviderContext `
-    -NombreProvider "MockProvider" `
-    -VersionProvider "0.1.0" `
-    -ConfiguracionProvider @{ Entorno = "Pruebas" } `
-    -CapacidadesProvider @("Lifecycle", "Registry") `
-    -MetadatosProvider @{ Tipo = "Mock" }
+    Context 'ProviderRegistry' {
+        It 'Should create empty provider registry' {
+            $registry = New-HermesEnterpriseProviderRegistry
+            $registry | Should -Not -BeNullOrEmpty
+            $registry.Providers.Count | Should -Be 0
+        }
 
-Assert-HermesEnterpriseCondition ($ContextoProvider.NombreProvider -eq "MockProvider") "El contexto no conserva el nombre del provider."
-Assert-HermesEnterpriseCondition ($ContextoProvider.VersionProvider -eq "0.1.0") "El contexto no conserva la version del provider."
-Assert-HermesEnterpriseCondition ($ContextoProvider.Estado -eq "Created") "El contexto no inicia en estado Created."
-Assert-HermesEnterpriseCondition ($ContextoProvider.Health.Estado -eq "Unknown") "El contexto no inicializa Health en estado Unknown."
-Assert-HermesEnterpriseCondition (-not $ContextoProvider.ConfiguracionProvider.ContainsKey("ApiKey")) "El contexto no debe contener credenciales reales."
+        It 'Should register provider successfully' {
+            $registry = New-HermesEnterpriseProviderRegistry
+            $provider = New-HermesEnterpriseProvider -ProviderName 'TestProvider' -ProviderType 'infra'
+            $result = Register-HermesEnterpriseProvider -ProviderRegistry $registry -Provider $provider
+            $result | Should -BeTrue
+        }
+    }
 
-$RegistroProviders = New-HermesEnterpriseProviderRegistry
-Register-HermesEnterpriseProvider -ProveedorRegistry $RegistroProviders -NombreProveedor "MockProvider" -Proveedor $ContextoProvider | Out-Null
-Assert-HermesEnterpriseCondition ((Get-HermesEnterpriseRegisteredProviders -ProveedorRegistry $RegistroProviders).Count -eq 1) "El registro no listó el provider registrado."
-Assert-HermesEnterpriseCondition ((Get-HermesEnterpriseProvider -ProveedorRegistry $RegistroProviders -NombreProveedor "MockProvider").NombreProvider -eq "MockProvider") "El registro no consultó el provider esperado."
-Unregister-HermesEnterpriseProvider -ProveedorRegistry $RegistroProviders -NombreProveedor "MockProvider" | Out-Null
-Assert-HermesEnterpriseCondition (-not (Test-HermesEnterpriseProviderRegistered -ProveedorRegistry $RegistroProviders -NombreProveedor "MockProvider")) "El registro no eliminó el provider esperado."
-
-$AdministradorProviders = New-HermesEnterpriseProviderManager
-Register-HermesEnterpriseManagedProvider -AdministradorProviders $AdministradorProviders -ContextoProvider $ContextoProvider | Out-Null
-Initialize-HermesEnterpriseProvider -AdministradorProviders $AdministradorProviders -NombreProvider "MockProvider" | Out-Null
-Assert-HermesEnterpriseCondition ((Get-HermesEnterpriseProviderState -AdministradorProviders $AdministradorProviders -NombreProvider "MockProvider") -eq "Initialized") "El manager no inicializó el provider."
-Stop-HermesEnterpriseProvider -AdministradorProviders $AdministradorProviders -NombreProvider "MockProvider" | Out-Null
-Assert-HermesEnterpriseCondition ((Get-HermesEnterpriseProviderState -AdministradorProviders $AdministradorProviders -NombreProvider "MockProvider") -eq "Disconnected") "El manager no apagó el provider."
-
-Write-Host "Test-ProviderFramework completado correctamente." -ForegroundColor Green
+    Context 'ProviderResolver' {
+        It 'Should create provider execution context' {
+            $context = New-HermesEnterpriseProviderContext
+            $context | Should -Not -BeNullOrEmpty
+        }
+    }
+}

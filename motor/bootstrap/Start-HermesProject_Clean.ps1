@@ -4,11 +4,11 @@ Set-StrictMode -Version Latest
 .SYNOPSIS
     Start-HermesProject - crea estructura local y ambiente para un nuevo proyecto Hermes.
 .DESCRIPTION
-    Soporta dos formas de invocación:
-      - Sin parámetros: solicita el nombre por consola.
-      - Con parámetro -NombreDeProyecto: usa el valor sin preguntar.
+    Soporta dos formas de invocaciÃ³n:
+      - Sin parÃ¡metros: solicita el nombre por consola.
+      - Con parÃ¡metro -NombreDeProyecto: usa el valor sin preguntar.
     Validaciones: el nombre debe cumplir ^[A-Za-z][A-Za-z0-9]*$
-    Si la validación falla, NO se realiza ninguna operación y el script sale con code 1.
+    Si la validaciÃ³n falla, NO se realiza ninguna operaciÃ³n y el script sale con code 1.
 .NOTES
     Compatible PowerShell 5.1+ y 7+
 #>
@@ -19,19 +19,19 @@ param(
     [string] $NombreDeProyecto = ''
 )
 
-function Write-Info { param($m) Write-Host $m -ForegroundColor Blue }
-function Write-Warn { param($m) Write-Host $m -ForegroundColor Yellow }
-function Write-Success { param($m) Write-Host $m -ForegroundColor Green }
+function Write-Info { param($m) Write-Output $m -ForegroundColor Blue }
+function Write-Warn { param($m) Write-Output $m -ForegroundColor Yellow }
+function Write-Success { param($m) Write-Output $m -ForegroundColor Green }
 function Write-ErrorAndExit {
     param($m, $code = 1)
-    Write-Host $m -ForegroundColor Red
+    Write-Output $m -ForegroundColor Red
     exit $code
 }
 
 function Get-ProjectName {
     param([string]$CliNombre)
     if (-not [string]::IsNullOrWhiteSpace($CliNombre)) {
-        Write-Info "Usando NombreDeProyecto pasado por parámetro: $CliNombre"
+        Write-Info "Usando NombreDeProyecto pasado por parÃ¡metro: $CliNombre"
         return $CliNombre.Trim()
     }
     # Preguntar por consola
@@ -43,10 +43,10 @@ function Get-ProjectName {
 
 function Test-ProjectName {
     param([string]$Nombre)
-    # Regla: no vacío, no espacios, iniciar por letra, solo A-Z a-z 0-9
+    # Regla: no vacÃ­o, no espacios, iniciar por letra, solo A-Z a-z 0-9
     if ([string]::IsNullOrWhiteSpace($Nombre)) {
         Write-Warn "ERROR El nombre del proyecto no cumple las reglas."
-        Write-Host "- no puede estar vacío" -ForegroundColor Yellow
+        Write-Output "- no puede estar vacÃ­o" -ForegroundColor Yellow
         return $false
     }
     if ($Nombre -match '\s') {
@@ -56,10 +56,10 @@ function Test-ProjectName {
     $pattern = '^[A-Za-z][A-Za-z0-9]*$'
     if ($Nombre -notmatch $pattern) {
         Write-Warn "ERROR El nombre del proyecto no cumple las reglas. Debe:"
-        Write-Host "- comenzar por una letra" -ForegroundColor Yellow
-        Write-Host "- contener únicamente letras y números" -ForegroundColor Yellow
-        Write-Host "- no tener espacios" -ForegroundColor Yellow
-        Write-Host "- no contener caracteres especiales" -ForegroundColor Yellow
+        Write-Output "- comenzar por una letra" -ForegroundColor Yellow
+        Write-Output "- contener Ãºnicamente letras y nÃºmeros" -ForegroundColor Yellow
+        Write-Output "- no tener espacios" -ForegroundColor Yellow
+        Write-Output "- no contener caracteres especiales" -ForegroundColor Yellow
         return $false
     }
     return $true
@@ -69,7 +69,7 @@ function New-LocalProject {
     param([string]$Nombre, [string]$SandboxRoot = '.\\sandbox')
     $projectPath = Join-Path -Path $SandboxRoot -ChildPath $Nombre
     if (Test-Path $projectPath) {
-        Write-Warn "La carpeta $projectPath ya existe. No se sobreescribirá."
+        Write-Warn "La carpeta $projectPath ya existe. No se sobreescribirÃ¡."
     } else {
         Write-Info "Creando carpeta local: $projectPath"
         New-Item -Path $projectPath -ItemType Directory -Force | Out-Null

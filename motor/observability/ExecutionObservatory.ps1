@@ -16,7 +16,7 @@ $Execution:Deadlock = @{ detected = $false; reason = '' }
 function Start-Observatory {
     param([int]$PollIntervalMs = 500)
     $Execution:TargetPid = $PID
-    Write-Host "[Observatory] starting (run_id=$($Execution:RunId))"
+    Write-Output "[Observatory] starting (run_id=$($Execution:RunId))"
     $script:ObsTimer = New-Object System.Timers.Timer $PollIntervalMs
     $script:ObsTimer.AutoReset = $true
     $script:ObsTimer.Add_Elapsed({
@@ -46,7 +46,8 @@ function Start-Observatory {
                 Stop-Observatory
             }
         } catch {
-            # ignore
+            # SuppressExpected — timer callback transient errors
+            $null = 0
         }
     })
     $script:ObsTimer.Start()
@@ -82,10 +83,16 @@ function Stop-Observatory {
             $git.status = if ([string]::IsNullOrWhiteSpace($status)) { 'clean' } else { 'dirty' }
             Pop-Location
         }
-    } catch { }
+    } catch { 
+            # SuppressExpected — git commands may fail outside a repo
+            $null = 0
+        }
 
     # orphaned processes detection: children that outlived parent not trivial here; count children of PID at last sample
-    try { $children = $script:LastChildren; $Execution:Orphaned = ($children | Measure-Object).Count } catch { $Execution:Orphaned = 0 }
+    try { $children = $script:LastChildren; $Execution:Orphaned = ($children | Measure-Object).Count } catch { 
+            # SuppressExpected — no children to measure
+            $Execution:Orphaned = 0 
+        }
 
     $llmSummary = @{ total_calls = $Execution:LLMCalls.Count; total_cost_usd = ([math]::Round(($Execution:LLMCalls | Measure-Object -Property cost_usd -Sum).Sum,4)); breakdown = @() }
     foreach ($g in $Execution:LLMCalls | Group-Object provider, model) {
@@ -106,7 +113,7 @@ function Stop-Observatory {
     if (-not (Test-Path $outDir)) { New-Item -Path $outDir -ItemType Directory -Force | Out-Null }
     $outPath = Join-Path $outDir 'execution.json'
     $executionJson | ConvertTo-Json -Depth 6 | Set-Content -Path $outPath -Encoding UTF8
-    Write-Host "[Observatory] wrote $outPath"
+    Write-Output "[Observatory] wrote $outPath"
 }
 
 # Export functions

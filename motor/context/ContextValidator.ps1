@@ -4,9 +4,9 @@
 .DESCRIPTION
     Valida que los archivos de contexto generados sean:
     - Completos (existen y tienen contenido)
-    - Coherentes entre sí (mismo commit, versión, rama)
+    - Coherentes entre sÃ­ (mismo commit, versiÃ³n, rama)
     - Dentro del presupuesto de tokens
-    - Parseables correctamente (JSON válido)
+    - Parseables correctamente (JSON vÃ¡lido)
 .BUDGET
     Maximo 250 lineas.
 .INPUTS
@@ -16,7 +16,7 @@
 .EXAMPLE
     $result = Invoke-ContextValidation -ContextPath "D:\HERMES-ENTERPRISE\.hermes\context"
     if (-not $result.IsValid) {
-        Write-Error "Contexto inválido: $($result.Errors -join ', ')"
+        Write-Error "Contexto invÃ¡lido: $($result.Errors -join ', ')"
     }
 #>
 function Invoke-ContextValidation {
@@ -61,7 +61,7 @@ function Invoke-ContextValidation {
         
         $fileSize = (Get-Item $filePath).Length
         if ($fileSize -eq 0) {
-            $errors += "Archivo requerido vacío: $file"
+            $errors += "Archivo requerido vacÃ­o: $file"
             continue
         }
         
@@ -77,7 +77,7 @@ function Invoke-ContextValidation {
         if (Test-Path $filePath) {
             $fileSize = (Get-Item $filePath).Length
             if ($fileSize -eq 0) {
-                $warnings += "Archivo opcional vacío: $file"
+                $warnings += "Archivo opcional vacÃ­o: $file"
                 continue
             }
             $statistics.FilesValidated++
@@ -94,7 +94,7 @@ function Invoke-ContextValidation {
                 $content = Get-Content $jsonPath -Raw | ConvertFrom-Json
                 $statistics.FilesValidated++
             } catch {
-                $errors += "JSON inválido en: $jsonFile"
+                $errors += "JSON invÃ¡lido en: $jsonFile"
             }
         }
     }
@@ -119,7 +119,10 @@ function Invoke-ContextValidation {
             if ($json.project.commit) {
                 $commits += $json.project.commit
             }
-        } catch {}
+        } catch { 
+            # SuppressExpected — file may not exist
+            $null = 0
+        }
     }
     
     # Extraer commit de MANIFEST.json
@@ -130,7 +133,10 @@ function Invoke-ContextValidation {
             if ($json.commit) {
                 $commits += $json.commit
             }
-        } catch {}
+        } catch { 
+            # SuppressExpected — file may not exist
+            $null = 0
+        }
     }
     
     # Validar coherencia
@@ -159,7 +165,7 @@ function Estimate-Tokens {
     param([string]$FilePath)
     
     $content = Get-Content $FilePath -Raw
-    # Estimación: 1 token ~= 4 caracteres (aproximación conservadora)
+    # EstimaciÃ³n: 1 token ~= 4 caracteres (aproximaciÃ³n conservadora)
     return [math]::Ceiling($content.Length / 4)
 }
 

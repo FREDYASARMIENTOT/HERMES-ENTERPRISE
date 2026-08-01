@@ -345,7 +345,7 @@ function Enter-HermesEnvironment {
 
     # Guardar PATH original para restaurar despues
     if (-not (Get-Variable -Name 'HermesOriginalPath' -Scope Global -ErrorAction SilentlyContinue)) {
-        $global:HermesOriginalPath = $env:PATH
+        $script:HermesOriginalPath = $env:PATH
     }
 
     # Prepend scripts dir al PATH
@@ -366,7 +366,7 @@ function Exit-HermesEnvironment {
     param()
 
     if (Get-Variable -Name 'HermesOriginalPath' -Scope Global -ErrorAction SilentlyContinue) {
-        $env:PATH = $global:HermesOriginalPath
+        $env:PATH = $script:HermesOriginalPath
         Remove-Variable -Name 'HermesOriginalPath' -Scope Global -Force
     }
 

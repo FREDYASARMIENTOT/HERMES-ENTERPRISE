@@ -7,7 +7,7 @@
 .NOTES
     Paso 4 - BootstrapOrchestrator
 #>
-param([string]$ProjectRoot = 'D:\HERMES-ENTERPRISE')
+$ProjectRoot = 'D:\HERMES-ENTERPRISE'
 $ErrorActionPreference = 'Stop'
 $suite = 'Test-BootstrapOrchestrator'
 $pass = 0; $fail = 0; $out = [System.Collections.ArrayList]::new()

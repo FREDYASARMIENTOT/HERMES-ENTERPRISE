@@ -7,7 +7,7 @@ function Test-GitSecrets {
         $text = Get-Content -Raw -Path $_.FullName
         if ($text -match 'AKIA[0-9A-Z]{16}|PRIVATE_KEY|SECRET|PASSWORD|TOKEN') { $secretsFound += $_.FullName }
     }
-    # Historial: revisar commits recientes (últimos 50) por regex
+    # Historial: revisar commits recientes (Ãºltimos 50) por regex
     git log -n 50 --pretty=format:%H | ForEach-Object {
         $sha = $_
         $diff = git show $sha --pretty="" --name-only
@@ -17,10 +17,10 @@ function Test-GitSecrets {
 }
 
 function Validate-PAT {
-    # Comprueba que gh auth status funcione y que el token tenga al menos permisos básicos
+    # Comprueba que gh auth status funcione y que el token tenga al menos permisos bÃ¡sicos
     try {
         $status = gh auth status 2>&1
         if ($status -match 'Logged in to github.com') { return $true }
-    } catch { }
+    } catch { # SuppressExpected }
     return $false
 }

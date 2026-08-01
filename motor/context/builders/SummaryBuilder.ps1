@@ -108,7 +108,7 @@ commit: $($ExecutionData.CommitHash)
 - **Tests Pasados:** $($ExecutionData.TestsPassed)
 - **Tests Fallidos:** $($ExecutionData.TestsFailed)
 - **Cobertura:** $($ExecutionData.TestCoverage)%
-- **Estado:** $(if ($ExecutionData.TestsFailed -eq 0) { "✓ Todos los tests pasan" } else { "✗ Algunos tests fallaron" })
+- **Estado:** $(if ($ExecutionData.TestsFailed -eq 0) { "PASS - Todos los tests pasan" } else { "FAIL - Algunos tests fallaron" })
 
 ## Commit Realizado
 - **Hash:** ``$($ExecutionData.CommitHash | Select-Object -First 7)``

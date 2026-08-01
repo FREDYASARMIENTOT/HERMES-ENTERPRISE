@@ -33,18 +33,18 @@ class HermesPathResolver {
         $this.DefaultProvisionTarget = $json.DefaultProvisionTarget
     }
 
-    [string]Get-FrameworkRoot() { return $this.FrameworkRoot }
-    [string]Get-WorkspaceRoot() { return $this.WorkspaceRoot }
-    [string]Get-SandboxRoot() { return $this.SandboxRoot }
-    [string]Get-TemplatesRoot() { return $this.TemplatesRoot }
-    [string]Get-SkillsRoot() { return $this.SkillsRoot }
-    [string]Get-TestsRoot() { return $this.TestsRoot }
-    [string]Get-LogsRoot() { return $this.LogsRoot }
-    [string]Get-ReportsRoot() { return $this.ReportsRoot }
+    [string]GetFrameworkRoot() { return $this.FrameworkRoot }
+    [string]GetWorkspaceRoot() { return $this.WorkspaceRoot }
+    [string]GetSandboxRoot() { return $this.SandboxRoot }
+    [string]GetTemplatesRoot() { return $this.TemplatesRoot }
+    [string]GetSkillsRoot() { return $this.SkillsRoot }
+    [string]GetTestsRoot() { return $this.TestsRoot }
+    [string]GetLogsRoot() { return $this.LogsRoot }
+    [string]GetReportsRoot() { return $this.ReportsRoot }
 
-    [string]Get-ProjectRoot([string]$projectName) {
+    [string]GetProjectRoot([string]$projectName) {
         return (Join-Path -Path $this.WorkspaceRoot -ChildPath $projectName)
     }
 }
 
-Export-ModuleMember -Class HermesPathResolver
+Export-ModuleMember -Function * -Variable *

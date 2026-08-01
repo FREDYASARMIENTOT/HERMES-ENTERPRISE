@@ -1,0 +1,74 @@
+# PUBLISH IGNORE
+# Para dotnet publish y otras herramientas de publicación
+
+# Dev tools
+tools/
+plantillas/
+builders/
+memoria/
+perfiles/
+herramientas/
+PATCHES/
+engine/
+
+# Tests
+tests/
+pruebas/
+test-output/
+coverage/
+
+# Docs
+docs/
+documentacion/
+arquitectura/
+CLINE.md
+CHANGELOG.md
+CURRENT_STATE.md
+AUDIT_REPORT.md
+README.md
+
+# Reports
+reports/
+
+# Sandbox
+sandbox/
+agentes/
+
+# IDE
+.vscode/
+.vs/
+.idea/
+
+# Env
+.env
+.env.*
+.venv/
+.venv_*/
+.conda_env/
+__pycache__/
+
+# Temp
+*.log
+logs/
+*.tmp
+*.bak
+*.old
+
+# Build artifacts
+bin/
+obj/
+artifacts/
+release/
+
+# Runtime
+.hermes/
+motor/.hermes/
+
+# Generated docs (RC44 artifacts)
+WORKSPACE_CLASSIFICATION.md
+WORKSPACE_ARCHITECTURE.md
+DEPLOYMENT_EXCLUSIONS.md
+AZURE_APP_SERVICE_DEPLOYMENT.md
+BUILD_ARCHITECTURE.md
+PACKAGING_STRATEGY.md
+DEPLOYMENT_ARCHITECTURE.md

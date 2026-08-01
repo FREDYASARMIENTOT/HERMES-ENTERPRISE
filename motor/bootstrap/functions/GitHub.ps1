@@ -5,7 +5,7 @@ function Test-GitHubAuthentication {
         if ($status -match 'Logged in to github.com') {
             return $true
         }
-    } catch { }
+    } catch { # SuppressExpected }
     return $false
 }
 

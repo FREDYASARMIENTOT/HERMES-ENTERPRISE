@@ -12,7 +12,7 @@ function Test-ProvisioningPrerequisites {
     if (-not $ghAuth) { $errors += 'gh unauthenticated' }
 
     if ($errors.Count -gt 0) {
-        Write-Host "Prereq errors: $($errors -join ', ')"
+        Write-Output "Prereq errors: $($errors -join ', ')"
         return $false
     }
     return $true

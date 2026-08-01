@@ -6,18 +6,18 @@
     Permite:
     - Registrar nuevas capacidades (New-CapabilityRegistration)
     - Consultar capacidades registradas (Get-CapabilityRegistration, Get-AllCapabilityRegistrations)
-    - Verificar si una capacidad está disponible (Test-CapabilityRegistration)
+    - Verificar si una capacidad estÃ¡ disponible (Test-CapabilityRegistration)
     
     El registry mantiene una tabla hash global $script:CapabilityRegistry
-    que persiste durante la sesión actual de PowerShell.
+    que persiste durante la sesiÃ³n actual de PowerShell.
     
     No implementa ninguna capacidad concreta. No conoce Azure, GitHub, Docker
-    ni ningún proveedor específico. Solo gestiona metadatos de definición.
+    ni ningÃºn proveedor especÃ­fico. Solo gestiona metadatos de definiciÃ³n.
 .NOTES
     Sprint: 6.0
     Fase: 6 - Capabilities
     Fecha: 2026-07-10
-    Versión: 1.0.0
+    VersiÃ³n: 1.0.0
 #>
 
 Set-StrictMode -Version Latest
@@ -30,11 +30,11 @@ function New-CapabilityRegistration {
     .SYNOPSIS
         Registra una nueva capacidad en el registry global.
     .DESCRIPTION
-        Añade una definición de capacidad al registro central.
+        AÃ±ade una definiciÃ³n de capacidad al registro central.
         Si ya existe una capacidad con el mismo nombre, lanza un error
         para evitar duplicados accidentales.
         
-        Esta función solo registra metadatos. No ejecuta la capacidad,
+        Esta funciÃ³n solo registra metadatos. No ejecuta la capacidad,
         no accede al sistema de archivos, no consulta proveedores externos.
     .PARAMETER DefinicionCapacidad
         Objeto del tipo Hermes.Capabilities.Definition (creado con New-CapabilityDefinition).
@@ -44,7 +44,7 @@ function New-CapabilityRegistration {
         $definition = New-CapabilityDefinition -NombreCapacidad 'TestCapability'
         $exitoso = New-CapabilityRegistration -DefinicionCapacidad $definition
     .NOTES
-        Si el nombre ya existe, la función lanza un error.
+        Si el nombre ya existe, la funciÃ³n lanza un error.
         Para reemplazar una capacidad existente, primero use Remove-CapabilityRegistration.
     #>
     [CmdletBinding()]
@@ -63,7 +63,7 @@ function New-CapabilityRegistration {
     $nombreCapacidad = $DefinicionCapacidad.NombreCapacidad.Trim().ToLower()
     
     if ($script:CapabilityRegistry.ContainsKey($nombreCapacidad)) {
-        throw "La capacidad '$($DefinicionCapacidad.NombreCapacidad)' ya está registrada. Use Remove-CapabilityRegistration primero."
+        throw "La capacidad '$($DefinicionCapacidad.NombreCapacidad)' ya estÃ¡ registrada. Use Remove-CapabilityRegistration primero."
     }
     
     # Registrar con timestamp
@@ -80,12 +80,12 @@ function New-CapabilityRegistration {
 function Get-CapabilityRegistration {
     <#
     .SYNOPSIS
-        Obtiene la definición de una capacidad específica del registry.
+        Obtiene la definiciÃ³n de una capacidad especÃ­fica del registry.
     .DESCRIPTION
-        Busca una capacidad por nombre y devuelve su definición completa.
+        Busca una capacidad por nombre y devuelve su definiciÃ³n completa.
         Si la capacidad no existe, devuelve $null.
         
-        La búsqueda es case-insensitive.
+        La bÃºsqueda es case-insensitive.
     .PARAMETER NombreCapacidad
         Nombre de la capacidad a buscar.
     .OUTPUTS
@@ -93,7 +93,7 @@ function Get-CapabilityRegistration {
     .EXAMPLE
         $def = Get-CapabilityRegistration -NombreCapacidad 'AzureResourceDiscovery'
         if ($def -ne $null) {
-            Write-Host "Capacidad encontrada: $($def.NombreCapacidad) v$($def.VersionCapacidad)"
+            Write-Output "Capacidad encontrada: $($def.NombreCapacidad) v$($def.VersionCapacidad)"
         }
     #>
     [CmdletBinding()]
@@ -103,7 +103,7 @@ function Get-CapabilityRegistration {
     )
     
     if ([string]::IsNullOrWhiteSpace($NombreCapacidad)) {
-        throw 'El parámetro NombreCapacidad es obligatorio.'
+        throw 'El parÃ¡metro NombreCapacidad es obligatorio.'
     }
     
     $nombreNormalizado = $NombreCapacidad.Trim().ToLower()
@@ -123,13 +123,13 @@ function Get-AllCapabilityRegistrations {
         Retorna un arreglo con las definiciones de todas las capacidades
         actualmente registradas en el registry.
         
-        El orden no está garantizado (depende del hashtable interno).
+        El orden no estÃ¡ garantizado (depende del hashtable interno).
     .OUTPUTS
         PSCustomObject[] - Arreglo de definiciones de capacidades.
     .EXAMPLE
         $todas = Get-AllCapabilityRegistrations
-        Write-Host "Total de capacidades registradas: $($todas.Count)"
-        $todas | ForEach-Object { Write-Host "  - $($_.NombreCapacidad)" }
+        Write-Output "Total de capacidades registradas: $($todas.Count)"
+        $todas | ForEach-Object { Write-Output "  - $($_.NombreCapacidad)" }
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject[]])]
@@ -147,19 +147,19 @@ function Get-AllCapabilityRegistrations {
 function Test-CapabilityRegistration {
     <#
     .SYNOPSIS
-        Verifica si una capacidad está registrada.
+        Verifica si una capacidad estÃ¡ registrada.
     .DESCRIPTION
         Comprueba si existe una capacidad con el nombre especificado
         en el registry actual.
         
-        La búsqueda es case-insensitive.
+        La bÃºsqueda es case-insensitive.
     .PARAMETER NombreCapacidad
         Nombre de la capacidad a verificar.
     .OUTPUTS
         [bool] - $true si la capacidad existe, $false en caso contrario.
     .EXAMPLE
         if (Test-CapabilityRegistration -NombreCapacidad 'AzureResourceDiscovery') {
-            Write-Host "La capacidad Azure está disponible."
+            Write-Output "La capacidad Azure estÃ¡ disponible."
         }
     #>
     [CmdletBinding()]
@@ -182,17 +182,17 @@ function Remove-CapabilityRegistration {
         Elimina una capacidad del registry.
     .DESCRIPTION
         Remueve una capacidad registrada por nombre.
-        Si la capacidad no existe, no lanza error (diseño idempotente).
+        Si la capacidad no existe, no lanza error (diseÃ±o idempotente).
         
-        Use esta función antes de registrar una nueva versión de una capacidad
+        Use esta funciÃ³n antes de registrar una nueva versiÃ³n de una capacidad
         que ya existe en el registry.
     .PARAMETER NombreCapacidad
         Nombre de la capacidad a eliminar.
     .OUTPUTS
-        [bool] - $true si la capacidad fue eliminada, $false si no existía.
+        [bool] - $true si la capacidad fue eliminada, $false si no existÃ­a.
     .EXAMPLE
         $eliminado = Remove-CapabilityRegistration -NombreCapacidad 'OldCapability'
-        Write-Host "Capacidad eliminada: $eliminado"
+        Write-Output "Capacidad eliminada: $eliminado"
     #>
     [CmdletBinding()]
     [OutputType([bool])]
@@ -217,15 +217,15 @@ function Remove-CapabilityRegistration {
 function Get-CapabilityRegistrationCount {
     <#
     .SYNOPSIS
-        Devuelve el número total de capacidades registradas.
+        Devuelve el nÃºmero total de capacidades registradas.
     .DESCRIPTION
-        Retorna un conteo de cuántas capacidades hay actualmente
+        Retorna un conteo de cuÃ¡ntas capacidades hay actualmente
         en el registry global.
     .OUTPUTS
         [int] - Cantidad de capacidades registradas.
     .EXAMPLE
         $cantidad = Get-CapabilityRegistrationCount
-        Write-Host "Capacidades registradas: $cantidad"
+        Write-Output "Capacidades registradas: $cantidad"
     #>
     [CmdletBinding()]
     [OutputType([int])]
@@ -241,15 +241,15 @@ function Clear-AllCapabilityRegistrations {
     .DESCRIPTION
         Limpia completamente el registry global de capacidades.
         
-        Esta función es útil para pruebas unitarias o para reiniciar
+        Esta funciÃ³n es Ãºtil para pruebas unitarias o para reiniciar
         el estado del sistema de capacidades durante el desarrollo.
         
-        Use con precaución en producción.
+        Use con precauciÃ³n en producciÃ³n.
     .OUTPUTS
         [void]
     .EXAMPLE
         Clear-AllCapabilityRegistrations
-        Write-Host "Registry de capacidades limpiado."
+        Write-Output "Registry de capacidades limpiado."
     #>
     [CmdletBinding()]
     [OutputType([void])]

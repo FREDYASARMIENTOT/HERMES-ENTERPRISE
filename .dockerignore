@@ -1,0 +1,96 @@
+# ██████ VERSION CONTROL ██████
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+
+# ██████ DEVELOPMENT TOOLS ██████
+tools/
+plantillas/
+builders/
+memoria/
+perfiles/
+herramientas/
+PATCHES/
+engine/Scripts/
+
+# ██████ TESTING ██████
+tests/
+pruebas/
+test-output/
+coverage/
+
+# ██████ DOCUMENTATION ██████
+docs/
+documentacion/
+arquitectura/
+CLINE.md
+CHANGELOG.md
+CURRENT_STATE.md
+AUDIT_REPORT.md
+BOOTSTRAP_IMPLEMENTATION_PLAN.md
+MASTER_REFACTORING_ROADMAP.md
+GOLDEN_REFACTORING_SEQUENCE.md
+GOLDEN_REFACTORING_SEQUENCE_V2.md
+WORKING_TREE_RECONCILIATION.md
+ARCHITECTURE_CONVERGENCE_REVIEW.md
+MODULE_DEPENDENCY_GRAPH.md
+TECHNICAL_DEBT_REGISTER.md
+QUALITY_GATE_REPORT.md
+CODEBASE_STABILIZATION_AUDIT.md
+WORKSPACE_CLASSIFICATION.md
+WORKSPACE_ARCHITECTURE.md
+DEPLOYMENT_EXCLUSIONS.md
+AZURE_APP_SERVICE_DEPLOYMENT.md
+BUILD_ARCHITECTURE.md
+PACKAGING_STRATEGY.md
+DEPLOYMENT_ARCHITECTURE.md
+
+# ██████ REPORTS ██████
+reports/
+
+# █████️ SANDBOX / EXPERIMENTAL ██████
+sandbox/
+agentes/
+motor/capabilities/
+motor/observability/
+hello.ps1
+
+# ██████ IDE ██████
+.vscode/
+.vs/
+.idea/
+
+# █████️ ENVIRONMENTS ██████
+.env
+.env.*
+.venv/
+.venv_*/
+.conda_env/
+__pycache__/
+*.pyc
+*.pyo
+
+# ██████ TEMPORARY FILES ██████
+*.log
+logs/
+*.tmp
+*.bak
+*.old
+*.orig
+PATCHES/
+
+# █████️ RUNTIME ██████
+.hermes/cache/
+.hermes/tmp/
+.hermes/runtime/
+
+# ██████ BUILD ARTIFACTS ██████
+bin/
+obj/
+artifacts/
+release/
+
+# ██████ CI/CD CONFIG (runtime) ██████
+.github/
+.azure/

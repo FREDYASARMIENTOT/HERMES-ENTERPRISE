@@ -3,13 +3,13 @@
     Construye un BootstrapRequest a partir de entrada del usuario
 
 .DESCRIPTION
-    BootstrapRequestBuilder interactúa con el usuario para recopilar
-    toda la información necesaria para crear un proyecto Hermes.
+    BootstrapRequestBuilder interactÃºa con el usuario para recopilar
+    toda la informaciÃ³n necesaria para crear un proyecto Hermes.
 
-    Este componente es responsable ÚNICAMENTE de:
-    - Preguntar al usuario (vía Read-Host)
+    Este componente es responsable ÃšNICAMENTE de:
+    - Preguntar al usuario (vÃ­a Read-Host)
     - Validar respuestas
-    - Construir un BootstrapRequest válido
+    - Construir un BootstrapRequest vÃ¡lido
 
     NO es responsable de:
     - Crear archivos o carpetas
@@ -18,15 +18,15 @@
     - Invocar el orquestador
 
     Flujo:
-        Usuario → Builder → BootstrapRequest → Converter → BootstrapState
+        Usuario â†’ Builder â†’ BootstrapRequest â†’ Converter â†’ BootstrapState
 
 .NOTES
     Autor: Hermes Agent
     Fecha: 2026-07-10
-    Versión: 1.0.0
+    VersiÃ³n: 1.0.0
 
     Principios:
-    - Separación de preocupaciones: SOLO captura datos
+    - SeparaciÃ³n de preocupaciones: SOLO captura datos
     - Valida cada respuesta antes de continuar
     - Proporciona valores por defecto razonables
     - No asume nada sobre el sistema del usuario
@@ -35,11 +35,11 @@
 function Invoke-BootstrapRequestBuilder {
     <#
     .SYNOPSIS
-        Interactúa con el usuario para construir un BootstrapRequest
+        InteractÃºa con el usuario para construir un BootstrapRequest
 
     .DESCRIPTION
-        Guía al usuario a través de una serie de preguntas para
-        recopilar toda la información necesaria para crear un proyecto
+        GuÃ­a al usuario a travÃ©s de una serie de preguntas para
+        recopilar toda la informaciÃ³n necesaria para crear un proyecto
         Hermes. Valida cada respuesta y construye un DTO inmutable.
 
     .PARAMETER NombreProyecto
@@ -61,39 +61,39 @@ function Invoke-BootstrapRequestBuilder {
         [switch]$NonInteractive
     )
 
-    Write-Host "`n╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║     HERMES ENTERPRISE - Configuración de Nuevo Proyecto     ║" -ForegroundColor Cyan
-    Write-Host "╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
-    Write-Host ""
+    Write-Output "`nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—" -ForegroundColor Cyan
+    Write-Output "â•‘     HERMES ENTERPRISE - ConfiguraciÃ³n de Nuevo Proyecto     â•‘" -ForegroundColor Cyan
+    Write-Output "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•" -ForegroundColor Cyan
+    Write-Output ""
 
-    # ── 1. Nombre del proyecto ──
+    # â”€â”€ 1. Nombre del proyecto â”€â”€
     if ([string]::IsNullOrWhiteSpace($NombreProyecto)) {
         $NombreProyecto = Invoke-PromptNombreProyecto
     } else {
-        Write-Host "  ✓ Nombre del proyecto: $NombreProyecto" -ForegroundColor Green
+        Write-Output "  âœ“ Nombre del proyecto: $NombreProyecto" -ForegroundColor Green
     }
 
-    # ── 2. Rutas ──
+    # â”€â”€ 2. Rutas â”€â”€
     $RutaProyecto = Invoke-PromptRutaProyecto -NombreProyecto $NombreProyecto
     $RutaDefaultEnvironment = Join-Path $RutaProyecto ".venv"
     $RutaEnvironment = Invoke-PromptRutaEnvironment -RutaDefault $RutaDefaultEnvironment
 
-    # ── 3. Estructura del proyecto ──
-    $CrearFrontend = Invoke-PromptBoolean -Mensaje "¿Crear estructura de frontend (frontend/)?" -Default $false
-    $CrearBackend = Invoke-PromptBoolean -Mensaje "¿Crear estructura de backend (backend/)?" -Default $false
+    # â”€â”€ 3. Estructura del proyecto â”€â”€
+    $CrearFrontend = Invoke-PromptBoolean -Mensaje "Â¿Crear estructura de frontend (frontend/)?" -Default $false
+    $CrearBackend = Invoke-PromptBoolean -Mensaje "Â¿Crear estructura de backend (backend/)?" -Default $false
 
-    # ── 4. Runtimes ──
+    # â”€â”€ 4. Runtimes â”€â”€
     $RuntimeNode = ""
     if ($CrearFrontend) {
-        $RuntimeNode = Invoke-PromptString -Mensaje "  Versión de Node.js" -Default "20.11.0"
+        $RuntimeNode = Invoke-PromptString -Mensaje "  VersiÃ³n de Node.js" -Default "20.11.0"
     }
 
     $RuntimePython = ""
     if ($CrearBackend) {
-        $RuntimePython = Invoke-PromptString -Mensaje "  Versión de Python" -Default "3.11"
+        $RuntimePython = Invoke-PromptString -Mensaje "  VersiÃ³n de Python" -Default "3.11"
     }
 
-    # ── 5. Repositorio Git ──
+    # â”€â”€ 5. Repositorio Git â”€â”€
     $AccionRepositorio = Invoke-PromptAccionRepositorio
     $ProveedorGit = "None"
     $URLRemoto = ""
@@ -119,19 +119,19 @@ function Invoke-BootstrapRequestBuilder {
         }
     }
 
-    # ── 6. Configuración adicional ──
+    # â”€â”€ 6. ConfiguraciÃ³n adicional â”€â”€
     $CrearGitIgnore = Invoke-PromptBoolean -Mensaje "Crear archivo .gitignore?" -Default $true
     $CrearEnv = Invoke-PromptBoolean -Mensaje "Crear entorno virtual Python (.venv)?" -Default $false
     $AbrirVSCode = Invoke-PromptBoolean -Mensaje "Abrir VS Code al finalizar?" -Default $true
 
-    # ── 7. Descripción ──
-    $DescripcionProyecto = Invoke-PromptString -Mensaje "Descripción del proyecto (opcional)" -Default ""
+    # â”€â”€ 7. DescripciÃ³n â”€â”€
+    $DescripcionProyecto = Invoke-PromptString -Mensaje "DescripciÃ³n del proyecto (opcional)" -Default ""
 
-    # ── 8. Construir DTO ──
+    # â”€â”€ 8. Construir DTO â”€â”€
     $request = New-BootstrapRequest @PSBoundParameters
 
-    Write-Host "`n  ✓ BootstrapRequest creado exitosamente" -ForegroundColor Green
-    Write-Host ""
+    Write-Output "`n  âœ“ BootstrapRequest creado exitosamente" -ForegroundColor Green
+    Write-Output ""
 
     return $request
 }
@@ -139,7 +139,7 @@ function Invoke-BootstrapRequestBuilder {
 function Invoke-PromptNombreProyecto {
     <#
     .SYNOPSIS
-        Solicita el nombre del proyecto con validación
+        Solicita el nombre del proyecto con validaciÃ³n
     #>
 
     [CmdletBinding()]
@@ -149,18 +149,18 @@ function Invoke-PromptNombreProyecto {
         $nombre = Read-Host "  Nombre del proyecto"
 
         if ([string]::IsNullOrWhiteSpace($nombre)) {
-            Write-Host "    ✗ El nombre no puede estar vacío" -ForegroundColor Red
+            Write-Output "    âœ— El nombre no puede estar vacÃ­o" -ForegroundColor Red
             continue
         }
 
         if ($nombre.Length -lt 3 -or $nombre.Length -gt 64) {
-            Write-Host "    ✗ Debe tener entre 3 y 64 caracteres (ingresado: $($nombre.Length))" -ForegroundColor Red
+            Write-Output "    âœ— Debe tener entre 3 y 64 caracteres (ingresado: $($nombre.Length))" -ForegroundColor Red
             continue
         }
 
         if ($nombre -notmatch '^[a-zA-Z0-9_-]+$') {
-            Write-Host "    ✗ Solo se permiten letras, números, guiones bajos (_) y guiones (-)" -ForegroundColor Red
-            Write-Host "      Ejemplos válidos: MiProyecto, proyecto-demo, proyecto_2026" -ForegroundColor Gray
+            Write-Output "    âœ— Solo se permiten letras, nÃºmeros, guiones bajos (_) y guiones (-)" -ForegroundColor Red
+            Write-Output "      Ejemplos vÃ¡lidos: MiProyecto, proyecto-demo, proyecto_2026" -ForegroundColor Gray
             continue
         }
 
@@ -171,7 +171,7 @@ function Invoke-PromptNombreProyecto {
 function Invoke-PromptRutaProyecto {
     <#
     .SYNOPSIS
-        Solicita la ruta donde se creará el proyecto
+        Solicita la ruta donde se crearÃ¡ el proyecto
     #>
 
     [CmdletBinding()]
@@ -225,18 +225,18 @@ function Invoke-PromptRutaRepositorioLocal {
         $ruta = Read-Host "  Ruta del repositorio local existente"
 
         if ([string]::IsNullOrWhiteSpace($ruta)) {
-            Write-Host "    ✗ Debe especificar una ruta" -ForegroundColor Red
+            Write-Output "    âœ— Debe especificar una ruta" -ForegroundColor Red
             continue
         }
 
         if (-not (Test-Path $ruta)) {
-            Write-Host "    ✗ La ruta no existe" -ForegroundColor Red
+            Write-Output "    âœ— La ruta no existe" -ForegroundColor Red
             continue
         }
 
         $gitDir = Join-Path $ruta ".git"
         if (-not (Test-Path (Join-Path $gitDir "HEAD"))) {
-            Write-Host "    ✗ La ruta no contiene un repositorio Git válido" -ForegroundColor Red
+            Write-Output "    âœ— La ruta no contiene un repositorio Git vÃ¡lido" -ForegroundColor Red
             continue
         }
 
@@ -247,7 +247,7 @@ function Invoke-PromptRutaRepositorioLocal {
 function Invoke-PromptBoolean {
     <#
     .SYNOPSIS
-        Solicita una respuesta sí/no
+        Solicita una respuesta sÃ­/no
     #>
 
     [CmdletBinding()]
@@ -299,20 +299,20 @@ function Invoke-PromptString {
 function Invoke-PromptAccionRepositorio {
     <#
     .SYNOPSIS
-        Solicita la acción sobre el repositorio Git
+        Solicita la acciÃ³n sobre el repositorio Git
     #>
 
     [CmdletBinding()]
     param()
 
-    Write-Host "`n  ── Configuración de repositorio Git ──" -ForegroundColor Cyan
-    Write-Host "  1) Crear nuevo repositorio y conectar con remoto" -ForegroundColor White
-    Write-Host "  2) Clonar repositorio existente" -ForegroundColor White
-    Write-Host "  3) Conectar con repositorio local existente" -ForegroundColor White
-    Write-Host "  4) Ninguno (proyecto sin Git)" -ForegroundColor White
+    Write-Output "`n  â”€â”€ ConfiguraciÃ³n de repositorio Git â”€â”€" -ForegroundColor Cyan
+    Write-Output "  1) Crear nuevo repositorio y conectar con remoto" -ForegroundColor White
+    Write-Output "  2) Clonar repositorio existente" -ForegroundColor White
+    Write-Output "  3) Conectar con repositorio local existente" -ForegroundColor White
+    Write-Output "  4) Ninguno (proyecto sin Git)" -ForegroundColor White
 
     while ($true) {
-        $opcion = Read-Host "  Seleccione una opción (1-4, default: 4)"
+        $opcion = Read-Host "  Seleccione una opciÃ³n (1-4, default: 4)"
 
         if ([string]::IsNullOrWhiteSpace($opcion)) {
             return "Ninguno"
@@ -324,7 +324,7 @@ function Invoke-PromptAccionRepositorio {
             "3" { return "Conectar" }
             "4" { return "Ninguno" }
             default {
-                Write-Host "    ✗ Opción inválida" -ForegroundColor Red
+                Write-Output "    âœ— OpciÃ³n invÃ¡lida" -ForegroundColor Red
                 continue
             }
         }

@@ -3,7 +3,7 @@ function GitHubProvision {
         [string]$RepoPath,
         [string]$RepoName
     )
-    Write-Host "[PROVISION] Iniciando GitHubProvision para $RepoName"
+    Write-Output "[PROVISION] Iniciando GitHubProvision para $RepoName"
     Escribir-ProgresoHermes -Evento 'Inicio' -Paso 'GitHubProvision' -Detalle $RepoName
 
     # Inicializar git si no existe
@@ -20,8 +20,10 @@ function GitHubProvision {
 
     # Crear repo en GitHub real usando gh
     try {
-        $createCmd = "gh repo create $RepoName --public --source=$RepoPath --remote=origin --push --confirm"
-        iex $createCmd
+        & gh repo create $RepoName --public --source=$RepoPath --remote=origin --push --confirm 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) {
+            throw "gh repo create falló con código $LASTEXITCODE"
+        }
         Escribir-ProgresoHermes -Evento 'Exito' -Paso 'GitHubCreate' -Detalle $RepoName
     } catch {
         Escribir-ProgresoHermes -Evento 'Fallo' -Paso 'GitHubCreate' -Detalle $_
@@ -30,7 +32,10 @@ function GitHubProvision {
 
     # Verificar
     try {
-        $view = iex "gh repo view $RepoName --json name,url" | Out-String
+        $view = & gh repo view $RepoName --json name,url 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) {
+            throw "gh repo view falló con código $LASTEXITCODE"
+        }
         Escribir-ProgresoHermes -Evento 'Progreso' -Paso 'GitHubVerify' -Detalle $view
     } catch {
         Escribir-ProgresoHermes -Evento 'Fallo' -Paso 'GitHubVerify' -Detalle $_

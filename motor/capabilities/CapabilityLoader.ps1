@@ -4,20 +4,20 @@
 .DESCRIPTION
     CapabilityLoader.ps1 implementa la carga de capacidades desde archivos .ps1.
     Permite:
-    - Cargar definiciones desde rutas específicas (Start-CapabilityLoading)
-    - Cargar y registrar capacidades automáticamente (Load-CapabilityFromPath)
+    - Cargar definiciones desde rutas especÃ­ficas (Start-CapabilityLoading)
+    - Cargar y registrar capacidades automÃ¡ticamente (Load-CapabilityFromPath)
     - Cargar todas las capacidades de un directorio (Load-AllCapabilitiesFromDirectory)
     
     El loader solo carga metadatos y definiciones. No ejecuta las capacidades,
     no accede a proveedores externos, no modifica el Bootstrap Engine.
     
-    Cada archivo de capacidad debe contener una función que retorne un objeto
+    Cada archivo de capacidad debe contener una funciÃ³n que retorne un objeto
     del tipo Hermes.Capabilities.Definition.
 .NOTES
     Sprint: 6.0
     Fase: 6 - Capabilities
     Fecha: 2026-07-10
-    Versión: 1.0.0
+    VersiÃ³n: 1.0.0
 #>
 
 Set-StrictMode -Version Latest
@@ -25,17 +25,17 @@ Set-StrictMode -Version Latest
 function Start-CapabilityLoading {
     <#
     .SYNOPSIS
-        Carga una definición de capacidad desde un archivo .ps1.
+        Carga una definiciÃ³n de capacidad desde un archivo .ps1.
     .DESCRIPTION
         Ejecuta el script PowerShell especificado y espera que retorne
         un objeto del tipo Hermes.Capabilities.Definition.
         
-        Esta función solo carga la definición en memoria.
+        Esta funciÃ³n solo carga la definiciÃ³n en memoria.
         No registra la capacidad en el Registry. Para registrar,
         use Load-CapabilityFromPath.
         
         El archivo debe:
-        - Existir físicamente
+        - Existir fÃ­sicamente
         - Ser ejecutable
         - Retornar un objeto Hermes.Capabilities.Definition
         - No contener dependencias de Azure, GitHub, Docker, etc.
@@ -45,9 +45,9 @@ function Start-CapabilityLoading {
         PSCustomObject (Hermes.Capabilities.Definition) o lanza error si falla.
     .EXAMPLE
         $def = Start-CapabilityLoading -RutaArchivoCapacidad 'C:\Proyectos\MyCap.ps1'
-        Write-Host "Capacidad cargada: $($def.NombreCapacidad)"
+        Write-Output "Capacidad cargada: $($def.NombreCapacidad)"
     .NOTES
-        Esta función NO registra la capacidad.
+        Esta funciÃ³n NO registra la capacidad.
         Use Load-CapabilityFromPath para cargar y registrar en un solo paso.
     #>
     [CmdletBinding()]
@@ -57,9 +57,9 @@ function Start-CapabilityLoading {
         [string]$RutaArchivoCapacidad
     )
     
-    # Validar que la ruta no esté vacía
+    # Validar que la ruta no estÃ© vacÃ­a
     if ([string]::IsNullOrWhiteSpace($RutaArchivoCapacidad)) {
-        throw 'El parámetro RutaArchivoCapacidad es obligatorio.'
+        throw 'El parÃ¡metro RutaArchivoCapacidad es obligatorio.'
     }
     
     # Validar que el archivo exista
@@ -69,7 +69,7 @@ function Start-CapabilityLoading {
     
     # Validar que sea un archivo .ps1
     if (-not $RutaArchivoCapacidad.EndsWith('.ps1')) {
-        throw "El archivo de capacidad debe tener extensión .ps1: $RutaArchivoCapacidad"
+        throw "El archivo de capacidad debe tener extensiÃ³n .ps1: $RutaArchivoCapacidad"
     }
     
     # Ejecutar el script y capturar el resultado
@@ -80,13 +80,13 @@ function Start-CapabilityLoading {
         throw "Error al cargar la capacidad desde '$RutaArchivoCapacidad': $_"
     }
     
-    # Validar que el resultado sea una definición válida
+    # Validar que el resultado sea una definiciÃ³n vÃ¡lida
     if ($null -eq $resultado) {
-        throw "El archivo '$RutaArchivoCapacidad' no retornó ningún objeto."
+        throw "El archivo '$RutaArchivoCapacidad' no retornÃ³ ningÃºn objeto."
     }
     
     if ($resultado.PSTypeName -ne 'Hermes.Capabilities.Definition') {
-        throw "El archivo '$RutaArchivoCapacidad' debe retornar un objeto de tipo Hermes.Capabilities.Definition, pero retornó: $($resultado.PSTypeName)"
+        throw "El archivo '$RutaArchivoCapacidad' debe retornar un objeto de tipo Hermes.Capabilities.Definition, pero retornÃ³: $($resultado.PSTypeName)"
     }
     
     return $resultado
@@ -97,26 +97,26 @@ function Load-CapabilityFromPath {
     .SYNOPSIS
         Carga y registra una capacidad desde un archivo .ps1.
     .DESCRIPTION
-        Combina la carga de la definición (Start-CapabilityLoading) con
-        el registro automático en el CapabilityRegistry.
+        Combina la carga de la definiciÃ³n (Start-CapabilityLoading) con
+        el registro automÃ¡tico en el CapabilityRegistry.
         
-        Este es el método recomendado para agregar una nueva capacidad
+        Este es el mÃ©todo recomendado para agregar una nueva capacidad
         al framework de manera declarativa.
         
         Pasos que realiza:
         1. Valida que el archivo exista y sea ejecutable
-        2. Ejecuta el script para obtener la definición
+        2. Ejecuta el script para obtener la definiciÃ³n
         3. Registra la capacidad en el CapabilityRegistry
-        4. Retorna la definición registrada
+        4. Retorna la definiciÃ³n registrada
         
-        Si la capacidad ya está registrada, lanza un error.
+        Si la capacidad ya estÃ¡ registrada, lanza un error.
     .PARAMETER RutaArchivoCapacidad
         Ruta absoluta o relativa al archivo .ps1 de la capacidad.
     .OUTPUTS
-        PSCustomObject (Hermes.Capabilities.Definition) - La definición registrada.
+        PSCustomObject (Hermes.Capabilities.Definition) - La definiciÃ³n registrada.
     .EXAMPLE
         $def = Load-CapabilityFromPath -RutaArchivoCapacidad 'C:\Capabilities\Azure.ps1'
-        Write-Host "Capacidad registrada: $($def.NombreCapacidad) v$($def.VersionCapacidad)"
+        Write-Output "Capacidad registrada: $($def.NombreCapacidad) v$($def.VersionCapacidad)"
     .NOTES
         Si la capacidad ya existe en el registry, use Remove-CapabilityRegistration
         antes de intentar cargarla nuevamente.
@@ -128,7 +128,7 @@ function Load-CapabilityFromPath {
         [string]$RutaArchivoCapacidad
     )
     
-    # Cargar la definición desde el archivo
+    # Cargar la definiciÃ³n desde el archivo
     $definicion = Start-CapabilityLoading -RutaArchivoCapacidad $RutaArchivoCapacidad
     
     # Registrar en el CapabilityRegistry
@@ -154,23 +154,23 @@ function Load-AllCapabilitiesFromDirectory {
     .PARAMETER RutaDirectorioCapacidades
         Ruta absoluta o relativa al directorio que contiene las capacidades.
     .PARAMETER BuscarRecursivamente
-        Si está presente, busca en subdirectorios. Por defecto, solo busca en el directorio raíz.
+        Si estÃ¡ presente, busca en subdirectorios. Por defecto, solo busca en el directorio raÃ­z.
     .OUTPUTS
         PSCustomObject[] - Arreglo de definiciones cargadas y registradas.
     .EXAMPLE
         $cargadas = Load-AllCapabilitiesFromDirectory -RutaDirectorioCapacidades 'C:\Proyecto\capabilities'
-        Write-Host "Total de capacidades cargadas: $($cargadas.Count)"
+        Write-Output "Total de capacidades cargadas: $($cargadas.Count)"
     .EXAMPLE
         $cargadas = Load-AllCapabilitiesFromDirectory -RutaDirectorioCapacidades 'C:\Proyecto\capabilities' -BuscarRecursivamente
         foreach ($cap in $cargadas) {
-            Write-Host "  - $($cap.NombreCapacidad) v$($cap.VersionCapacidad)"
+            Write-Output "  - $($cap.NombreCapacidad) v$($cap.VersionCapacidad)"
         }
     .NOTES
-        Esta función ignora archivos que:
-        - No tienen extensión .ps1
+        Esta funciÃ³n ignora archivos que:
+        - No tienen extensiÃ³n .ps1
         - Lanzan excepciones al ejecutarse
         - No retornan un objeto Hermes.Capabilities.Definition
-        - Ya están registrados en el CapabilityRegistry
+        - Ya estÃ¡n registrados en el CapabilityRegistry
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject[]])]
@@ -187,7 +187,7 @@ function Load-AllCapabilitiesFromDirectory {
         throw "El directorio de capacidades no existe: $RutaDirectorioCapacidades"
     }
     
-    # Construir parámetros para Get-ChildItem
+    # Construir parÃ¡metros para Get-ChildItem
     $parametrosBusqueda = @{
         Path   = $RutaDirectorioCapacidades
         Filter = '*.ps1'

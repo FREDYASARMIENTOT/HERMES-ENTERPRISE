@@ -33,9 +33,9 @@ if (Test-Path $resolverModule) {
 }
 
 if ($Sandbox.IsPresent) {
-    $WorkspaceRoot = $resolver.Get-SandboxRoot()
+    $WorkspaceRoot = $resolver.GetSandboxRoot()
 } elseif (-not $WorkspaceRoot) {
-    $WorkspaceRoot = $resolver.Get-WorkspaceRoot()
+    $WorkspaceRoot = $resolver.GetWorkspaceRoot()
 }
 
 # Inject WorkspaceRoot and Sandbox into bound parameters

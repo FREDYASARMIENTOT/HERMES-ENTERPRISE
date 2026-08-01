@@ -1,51 +1,100 @@
-# Logs
-reports/logs/
+# ██████ OS & SYSTEM ██████
+Thumbs.db
+.DS_Store
+Desktop.ini
+$RECYCLE.BIN/
+
+# ██████ IDE / EDITOR ██████
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# ██████ ENVIRONMENTS ██████
+.env
+.env.*
+.venv/
+.venv_*/
+.conda_env/
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+.terraform/
+
+# ██████ LOGS ██████
 *.log
 logs/
 
-# Runtime
+# ██████ TEMPORARY FILES ██████
+*.tmp
+*.bak
+*.old
+*.orig
+
+# █████️ BUILD ARTIFACTS ██████
+bin/
+obj/
+artifacts/
+release/
+*.ps1xml
+
+# ██████ RUNTIME (Hermes) ██████
 .hermes/cache/
 .hermes/tmp/
 .hermes/runtime/
 .hermes/sessions/
-
-# Python
-__pycache__/
-*.pyc
-
-# PowerShell
-*.ps1xml
-
-# VS Code
-.vscode/
-
-# Visual Studio
-.vs/
-
-# Build
-bin/
-obj/
-
-# Temporary
-*.tmp
-*.bak
-*.old
-
-# OS
-Thumbs.db
-.DS_Store
-
-# Hermes Bootstrap Context
 motor/.hermes/
 
-# Test artifacts
-pruebas/salida-temporal/
-
-# Environment files
-.env
-
-# Reports generated
+# ██████ REPORTS (generated) ██████
 reports/*.xml
 reports/*.jsonl
-# sandbox/Local/ (repo anidado, no trackear)  
-# sandbox/ completo (subrepos + tests locales)  
+reports/backups/
+reports/dual_bootstrap_map.json
+reports/environment_state.json
+reports/git_log.json
+reports/kernel_health.json
+reports/module_dependency_graph.json
+reports/pip_integrity.json
+reports/precheck_report.json
+reports/python_integrity.json
+reports/regla_cero_audit.json
+reports/runtime_core_state.json
+reports/vscode_settings_audit.json
+
+# ██████ TEST ARTIFACTS ██████
+pruebas/salida-temporal/
+test-output/
+coverage/
+
+# ██████ GIT SUBREPOS / NESTED ██████
+sandbox/
+
+# █████️ GENERATED DOCUMENTATION ██████
+# (Build artifacts from RC44 — not source)
+WORKSPACE_CLASSIFICATION.md
+WORKSPACE_ARCHITECTURE.md
+DEPLOYMENT_EXCLUSIONS.md
+AZURE_APP_SERVICE_DEPLOYMENT.md
+BUILD_ARCHITECTURE.md
+PACKAGING_STRATEGY.md
+DEPLOYMENT_ARCHITECTURE.md
+ARCHITECTURE_CONVERGENCE_REVIEW.md
+CODEBASE_STABILIZATION_AUDIT.md
+MODULE_DEPENDENCY_GRAPH.md
+QUALITY_GATE_REPORT.md
+TECHNICAL_DEBT_REGISTER.md
+
+# █████️ RC45 TOOLS ██████
+tools/RC43_Comprehensive.ps1
+tools/RC45_Audit.ps1
+tools/RC45_Cleanup.ps1
+tools/RC45_FixVerbs.ps1
+
+# █████️ PRUEBAS GENERADAS ██████
+pruebas/unitarias/Test-BootLoader.ps1
+pruebas/unitarias/Test-CoreServices.ps1
+pruebas/unitarias/TestHelpers.psm1
+pruebas/run_analyzer_summary.ps1

@@ -27,17 +27,46 @@ function New-HermesEnterpriseRuntime {
         [psobject]$EngineRegistry,
 
         [Parameter(Mandatory = $false)]
-        [psobject]$ProviderRegistry
+        [psobject]$ProviderRegistry,
+
+        [Parameter(Mandatory = $false)]
+        [psobject]$CapabilityRegistry,
+
+        [Parameter(Mandatory = $false)]
+        [psobject]$DependencyContainer
     )
 
+    $pipelineOrchestrator = if ($null -ne $CapabilityRegistry -and $null -ne $DependencyContainer) {
+        New-PipelineOrchestrator -CapabilityRegistry $CapabilityRegistry -DependencyContainer $DependencyContainer
+    } else { $null }
+
+    $providerLifecycle = if ($null -ne $ProviderRegistry -and $null -ne $DependencyContainer) {
+        New-ProviderLifecycleManager -ProviderRegistry $ProviderRegistry -DependencyContainer $DependencyContainer
+    } else { $null }
+
+    $engineDiscovery = if ($null -ne $EngineRegistry) {
+        New-EngineDiscovery -EngineRegistry $EngineRegistry
+    } else { $null }
+
+    $providerDiscovery = if ($null -ne $ProviderRegistry) {
+        New-ProviderDiscovery -ProviderRegistry $ProviderRegistry
+    } else { $null }
+
     $runtime = [pscustomobject][ordered]@{
-        EventBus        = $EventBusKernel
-        EngineRegistry  = $EngineRegistry
-        ProviderRegistry = $ProviderRegistry
-        EstadoRuntime   = 'Creado'
-        Componentes     = [System.Collections.ArrayList]@()
-        HoraInicio      = $null
-        ExecutionContexts = [System.Collections.ArrayList]@()
+        EventBus            = $EventBusKernel
+        EngineRegistry      = $EngineRegistry
+        ProviderRegistry    = $ProviderRegistry
+        CapabilityRegistry  = $CapabilityRegistry
+        Container           = $DependencyContainer
+        PipelineOrchestrator = $pipelineOrchestrator
+        ProviderLifecycle   = $providerLifecycle
+        EngineDiscovery     = $engineDiscovery
+        ProviderDiscovery   = $providerDiscovery
+        EstadoRuntime       = 'Creado'
+        Componentes         = [System.Collections.ArrayList]@()
+        HoraInicio          = $null
+        ExecutionContexts   = [System.Collections.ArrayList]@()
+        UseCaseHistory      = [System.Collections.ArrayList]@()
     }
 
     return $runtime
@@ -252,4 +281,143 @@ function Get-HermesEnterpriseRuntimeStatus {
     }
 }
 
-Export-ModuleMember -Function New-HermesEnterpriseRuntime, Start-HermesEnterpriseRuntime, Stop-HermesEnterpriseRuntime, Invoke-HermesEnterpriseRuntimeEngine, Register-HermesEnterpriseRuntimeComponent, Get-HermesEnterpriseRuntimeStatus
+<#
+.SYNOPSIS
+    Ejecuta un Use Case a través del PipelineOrchestrator.
+.DESCRIPTION
+    Crea un UseCaseContext con las capacidades requeridas y lo ejecuta a través del pipeline.
+.PARAMETER RuntimeKernel
+    El Runtime del Kernel.
+.PARAMETER UseCaseName
+    Nombre del Use Case.
+.PARAMETER RequiredCapabilities
+    Array de capacidades requeridas.
+.PARAMETER InputParameters
+    Hashtable de parámetros de entrada.
+.PARAMETER Metadata
+    Hashtable de metadatos adicionales.
+#>
+function Invoke-HermesEnterpriseUseCase {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [psobject]$RuntimeKernel,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$UseCaseName,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$RequiredCapabilities,
+
+        [Parameter(Mandatory = $false)]
+        [hashtable]$InputParameters = @{},
+
+        [Parameter(Mandatory = $false)]
+        [hashtable]$Metadata = @{}
+    )
+
+    if ($RuntimeKernel.EstadoRuntime -ne 'Iniciado') {
+        throw "Runtime is not started. Current state: $($RuntimeKernel.EstadoRuntime)"
+    }
+
+    if ($null -eq $RuntimeKernel.PipelineOrchestrator) {
+        throw "PipelineOrchestrator is not configured. CapabilityRegistry and DependencyContainer required."
+    }
+
+    # Crear contexto de Use Case
+    $useCaseContext = New-UseCaseContext -UseCaseName $UseCaseName `
+                                         -RequiredCapabilities $RequiredCapabilities `
+                                         -InputParameters $InputParameters `
+                                         -Metadata $Metadata
+
+    # Ejecutar pipeline
+    $result = Invoke-UseCasePipeline -PipelineOrchestrator $RuntimeKernel.PipelineOrchestrator `
+                                     -UseCaseContext $useCaseContext
+
+    # Registrar en historial del Runtime
+    $null = $RuntimeKernel.UseCaseHistory.Add($result)
+
+    # Publicar evento en el bus
+    if ($null -ne $RuntimeKernel.EventBus) {
+        Publish-EventBusEvent -EventBus $RuntimeKernel.EventBus -EventName "usecase.$($result.Status.ToLower())" -EventData @{
+            UseCaseName = $result.UseCaseName
+            UseCaseId   = $result.UseCaseId
+            Status      = $result.Status
+        }
+    }
+
+    return $result
+}
+
+<#
+.SYNOPSIS
+    Obtiene un resumen del Use Case Pipeline en el Runtime.
+#>
+function Get-HermesEnterprisePipelineSummary {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [psobject]$RuntimeKernel
+    )
+
+    if ($null -eq $RuntimeKernel.PipelineOrchestrator) {
+        return [pscustomobject][ordered]@{
+            PipelineConfigured = $false
+            Message            = 'PipelineOrchestrator not configured'
+        }
+    }
+
+    $pipelineSummary = Get-PipelineOrchestratorSummary -PipelineOrchestrator $RuntimeKernel.PipelineOrchestrator
+    $capabilitySummary = if ($null -ne $RuntimeKernel.CapabilityRegistry) {
+        Get-CapabilityRegistrySummary -CapabilityRegistry $RuntimeKernel.CapabilityRegistry
+    } else { $null }
+
+    return [pscustomobject][ordered]@{
+        PipelineConfigured = $true
+        TotalExecutions    = $pipelineSummary.TotalExecutions
+        TotalSuccesses     = $pipelineSummary.TotalSuccesses
+        TotalFailures      = $pipelineSummary.TotalFailures
+        SuccessRate        = $pipelineSummary.SuccessRate
+        AverageExecutionMs = $pipelineSummary.AverageExecutionMs
+        RegisteredCapabilities = if ($null -ne $capabilitySummary) { $capabilitySummary.RegisteredCapabilities } else { 0 }
+        LastExecution      = $pipelineSummary.LastExecution
+    }
+}
+
+<#
+.SYNOPSIS
+    Conecta todos los Providers registrados vía ProviderLifecycleManager.
+#>
+function Connect-HermesEnterpriseRuntimeProviders {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [psobject]$RuntimeKernel
+    )
+
+    if ($null -eq $RuntimeKernel.ProviderLifecycle) {
+        throw "ProviderLifecycleManager not configured."
+    }
+
+    $connected = [System.Collections.ArrayList]@()
+    $providers = Get-AllProvidersFromRegistry -Registry $RuntimeKernel.ProviderRegistry
+
+    foreach ($provider in $providers) {
+        try {
+            $null = Connect-Provider -LifecycleManager $RuntimeKernel.ProviderLifecycle -ProviderName $provider.Name
+            $null = $connected.Add($provider.Name)
+        }
+        catch {
+            Write-Warning "Failed to connect provider '$($provider.Name)': $_"
+        }
+    }
+
+    return $connected
+}
+
+Export-ModuleMember -Function New-HermesEnterpriseRuntime, Start-HermesEnterpriseRuntime, Stop-HermesEnterpriseRuntime, Invoke-HermesEnterpriseRuntimeEngine, Register-HermesEnterpriseRuntimeComponent, Get-HermesEnterpriseRuntimeStatus, Invoke-HermesEnterpriseUseCase, Get-HermesEnterprisePipelineSummary, Connect-HermesEnterpriseRuntimeProviders

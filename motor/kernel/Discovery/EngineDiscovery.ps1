@@ -142,4 +142,3 @@ function Get-DiscoveredEngines {
     return $EngineDiscovery.SearchResults
 }
 
-Export-ModuleMember -Function New-EngineDiscovery, Find-EngineByCapability, Find-EngineByType, Get-DiscoveredEngines

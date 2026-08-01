@@ -188,4 +188,3 @@ function Get-ProviderExecutionContextSummary {
     }
 }
 
-Export-ModuleMember -Function New-ProviderExecutionContext, Set-ProviderContextCredential, Get-ProviderContextCredential, Set-ProviderContextConfig, Get-ProviderContextConfig, Register-ProviderExecutionResult, Complete-ProviderExecutionContext, Get-ProviderExecutionContextSummary

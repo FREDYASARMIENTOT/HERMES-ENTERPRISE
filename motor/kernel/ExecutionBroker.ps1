@@ -20,4 +20,3 @@ function Invoke-ExecutionBroker {
     }
 }
 
-Export-ModuleMember -Function Invoke-ExecutionBroker

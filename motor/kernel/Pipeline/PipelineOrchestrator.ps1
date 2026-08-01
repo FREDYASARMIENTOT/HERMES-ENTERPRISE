@@ -184,4 +184,3 @@ function Get-PipelineOrchestratorSummary {
     }
 }
 
-Export-ModuleMember -Function New-PipelineOrchestrator, Invoke-UseCasePipeline, Get-PipelineOrchestratorSummary

@@ -1,4 +1,7 @@
-Import-Module ..\..\motor\bootstrap\functions\Git.ps1 -Force
+# Test-GitSynchronization.ps1
+# Migrado desde tests/security/Test-GitSynchronization.ps1
+$RepoRoot = 'D:\HERMES-ENTERPRISE'
+Import-Module "$RepoRoot\motor\bootstrap\functions\Git.ps1" -Force
 
 Describe "Git Synchronization Tests" {
     It "Fase A - Estado local" {

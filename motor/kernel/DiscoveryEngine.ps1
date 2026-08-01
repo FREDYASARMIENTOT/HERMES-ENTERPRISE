@@ -29,4 +29,3 @@ function Write-CapabilitySnapshot {
     return $OutPath
 }
 
-Export-ModuleMember -Function Get-SystemCapabilities,Write-CapabilitySnapshot

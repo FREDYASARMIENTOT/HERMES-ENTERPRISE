@@ -236,4 +236,3 @@ function Disconnect-AllProviders {
     return $results
 }
 
-Export-ModuleMember -Function New-ProviderLifecycleManager, Connect-Provider, Disconnect-Provider, Test-ProviderHealth, Get-ProviderLifecycleStatus, Disconnect-AllProviders

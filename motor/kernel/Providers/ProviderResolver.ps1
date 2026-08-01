@@ -122,4 +122,3 @@ function Get-ProviderResolverSummary {
     return $summary
 }
 
-Export-ModuleMember -Function New-ProviderResolver, Resolve-ProviderById, Resolve-ProvidersByName, Resolve-ProvidersByType, Resolve-ProvidersByStatus, Resolve-ConnectedProviders, Get-ProviderResolverSummary

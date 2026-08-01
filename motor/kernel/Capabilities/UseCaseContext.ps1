@@ -126,4 +126,3 @@ function Get-UseCaseContextStatus {
     }
 }
 
-Export-ModuleMember -Function New-UseCaseContext, Test-UseCaseContextValid, Get-UseCaseContextStatus

@@ -1,13 +1,14 @@
 # Test-GitSecrets.ps1
 # Security-first pre-push secret scanner
+# Migrado desde tests/security/Test-GitSecrets.ps1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = Resolve-Path "$PSScriptRoot/../../" | Select-Object -ExpandProperty Path
-$envPath = Join-Path $repoRoot '.env'
-$envExamplePath = Join-Path $repoRoot '.env.example'
+$RepoRoot = 'D:\HERMES-ENTERPRISE'
+$envPath = Join-Path $RepoRoot '.env'
+$envExamplePath = Join-Path $RepoRoot '.env.example'
 
-Write-Host "Repository root: $repoRoot"
+Write-Host "Repository root: $RepoRoot"
 
 # 1. Validate .env and .env.example
 $hasEnv = Test-Path $envPath
@@ -19,7 +20,7 @@ $patterns = @('API_KEY','API-KEY','OPENAI','AZURE','AZURE_','TOKEN','SECRET','PA
 $matches = @()
 foreach ($p in $patterns) {
     try {
-        $r = git -C $repoRoot grep -n -- "${p}" 2>$null
+        $r = git -C $RepoRoot grep -n -- "${p}" 2>$null
         if ($r) { $matches += $r }
     } catch { }
 }
@@ -27,11 +28,11 @@ foreach ($p in $patterns) {
 # 3. Scan commit history (recent commits)
 $historyMatches = @()
 try {
-    $revlist = git -C $repoRoot rev-list --all
+    $revlist = git -C $RepoRoot rev-list --all
     foreach ($c in $revlist) {
         foreach ($p in $patterns) {
             try {
-                $r = git -C $repoRoot grep -n "${p}" $c -- 2>$null
+                $r = git -C $RepoRoot grep -n "${p}" $c -- 2>$null
                 if ($r) { $historyMatches += ("${c}:`n$r") }
             } catch { }
         }

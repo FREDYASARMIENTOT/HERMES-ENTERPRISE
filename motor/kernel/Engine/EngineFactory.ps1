@@ -150,4 +150,3 @@ function Get-EngineFactoryRegisteredEngines {
     return $Factory.Constructors.Keys | Sort-Object
 }
 
-Export-ModuleMember -Function New-EngineFactory, Register-EngineFactoryConstructor, New-EngineFromFactory, Test-EngineFactoryRegistered, Get-EngineFactoryRegisteredEngines

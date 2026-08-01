@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$RepoRoot = 'D:\HERMES-ENTERPRISE'
 Write-Host "`n[PRUEBA UNITARIA] Sprint 6.3 - AzureResourceDiscovery" -ForegroundColor Cyan
 Write-Host ("=" * 72)
 
@@ -8,7 +9,7 @@ function Fail($n,$m){ $script:f++; Write-Host "[FAIL] $n :: $m" -ForegroundColor
 
 try {
     # Dot-source del componente
-    . "$PSScriptRoot\..\motor\providers\azure\AzureResourceDiscovery.ps1"
+    . "$RepoRoot\motor\providers\azure\AzureResourceDiscovery.ps1"
     
     # T1: Función pública existe
     if (Get-Command Get-HermesAzureResourceDiscovery -ErrorAction SilentlyContinue) {

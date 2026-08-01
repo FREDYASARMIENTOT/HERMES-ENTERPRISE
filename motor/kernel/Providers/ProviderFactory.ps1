@@ -104,4 +104,3 @@ function Get-ProviderFactoryRegisteredProviders {
     return $Factory.Constructors.Keys | Sort-Object
 }
 
-Export-ModuleMember -Function New-ProviderFactory, Register-ProviderFactoryConstructor, New-ProviderFromFactory, Test-ProviderFactoryRegistered, Get-ProviderFactoryRegisteredProviders

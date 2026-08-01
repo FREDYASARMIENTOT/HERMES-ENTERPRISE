@@ -171,4 +171,3 @@ function Update-EngineRegistryCounters {
     $Registry.FaultedCount = ($Registry.Engines.Values | Where-Object { $_.Status -eq 'Faulted' } | Measure-Object).Count
 }
 
-Export-ModuleMember -Function New-EngineRegistry, Register-EngineInRegistry, Unregister-EngineFromRegistry, Get-EngineFromRegistry, Get-AllEnginesFromRegistry, Update-EngineRegistryCounters

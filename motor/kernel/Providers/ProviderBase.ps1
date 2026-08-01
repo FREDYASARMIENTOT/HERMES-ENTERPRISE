@@ -272,4 +272,3 @@ function Get-ProviderBaseStatus {
     }
 }
 
-Export-ModuleMember -Function New-ProviderBase, Initialize-ProviderBase, Test-ProviderBaseValidation, Connect-ProviderBase, Disconnect-ProviderBase, Set-ProviderBaseFaulted, Get-ProviderBaseStatus

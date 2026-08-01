@@ -260,4 +260,3 @@ function Get-EngineBaseStatus {
     }
 }
 
-Export-ModuleMember -Function New-EngineBase, Initialize-EngineBase, Test-EngineBaseValidation, Start-EngineBase, Stop-EngineBase, Set-EngineBaseFaulted, Get-EngineBaseStatus

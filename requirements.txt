@@ -1,0 +1,4 @@
+# HermesEnterprise Python dependencies
+# This project is PowerShell-based; Python is used for tooling/scripts.
+# Dependencies installed via Conda environment HermesEnterprise.
+pyyaml>=6.0

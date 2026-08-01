@@ -1,0 +1,103 @@
+{
+    "schemaVersion": "1.0",
+    "timestamp": "2026-08-01T06:05:00-05:00",
+    "phase": "RC32-Completed",
+    "Python": {
+        "version": "3.14.0",
+        "globalInterpreter": "C:\\Python314\\python.exe",
+        "condaInterpreter": "C:\\Users\\fredya.sarmiento\\.conda\\envs\\HermesEnterprise\\python.exe",
+        "pip": {
+            "version": "25.2",
+            "path": "C:\\Python314\\Scripts\\pip.exe"
+        }
+    },
+    "Git": {
+        "version": "2.54.0.windows.1"
+    },
+    "PowerShell": {
+        "version": "5.1.26100.7705",
+        "Pester": {
+            "version": "3.4.0",
+            "available": true
+        },
+        "PSScriptAnalyzer": {
+            "version": "1.25.0",
+            "available": true
+        }
+    },
+    "Conda": {
+        "installed": true,
+        "version": "25.11.1",
+        "executable": "D:\\ProgramData\\Anaconda3\\Scripts\\conda.exe",
+        "environment": {
+            "name": "HermesEnterprise",
+            "created": true,
+            "python": "3.14.0",
+            "interpreter": "C:\\Users\\fredya.sarmiento\\.conda\\envs\\HermesEnterprise\\python.exe",
+            "sourceFile": "environment.yml"
+        }
+    },
+    "VSCode": {
+        "version": "1.131.0",
+        "commit": "e4c7e7b1d6d060162f4aa7f8225271b67ce1df75",
+        "workspace": "d:\\HERMES-ENTERPRISE",
+        "settingsUpdated": true,
+        "pythonInterpreter": "C:\\Users\\fredya.sarmiento\\.conda\\envs\\HermesEnterprise\\python.exe",
+        "condaPath": "D:\\ProgramData\\Anaconda3\\Scripts\\conda.exe",
+        "terminalActivateEnv": true
+    },
+    "LegacyRemoval": {
+        ".conda_env": {
+            "status": "EXISTS",
+            "gitTracked": false,
+            "gitignored": true
+        },
+        ".venv_HermesEnterprise": {
+            "status": "EXISTS",
+            "gitTracked": false,
+            "gitignored": true
+        }
+    },
+    "PATH": {
+        "current": [
+            "C:\\Program Files (x86)\\Microsoft SDKs\\Azure\\CLI2\\wbin",
+            "C:\\Python314\\Scripts\\",
+            "C:\\Python314\\",
+            "C:\\Python314\\Lib\\site-packages\\pip",
+            "C:\\WINDOWS\\system32",
+            "C:\\WINDOWS",
+            "C:\\WINDOWS\\System32\\Wbem",
+            "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\",
+            "C:\\WINDOWS\\System32\\OpenSSH\\",
+            "C:\\Program Files\\dotnet\\",
+            "D:\\Program Files\\nodejs\\",
+            "C:\\ProgramData\\chocolatey\\bin",
+            "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\",
+            "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\",
+            "D:\\xampp\\php",
+            "D:\\composer",
+            "D:\\Program Files\\Git\\cmd",
+            "C:\\Program Files\\PowerShell\\7\\",
+            "D:\\Program Files\\GitHub CLI\\",
+            "C:\\Program Files\\Azure Dev CLI\\",
+            "C:\\Users\\fredya.sarmiento\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts",
+            "C:\\Users\\fredya.sarmiento\\AppData\\Local\\hermes\\bin",
+            "C:\\Users\\fredya.sarmiento\\.local\\bin",
+            "D:\\Users\\fredya.sarmiento\\AppData\\Local\\Programs\\Antigravity\\bin",
+            "D:\\Users\\fredya.sarmiento\\AppData\\Local\\Programs\\Microsoft VS Code\\bin",
+            "C:\\Windows\\System32",
+            "C:\\Users\\fredya.sarmiento\\AppData\\Roaming\\npm",
+            "C:\\Users\\fredya.sarmiento\\AppData\\Local\\Programs\\Antigravity IDE\\bin",
+            "D:\\Program Files\\Antigravity IDE\\bin",
+            "C:\\Users\\fredya.sarmiento\\AppData\\Local\\GitHubCopilotCLI\\",
+            "C:\\Program Files\\Azure Dev CLI"
+        ],
+        "condaNotInPath": true,
+        "addToPath": [
+            "D:\\ProgramData\\Anaconda3",
+            "D:\\ProgramData\\Anaconda3\\Scripts",
+            "D:\\ProgramData\\Anaconda3\\Library\\bin",
+            "D:\\ProgramData\\Anaconda3\\condabin"
+        ]
+    }
+}

@@ -45,7 +45,7 @@ function New-CapabilityRegistry {
 .PARAMETER ProviderResolver
     ScriptBlock o nombre del resolver de Provider asociado a la capacidad.
 #>
-function Register-Capability {
+function Register-CapabilityToRegistry {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -209,4 +209,3 @@ function Get-CapabilityRegistrySummary {
     }
 }
 
-Export-ModuleMember -Function New-CapabilityRegistry, Register-Capability, Test-CapabilityRegistered, Get-CapabilityEngineResolvers, Get-CapabilityProviderResolvers, Resolve-Capabilities, Get-CapabilityRegistrySummary

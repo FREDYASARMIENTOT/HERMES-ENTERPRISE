@@ -140,4 +140,3 @@ function Update-ProviderRegistryCounters {
     $Registry.FaultedCount = ($Registry.Providers.Values | Where-Object { $_.Status -eq 'Faulted' } | Measure-Object).Count
 }
 
-Export-ModuleMember -Function New-ProviderRegistry, Register-ProviderInRegistry, Unregister-ProviderFromRegistry, Get-ProviderFromRegistry, Get-AllProvidersFromRegistry, Update-ProviderRegistryCounters

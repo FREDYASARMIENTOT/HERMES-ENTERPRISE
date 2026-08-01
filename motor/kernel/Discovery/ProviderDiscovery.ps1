@@ -142,4 +142,3 @@ function Get-DiscoveredProviders {
     return $ProviderDiscovery.SearchResults
 }
 
-Export-ModuleMember -Function New-ProviderDiscovery, Find-ProviderByCapability, Find-ProviderByType, Get-DiscoveredProviders

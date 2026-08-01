@@ -4,156 +4,87 @@ Proyecto : HERMES-ENTERPRISE
 Archivo  : EngineResolver.ps1
 Autor    : Fredy Alejandro Sarmiento Torres
 Propósito:
-    Resolvedor de dependencias entre motores del Kernel Enterprise.
-    Proporciona capacidades de descubrimiento y resolución de motores por nombre, capacidad o estado.
+    Resolvedor de Motores — registry lookup + lazy init + lifecycle validation.
+    Satisface: capability.engine.resolve
 ====================================================================================================
 #>
 
 Set-StrictMode -Version Latest
 
-<#
-.SYNOPSIS
-    Crea una nueva instancia de EngineResolver.
-.DESCRIPTION
-    Inicializa el resolvedor vinculado a un EngineRegistry para consultar motores.
-.PARAMETER Registry
-    Instancia de EngineRegistry donde buscar motores.
-#>
-function New-EngineResolver {
+$script:EngineRegistry = @{}
+
+function Register-Engine {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
-        [psobject]$Registry
+        [psobject]$Engine
     )
 
-    return [pscustomobject][ordered]@{
-        Registry = $Registry
+    if (-not (Test-EngineContractValid $Engine)) {
+        throw "Engine '$($Engine.Name)' does not satisfy IEngine contract"
     }
-}
 
-<#
-.SYNOPSIS
-    Resuelve un motor por su Id.
-.DESCRIPTION
-    Busca un motor en el registro por su identificador único.
-#>
-function Resolve-EngineById {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Resolver,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$EngineId
-    )
-
-    return Get-EngineFromRegistry -Registry $Resolver.Registry -EngineId $EngineId
-}
-
-<#
-.SYNOPSIS
-    Resuelve motores por su nombre.
-.DESCRIPTION
-    Busca todos los motores cuyo Name coincida exactamente con el valor proporcionado.
-#>
-function Resolve-EnginesByName {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Resolver,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$EngineName
-    )
-
-    $allEngines = Get-AllEnginesFromRegistry -Registry $Resolver.Registry
-    return $allEngines | Where-Object { $_.Name -eq $EngineName }
-}
-
-<#
-.SYNOPSIS
-    Resuelve motores que tengan una capacidad específica.
-.DESCRIPTION
-    Busca motores cuya lista de capacidades contenga la capacidad especificada.
-    Nota: Esta función requiere que los motores tengan una propiedad Capabilities.
-.PARAMETER Resolver
-    Instancia de EngineResolver.
-.PARAMETER Capability
-    Nombre de la capacidad a buscar.
-#>
-function Resolve-EnginesByCapability {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Resolver,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Capability
-    )
-
-    $allEngines = Get-AllEnginesFromRegistry -Registry $Resolver.Registry
-    return $allEngines | Where-Object {
-        $_.PSObject.Properties.Name -contains 'Capabilities' -and
-        $null -ne $_.Capabilities -and
-        $_.Capabilities -contains $Capability
+    if ([string]::IsNullOrEmpty($Engine.Id)) {
+        $id = $Engine.Name
+    } else {
+        $id = $Engine.Id
     }
+    $script:EngineRegistry[$id] = $Engine
 }
 
-<#
-.SYNOPSIS
-    Resuelve motores por estado.
-.DESCRIPTION
-    Busca todos los motores que estén en el estado especificado.
-#>
-function Resolve-EnginesByStatus {
+function Resolve-Engine {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Resolver,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Stopped', 'Initialized', 'Running', 'Faulted')]
-        [string]$Status
+        [ValidateNotNullOrEmpty()]
+        [string]$EngineIdOrName
     )
 
-    return Get-AllEnginesFromRegistry -Registry $Resolver.Registry -FilterByStatus $Status
-}
+    # 1. Direct lookup by key (Id)
+    if ($script:EngineRegistry.ContainsKey($EngineIdOrName)) {
+        return $script:EngineRegistry[$EngineIdOrName]
+    }
 
-<#
-.SYNOPSIS
-    Obtiene un resumen de todos los motores y su estado.
-.DESCRIPTION
-    Retorna una lista de objetos con información resumida de cada motor registrado.
-#>
-function Get-EngineResolverSummary {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Resolver
-    )
-
-    $engines = Get-AllEnginesFromRegistry -Registry $Resolver.Registry
-    $summary = @()
-
-    foreach ($engine in $engines) {
-        $summary += [pscustomobject][ordered]@{
-            Id      = $engine.Id
-            Name    = $engine.Name
-            Version = $engine.Version
-            Status  = $engine.Status
+    # 2. Scan by Name, Id, or EngineType (use cases reference EngineType)
+    foreach ($key in $script:EngineRegistry.Keys) {
+        $e = $script:EngineRegistry[$key]
+        if ($e.Name -eq $EngineIdOrName -or
+            $e.Id -eq $EngineIdOrName -or
+            $e.EngineType -eq $EngineIdOrName) {
+            return $e
         }
     }
 
-    return $summary
+    return $null
 }
 
-Export-ModuleMember -Function New-EngineResolver, Resolve-EngineById, Resolve-EnginesByName, Resolve-EnginesByCapability, Resolve-EnginesByStatus, Get-EngineResolverSummary
+function Get-AllEngines {
+    [CmdletBinding()]
+    param()
+
+    return $script:EngineRegistry.Values
+}
+
+function Clear-EngineRegistry {
+    [CmdletBinding()]
+    param()
+
+    $script:EngineRegistry.Clear()
+}
+
+function Test-EngineContractValid {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [psobject]$Engine
+    )
+
+    return $Engine.PSObject.Properties.Name -contains 'Id' -and
+           $Engine.PSObject.Properties.Name -contains 'Name' -and
+           $Engine.PSObject.Properties.Name -contains 'Capabilities' -and
+           $Engine.PSObject.Properties.Name -contains 'Status' -and
+           $Engine.PSObject.Properties.Name -contains 'EngineType'
+}
+

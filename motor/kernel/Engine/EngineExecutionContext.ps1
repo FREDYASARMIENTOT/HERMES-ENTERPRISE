@@ -235,4 +235,3 @@ function Get-ExecutionContextSummary {
     }
 }
 
-Export-ModuleMember -Function New-EngineExecutionContext, Set-ExecutionContextData, Get-ExecutionContextData, Remove-ExecutionContextData, Register-EngineExecutionResult, Complete-EngineExecutionContext, Get-ExecutionContextSummary

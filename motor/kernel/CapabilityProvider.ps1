@@ -25,4 +25,3 @@ function Resolve-ExecutionRequest {
     return @{ status='READY'; capability=$cap; payload=$Payload }
 }
 
-Export-ModuleMember -Function Resolve-Capability,Resolve-ExecutionRequest

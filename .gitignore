@@ -7,6 +7,7 @@ $RECYCLE.BIN/
 # ██████ IDE / EDITOR ██████
 .vscode/
 .vs/
+.vscode-test/
 .idea/
 *.swp
 *.swo
@@ -34,12 +35,23 @@ logs/
 *.old
 *.orig
 
-# █████️ BUILD ARTIFACTS ██████
+# ██████ BUILD ARTIFACTS ██████
 bin/
 obj/
 artifacts/
 release/
 *.ps1xml
+*.pdb
+*.cache
+lib/HermesSQLiteProvider/bin/
+lib/HermesSQLiteProvider/obj/
+lib/Microsoft.Data.Sqlite/
+lib/System.Data.SQLite/
+lib/System.Data.SQLite.extracted/
+lib/System.Data.SQLite.Full/
+lib/HermesSQLiteProvider/*.cs
+lib/HermesSQLiteProvider/*.csproj
+lib/*.zip
 
 # ██████ RUNTIME (Hermes) ██████
 .hermes/cache/
@@ -63,17 +75,25 @@ reports/python_integrity.json
 reports/regla_cero_audit.json
 reports/runtime_core_state.json
 reports/vscode_settings_audit.json
+reports/temp/
 
 # ██████ TEST ARTIFACTS ██████
 pruebas/salida-temporal/
 test-output/
 coverage/
+data/tests/
+
+# ██████ DEBUG & DIAGNOSTIC ██████
+debug_*
+test_*.db
+test_*.db-journal
+test_*.db-shm
+test_*.db-wal
 
 # ██████ GIT SUBREPOS / NESTED ██████
 sandbox/
 
-# █████️ GENERATED DOCUMENTATION ██████
-# (Build artifacts from RC44 — not source)
+# ██████ GENERATED DOCUMENTATION ██████
 WORKSPACE_CLASSIFICATION.md
 WORKSPACE_ARCHITECTURE.md
 DEPLOYMENT_EXCLUSIONS.md
@@ -87,13 +107,13 @@ MODULE_DEPENDENCY_GRAPH.md
 QUALITY_GATE_REPORT.md
 TECHNICAL_DEBT_REGISTER.md
 
-# █████️ RC45 TOOLS ██████
+# ██████ RC45 TOOLS ██████
 tools/RC43_Comprehensive.ps1
 tools/RC45_Audit.ps1
 tools/RC45_Cleanup.ps1
 tools/RC45_FixVerbs.ps1
 
-# █████️ PRUEBAS GENERADAS ██████
+# ██████ PRUEBAS GENERADAS ██████
 pruebas/unitarias/Test-BootLoader.ps1
 pruebas/unitarias/Test-CoreServices.ps1
 pruebas/unitarias/TestHelpers.psm1

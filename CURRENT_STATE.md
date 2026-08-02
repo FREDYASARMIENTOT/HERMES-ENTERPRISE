@@ -1,26 +1,63 @@
 # CURRENT_STATE
 
-Date: 2026-07-18
+Date: 2026-01-08
 
-Summary:
-- Bootstrap refactored into modular architecture under motor/bootstrap/
-  - New orchestrator: Start-HermesProject.ps1 (loads functions/*.ps1)
-  - Functions implemented: Git.ps1, Provisioning.ps1, Python.ps1, Validation.ps1, Templates.ps1, Reporting.ps1
-- New-PythonEnvironment and Install-Dependencies rewritten to avoid in-expression `if` usage
-- Forensic artifacts placed under .verification/ (trace_execution.log, final_error_dump.txt, venv_* logs)
-- Test harness: tests/bootstrap/Test-StartHermesProject.ps1 (work in progress; paths normalized)
-- Git push blocked by GitHub secret-scanning: commit cad27c5c... includes secret in historical commits (test_foundry.py). DO NOT push until secret rotated or history sanitized.
+## Last Milestone: Persistence Layer — RC50.1
 
-Next actions before remote push:
-1. Rotate any exposed credentials (Azure/Foundry/OpenAI/API keys) found in history.
-2. Run git-filter-repo to remove or redact secrets from history, or follow GitHub unblock flow.
-3. Re-run test suite and verify No Regression Gate PASS for all scenarios.
+### ✅ All 75 Integration Tests Passing
+```
+Total Tests : 75
+Passed      : 75
+Failed      : 0
+Pass Rate   : 100%
+```
 
-Artifacts:
-- .verification/ (trace logs, dumps, test outputs, venv captures)
+### What was fixed (15 issues resolved)
 
-Notes:
-- Local provisioning (Start-HermesProject.ps1 -Mode Local) works and creates sandbox, venv, initializes git and templates.
-- Modular architecture implemented to allow future GitHub/GitLab/AzureDevOps provisioning.
+| # | Fix | Component |
+|---|-----|-----------|
+| 1 | SQLITE_STATIC pinvoke -> inline string params in Invoke-HermesSql | HermesPersistence.psm1 |
+| 2 | Register-HermesMigration leaked Object[] (missing `$null =`) | HermesPersistence.psm1 |
+| 3 | Connect-HermesDatabase had `return $true` causing output leak | HermesPersistence.psm1 |
+| 4 | Initialize-HermesPersistence leaked `$manager` via trailing comma | HermesPersistence.psm1 |
+| 5 | Backup-HermesDatabase: missing backup directory creation | HermesPersistence.psm1 |
+| 6 | Insert/Update/Delete ScriptMethods leaked return values | HermesPersistence.psm1 |
+| 7 | RecordMetric leaked Insert result | HermesPersistence.psm1 |
+| 8 | MarkAsRead leaked return value | HermesPersistence.psm1 |
+| 9 | Test line 69 used undefined `$connected` var | Test-PersistenceLayer.ps1 |
+| 10 | `[short]` -> `[int16]` type mismatch in Invoke-HermesSql | HermesPersistence.psm1 |
+| 11-15 | Output suppression patterns across module functions | HermesPersistence.psm1 |
 
-Contact: DevOps lead must rotate any keys before a force-with-lease push.
+### HermesSQLiteProvider.dll Working
+
+- Loads successfully via `[System.Reflection.Assembly]::LoadFrom()`
+- Factory type: `HermesSQLiteProvider.HermesSQLiteProviderFactory`
+- Connection type: `HermesSQLiteProvider.HermesSQLiteConnection`
+- Supports Open/Close/ExecuteNonQuery/ExecuteReader/Transactions
+- Test-HermesProvider.ps1 validates full provider chain independently
+
+### Test Coverage (11 groups)
+```
+Provider, Connection, Config, Schema
+Migration, CRUD (Insert/Update/Delete/Select)
+Repository, Transaction, SeedData/Reset
+Backup/Restore, Telemetry
+```
+
+### Key Architecture Decisions
+
+- All output suppression uses `$null =` pattern (NOT `Out-Null`)
+- Connection state managed via `IsConnected` property on HermesDatabaseManager
+- Config resolved from `persistence.psd1` with fallback defaults
+- Migration state tracked in `__MigrationHistory` table
+- Repositories mapped via `repositories` section in config
+
+### Next Steps
+
+1. Git push (after verifying no secrets in history)
+2. Documentation finalization
+3. Bootstrap refactoring continues
+
+### Blockers
+
+- None for persistence layer

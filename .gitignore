@@ -117,4 +117,4 @@ tools/RC45_FixVerbs.ps1
 pruebas/unitarias/Test-BootLoader.ps1
 pruebas/unitarias/Test-CoreServices.ps1
 pruebas/unitarias/TestHelpers.psm1
-pruebas/run_analyzer_summary.ps1
+pruebas/run_analyzer_summary.ps1".git-credentials"  

@@ -1,63 +1,114 @@
 # CURRENT_STATE
 
-Date: 2026-01-08
+Date: 2026-03-08
 
-## Last Milestone: Persistence Layer — RC50.1
+## Last Milestone: Hermes Commands Module — RC62
 
-### ✅ All 75 Integration Tests Passing
+### ✅ 64/64 Pester Unit Tests Passing (100%)
 ```
-Total Tests : 75
-Passed      : 75
+Total Tests : 64
+Passed      : 64
 Failed      : 0
 Pass Rate   : 100%
 ```
 
-### What was fixed (15 issues resolved)
+### What was accomplished (RC56 → RC62)
 
-| # | Fix | Component |
-|---|-----|-----------|
-| 1 | SQLITE_STATIC pinvoke -> inline string params in Invoke-HermesSql | HermesPersistence.psm1 |
-| 2 | Register-HermesMigration leaked Object[] (missing `$null =`) | HermesPersistence.psm1 |
-| 3 | Connect-HermesDatabase had `return $true` causing output leak | HermesPersistence.psm1 |
-| 4 | Initialize-HermesPersistence leaked `$manager` via trailing comma | HermesPersistence.psm1 |
-| 5 | Backup-HermesDatabase: missing backup directory creation | HermesPersistence.psm1 |
-| 6 | Insert/Update/Delete ScriptMethods leaked return values | HermesPersistence.psm1 |
-| 7 | RecordMetric leaked Insert result | HermesPersistence.psm1 |
-| 8 | MarkAsRead leaked return value | HermesPersistence.psm1 |
-| 9 | Test line 69 used undefined `$connected` var | Test-PersistenceLayer.ps1 |
-| 10 | `[short]` -> `[int16]` type mismatch in Invoke-HermesSql | HermesPersistence.psm1 |
-| 11-15 | Output suppression patterns across module functions | HermesPersistence.psm1 |
+| # | Change | Component |
+|---|--------|-----------|
+| 1 | 21 public commands implemented and exported | Hermes.Commands.psm1 |
+| 2 | 21 aliases for all commands | Hermes.Commands.psd1 |
+| 3 | Module manifest (.psd1) with proper exports and dependencies | Hermes.Commands.psd1 |
+| 4 | Environment providers: VenvEnvironment & CondaEnvironment | Providers/EnvironmentProvider.ps1 |
+| 5 | Provider base contract with IProvider pattern | Providers/ProviderBase.ps1 |
+| 6 | Fixed `process` block warning in EnvironmentProvider.ps1 | PSScriptAnalyzer |
+| 7 | 10 comprehensive documentation files created | docs/ |
+| 8 | 64 Pester unit tests (Pester 3.4.0 compatible) | pruebas/unitarias/Hermes.Commands.Tests.ps1 |
+| 9 | Fixed `$cmd.Parameters['X'].Mandatory` returning `$null` in Pester 3.x | Test helper function |
+| 10 | Fixed `.Attributes.SwitchParameter` → `.SwitchParameter` for script functions | Tests |
+| 11 | Fixed `[ValidateSetAttribute]` → fully qualified type name | Tests |
+| 12 | 0 PSScriptAnalyzer errors in module and manifest | PSSA compliance |
 
-### HermesSQLiteProvider.dll Working
+### 21 Public Commands
 
-- Loads successfully via `[System.Reflection.Assembly]::LoadFrom()`
-- Factory type: `HermesSQLiteProvider.HermesSQLiteProviderFactory`
-- Connection type: `HermesSQLiteProvider.HermesSQLiteConnection`
-- Supports Open/Close/ExecuteNonQuery/ExecuteReader/Transactions
-- Test-HermesProvider.ps1 validates full provider chain independently
+#### Project Lifecycle (8)
+- `Crear-HermesProyecto` (alias `chp`) — Create new Hermes project with optional venv/conda
+- `Start-HermesProject` (alias `shp`) — Initialize project workspace with standard files
+- `Abrir-HermesProyecto` (alias `ahp`) — Open project in VS Code
+- `Publicar-HermesProyecto` (alias `uhp`) — Publish project to GitHub repository
+- `Cerrar-HermesProyecto` (alias `ghp`) — Close project (cleanup logs and .venv)
+- `Eliminar-HermesProyecto` (alias `ghpe`) — Permanently delete project
+- `Get-HermesProyecto` — Get project status and structure analysis
+- `Get-HermesProyectos` (alias `php`) — List all projects in workspace
 
-### Test Coverage (11 groups)
+#### Environment Management (6)
+- `New-HermesVenv` (alias `nhv`) — Create Python venv at project path
+- `Enter-HermesVenv` (alias `ehv`) — Get venv activation command
+- `Remove-HermesVenv` (alias `rhv`) — Remove .venv directory
+- `New-HermesConda` (alias `nhc2`) — Create Conda environment from environment.yml
+- `Enter-HermesConda` (alias `ehc`) — Get conda activate command
+- `Remove-HermesConda` (alias `rhc`) — Remove Conda environment
+
+#### Workspace & Utilities (7)
+- `New-HermesWorkspace` (alias `nhw`) — Create workspace directory with .vscode
+- `Open-HermesWorkspace` (alias `ohw`) — Open workspace in VS Code
+- `Get-HermesWorkspace` (alias `ghw`) — Display workspace information
+- `New-HermesDocumentacion` (alias `nhd`) — Generate documentation from templates
+- `New-HermesCommit` (alias `nhc`) — Create git commit with telemetry
+- `Test-HermesPython` (alias `chp2`) — Validate Python installation
+- `Install-ProjectFromFactory` (alias `ipf`) — Install from project factory with options
+
+### Documentation
+
+10 user-facing guides created in `/docs/`:
+- [Installation Guide](docs/Installation.md)
+- [Quick Start Guide](docs/QuickStart.md)
+- [User Manual](docs/UserManual.md)
+- [Troubleshooting Guide](docs/Troubleshooting.md)
+- [FAQ](docs/FAQ.md)
+- [Command Reference](docs/CommandReference.md)
+- [Examples](docs/Examples.md)
+- [Architecture Overview](docs/ArchitectureOverview.md)
+- [User Acceptance Tests](docs/UserAcceptanceTests.md)
+
+### PSScriptAnalyzer Compliance
+
+- `Hermes.Commands.psm1`: 0 errors
+- `Hermes.Commands.psd1`: 0 errors
+- `Hermes.Commands.Tests.ps1`: 0 errors (1 BOM warning only)
+
+### Test Coverage Areas
+
 ```
-Provider, Connection, Config, Schema
-Migration, CRUD (Insert/Update/Delete/Select)
-Repository, Transaction, SeedData/Reset
-Backup/Restore, Telemetry
+Module import & version
+Command names & aliases (all 21)
+Help synopsis & parameter documentation
+Parameter mandatory/optional validation
+ValidateSet attribute checks
+Switch parameter identification
+Return types ($null, $true/$false)
+Non-existent path handling
+Directory creation & cleanup
+Error handling (invalid params, graceful degradation)
+PSScriptAnalyzer compliance
 ```
 
 ### Key Architecture Decisions
 
-- All output suppression uses `$null =` pattern (NOT `Out-Null`)
-- Connection state managed via `IsConnected` property on HermesDatabaseManager
-- Config resolved from `persistence.psd1` with fallback defaults
-- Migration state tracked in `__MigrationHistory` table
-- Repositories mapped via `repositories` section in config
+- All commands follow PowerShell script function pattern (not C# cmdlets)
+- Provider pattern via ProviderBase.ps1 with IProvider contract
+- Environment providers extend base with specific properties (VenvPath, CondaPath, PythonVersion)
+- SQLite persistence via sqlite3.exe and HermesSQLiteProvider for history tracking
+- Module manifest (.psd1) handles alias mapping and dependency loading
+- Tests use `Get-ParameterMandatory` helper to work around Pester 3.x limitations
+- All output suppression uses `$null =` pattern (not `Out-Null`)
 
 ### Next Steps
 
-1. Git push (after verifying no secrets in history)
-2. Documentation finalization
+1. Documentation finalization (completed)
+2. Full integration tests for environment commands
 3. Bootstrap refactoring continues
 
 ### Blockers
 
-- None for persistence layer
+- None for RC62

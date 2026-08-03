@@ -478,19 +478,21 @@ function Get-EnvironmentProviderStatus {
         [psobject]$Provider
     )
 
-    return [pscustomobject][ordered]@{
-        Id              = $Provider.Id
-        Name            = $Provider.Name
-        Version         = $Provider.Version
-        ProviderType    = $Provider.ProviderType
-        Status          = $Provider.Status
-        IsConnected     = $Provider.IsConnected
-        PythonVersion   = $Provider.PythonVersion
-        VenvPath        = $Provider.VenvPath
-        CondaPath       = $Provider.CondaPath
-        LastCreatedEnv  = $Provider.LastCreatedEnv
-        ErrorCount      = $Provider.Errors.Count
-        LastConnection  = $Provider.LastConnection
+    process {
+        return [pscustomobject][ordered]@{
+            Id              = $Provider.Id
+            Name            = $Provider.Name
+            Version         = $Provider.Version
+            ProviderType    = $Provider.ProviderType
+            Status          = $Provider.Status
+            IsConnected     = $Provider.IsConnected
+            PythonVersion   = $Provider.PythonVersion
+            VenvPath        = $Provider.VenvPath
+            CondaPath       = $Provider.CondaPath
+            LastCreatedEnv  = $Provider.LastCreatedEnv
+            ErrorCount      = $Provider.Errors.Count
+            LastConnection  = $Provider.LastConnection
+        }
     }
 }
 

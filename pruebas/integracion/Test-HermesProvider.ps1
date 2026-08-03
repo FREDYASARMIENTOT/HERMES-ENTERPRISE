@@ -222,7 +222,7 @@ catch {
     $ex = $_.Exception
     while ($ex) {
         if ($ex.GetType().Name -match "FileNotFoundException|BadImageFormatException") {
-            try { Write-Host ("  FusionLog: " + $ex.FusionLog) -ForegroundColor Red } catch {}
+            try { Write-Host ("  FusionLog: " + $ex.FusionLog) -ForegroundColor Red } catch { Write-Debug "FusionLog not available" }
         }
         $ex = $ex.InnerException
     }
@@ -305,7 +305,7 @@ catch {
     $ex = $_.Exception
     while ($ex) {
         if ($ex.GetType().Name -match "FileNotFoundException|DllNotFoundException") {
-            try { Write-Host ("  FusionLog: " + $ex.FusionLog) -ForegroundColor Red } catch {}
+            try { Write-Host ("  FusionLog: " + $ex.FusionLog) -ForegroundColor Red } catch { Write-Debug "FusionLog not available" }
         }
         $ex = $ex.InnerException
     }

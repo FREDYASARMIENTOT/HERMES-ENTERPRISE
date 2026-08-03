@@ -111,7 +111,6 @@ function _Complete-EnvironmentHistory {
     $db = Join-Path (_Get-HermesRootEnv) 'hermes.db'
     if (-not (Test-Path $db)) { return }
     $ts = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
-    $pn = $ProjectName.Replace("'", "''")
     $sql = "UPDATE EnvironmentHistory SET EndTime='$ts', Duration = ROUND((julianday('$ts') - julianday(StartTime)) * 86400, 2), Result='$Result' WHERE EnvironmentId='$EnvironmentId' AND Result='Pending'"
     sqlite3.exe "`"$db`"" $sql 2>$null | Out-Null
 }
@@ -138,7 +137,7 @@ function Find-CondaPath {
     try {
         $whereResult = where.exe conda 2>$null
         if ($whereResult) { return $whereResult[0].Trim() }
-    } catch { }
+    } catch { Write-Verbose "Conda not found via where.exe" }
     return $null
 }
 

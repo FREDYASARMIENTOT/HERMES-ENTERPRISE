@@ -22,7 +22,7 @@ foreach ($p in $patterns) {
     try {
         $r = git -C $RepoRoot grep -n -- "${p}" 2>$null
         if ($r) { $matches += $r }
-    } catch { }
+    } catch { Write-Debug "Git grep failed for pattern: $p" }
 }
 
 # 3. Scan commit history (recent commits)
@@ -34,10 +34,10 @@ try {
             try {
                 $r = git -C $RepoRoot grep -n "${p}" $c -- 2>$null
                 if ($r) { $historyMatches += ("${c}:`n$r") }
-            } catch { }
+            } catch { Write-Debug "Git grep history failed: $p @ $c" }
         }
     }
-} catch { }
+} catch { Write-Debug "Git rev-list failed" }
 
 # Consolidate
 $allMatches = $matches + $historyMatches

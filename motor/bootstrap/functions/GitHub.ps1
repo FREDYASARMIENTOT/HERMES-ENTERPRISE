@@ -6,7 +6,7 @@ function Test-GitHubAuthentication {
             return $true
         }
     } catch {
-        # SuppressExpected
+        Write-Verbose "GitHub authentication check non-critical: $_"
     }
     return $false
 }

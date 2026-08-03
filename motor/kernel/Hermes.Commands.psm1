@@ -108,13 +108,13 @@ function Crear-HermesProyecto {
         [string]$GitHubUser = 'FREDYASARMIENTOT',
 
         [Parameter(Mandatory = $false)]
-        [switch]$CrearRepositorioGitHub = $true,
+        [switch]$CrearRepositorioGitHub,
 
         [Parameter(Mandatory = $false)]
-        [switch]$InicializarGit = $true,
+        [switch]$InicializarGit,
 
         [Parameter(Mandatory = $false)]
-        [switch]$AbrirVSCode = $true,
+        [switch]$AbrirVSCode,
 
         [Parameter(Mandatory = $false)]
         [switch]$NoPush
@@ -668,9 +668,9 @@ function Install-ProjectFromFactory {
         [string]$GitHubUser = 'FREDYASARMIENTOT',
         [string]$TipoEntorno = 'conda',
         [string]$PythonVersion = '3.14',
-        [switch]$InicializarGit = $true,
-        [switch]$CrearRepositorioGitHub = $true,
-        [switch]$AbrirVSCode = $true
+        [switch]$InicializarGit,
+        [switch]$CrearRepositorioGitHub,
+        [switch]$AbrirVSCode
     )
 
     $historyId = _Write-ProjectHistory -ProjectId $NombreProyecto -Operation 'Crear-HermesProyecto' -Workspace $WorkspaceRoot

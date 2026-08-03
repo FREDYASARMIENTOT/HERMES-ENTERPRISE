@@ -14,6 +14,20 @@ $script:ModuleRoot = Split-Path -Parent $script:ModulePath
 Remove-Module Hermes.Commands -Force -ErrorAction SilentlyContinue
 Import-Module $script:ModulePath -Force -ErrorAction Stop
 
+# ─── Helper function for Pester 3.x compatibility ─────────────────
+# In PowerShell script functions, $cmd.Parameters['X'].Mandatory
+# returns $null (it's an alias property that doesn't resolve).
+# We must extract Mandatory from the ParameterAttribute.
+function Get-ParameterMandatory {
+    param([string]$CommandName, [string]$ParameterName)
+    $cmd = Get-Command $CommandName
+    $attr = $cmd.Parameters[$ParameterName].Attributes |
+        Where-Object { $_ -is [System.Management.Automation.ParameterAttribute] } |
+        Select-Object -First 1
+    if ($null -eq $attr) { return $false }
+    return [bool]$attr.Mandatory
+}
+
 Describe 'Hermes.Commands Module' -Tag 'Module', 'RC62' {
 
     It 'Should import without errors' {
@@ -125,8 +139,7 @@ Describe 'Crear-HermesProyecto' -Tag 'Project', 'RC62' {
     }
 
     It 'Should have mandatory parameter -NombreProyecto' {
-        $cmd = Get-Command Crear-HermesProyecto
-        ($cmd.Parameters['NombreProyecto'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Crear-HermesProyecto' -ParameterName 'NombreProyecto' | Should Be $true
     }
 
     It 'Should have optional -TipoEntorno with ValidateSet(venv,conda)' {
@@ -140,10 +153,10 @@ Describe 'Crear-HermesProyecto' -Tag 'Project', 'RC62' {
 
     It 'Should have 4 switch parameters' {
         $cmd = Get-Command Crear-HermesProyecto
-        $cmd.Parameters['InicializarGit'].SwitchParameter | Should Be $true
-        $cmd.Parameters['CrearRepositorioGitHub'].SwitchParameter | Should Be $true
-        $cmd.Parameters['AbrirVSCode'].SwitchParameter | Should Be $true
-        $cmd.Parameters['NoPush'].SwitchParameter | Should Be $true
+        $cmd.Parameters['InicializarGit'].Attributes.SwitchParameter | Should Be $true
+        $cmd.Parameters['CrearRepositorioGitHub'].Attributes.SwitchParameter | Should Be $true
+        $cmd.Parameters['AbrirVSCode'].Attributes.SwitchParameter | Should Be $true
+        $cmd.Parameters['NoPush'].Attributes.SwitchParameter | Should Be $true
     }
 }
 
@@ -154,8 +167,7 @@ Describe 'Get-HermesProyecto' -Tag 'Project', 'RC62' {
     }
 
     It 'Should have mandatory -ProjectPath' {
-        $cmd = Get-Command Get-HermesProyecto
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Get-HermesProyecto' -ParameterName 'ProjectPath' | Should Be $true
     }
 
     It 'Should return $null for non-existent path' {
@@ -171,8 +183,7 @@ Describe 'Start-HermesProject' -Tag 'Project', 'RC62' {
     }
 
     It 'Should have optional -ProjectPath' {
-        $cmd = Get-Command Start-HermesProject
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $false) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Start-HermesProject' -ParameterName 'ProjectPath' | Should Be $false
     }
 }
 
@@ -183,8 +194,7 @@ Describe 'Abrir-HermesProyecto' -Tag 'Project', 'RC62' {
     }
 
     It 'Should have mandatory -ProjectPath' {
-        $cmd = Get-Command Abrir-HermesProyecto
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Abrir-HermesProyecto' -ParameterName 'ProjectPath' | Should Be $true
     }
 
     It 'Should return $false for non-existent path' {
@@ -200,10 +210,9 @@ Describe 'Publicar-HermesProyecto' -Tag 'Project', 'GitHub', 'RC62' {
     }
 
     It 'Should have 3 mandatory parameters' {
-        $cmd = Get-Command Publicar-HermesProyecto
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
-        ($cmd.Parameters['GitHubUser'].Mandatory -eq $true) | Should Be $true
-        ($cmd.Parameters['RepoName'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Publicar-HermesProyecto' -ParameterName 'ProjectPath' | Should Be $true
+        Get-ParameterMandatory -CommandName 'Publicar-HermesProyecto' -ParameterName 'GitHubUser' | Should Be $true
+        Get-ParameterMandatory -CommandName 'Publicar-HermesProyecto' -ParameterName 'RepoName' | Should Be $true
     }
 }
 
@@ -214,8 +223,7 @@ Describe 'Cerrar-HermesProyecto' -Tag 'Project', 'RC62' {
     }
 
     It 'Should have mandatory -ProjectPath' {
-        $cmd = Get-Command Cerrar-HermesProyecto
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Cerrar-HermesProyecto' -ParameterName 'ProjectPath' | Should Be $true
     }
 }
 
@@ -226,8 +234,7 @@ Describe 'Eliminar-HermesProyecto' -Tag 'Project', 'RC62' {
     }
 
     It 'Should have mandatory -ProjectPath' {
-        $cmd = Get-Command Eliminar-HermesProyecto
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Eliminar-HermesProyecto' -ParameterName 'ProjectPath' | Should Be $true
     }
 }
 
@@ -238,8 +245,7 @@ Describe 'Get-HermesProyectos' -Tag 'Project', 'RC62' {
     }
 
     It 'Should have optional -WorkspaceRoot' {
-        $cmd = Get-Command Get-HermesProyectos
-        ($cmd.Parameters['WorkspaceRoot'].Mandatory -eq $false) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Get-HermesProyectos' -ParameterName 'WorkspaceRoot' | Should Be $false
     }
 }
 
@@ -269,8 +275,7 @@ Describe 'New-HermesDocumentacion' -Tag 'Utility', 'RC62' {
     }
 
     It 'Should have mandatory -ProjectPath' {
-        $cmd = Get-Command New-HermesDocumentacion
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'New-HermesDocumentacion' -ParameterName 'ProjectPath' | Should Be $true
     }
 }
 
@@ -281,8 +286,7 @@ Describe 'New-HermesCommit' -Tag 'Git', 'RC62' {
     }
 
     It 'Should have mandatory -ProjectPath' {
-        $cmd = Get-Command New-HermesCommit
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'New-HermesCommit' -ParameterName 'ProjectPath' | Should Be $true
     }
 
     It 'Should handle non-existent project path gracefully' {
@@ -299,8 +303,7 @@ Describe 'Environment Commands' -Tag 'Environment', 'RC62' {
     }
 
     It 'New-HermesVenv should have mandatory -ProjectPath' {
-        $cmd = Get-Command New-HermesVenv
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'New-HermesVenv' -ParameterName 'ProjectPath' | Should Be $true
     }
 
     It 'Enter-HermesVenv should exist' {
@@ -309,8 +312,7 @@ Describe 'Environment Commands' -Tag 'Environment', 'RC62' {
     }
 
     It 'Enter-HermesVenv should have mandatory -ProjectPath' {
-        $cmd = Get-Command Enter-HermesVenv
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Enter-HermesVenv' -ParameterName 'ProjectPath' | Should Be $true
     }
 
     It 'Enter-HermesVenv should return $null for non-existent project' {
@@ -329,9 +331,8 @@ Describe 'Environment Commands' -Tag 'Environment', 'RC62' {
     }
 
     It 'New-HermesConda should have mandatory -ProjectPath and -EnvironmentName' {
-        $cmd = Get-Command New-HermesConda
-        ($cmd.Parameters['ProjectPath'].Mandatory -eq $true) | Should Be $true
-        ($cmd.Parameters['EnvironmentName'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'New-HermesConda' -ParameterName 'ProjectPath' | Should Be $true
+        Get-ParameterMandatory -CommandName 'New-HermesConda' -ParameterName 'EnvironmentName' | Should Be $true
     }
 
     It 'Enter-HermesConda should exist' {
@@ -340,8 +341,7 @@ Describe 'Environment Commands' -Tag 'Environment', 'RC62' {
     }
 
     It 'Enter-HermesConda should have mandatory -EnvironmentName' {
-        $cmd = Get-Command Enter-HermesConda
-        ($cmd.Parameters['EnvironmentName'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Enter-HermesConda' -ParameterName 'EnvironmentName' | Should Be $true
     }
 
     It 'Remove-HermesConda should exist' {
@@ -350,8 +350,7 @@ Describe 'Environment Commands' -Tag 'Environment', 'RC62' {
     }
 
     It 'Remove-HermesConda should have mandatory -EnvironmentName' {
-        $cmd = Get-Command Remove-HermesConda
-        ($cmd.Parameters['EnvironmentName'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Remove-HermesConda' -ParameterName 'EnvironmentName' | Should Be $true
     }
 }
 
@@ -363,8 +362,7 @@ Describe 'Workspace Commands' -Tag 'Workspace', 'RC62' {
     }
 
     It 'New-HermesWorkspace should have mandatory -WorkspaceRoot' {
-        $cmd = Get-Command New-HermesWorkspace
-        ($cmd.Parameters['WorkspaceRoot'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'New-HermesWorkspace' -ParameterName 'WorkspaceRoot' | Should Be $true
     }
 
     It 'New-HermesWorkspace should create directory and return $true' {
@@ -384,8 +382,7 @@ Describe 'Workspace Commands' -Tag 'Workspace', 'RC62' {
     }
 
     It 'Open-HermesWorkspace should have mandatory -WorkspaceRoot' {
-        $cmd = Get-Command Open-HermesWorkspace
-        ($cmd.Parameters['WorkspaceRoot'].Mandatory -eq $true) | Should Be $true
+        Get-ParameterMandatory -CommandName 'Open-HermesWorkspace' -ParameterName 'WorkspaceRoot' | Should Be $true
     }
 
     It 'Open-HermesWorkspace should return $false for non-existent path' {
@@ -407,9 +404,9 @@ Describe 'Install-ProjectFromFactory' -Tag 'Utility', 'RC62' {
 
     It 'Should have switch parameters' {
         $cmd = Get-Command Install-ProjectFromFactory
-        $cmd.Parameters['InicializarGit'].SwitchParameter | Should Be $true
-        $cmd.Parameters['CrearRepositorioGitHub'].SwitchParameter | Should Be $true
-        $cmd.Parameters['AbrirVSCode'].SwitchParameter | Should Be $true
+        $cmd.Parameters['InicializarGit'].Attributes.SwitchParameter | Should Be $true
+        $cmd.Parameters['CrearRepositorioGitHub'].Attributes.SwitchParameter | Should Be $true
+        $cmd.Parameters['AbrirVSCode'].Attributes.SwitchParameter | Should Be $true
     }
 }
 

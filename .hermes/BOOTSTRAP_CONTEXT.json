@@ -1,15 +1,7 @@
-{
-  "Sprint": "Builder++++++",
-  "Status": "IN_PROGRESS",
-  "GoldenPath": {
-    "EngineResolution": "PASS",
-    "Adapter": "PASS",
-    "SchedulerInvocation": "PENDING",
-    "ProjectCreation": "PENDING",
-    "GitInitialization": "PENDING",
-    "GitHubProvision": "PENDING",
-    "InitialPush": "PENDING"
-  },
-  "CurrentBlocker": "Instrumentation visibility",
-  "NextTask": "Verify Adapter to Scheduler execution"
+﻿{
+    "sprint":  "A.27",
+    "objetivo":  "Provision full",
+    "ultimo_paso":  null,
+    "last_updated":  "2026-08-03T11:35:23.1624561-05:00",
+    "estado":  "IN_PROGRESS"
 }

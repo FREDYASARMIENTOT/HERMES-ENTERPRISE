@@ -21,11 +21,24 @@ $resolverModule = Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.De
 
 if (Test-Path $resolverModule) {
     try {
+        # Try function-based API first (works in all PowerShell execution contexts)
         Import-Module $resolverModule -Force -ErrorAction Stop
-        $resolver = [HermesPathResolver]::new($configPath)
+        if (Get-Command Get-HermesPaths -ErrorAction SilentlyContinue) {
+            $paths = Get-HermesPaths -ConfigPath $configPath
+            $WorkspaceRoot = $paths.WorkspaceRoot
+            $SandboxRoot = $paths.SandboxRoot
+        } else {
+            # Fallback to class-based API
+            $resolver = [HermesPathResolver]::new($configPath)
+            $WorkspaceRoot = $resolver.GetWorkspaceRoot()
+            $SandboxRoot = $resolver.GetSandboxRoot()
+        }
     } catch {
-        Write-Error "Failed to load HermesPathResolver: $($_.Exception.Message)"
-        throw
+        # Ultimate fallback: direct JSON parsing
+        Write-Warning "Failed to load HermesPathResolver: $($_.Exception.Message). Using direct JSON parsing."
+        $json = Get-Content $configPath -Raw | ConvertFrom-Json
+        $WorkspaceRoot = $json.WorkspaceRoot
+        $SandboxRoot = $json.SandboxRoot
     }
 } else {
     Write-Error "HermesPathResolver module not found at $resolverModule"
@@ -33,12 +46,13 @@ if (Test-Path $resolverModule) {
 }
 
 if ($Sandbox.IsPresent) {
-    $WorkspaceRoot = $resolver.GetSandboxRoot()
-} elseif (-not $WorkspaceRoot) {
-    $WorkspaceRoot = $resolver.GetWorkspaceRoot()
+    $WorkspaceRoot = $SandboxRoot
 }
 
-# Inject WorkspaceRoot and Sandbox into bound parameters
+# Ensure NombreProyecto is always present (the default needs to be passed explicitly)
+if (-not $PSBoundParameters.ContainsKey('NombreProyecto')) {
+    $PSBoundParameters['NombreProyecto'] = $NombreProyecto
+}
 $PSBoundParameters['WorkspaceRoot'] = $WorkspaceRoot
 $PSBoundParameters['Sandbox'] = $Sandbox.IsPresent
 

@@ -92,7 +92,7 @@ function Connect-HermesDatabase {
         }
     }
     catch {
-        # SQLite may not be available as assembly - try via ADO.NET
+        Write-Debug "System.Data.SQLite assembly not found via Add-Type: $_"
     }
 
     try {
@@ -120,13 +120,13 @@ function Disconnect-HermesDatabase {
     )
 
     if ($Manager.Transaction) {
-        try { $Manager.Transaction.Rollback() } catch {}
+        try { $Manager.Transaction.Rollback() } catch { Write-Verbose "Error rolling back transaction: $_" }
         $Manager.Transaction = $null
     }
 
     if ($Manager.Connection -and $Manager.Connection.State -eq 'Open') {
-        try { $Manager.Connection.Close() } catch {}
-        try { $Manager.Connection.Dispose() } catch {}
+        try { $Manager.Connection.Close() } catch { Write-Verbose "Error closing connection: $_" }
+        try { $Manager.Connection.Dispose() } catch { Write-Verbose "Error disposing connection: $_" }
     }
 
     $Manager.Connection = $null

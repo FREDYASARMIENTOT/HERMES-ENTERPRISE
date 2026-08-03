@@ -117,4 +117,34 @@ tools/RC45_FixVerbs.ps1
 pruebas/unitarias/Test-BootLoader.ps1
 pruebas/unitarias/Test-CoreServices.ps1
 pruebas/unitarias/TestHelpers.psm1
-pruebas/run_analyzer_summary.ps1".git-credentials"  
+pruebas/run_analyzer_summary.ps1
+
+# ██████ GENERATED REPORTS ██████
+AUDIT_REPORT.md
+bootstrap.json
+bootstrap.yaml
+BOOTSTRAP_IMPLEMENTATION_PLAN.md
+GOLDEN_REFACTORING_SEQUENCE.md
+GOLDEN_REFACTORING_SEQUENCE_V2.md
+MASTER_REFACTORING_ROADMAP.md
+KERNEL_CONTRACT_SPECIFICATION.md
+HERMES_ENTERPRISE_IMPLEMENTATION_GOVERNANCE.md
+WORKING_TREE_RECONCILIATION.md
+CODEOWNERS
+CLINE.md
+final_error_dump.txt
+
+# ██████ GENERATED DB FILES ██████
+hermes.db
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
+
+# ██████ OLD TEST SCRIPTS ██████
+_TestFix.ps1
+_TestProvision.ps1
+hello.ps1
+
+# ██████ .git-credentials ██████
+.git-credentials

@@ -30,13 +30,21 @@ Write-Host ("  DLL path arg       : " + $DllPath)
 Write-Host ("  DLL exists         : " + (Test-Path $DllPath))
 Write-Host ""
 
+# ── Almacenamos variables que se iran completando paso a paso ──
+$script:resolvedDll = $null
+$script:asm          = $null
+$script:connType     = $null
+$script:conn         = $null
+
+# ====================================================================
 # PASO 1: Resolver configuracion
+# ====================================================================
 Write-Host "PASO 1 - Resolver configuracion (persistence.psd1)" -ForegroundColor Yellow
 try {
     $configPath = Join-Path $PSScriptRoot "..\..\motor\config\persistence.psd1"
     Write-Host ("  Config path : " + $configPath)
     Write-Host ("  Exists      : " + (Test-Path $configPath))
-    
+
     $cfg = Import-LocalizedData -BaseDirectory (Split-Path $configPath -Parent) -FileName "persistence.psd1" -ErrorAction Stop
     Write-Host "  Config loaded successfully" -ForegroundColor Green
     Write-Host ("  Provider    : " + $cfg.Provider)
@@ -55,7 +63,9 @@ catch {
 }
 Write-Host ""
 
+# ====================================================================
 # PASO 2: Resolver DLL
+# ====================================================================
 Write-Host "PASO 2 - Resolver ruta del DLL" -ForegroundColor Yellow
 try {
     $workspaceRoot = $env:HERMES_WORKSPACE_ROOT
@@ -63,37 +73,39 @@ try {
         $workspaceRoot = (Resolve-Path "$PSScriptRoot\..\.." -ErrorAction Stop).Path
     }
     Write-Host ("  Workspace Root : " + $workspaceRoot)
-    
+
     $dllRelPath = $cfg.HermesSQLiteProvider.AssemblyPath
     Write-Host ("  DLL rel path   : " + $dllRelPath)
-    
+
     $hermesDllRaw = Join-Path $workspaceRoot $dllRelPath
     Write-Host ("  DLL full path  : " + $hermesDllRaw)
-    
-    $resolvedDll = if (Test-Path $hermesDllRaw) {
+
+    $resolvedPath = if (Test-Path $hermesDllRaw) {
         (Resolve-Path $hermesDllRaw -ErrorAction Stop).Path
     }
     else {
         $hermesDllRaw
     }
-    Write-Host ("  Resolved path  : " + $resolvedDll)
-    Write-Host ("  Exists         : " + (Test-Path $resolvedDll))
-    
-    if (-not (Test-Path $resolvedDll)) {
-        throw "DLL file does not exist at resolved path: " + $resolvedDll
+    Write-Host ("  Resolved path  : " + $resolvedPath)
+    Write-Host ("  Exists         : " + (Test-Path $resolvedPath))
+
+    if (-not (Test-Path $resolvedPath)) {
+        throw "DLL file does not exist at resolved path: " + $resolvedPath
     }
-    
-    $dllInfo = Get-Item $resolvedDll
+
+    $dllInfo = Get-Item $resolvedPath
     Write-Host ("  File size      : " + $dllInfo.Length + " bytes")
     Write-Host ("  Last modified  : " + $dllInfo.LastWriteTime)
-    
+
     try {
-        $asmName = [System.Reflection.AssemblyName]::GetAssemblyName($resolvedDll)
+        $asmName = [System.Reflection.AssemblyName]::GetAssemblyName($resolvedPath)
         Write-Host ("  Assembly Name  : " + $asmName.FullName) -ForegroundColor Green
     }
     catch {
         Write-Host ("  [WARN] Cannot read assembly metadata: " + $_.Exception.Message) -ForegroundColor Yellow
     }
+
+    $script:resolvedDll = $resolvedPath
 }
 catch {
     Write-Host "  [ERROR] Failed to resolve DLL path" -ForegroundColor Red
@@ -105,31 +117,37 @@ catch {
 }
 Write-Host ""
 
-# PASO 3: Load Assembly (Add-Type)
-Write-Host "PASO 3 - Load Assembly (Add-Type)" -ForegroundColor Yellow
+# ====================================================================
+# PASO 3: Load Assembly (LoadFrom)
+# ====================================================================
+Write-Host "PASO 3 - Load Assembly (LoadFrom)" -ForegroundColor Yellow
 try {
-    $alreadyLoaded = $null -ne ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { 
+    # Check if already loaded
+    $alreadyLoaded = $null -ne ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {
         $_.FullName -like "HermesSQLiteProvider*" -or $_.Location -like "*HermesSQLiteProvider*"
     })
     Write-Host ("  Already loaded? : " + $alreadyLoaded)
-    
+
     if (-not $alreadyLoaded) {
-        Write-Host ("  Loading via Add-Type -Path " + $resolvedDll + " ...")
-        Add-Type -Path $resolvedDll -ErrorAction Stop
-        Write-Host "  Add-Type succeeded!" -ForegroundColor Green
+        Write-Host ("  Loading via Assembly.LoadFrom: " + $script:resolvedDll)
+        $script:asm = [System.Reflection.Assembly]::LoadFrom($script:resolvedDll)
+        Write-Host "  LoadFrom succeeded!" -ForegroundColor Green
     }
     else {
-        Write-Host "  Assembly already loaded, skipping Add-Type" -ForegroundColor Green
+        Write-Host "  Assembly already loaded, retrieving from AppDomain" -ForegroundColor Green
+        $script:asm = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {
+            $_.FullName -like "HermesSQLiteProvider*" -or $_.Location -like "*HermesSQLiteProvider*"
+        } | Select-Object -First 1
     }
-    
-    $loadedAsm = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { 
-        $_.FullName -like "HermesSQLiteProvider*" -or $_.Location -like "*HermesSQLiteProvider*"
-    }
-    if ($loadedAsm) {
-        Write-Host ("  Assembly verified in AppDomain: " + $loadedAsm.FullName) -ForegroundColor Green
+
+    if ($script:asm) {
+        Write-Host ("  Assembly FullName: " + $script:asm.FullName) -ForegroundColor Green
+        Write-Host ("  Location         : " + $script:asm.Location) -ForegroundColor Green
+        Write-Host ("  ImageRuntimeVer  : " + $script:asm.ImageRuntimeVersion) -ForegroundColor Green
+        Write-Host ("  IsDynamic        : " + $script:asm.IsDynamic) -ForegroundColor Green
     }
     else {
-        Write-Host "  [WARN] Assembly not found in AppDomain after load" -ForegroundColor Yellow
+        throw "Assembly object is null after load attempt"
     }
 }
 catch {
@@ -138,52 +156,60 @@ catch {
     Write-Host ("  Message         : " + $_.Exception.Message) -ForegroundColor Red
     Write-Host ("  InnerException  : " + $_.Exception.InnerException) -ForegroundColor Red
     Write-Host ("  StackTrace      : " + $_.Exception.StackTrace) -ForegroundColor Red
+
     if ($_.Exception.InnerException) {
         Write-Host ("  Inner Stack     : " + $_.Exception.InnerException.StackTrace) -ForegroundColor Red
     }
-    if ($_.Exception -is [System.IO.FileNotFoundException]) {
-        Write-Host ("  FusionLog       : " + $_.Exception.FusionLog) -ForegroundColor Red
+
+    # FusionLog: can be on FileNotFoundException / BadImageFormatException / etc
+    $ex = $_.Exception
+    while ($ex) {
+        if ($ex.GetType().Name -match "FileNotFoundException|BadImageFormatException|FileLoadException") {
+            try {
+                $fusionLog = $ex.FusionLog
+                if (-not [string]::IsNullOrEmpty($fusionLog)) {
+                    Write-Host ("  --- FusionLog ---") -ForegroundColor Red
+                    Write-Host $fusionLog -ForegroundColor Red
+                    Write-Host ("  --- End FusionLog ---") -ForegroundColor Red
+                }
+            }
+            catch {
+                Write-Host ("  [FusionLog not accessible on this exception]") -ForegroundColor Yellow
+            }
+        }
+        $ex = $ex.InnerException
     }
-    throw "PASO 3 FAILED: Add-Type failed for " + $resolvedDll
+
+    throw "PASO 3 FAILED: LoadFrom failed for " + $script:resolvedDll
 }
 Write-Host ""
 
+# ====================================================================
 # PASO 4: GetType
+# ====================================================================
 Write-Host "PASO 4 - GetType Hermes.Data.SQLite.HermesSQLiteConnection" -ForegroundColor Yellow
 try {
-    $typeLoaded = ([System.Management.Automation.PSTypeName]"Hermes.Data.SQLite.HermesSQLiteConnection").Type
-    if ($typeLoaded) {
-        Write-Host ("  PSTypeName resolution: " + $typeLoaded.FullName) -ForegroundColor Green
-        Write-Host ("  Assembly             : " + $typeLoaded.Assembly.FullName) -ForegroundColor Green
+    Write-Host "  Attempting direct GetType from assembly..."
+    $script:connType = $script:asm.GetType("Hermes.Data.SQLite.HermesSQLiteConnection")
+    if ($script:connType) {
+        Write-Host ("  GetType succeeded: " + $script:connType.FullName) -ForegroundColor Green
+        Write-Host ("  Assembly          : " + $script:connType.Assembly.FullName) -ForegroundColor Green
+        Write-Host ("  IsPublic          : " + $script:connType.IsPublic) -ForegroundColor Green
+        Write-Host ("  IsClass           : " + $script:connType.IsClass) -ForegroundColor Green
+        Write-Host ("  IsAbstract        : " + $script:connType.IsAbstract) -ForegroundColor Green
     }
     else {
-        Write-Host "  PSTypeName resolution FAILED (returned null)" -ForegroundColor Yellow
-    }
-    
-    $asmLoaded = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { 
-        $_.FullName -like "HermesSQLiteProvider*"
-    }
-    if ($asmLoaded) {
-        Write-Host "  Direct GetType from assembly..."
-        $directType = $asmLoaded.GetType("Hermes.Data.SQLite.HermesSQLiteConnection")
-        if ($directType) {
-            Write-Host ("  Direct GetType succeeded: " + $directType.FullName) -ForegroundColor Green
+        Write-Host "  GetType returned null - enumerating all types in assembly:" -ForegroundColor Yellow
+        $allTypes = $script:asm.GetTypes()
+        if ($allTypes.Count -eq 0) {
+            Write-Host "    (No types found in assembly!)" -ForegroundColor Red
         }
         else {
-            Write-Host "  Listing all types in assembly:" -ForegroundColor Yellow
-            foreach ($t in $asmLoaded.GetExportedTypes()) {
-                Write-Host ("    - " + $t.FullName)
-            }
-            if ($asmLoaded.GetExportedTypes().Count -eq 0) {
-                Write-Host "    (No exported types found)" -ForegroundColor Red
-                foreach ($t in $asmLoaded.GetTypes()) {
-                    Write-Host ("    - " + $t.FullName)
-                }
+            foreach ($t in $allTypes) {
+                Write-Host ("    - " + $t.FullName + " (Public=" + $t.IsPublic + ", Class=" + $t.IsClass + ")")
             }
         }
-    }
-    else {
-        Write-Host "  [ERROR] Assembly not found in AppDomain" -ForegroundColor Red
+        throw "GetType returned null for 'Hermes.Data.SQLite.HermesSQLiteConnection'"
     }
 }
 catch {
@@ -192,29 +218,38 @@ catch {
     Write-Host ("  Message        : " + $_.Exception.Message) -ForegroundColor Red
     Write-Host ("  InnerException : " + $_.Exception.InnerException) -ForegroundColor Red
     Write-Host ("  StackTrace     : " + $_.Exception.StackTrace) -ForegroundColor Red
+
+    $ex = $_.Exception
+    while ($ex) {
+        if ($ex.GetType().Name -match "FileNotFoundException|BadImageFormatException") {
+            try { Write-Host ("  FusionLog: " + $ex.FusionLog) -ForegroundColor Red } catch {}
+        }
+        $ex = $ex.InnerException
+    }
+
     throw "PASO 4 FAILED: Cannot resolve type Hermes.Data.SQLite.HermesSQLiteConnection"
 }
 Write-Host ""
 
+# ====================================================================
 # PASO 5: Constructor
-Write-Host "PASO 5 - New-Object HermesSQLiteConnection" -ForegroundColor Yellow
+# ====================================================================
+Write-Host "PASO 5 - Create instance via Activator.CreateInstance" -ForegroundColor Yellow
 $connectionString = "Data Source=" + (Join-Path $workspaceRoot "data\test_hermes_provider.db") + ";Version=3;Pooling=True;Max Pool Size=100;"
-$conn = $null
 try {
     Write-Host ("  ConnectionString: " + $connectionString)
-    
-    $conn = New-Object Hermes.Data.SQLite.HermesSQLiteConnection($connectionString)
-    
-    if ($conn) {
+
+    $script:conn = [Activator]::CreateInstance($script:connType, $connectionString)
+
+    if ($script:conn) {
         Write-Host "  Constructor succeeded!" -ForegroundColor Green
-        Write-Host ("  Connection type : " + $conn.GetType().FullName) -ForegroundColor Green
-        Write-Host ("  ConnectionString: " + $conn.ConnectionString) -ForegroundColor Green
-        Write-Host ("  State (pre-open): " + $conn.State) -ForegroundColor Green
-        Write-Host ("  Timeout         : " + $conn.ConnectionTimeout) -ForegroundColor Green
+        Write-Host ("  Connection type : " + $script:conn.GetType().FullName) -ForegroundColor Green
+        Write-Host ("  ConnectionString: " + $script:conn.ConnectionString) -ForegroundColor Green
+        Write-Host ("  State (pre-open): " + $script:conn.State) -ForegroundColor Green
+        Write-Host ("  Timeout         : " + $script:conn.ConnectionTimeout) -ForegroundColor Green
     }
     else {
-        Write-Host "  [ERROR] Constructor returned null" -ForegroundColor Red
-        throw "New-Object returned null"
+        throw "Activator.CreateInstance returned null"
     }
 }
 catch {
@@ -230,16 +265,18 @@ catch {
 }
 Write-Host ""
 
+# ====================================================================
 # PASO 6: Open Connection
+# ====================================================================
 Write-Host "PASO 6 - Open" -ForegroundColor Yellow
 try {
     Write-Host "  Attempting conn.Open ..."
-    $conn.Open()
+    $script:conn.Open()
     Write-Host "  Open succeeded!" -ForegroundColor Green
-    Write-Host ("  State (post-open): " + $conn.State) -ForegroundColor Green
-    
+    Write-Host ("  State (post-open): " + $script:conn.State) -ForegroundColor Green
+
     Write-Host "  Testing simple query..."
-    $cmd = $conn.CreateCommand()
+    $cmd = $script:conn.CreateCommand()
     $cmd.CommandText = "SELECT sqlite_version() AS version"
     $reader = $cmd.ExecuteReader()
     if ($reader.Read()) {
@@ -248,7 +285,7 @@ try {
     }
     $reader.Close()
     $cmd.Dispose()
-    
+
     Write-Host ""
     Write-Host "================================================" -ForegroundColor Green
     Write-Host "   TEST COMPLETED SUCCESSFULLY                  " -ForegroundColor Green
@@ -264,15 +301,26 @@ catch {
     if ($_.Exception.InnerException) {
         Write-Host ("  Inner Stack     : " + $_.Exception.InnerException.StackTrace) -ForegroundColor Red
     }
+
+    $ex = $_.Exception
+    while ($ex) {
+        if ($ex.GetType().Name -match "FileNotFoundException|DllNotFoundException") {
+            try { Write-Host ("  FusionLog: " + $ex.FusionLog) -ForegroundColor Red } catch {}
+        }
+        $ex = $ex.InnerException
+    }
+
     throw "PASO 6 FAILED: conn.Open failed"
 }
 finally {
-    if ($conn) {
+    if ($script:conn) {
         try {
-            if ($conn.State -eq "Open") { $conn.Close() }
-            $conn.Dispose()
+            if ($script:conn.State -eq "Open") { $script:conn.Close() }
+            $script:conn.Dispose()
         }
-        catch { }
+        catch {
+            Write-Host "  [WARN] Cleanup error: $_" -ForegroundColor Yellow
+        }
     }
 }
 Write-Host ""

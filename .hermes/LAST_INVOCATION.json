@@ -1,0 +1,10 @@
+﻿{
+    "AbrirVSCode":  true,
+    "GitHubUser":  "",
+    "Sandbox":  false,
+    "WorkspaceRoot":  "D:/Proyectos",
+    "Modo":  "Desarrollo",
+    "EjecutarPruebas":  false,
+    "NombreProyecto":  "ProyectoPrueba002",
+    "ProvisionTarget":  "Local"
+}

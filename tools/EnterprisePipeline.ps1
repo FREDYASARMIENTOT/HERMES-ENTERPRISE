@@ -10,10 +10,6 @@ $adapterRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $schedulerPath = Join-Path -Path $adapterRoot -ChildPath 'Scheduler.ps1'
 $alt = Join-Path -Path (Join-Path $adapterRoot '..') -ChildPath 'motor\bootstrap\engine\BootstrapOrchestrator.ps1'
 
-# Prefer local Invoke-EnterprisePipeline implementation
-$invokePath = Join-Path -Path $adapterRoot -ChildPath 'Invoke-EnterprisePipeline.ps1'
-if (Test-Path $invokePath) { . $invokePath }
-
 # Logging helper
 function Write-HermesLog {
     param([string]$Message)
@@ -21,7 +17,7 @@ function Write-HermesLog {
     Add-Content -Path $logPath -Value ("$(Get-Date -Format o) | $Message")
 }
 
-# Try to load scheduler or orchestrator
+# Try to load scheduler or orchestrator first (base functions)
 if (Test-Path $schedulerPath) {
     . $schedulerPath
     Write-HermesLog "Adapter: Loaded Scheduler at $schedulerPath"
@@ -32,6 +28,13 @@ if (Test-Path $schedulerPath) {
     Write-HermesLog "Adapter: Scheduler not found at $schedulerPath and orchestrator not found at $alt"
     Write-Output "[Adapter] Scheduler not found at $schedulerPath and orchestrator not found at $alt"
     return 1
+}
+
+# Override with real Invoke-EnterprisePipeline implementation (if available)
+$invokePath = Join-Path -Path $adapterRoot -ChildPath 'Invoke-EnterprisePipeline.ps1'
+if (Test-Path $invokePath) {
+    . $invokePath
+    Write-HermesLog "Adapter: Loaded Invoke-EnterprisePipeline implementation from $invokePath"
 }
 
 # Delegate call

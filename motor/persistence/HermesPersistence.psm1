@@ -68,7 +68,7 @@ function Connect-HermesDatabase {
             Write-Host "  InnerException type: $($_.Exception.InnerException.GetType().FullName)"
             Write-Host "  InnerException Message: $($_.Exception.InnerException.Message)"
             Write-Host "  Inner StackTrace: $($_.Exception.InnerException.StackTrace)"
-            try { Write-Host "  FusionLog: $($_.Exception.InnerException.FusionLog)" } catch {}
+        try { Write-Host "  FusionLog: $($_.Exception.InnerException.FusionLog)" } catch { Write-Verbose "FusionLog not available" }
         }
         Write-Host "  StackTrace: $($_.ScriptStackTrace)"
         throw "Connect-HermesDatabase Step 2 (LoadAssembly) failed: $_"
@@ -136,7 +136,7 @@ function Connect-HermesDatabase {
 function Disconnect-HermesDatabase {
     [CmdletBinding()][OutputType([void])] param([psobject]$Manager)
     if ($Manager.Connection -and $Manager.IsConnected) {
-        try { $Manager.Connection.Close() } catch { }
+        try { $Manager.Connection.Close() } catch { Write-Verbose "Error closing connection: $_" }
         $Manager.Connection = $null
         $Manager.IsConnected = $false
         Write-Verbose "Disconnected"
@@ -679,8 +679,8 @@ function Start-HermesDatabaseTransaction {
 function Undo-HermesDatabaseTransaction {
     [CmdletBinding()][OutputType([void])] param([psobject]$Manager)
     if ($Manager._Transaction) {
-        try { $Manager._Transaction.Rollback() } catch { }
-        try { $Manager._Transaction.Dispose() } catch { }
+        try { $Manager._Transaction.Rollback() } catch { Write-Verbose "Error rolling back transaction: $_" }
+        try { $Manager._Transaction.Dispose() } catch { Write-Verbose "Error disposing transaction: $_" }
         $Manager._Transaction = $null
     }
 }
@@ -868,7 +868,7 @@ function Initialize-HermesTestData {
                 '@Id' = "test_prov_$i"; '@Name' = "TestProvider$i"; '@Type' = @('Cloud','Local','Hybrid')[$i % 3]; '@Status' = @('Running','Stopped','Error')[$i % 3]; '@Desc' = "Test provider $i"
             } | Out-Null
             $count++
-        } catch {}
+        } catch { Write-Warning "Error inserting test data: $_" }
     }
     return $count
 }

@@ -1,7 +1,0 @@
-{
-  "project": { "name": "ProyectoTest025" },
-  "github": { "create": true, "visibility": "public", "configure_actions": true },
-  "python": { "create_venv": true, "install_requirements": true },
-  "vscode": { "open": true },
-  "tests": { "run": true }
-}

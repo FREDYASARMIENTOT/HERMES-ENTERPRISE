@@ -144,8 +144,8 @@ Describe 'Crear-HermesProyecto' -Tag 'Project', 'RC62' {
 
     It 'Should have optional -TipoEntorno with ValidateSet(venv,conda)' {
         $cmd = Get-Command Crear-HermesProyecto
-        (-not $cmd.Parameters['TipoEntorno'].Mandatory) | Should Be $true
-        $att = $cmd.Parameters['TipoEntorno'].Attributes | Where-Object { $_ -is [ValidateSetAttribute] }
+        Get-ParameterMandatory -CommandName 'Crear-HermesProyecto' -ParameterName 'TipoEntorno' | Should Be $false
+        $att = $cmd.Parameters['TipoEntorno'].Attributes | Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] }
         ($null -ne $att) | Should Be $true
         ($att.ValidValues -contains 'venv') | Should Be $true
         ($att.ValidValues -contains 'conda') | Should Be $true
@@ -153,10 +153,10 @@ Describe 'Crear-HermesProyecto' -Tag 'Project', 'RC62' {
 
     It 'Should have 4 switch parameters' {
         $cmd = Get-Command Crear-HermesProyecto
-        $cmd.Parameters['InicializarGit'].Attributes.SwitchParameter | Should Be $true
-        $cmd.Parameters['CrearRepositorioGitHub'].Attributes.SwitchParameter | Should Be $true
-        $cmd.Parameters['AbrirVSCode'].Attributes.SwitchParameter | Should Be $true
-        $cmd.Parameters['NoPush'].Attributes.SwitchParameter | Should Be $true
+        $cmd.Parameters['InicializarGit'].SwitchParameter | Should Be $true
+        $cmd.Parameters['CrearRepositorioGitHub'].SwitchParameter | Should Be $true
+        $cmd.Parameters['AbrirVSCode'].SwitchParameter | Should Be $true
+        $cmd.Parameters['NoPush'].SwitchParameter | Should Be $true
     }
 }
 
@@ -404,9 +404,9 @@ Describe 'Install-ProjectFromFactory' -Tag 'Utility', 'RC62' {
 
     It 'Should have switch parameters' {
         $cmd = Get-Command Install-ProjectFromFactory
-        $cmd.Parameters['InicializarGit'].Attributes.SwitchParameter | Should Be $true
-        $cmd.Parameters['CrearRepositorioGitHub'].Attributes.SwitchParameter | Should Be $true
-        $cmd.Parameters['AbrirVSCode'].Attributes.SwitchParameter | Should Be $true
+        $cmd.Parameters['InicializarGit'].SwitchParameter | Should Be $true
+        $cmd.Parameters['CrearRepositorioGitHub'].SwitchParameter | Should Be $true
+        $cmd.Parameters['AbrirVSCode'].SwitchParameter | Should Be $true
     }
 }
 

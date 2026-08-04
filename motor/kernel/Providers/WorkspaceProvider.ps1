@@ -1,78 +1,20 @@
 <#
 ====================================================================================================
 Proyecto : HERMES-ENTERPRISE
-Archivo  : WorkspaceProvider.ps1
+Archivo  : WorkspaceProvider.ps1  (REDIRECT)
 Autor    : Fredy Alejandro Sarmiento Torres
 Propósito:
-    Proveedor de Workspace — gestiona workspaces disponibles en el sistema.
-    Satisface: capability.workspace.discovery
+    REDIRECT al WorkspaceProvider canónico en motor/kernel/Module/Hermes.Commands/Providers/.
+    Garantiza un único punto de verdad. (MICROFASE 1 — Consolidación)
 ====================================================================================================
 #>
 
 Set-StrictMode -Version Latest
 
-function New-WorkspaceProvider {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Id,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Name
-    )
-
-    return [pscustomobject][ordered]@{
-        Id          = $Id
-        Name        = $Name
-        Version     = '1.0.0'
-        Type        = 'Workspace'
-        Status      = 'Uninitialized'
-        Capabilities = @('capability.workspace.discovery')
-        CreatedAt   = [datetime]::UtcNow.ToString('o')
-    }
+# Redirect to canonical implementation in Hermes.Commands module
+$canonicalPath = Join-Path $PSScriptRoot '..\Module\Hermes.Commands\Providers\WorkspaceProvider.ps1'
+if (Test-Path $canonicalPath) {
+    . $canonicalPath
+} else {
+    throw "[WorkspaceProvider.ps1] Canonical provider not found at: $canonicalPath"
 }
-
-function Invoke-WorkspaceProvider {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Provider,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$UseCaseContext,
-
-        [Parameter(Mandatory = $false)]
-        [psobject]$Container = $null
-    )
-
-    $Provider.Status = 'Running'
-
-    try {
-        $Provider.Status = 'Available'
-        return @{
-            Provider   = 'WorkspaceProvider'
-            Status     = 'Available'
-        }
-    }
-    catch {
-        $Provider.Status = 'Error'
-        return @{ Provider = 'WorkspaceProvider'; Status = 'Error'; Error = $_.Exception.Message }
-    }
-}
-
-function Test-WorkspaceProviderValid {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Provider
-    )
-
-    return (-not [string]::IsNullOrEmpty($Provider.Id)) -and
-           (-not [string]::IsNullOrEmpty($Provider.Name))
-}
-

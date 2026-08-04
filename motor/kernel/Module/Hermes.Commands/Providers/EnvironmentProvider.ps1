@@ -478,8 +478,12 @@ function Get-EnvironmentProviderStatus {
         [psobject]$Provider
     )
 
+    begin {
+        $results = [System.Collections.ArrayList]@()
+    }
+
     process {
-        return [pscustomobject][ordered]@{
+        $null = $results.Add([pscustomobject][ordered]@{
             Id              = $Provider.Id
             Name            = $Provider.Name
             Version         = $Provider.Version
@@ -492,7 +496,11 @@ function Get-EnvironmentProviderStatus {
             LastCreatedEnv  = $Provider.LastCreatedEnv
             ErrorCount      = $Provider.Errors.Count
             LastConnection  = $Provider.LastConnection
-        }
+        })
+    }
+
+    end {
+        return $results
     }
 }
 

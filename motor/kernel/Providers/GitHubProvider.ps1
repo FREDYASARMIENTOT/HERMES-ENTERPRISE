@@ -1,82 +1,20 @@
 <#
 ====================================================================================================
 Proyecto : HERMES-ENTERPRISE
-Archivo  : GitHubProvider.ps1
+Archivo  : GitHubProvider.ps1  (REDIRECT)
 Autor    : Fredy Alejandro Sarmiento Torres
 Propósito:
-    Proveedor de GitHub — interactúa con la API de GitHub para operaciones de repositorio.
-    Satisface: capability.workspace.bootstrap
+    REDIRECT al GitHubProvider canónico en motor/kernel/Module/Hermes.Commands/Providers/.
+    Garantiza un único punto de verdad. (MICROFASE 1 — Consolidación)
 ====================================================================================================
 #>
 
 Set-StrictMode -Version Latest
 
-function New-GitHubProvider {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Id,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Name
-    )
-
-    return [pscustomobject][ordered]@{
-        Id          = $Id
-        Name        = $Name
-        Version     = '1.0.0'
-        Type        = 'GitHub'
-        Status      = 'Uninitialized'
-        Capabilities = @('capability.workspace.bootstrap')
-        CreatedAt   = [datetime]::UtcNow.ToString('o')
-    }
+# Redirect to canonical implementation in Hermes.Commands module
+$canonicalPath = Join-Path $PSScriptRoot '..\Module\Hermes.Commands\Providers\GitHubProvider.ps1'
+if (Test-Path $canonicalPath) {
+    . $canonicalPath
+} else {
+    throw "[GitHubProvider.ps1] Canonical provider not found at: $canonicalPath"
 }
-
-function Invoke-GitHubProvider {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Provider,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$UseCaseContext,
-
-        [Parameter(Mandatory = $false)]
-        [psobject]$Container = $null
-    )
-
-    $Provider.Status = 'Running'
-
-    try {
-        $workspaceName = $UseCaseContext.InputParameters.WorkspaceName
-        $Provider.Status = 'Available'
-
-        return @{
-            Provider      = 'GitHubProvider'
-            Status        = 'Available'
-            WorkspaceName = $workspaceName
-            RepoUrl       = "https://github.com/owner/$workspaceName"
-        }
-    }
-    catch {
-        $Provider.Status = 'Error'
-        return @{ Provider = 'GitHubProvider'; Status = 'Error'; Error = $_.Exception.Message }
-    }
-}
-
-function Test-GitHubProviderValid {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [psobject]$Provider
-    )
-
-    return (-not [string]::IsNullOrEmpty($Provider.Id)) -and
-           (-not [string]::IsNullOrEmpty($Provider.Name))
-}
-

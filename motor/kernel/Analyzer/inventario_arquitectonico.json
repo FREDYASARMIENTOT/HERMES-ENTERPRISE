@@ -1,0 +1,3098 @@
+﻿[
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\.hermes\\BOOTSTRAP_CONTEXT.json",
+        "Name":  "BOOTSTRAP_CONTEXT.json",
+        "Extension":  ".json",
+        "SizeKB":  0.18,
+        "LastModified":  "2026-08-03 11:35:23",
+        "Directory":  ".hermes"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\.hermes\\LAST_INVOCATION.json",
+        "Name":  "LAST_INVOCATION.json",
+        "Extension":  ".json",
+        "SizeKB":  0.25,
+        "LastModified":  "2026-08-03 11:41:17",
+        "Directory":  ".hermes"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\.vscode\\settings.json",
+        "Name":  "settings.json",
+        "Extension":  ".json",
+        "SizeKB":  1.03,
+        "LastModified":  "2026-08-01 05:51:09",
+        "Directory":  ".vscode"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\configuracion\\bootstrap.enterprise.json",
+        "Name":  "bootstrap.enterprise.json",
+        "Extension":  ".json",
+        "SizeKB":  0.43,
+        "LastModified":  "2026-07-07 18:58:46",
+        "Directory":  "configuracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\configuracion\\kernel.enterprise.json",
+        "Name":  "kernel.enterprise.json",
+        "Extension":  ".json",
+        "SizeKB":  0.14,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "configuracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\ArchitectureOverview.md",
+        "Name":  "ArchitectureOverview.md",
+        "Extension":  ".md",
+        "SizeKB":  5.63,
+        "LastModified":  "2026-08-03 14:48:36",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\CHANGELOG_SESSION.md",
+        "Name":  "CHANGELOG_SESSION.md",
+        "Extension":  ".md",
+        "SizeKB":  0.8,
+        "LastModified":  "2026-07-18 23:41:57",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\CommandReference.md",
+        "Name":  "CommandReference.md",
+        "Extension":  ".md",
+        "SizeKB":  14.12,
+        "LastModified":  "2026-08-03 14:46:44",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\DEPENDENCY_MATRIX.md",
+        "Name":  "DEPENDENCY_MATRIX.md",
+        "Extension":  ".md",
+        "SizeKB":  0.21,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\Examples.md",
+        "Name":  "Examples.md",
+        "Extension":  ".md",
+        "SizeKB":  4.36,
+        "LastModified":  "2026-08-03 14:47:34",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\FAQ.md",
+        "Name":  "FAQ.md",
+        "Extension":  ".md",
+        "SizeKB":  3.48,
+        "LastModified":  "2026-08-03 14:44:57",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\Installation.md",
+        "Name":  "Installation.md",
+        "Extension":  ".md",
+        "SizeKB":  1.58,
+        "LastModified":  "2026-08-03 14:40:57",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\INTERNAL_CAPABILITY_USE_CASE_MATRIX.md",
+        "Name":  "INTERNAL_CAPABILITY_USE_CASE_MATRIX.md",
+        "Extension":  ".md",
+        "SizeKB":  35.3,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\MIGRATION_PLAN.md",
+        "Name":  "MIGRATION_PLAN.md",
+        "Extension":  ".md",
+        "SizeKB":  6.57,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\QuickStart.md",
+        "Name":  "QuickStart.md",
+        "Extension":  ".md",
+        "SizeKB":  1.73,
+        "LastModified":  "2026-08-03 14:41:31",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\RISKS.md",
+        "Name":  "RISKS.md",
+        "Extension":  ".md",
+        "SizeKB":  0.19,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\ROADMAP.md",
+        "Name":  "ROADMAP.md",
+        "Extension":  ".md",
+        "SizeKB":  0.29,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\Troubleshooting.md",
+        "Name":  "Troubleshooting.md",
+        "Extension":  ".md",
+        "SizeKB":  3.93,
+        "LastModified":  "2026-08-03 14:43:39",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\UserAcceptanceTests.md",
+        "Name":  "UserAcceptanceTests.md",
+        "Extension":  ".md",
+        "SizeKB":  4.71,
+        "LastModified":  "2026-08-03 14:50:33",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\UserManual.md",
+        "Name":  "UserManual.md",
+        "Extension":  ".md",
+        "SizeKB":  5.99,
+        "LastModified":  "2026-08-03 14:42:50",
+        "Directory":  "docs"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\docs\\adr\\ADR-001-Adapter-Pattern.md",
+        "Name":  "ADR-001-Adapter-Pattern.md",
+        "Extension":  ".md",
+        "SizeKB":  0.59,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "docs\\adr"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\ARCHITECTURE_DECISIONS.md",
+        "Name":  "ARCHITECTURE_DECISIONS.md",
+        "Extension":  ".md",
+        "SizeKB":  19.53,
+        "LastModified":  "2026-07-05 21:40:22",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\BOOTSTRAP.md",
+        "Name":  "BOOTSTRAP.md",
+        "Extension":  ".md",
+        "SizeKB":  10.23,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\CODING_STANDARD.md",
+        "Name":  "CODING_STANDARD.md",
+        "Extension":  ".md",
+        "SizeKB":  0,
+        "LastModified":  "2026-07-04 12:53:32",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\CONFIGURATION.md",
+        "Name":  "CONFIGURATION.md",
+        "Extension":  ".md",
+        "SizeKB":  1.26,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\DEVELOPER_ASSISTANT.md",
+        "Name":  "DEVELOPER_ASSISTANT.md",
+        "Extension":  ".md",
+        "SizeKB":  3.05,
+        "LastModified":  "2026-07-05 21:41:26",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\DEVELOPER_CONTEXT.md",
+        "Name":  "DEVELOPER_CONTEXT.md",
+        "Extension":  ".md",
+        "SizeKB":  4.44,
+        "LastModified":  "2026-07-05 21:36:43",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\DIRECTORY_STANDARD.md",
+        "Name":  "DIRECTORY_STANDARD.md",
+        "Extension":  ".md",
+        "SizeKB":  0,
+        "LastModified":  "2026-07-04 12:53:32",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\EVENT_BUS.md",
+        "Name":  "EVENT_BUS.md",
+        "Extension":  ".md",
+        "SizeKB":  1.21,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\FIRST_RUN_EXPERIENCE.md",
+        "Name":  "FIRST_RUN_EXPERIENCE.md",
+        "Extension":  ".md",
+        "SizeKB":  1.36,
+        "LastModified":  "2026-07-05 21:37:06",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\GITHUB_WORKSPACE_PROVIDER.md",
+        "Name":  "GITHUB_WORKSPACE_PROVIDER.md",
+        "Extension":  ".md",
+        "SizeKB":  1.23,
+        "LastModified":  "2026-07-05 19:27:04",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\KERNEL.md",
+        "Name":  "KERNEL.md",
+        "Extension":  ".md",
+        "SizeKB":  2.6,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\LOGGER.md",
+        "Name":  "LOGGER.md",
+        "Extension":  ".md",
+        "SizeKB":  1.22,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\MISSION.md",
+        "Name":  "MISSION.md",
+        "Extension":  ".md",
+        "SizeKB":  0,
+        "LastModified":  "2026-07-04 12:53:32",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\MODULE_REGISTRY.md",
+        "Name":  "MODULE_REGISTRY.md",
+        "Extension":  ".md",
+        "SizeKB":  1.21,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\OBJECTIVES.md",
+        "Name":  "OBJECTIVES.md",
+        "Extension":  ".md",
+        "SizeKB":  0,
+        "LastModified":  "2026-07-04 12:53:32",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PLUGIN_CONTRACTS.md",
+        "Name":  "PLUGIN_CONTRACTS.md",
+        "Extension":  ".md",
+        "SizeKB":  1.33,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PLUGIN_DISCOVERY.md",
+        "Name":  "PLUGIN_DISCOVERY.md",
+        "Extension":  ".md",
+        "SizeKB":  1.25,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PLUGIN_FRAMEWORK.md",
+        "Name":  "PLUGIN_FRAMEWORK.md",
+        "Extension":  ".md",
+        "SizeKB":  1.62,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PLUGIN_LIFECYCLE.md",
+        "Name":  "PLUGIN_LIFECYCLE.md",
+        "Extension":  ".md",
+        "SizeKB":  1.21,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PLUGIN_MANAGER.md",
+        "Name":  "PLUGIN_MANAGER.md",
+        "Extension":  ".md",
+        "SizeKB":  1.29,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PLUGIN_MANIFEST.md",
+        "Name":  "PLUGIN_MANIFEST.md",
+        "Extension":  ".md",
+        "SizeKB":  1.28,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PRINCIPLES.md",
+        "Name":  "PRINCIPLES.md",
+        "Extension":  ".md",
+        "SizeKB":  0,
+        "LastModified":  "2026-07-04 12:53:32",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PROJECT_CHARTER.md",
+        "Name":  "PROJECT_CHARTER.md",
+        "Extension":  ".md",
+        "SizeKB":  0,
+        "LastModified":  "2026-07-04 12:53:32",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PROVIDER_FRAMEWORK.md",
+        "Name":  "PROVIDER_FRAMEWORK.md",
+        "Extension":  ".md",
+        "SizeKB":  2.91,
+        "LastModified":  "2026-07-05 16:35:40",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\PROVIDER_REGISTRY.md",
+        "Name":  "PROVIDER_REGISTRY.md",
+        "Extension":  ".md",
+        "SizeKB":  1.26,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\README.md",
+        "Name":  "README.md",
+        "Extension":  ".md",
+        "SizeKB":  1.37,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\ROADMAP_EVOLUTIVO_INCREMENTAL.md",
+        "Name":  "ROADMAP_EVOLUTIVO_INCREMENTAL.md",
+        "Extension":  ".md",
+        "SizeKB":  13.18,
+        "LastModified":  "2026-07-04 19:20:46",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\RUNTIME.md",
+        "Name":  "RUNTIME.md",
+        "Extension":  ".md",
+        "SizeKB":  1.24,
+        "LastModified":  "2026-07-07 16:11:13",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\SESSION_FRAMEWORK.md",
+        "Name":  "SESSION_FRAMEWORK.md",
+        "Extension":  ".md",
+        "SizeKB":  2.46,
+        "LastModified":  "2026-07-05 21:38:47",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\SRS_HERMES_ENTERPRISE.md",
+        "Name":  "SRS_HERMES_ENTERPRISE.md",
+        "Extension":  ".md",
+        "SizeKB":  5.39,
+        "LastModified":  "2026-07-05 21:43:33",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\VISION.md",
+        "Name":  "VISION.md",
+        "Extension":  ".md",
+        "SizeKB":  0,
+        "LastModified":  "2026-07-04 12:53:32",
+        "Directory":  "documentacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\analysis\\phase-3.5-root-cause-analysis.md",
+        "Name":  "phase-3.5-root-cause-analysis.md",
+        "Extension":  ".md",
+        "SizeKB":  9.13,
+        "LastModified":  "2026-07-08 12:19:39",
+        "Directory":  "documentacion\\analysis"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arboria-arb\\CAPABILITY_MAP.md",
+        "Name":  "CAPABILITY_MAP.md",
+        "Extension":  ".md",
+        "SizeKB":  14.79,
+        "LastModified":  "2026-07-07 17:40:41",
+        "Directory":  "documentacion\\arboria-arb"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arboria-arb\\EXECUTION_CHECKLIST.md",
+        "Name":  "EXECUTION_CHECKLIST.md",
+        "Extension":  ".md",
+        "SizeKB":  17.6,
+        "LastModified":  "2026-07-07 17:48:22",
+        "Directory":  "documentacion\\arboria-arb"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arboria-arb\\EXECUTIVE_SUMMARY.md",
+        "Name":  "EXECUTIVE_SUMMARY.md",
+        "Extension":  ".md",
+        "SizeKB":  20.47,
+        "LastModified":  "2026-07-07 17:50:26",
+        "Directory":  "documentacion\\arboria-arb"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arboria-arb\\GO_DECISION.md",
+        "Name":  "GO_DECISION.md",
+        "Extension":  ".md",
+        "SizeKB":  14.93,
+        "LastModified":  "2026-07-07 17:44:45",
+        "Directory":  "documentacion\\arboria-arb"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arboria-arb\\ROADMAP_VALIDATION.md",
+        "Name":  "ROADMAP_VALIDATION.md",
+        "Extension":  ".md",
+        "SizeKB":  14.55,
+        "LastModified":  "2026-07-07 17:35:04",
+        "Directory":  "documentacion\\arboria-arb"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arboria-arb\\TECHNICAL_DEBT.md",
+        "Name":  "TECHNICAL_DEBT.md",
+        "Extension":  ".md",
+        "SizeKB":  19.71,
+        "LastModified":  "2026-07-07 17:43:09",
+        "Directory":  "documentacion\\arboria-arb"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arboria-arb\\TRACEABILITY_MATRIX.md",
+        "Name":  "TRACEABILITY_MATRIX.md",
+        "Extension":  ".md",
+        "SizeKB":  14.38,
+        "LastModified":  "2026-07-07 17:37:17",
+        "Directory":  "documentacion\\arboria-arb"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\arquitectura\\ArchitectureReport.md",
+        "Name":  "ArchitectureReport.md",
+        "Extension":  ".md",
+        "SizeKB":  2.22,
+        "LastModified":  "2026-07-08 13:15:51",
+        "Directory":  "documentacion\\arquitectura"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\bootstrap\\environment-design.md",
+        "Name":  "environment-design.md",
+        "Extension":  ".md",
+        "SizeKB":  9.22,
+        "LastModified":  "2026-07-08 11:24:42",
+        "Directory":  "documentacion\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\bootstrap-engine\\BootstrapOrchestrator.spec.md",
+        "Name":  "BootstrapOrchestrator.spec.md",
+        "Extension":  ".md",
+        "SizeKB":  4.6,
+        "LastModified":  "2026-07-10 05:30:39",
+        "Directory":  "documentacion\\bootstrap-engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\bootstrap-engine\\BOOTSTRAP_ENGINE.md",
+        "Name":  "BOOTSTRAP_ENGINE.md",
+        "Extension":  ".md",
+        "SizeKB":  29.3,
+        "LastModified":  "2026-07-07 19:01:42",
+        "Directory":  "documentacion\\bootstrap-engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\bootstrap-engine\\BOOTSTRAP_SEQUENCE.md",
+        "Name":  "BOOTSTRAP_SEQUENCE.md",
+        "Extension":  ".md",
+        "SizeKB":  5.79,
+        "LastModified":  "2026-07-10 06:30:28",
+        "Directory":  "documentacion\\bootstrap-engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\bootstrap-engine\\contratos-arquitectonicos.md",
+        "Name":  "contratos-arquitectonicos.md",
+        "Extension":  ".md",
+        "SizeKB":  9.88,
+        "LastModified":  "2026-07-10 06:47:42",
+        "Directory":  "documentacion\\bootstrap-engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\context\\context-optimization-engine.md",
+        "Name":  "context-optimization-engine.md",
+        "Extension":  ".md",
+        "SizeKB":  11.31,
+        "LastModified":  "2026-07-08 11:48:54",
+        "Directory":  "documentacion\\context"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\contratos\\BuilderContract.md",
+        "Name":  "BuilderContract.md",
+        "Extension":  ".md",
+        "SizeKB":  3.52,
+        "LastModified":  "2026-07-08 13:15:47",
+        "Directory":  "documentacion\\contratos"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\pre-auditorias\\AcceptanceChecklist.md",
+        "Name":  "AcceptanceChecklist.md",
+        "Extension":  ".md",
+        "SizeKB":  10.3,
+        "LastModified":  "2026-07-07 17:11:34",
+        "Directory":  "documentacion\\pre-auditorias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\pre-auditorias\\ACCEPTANCE_TEST001_EXECUTION_PLAN.md",
+        "Name":  "ACCEPTANCE_TEST001_EXECUTION_PLAN.md",
+        "Extension":  ".md",
+        "SizeKB":  19.01,
+        "LastModified":  "2026-07-07 17:46:29",
+        "Directory":  "documentacion\\pre-auditorias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\pre-auditorias\\ORR.md",
+        "Name":  "ORR.md",
+        "Extension":  ".md",
+        "SizeKB":  10.99,
+        "LastModified":  "2026-07-07 17:10:08",
+        "Directory":  "documentacion\\pre-auditorias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\pre-auditorias\\PRE-FLIGHT.md",
+        "Name":  "PRE-FLIGHT.md",
+        "Extension":  ".md",
+        "SizeKB":  6.16,
+        "LastModified":  "2026-07-07 17:00:46",
+        "Directory":  "documentacion\\pre-auditorias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\pre-auditorias\\ReadyForProduction.md",
+        "Name":  "ReadyForProduction.md",
+        "Extension":  ".md",
+        "SizeKB":  11.16,
+        "LastModified":  "2026-07-07 17:12:40",
+        "Directory":  "documentacion\\pre-auditorias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\01_MASTER_ROADMAP.md",
+        "Name":  "01_MASTER_ROADMAP.md",
+        "Extension":  ".md",
+        "SizeKB":  77.01,
+        "LastModified":  "2026-07-07 17:27:05",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\02_SPRINT_A.md",
+        "Name":  "02_SPRINT_A.md",
+        "Extension":  ".md",
+        "SizeKB":  40.56,
+        "LastModified":  "2026-07-07 17:25:30",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\03_SPRINT_B.md",
+        "Name":  "03_SPRINT_B.md",
+        "Extension":  ".md",
+        "SizeKB":  21.38,
+        "LastModified":  "2026-07-07 17:30:09",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\04_SPRINT_C.md",
+        "Name":  "04_SPRINT_C.md",
+        "Extension":  ".md",
+        "SizeKB":  23.64,
+        "LastModified":  "2026-07-07 17:32:26",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\05_SPRINT_D.md",
+        "Name":  "05_SPRINT_D.md",
+        "Extension":  ".md",
+        "SizeKB":  24.55,
+        "LastModified":  "2026-07-07 17:25:58",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\06_ARCHITECTURE_TARGET.md",
+        "Name":  "06_ARCHITECTURE_TARGET.md",
+        "Extension":  ".md",
+        "SizeKB":  123.27,
+        "LastModified":  "2026-07-07 17:33:13",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\07_BACKLOG.md",
+        "Name":  "07_BACKLOG.md",
+        "Extension":  ".md",
+        "SizeKB":  48.27,
+        "LastModified":  "2026-07-07 17:47:45",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\08_RISK_REGISTER.md",
+        "Name":  "08_RISK_REGISTER.md",
+        "Extension":  ".md",
+        "SizeKB":  23.85,
+        "LastModified":  "2026-07-07 17:28:20",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\09_RELEASE_PLAN.md",
+        "Name":  "09_RELEASE_PLAN.md",
+        "Extension":  ".md",
+        "SizeKB":  46.32,
+        "LastModified":  "2026-07-07 17:36:56",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\roadmap\\10_ACCEPTANCE_PLAN.md",
+        "Name":  "10_ACCEPTANCE_PLAN.md",
+        "Extension":  ".md",
+        "SizeKB":  93.45,
+        "LastModified":  "2026-07-07 17:45:32",
+        "Directory":  "documentacion\\roadmap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\documentacion\\sesiones\\CONTINUATION-3-5C.md",
+        "Name":  "CONTINUATION-3-5C.md",
+        "Extension":  ".md",
+        "SizeKB":  3.49,
+        "LastModified":  "2026-07-08 13:33:42",
+        "Directory":  "documentacion\\sesiones"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\CaptureGitRepo.ps1",
+        "Name":  "CaptureGitRepo.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.41,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\CreateExternalProject.ps1",
+        "Name":  "CreateExternalProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.72,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\CreateProject.ps1",
+        "Name":  "CreateProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.96,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\CreateProjectWrapper.ps1",
+        "Name":  "CreateProjectWrapper.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.34,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\FixWorkspaceResolver.ps1",
+        "Name":  "FixWorkspaceResolver.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.46,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\ProduceArchitectureInventory.ps1",
+        "Name":  "ProduceArchitectureInventory.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.21,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\ProduceInventory.ps1",
+        "Name":  "ProduceInventory.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.44,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\ProduceModuleInventoryDetailed.ps1",
+        "Name":  "ProduceModuleInventoryDetailed.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.95,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\ProduceModuleStructure.ps1",
+        "Name":  "ProduceModuleStructure.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.8,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\ResolveWorkspace.ps1",
+        "Name":  "ResolveWorkspace.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.41,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\RunFilesystemTests.ps1",
+        "Name":  "RunFilesystemTests.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.56,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\RunImportDiagnostics.ps1",
+        "Name":  "RunImportDiagnostics.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.42,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\RunImportForensics.ps1",
+        "Name":  "RunImportForensics.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\engine\\Scripts\\ValidateAndCreate_Direct.ps1",
+        "Name":  "ValidateAndCreate_Direct.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.17,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "engine\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\lib\\Microsoft.Data.Sqlite\\PACKAGE.md",
+        "Name":  "PACKAGE.md",
+        "Extension":  ".md",
+        "SizeKB":  1.63,
+        "LastModified":  "2024-10-29 09:54:32",
+        "Directory":  "lib\\Microsoft.Data.Sqlite"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\Startup.ps1",
+        "Name":  "Startup.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.79,
+        "LastModified":  "2026-07-04 13:48:12",
+        "Directory":  "motor"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\.hermes\\BOOTSTRAP_CONTEXT.json",
+        "Name":  "BOOTSTRAP_CONTEXT.json",
+        "Extension":  ".json",
+        "SizeKB":  0.16,
+        "LastModified":  "2026-07-19 21:39:45",
+        "Directory":  "motor\\.hermes"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\.hermes\\LAST_INVOCATION.json",
+        "Name":  "LAST_INVOCATION.json",
+        "Extension":  ".json",
+        "SizeKB":  0.25,
+        "LastModified":  "2026-08-01 23:24:00",
+        "Directory":  "motor\\.hermes"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Bootstrap.ps1",
+        "Name":  "Bootstrap.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.68,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\BootstrapOrchestrator.ps1",
+        "Name":  "BootstrapOrchestrator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.42,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Git.ps1",
+        "Name":  "Git.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.61,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\GitHub.ps1",
+        "Name":  "GitHub.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.5,
+        "LastModified":  "2026-08-01 20:35:08",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Python.ps1",
+        "Name":  "Python.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.44,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Reporting.ps1",
+        "Name":  "Reporting.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.34,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Security.ps1",
+        "Name":  "Security.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.2,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Start-HermesProject.ps1",
+        "Name":  "Start-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.05,
+        "LastModified":  "2026-08-01 23:24:21",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Start-HermesProject_Clean.ps1",
+        "Name":  "Start-HermesProject_Clean.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.79,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Synchronization.ps1",
+        "Name":  "Synchronization.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.63,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Templates.ps1",
+        "Name":  "Templates.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.42,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Tests.ps1",
+        "Name":  "Tests.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.13,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\Validation.ps1",
+        "Name":  "Validation.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.72,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\engine\\BootstrapOrchestrator.ps1",
+        "Name":  "BootstrapOrchestrator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.9,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\engine\\BootstrapState.ps1",
+        "Name":  "BootstrapState.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.06,
+        "LastModified":  "2026-07-07 18:59:26",
+        "Directory":  "motor\\bootstrap\\engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\engine\\BootstrapWizard.ps1",
+        "Name":  "BootstrapWizard.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.86,
+        "LastModified":  "2026-07-07 19:10:52",
+        "Directory":  "motor\\bootstrap\\engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\engine\\New-BootstrapStateFromRequest.ps1",
+        "Name":  "New-BootstrapStateFromRequest.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.25,
+        "LastModified":  "2026-07-10 06:40:12",
+        "Directory":  "motor\\bootstrap\\engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\engine\\environment\\EnvironmentManager.ps1",
+        "Name":  "EnvironmentManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  21.16,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\engine\\environment"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\Git.ps1",
+        "Name":  "Git.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.64,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\GitHub.ps1",
+        "Name":  "GitHub.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.93,
+        "LastModified":  "2026-08-03 13:26:07",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\GitHubProvision.ps1",
+        "Name":  "GitHubProvision.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.69,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\Provisioning.ps1",
+        "Name":  "Provisioning.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.38,
+        "LastModified":  "2026-07-18 23:00:28",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\Python.ps1",
+        "Name":  "Python.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.32,
+        "LastModified":  "2026-07-18 23:01:07",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\README.md",
+        "Name":  "README.md",
+        "Extension":  ".md",
+        "SizeKB":  0.24,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\Reporting.ps1",
+        "Name":  "Reporting.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.82,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\Templates.ps1",
+        "Name":  "Templates.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.35,
+        "LastModified":  "2026-07-18 23:02:30",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\Validation.ps1",
+        "Name":  "Validation.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.53,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\functions\\VSCode.ps1",
+        "Name":  "VSCode.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.56,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\functions"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\request\\BootstrapRequest.ps1",
+        "Name":  "BootstrapRequest.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.31,
+        "LastModified":  "2026-07-10 05:52:18",
+        "Directory":  "motor\\bootstrap\\request"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\request\\BootstrapRequestBuilder.ps1",
+        "Name":  "BootstrapRequestBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  9.63,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\bootstrap\\request"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\bootstrap\\request\\New-BootstrapRequestFromProjectArchitecture.ps1",
+        "Name":  "New-BootstrapRequestFromProjectArchitecture.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.16,
+        "LastModified":  "2026-07-10 23:13:33",
+        "Directory":  "motor\\bootstrap\\request"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\capabilities\\CapabilityContract.ps1",
+        "Name":  "CapabilityContract.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.04,
+        "LastModified":  "2026-07-11 00:20:18",
+        "Directory":  "motor\\capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\capabilities\\CapabilityLoader.ps1",
+        "Name":  "CapabilityLoader.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.37,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\capabilities\\CapabilityRegistry.ps1",
+        "Name":  "CapabilityRegistry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.68,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\config\\Configuration.psm1",
+        "Name":  "Configuration.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  1.63,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\config"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\config\\persistence.psd1",
+        "Name":  "persistence.psd1",
+        "Extension":  ".psd1",
+        "SizeKB":  1.08,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\config"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\ContextEngine.ps1",
+        "Name":  "ContextEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.38,
+        "LastModified":  "2026-07-08 12:20:11",
+        "Directory":  "motor\\context"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\ContextValidator.ps1",
+        "Name":  "ContextValidator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.25,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\context"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\builders\\CurrentStateBuilder.ps1",
+        "Name":  "CurrentStateBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.64,
+        "LastModified":  "2026-07-08 12:50:58",
+        "Directory":  "motor\\context\\builders"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\builders\\ManifestBuilder.ps1",
+        "Name":  "ManifestBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.91,
+        "LastModified":  "2026-07-08 13:01:00",
+        "Directory":  "motor\\context\\builders"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\builders\\MemoryBuilder.ps1",
+        "Name":  "MemoryBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.32,
+        "LastModified":  "2026-07-08 12:01:34",
+        "Directory":  "motor\\context\\builders"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\builders\\NextTaskBuilder.ps1",
+        "Name":  "NextTaskBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.31,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\context\\builders"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\builders\\ProjectIndexBuilder.ps1",
+        "Name":  "ProjectIndexBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.06,
+        "LastModified":  "2026-07-08 12:41:58",
+        "Directory":  "motor\\context\\builders"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\builders\\SummaryBuilder.ps1",
+        "Name":  "SummaryBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.65,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\context\\builders"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\builders\\WorkerContextBuilder.ps1",
+        "Name":  "WorkerContextBuilder.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.81,
+        "LastModified":  "2026-07-08 13:25:11",
+        "Directory":  "motor\\context\\builders"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\contracts\\ContextContract.ps1",
+        "Name":  "ContextContract.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.58,
+        "LastModified":  "2026-07-08 12:01:35",
+        "Directory":  "motor\\context\\contracts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\helpers\\ContextHelpers.ps1",
+        "Name":  "ContextHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.54,
+        "LastModified":  "2026-07-08 12:38:44",
+        "Directory":  "motor\\context\\helpers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\helpers\\DurationHelpers.ps1",
+        "Name":  "DurationHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.65,
+        "LastModified":  "2026-07-08 12:38:44",
+        "Directory":  "motor\\context\\helpers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\helpers\\GitHelpers.ps1",
+        "Name":  "GitHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.65,
+        "LastModified":  "2026-07-08 12:45:36",
+        "Directory":  "motor\\context\\helpers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\helpers\\ParseHelpers.ps1",
+        "Name":  "ParseHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.86,
+        "LastModified":  "2026-07-08 12:37:51",
+        "Directory":  "motor\\context\\helpers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\helpers\\PathHelpers.ps1",
+        "Name":  "PathHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.69,
+        "LastModified":  "2026-07-08 12:37:17",
+        "Directory":  "motor\\context\\helpers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\helpers\\ProjectHelpers.ps1",
+        "Name":  "ProjectHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.53,
+        "LastModified":  "2026-07-08 12:38:44",
+        "Directory":  "motor\\context\\helpers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\helpers\\TokenHelpers.ps1",
+        "Name":  "TokenHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.57,
+        "LastModified":  "2026-07-08 12:37:17",
+        "Directory":  "motor\\context\\helpers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\schemas\\manifest.schema.json",
+        "Name":  "manifest.schema.json",
+        "Extension":  ".json",
+        "SizeKB":  1.43,
+        "LastModified":  "2026-07-08 11:57:55",
+        "Directory":  "motor\\context\\schemas"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\context\\schemas\\worker.schema.json",
+        "Name":  "worker.schema.json",
+        "Extension":  ".json",
+        "SizeKB":  1.54,
+        "LastModified":  "2026-07-08 11:57:55",
+        "Directory":  "motor\\context\\schemas"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\dependencias\\DependencyInjection.ps1",
+        "Name":  "DependencyInjection.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.05,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\dependencias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\eventos\\EventBus.ps1",
+        "Name":  "EventBus.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.99,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\eventos"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\CapabilityProvider.ps1",
+        "Name":  "CapabilityProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.98,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Context.ps1",
+        "Name":  "Context.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  18.41,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\DiscoveryEngine.ps1",
+        "Name":  "DiscoveryEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.39,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\ExecutionBroker.ps1",
+        "Name":  "ExecutionBroker.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.91,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Hermes.Commands.psd1",
+        "Name":  "Hermes.Commands.psd1",
+        "Extension":  ".psd1",
+        "SizeKB":  2.59,
+        "LastModified":  "2026-08-02 23:38:59",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Hermes.Commands.psm1",
+        "Name":  "Hermes.Commands.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  29.18,
+        "LastModified":  "2026-08-03 13:06:23",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Kernel.ps1",
+        "Name":  "Kernel.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  12.6,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\KernelContext.ps1",
+        "Name":  "KernelContext.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.87,
+        "LastModified":  "2026-08-01 08:06:38",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\KernelHealth.ps1",
+        "Name":  "KernelHealth.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.46,
+        "LastModified":  "2026-08-01 08:06:38",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\KernelMetrics.ps1",
+        "Name":  "KernelMetrics.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.89,
+        "LastModified":  "2026-08-01 08:06:38",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\KernelValidator.ps1",
+        "Name":  "KernelValidator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.78,
+        "LastModified":  "2026-08-01 08:06:38",
+        "Directory":  "motor\\kernel"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Capabilities\\CapabilityRegistrar.ps1",
+        "Name":  "CapabilityRegistrar.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.38,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Capabilities\\CapabilityRegistry.ps1",
+        "Name":  "CapabilityRegistry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.37,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Capabilities\\UseCaseContext.ps1",
+        "Name":  "UseCaseContext.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.98,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Capabilities\\UseCaseLibrary.ps1",
+        "Name":  "UseCaseLibrary.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  32.39,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Capabilities\\UseCaseOrchestrator.ps1",
+        "Name":  "UseCaseOrchestrator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.13,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Capabilities\\UseCaseRegistry.ps1",
+        "Name":  "UseCaseRegistry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.65,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Capabilities"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Contracts\\IComponent.ps1",
+        "Name":  "IComponent.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.66,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Contracts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Contracts\\IEngine.ps1",
+        "Name":  "IEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.17,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Contracts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Contracts\\IProvider.ps1",
+        "Name":  "IProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.44,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Contracts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Discovery\\EngineDiscovery.ps1",
+        "Name":  "EngineDiscovery.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.9,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Discovery"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Discovery\\ProviderDiscovery.ps1",
+        "Name":  "ProviderDiscovery.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.05,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Discovery"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\BootstrapEngine.ps1",
+        "Name":  "BootstrapEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.96,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\ConfigEngine.ps1",
+        "Name":  "ConfigEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.77,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\DependencyEngine.ps1",
+        "Name":  "DependencyEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.79,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\DiscoveryEngine.ps1",
+        "Name":  "DiscoveryEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.52,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\EngineBase.ps1",
+        "Name":  "EngineBase.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.13,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\EngineExecutionContext.ps1",
+        "Name":  "EngineExecutionContext.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.78,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\EngineFactory.ps1",
+        "Name":  "EngineFactory.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.24,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\EngineRegistry.ps1",
+        "Name":  "EngineRegistry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.38,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\EngineResolver.ps1",
+        "Name":  "EngineResolver.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.41,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\KernelEngine.ps1",
+        "Name":  "KernelEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.48,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\ProviderEngine.ps1",
+        "Name":  "ProviderEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.74,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Engine\\RuntimeEngine.ps1",
+        "Name":  "RuntimeEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.48,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Engine"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Lifecycle\\ProviderLifecycleManager.ps1",
+        "Name":  "ProviderLifecycleManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.18,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Lifecycle"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Hermes.Commands.psd1",
+        "Name":  "Hermes.Commands.psd1",
+        "Extension":  ".psd1",
+        "SizeKB":  5.95,
+        "LastModified":  "2026-08-03 22:47:34",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Hermes.Commands.psm1",
+        "Name":  "Hermes.Commands.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  3.86,
+        "LastModified":  "2026-08-03 22:36:17",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Install\\Install-Hermes.ps1",
+        "Name":  "Install-Hermes.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.9,
+        "LastModified":  "2026-08-03 22:44:28",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Install"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Install\\Uninstall-Hermes.ps1",
+        "Name":  "Uninstall-Hermes.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.82,
+        "LastModified":  "2026-08-03 22:44:56",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Install"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Install\\Update-Hermes.ps1",
+        "Name":  "Update-Hermes.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.83,
+        "LastModified":  "2026-08-03 22:45:42",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Install"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Private\\DatabaseOperations.ps1",
+        "Name":  "DatabaseOperations.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.51,
+        "LastModified":  "2026-08-03 22:33:22",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Private"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Private\\HermesHelpers.ps1",
+        "Name":  "HermesHelpers.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.79,
+        "LastModified":  "2026-08-03 22:32:48",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Private"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Private\\PathResolver.ps1",
+        "Name":  "PathResolver.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.64,
+        "LastModified":  "2026-08-03 22:59:35",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Private"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Private\\Validation.ps1",
+        "Name":  "Validation.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.06,
+        "LastModified":  "2026-08-03 22:57:27",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Private"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\ProjectManager\\ProjectFactory.ps1",
+        "Name":  "ProjectFactory.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.02,
+        "LastModified":  "2026-08-03 22:34:39",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\ProjectManager"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\ProjectManager\\ProjectManager.ps1",
+        "Name":  "ProjectManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.08,
+        "LastModified":  "2026-08-03 22:35:07",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\ProjectManager"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Providers\\EnvironmentProvider.ps1",
+        "Name":  "EnvironmentProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  16.98,
+        "LastModified":  "2026-08-04 00:04:22",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Providers\\GitHubProvider.ps1",
+        "Name":  "GitHubProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.28,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Providers\\ProviderBase.ps1",
+        "Name":  "ProviderBase.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.49,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Providers\\WorkspaceProvider.ps1",
+        "Name":  "WorkspaceProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.1,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Backup-HermesProject.ps1",
+        "Name":  "Backup-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.82,
+        "LastModified":  "2026-08-03 22:43:25",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Clone-HermesProject.ps1",
+        "Name":  "Clone-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.55,
+        "LastModified":  "2026-08-03 22:42:52",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Close-HermesProject.ps1",
+        "Name":  "Close-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.19,
+        "LastModified":  "2026-08-03 22:42:18",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Enter-HermesEnvironment.ps1",
+        "Name":  "Enter-HermesEnvironment.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.25,
+        "LastModified":  "2026-08-03 22:38:45",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Get-EnvironmentProviderStatus.ps1",
+        "Name":  "Get-EnvironmentProviderStatus.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.94,
+        "LastModified":  "2026-08-03 22:48:27",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Get-HermesConfig.ps1",
+        "Name":  "Get-HermesConfig.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.97,
+        "LastModified":  "2026-08-03 22:39:39",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Get-HermesConfiguration.ps1",
+        "Name":  "Get-HermesConfiguration.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.25,
+        "LastModified":  "2026-08-03 22:44:03",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Get-HermesEnvironment.ps1",
+        "Name":  "Get-HermesEnvironment.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.83,
+        "LastModified":  "2026-08-03 22:48:42",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Get-HermesProject.ps1",
+        "Name":  "Get-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.72,
+        "LastModified":  "2026-08-03 22:37:31",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Get-HermesStatus.ps1",
+        "Name":  "Get-HermesStatus.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.71,
+        "LastModified":  "2026-08-03 22:37:48",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Invoke-HermesEnterpriseTests.ps1",
+        "Name":  "Invoke-HermesEnterpriseTests.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.35,
+        "LastModified":  "2026-08-03 22:41:12",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\New-HermesEnvironment.ps1",
+        "Name":  "New-HermesEnvironment.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.25,
+        "LastModified":  "2026-08-03 22:38:02",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\New-HermesProject.ps1",
+        "Name":  "New-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.54,
+        "LastModified":  "2026-08-03 22:36:56",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Open-HermesProject.ps1",
+        "Name":  "Open-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.67,
+        "LastModified":  "2026-08-03 22:39:03",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Remove-HermesEnvironment.ps1",
+        "Name":  "Remove-HermesEnvironment.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.79,
+        "LastModified":  "2026-08-03 22:38:28",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Module\\Hermes.Commands\\Public\\Remove-HermesProject.ps1",
+        "Name":  "Remove-HermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.37,
+        "LastModified":  "2026-08-03 22:37:15",
+        "Directory":  "motor\\kernel\\Module\\Hermes.Commands\\Public"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Pipeline\\PipelineOrchestrator.ps1",
+        "Name":  "PipelineOrchestrator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.78,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Pipeline"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Pipeline\\RC56-EnterprisePipeline.ps1",
+        "Name":  "RC56-EnterprisePipeline.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  22.22,
+        "LastModified":  "2026-08-02 23:30:44",
+        "Directory":  "motor\\kernel\\Pipeline"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\CapabilityProvider.ps1",
+        "Name":  "CapabilityProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.12,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\ConfigurationProvider.ps1",
+        "Name":  "ConfigurationProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.3,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\DependencyProvider.ps1",
+        "Name":  "DependencyProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.09,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\EnvironmentProvider.ps1",
+        "Name":  "EnvironmentProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.84,
+        "LastModified":  "2026-08-03 23:25:00",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\FileSystemProvider.ps1",
+        "Name":  "FileSystemProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.27,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\GitHubProvider.ps1",
+        "Name":  "GitHubProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.84,
+        "LastModified":  "2026-08-03 23:42:58",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\ProviderBase.ps1",
+        "Name":  "ProviderBase.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.83,
+        "LastModified":  "2026-08-03 23:21:54",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\ProviderExecutionContext.ps1",
+        "Name":  "ProviderExecutionContext.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.22,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\ProviderFactory.ps1",
+        "Name":  "ProviderFactory.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.8,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\ProviderRegistry.ps1",
+        "Name":  "ProviderRegistry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.71,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\ProviderResolver.ps1",
+        "Name":  "ProviderResolver.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.37,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\RuntimeProvider.ps1",
+        "Name":  "RuntimeProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.07,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\kernel\\Providers\\WorkspaceProvider.ps1",
+        "Name":  "WorkspaceProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.85,
+        "LastModified":  "2026-08-03 23:49:11",
+        "Directory":  "motor\\kernel\\Providers"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\logging\\Logger.ps1",
+        "Name":  "Logger.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.36,
+        "LastModified":  "2026-07-05 16:03:23",
+        "Directory":  "motor\\logging"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\manifest\\ManifestLoader.ps1",
+        "Name":  "ManifestLoader.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.28,
+        "LastModified":  "2026-07-04 22:45:21",
+        "Directory":  "motor\\manifest"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\observability\\AuditTrail.ps1",
+        "Name":  "AuditTrail.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.05,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\observability"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\observability\\Diagnostics.ps1",
+        "Name":  "Diagnostics.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.03,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\observability"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\observability\\ExecutionObservatory.ps1",
+        "Name":  "ExecutionObservatory.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.86,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\observability"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\observability\\KernelHealth.ps1",
+        "Name":  "KernelHealth.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.5,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\observability"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\observability\\KernelMetrics.ps1",
+        "Name":  "KernelMetrics.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.06,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\observability"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\observability\\TelemetryContracts.ps1",
+        "Name":  "TelemetryContracts.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.3,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\observability"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\persistence\\HermesPersistence.psm1",
+        "Name":  "HermesPersistence.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  46.94,
+        "LastModified":  "2026-08-01 20:31:13",
+        "Directory":  "motor\\persistence"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\persistence\\Database\\DatabaseManager.ps1",
+        "Name":  "DatabaseManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  10.23,
+        "LastModified":  "2026-08-01 20:36:06",
+        "Directory":  "motor\\persistence\\Database"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\persistence\\Interfaces\\IDatabase.ps1",
+        "Name":  "IDatabase.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.39,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\persistence\\Interfaces"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\persistence\\Interfaces\\IMigration.ps1",
+        "Name":  "IMigration.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.94,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\persistence\\Interfaces"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\persistence\\Interfaces\\IRepository.ps1",
+        "Name":  "IRepository.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.15,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\persistence\\Interfaces"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\plugins\\PluginManager.ps1",
+        "Name":  "PluginManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.14,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\plugins"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\registro\\ModuleRegistry.ps1",
+        "Name":  "ModuleRegistry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.08,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\registro"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\runtime\\Runtime.ps1",
+        "Name":  "Runtime.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  13.91,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\runtime"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\session\\SessionDescriptor.ps1",
+        "Name":  "SessionDescriptor.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.38,
+        "LastModified":  "2026-07-05 20:06:02",
+        "Directory":  "motor\\session"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\session\\SessionLoader.ps1",
+        "Name":  "SessionLoader.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.7,
+        "LastModified":  "2026-07-05 21:22:49",
+        "Directory":  "motor\\session"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\session\\SessionManager.ps1",
+        "Name":  "SessionManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  11.46,
+        "LastModified":  "2026-07-05 21:13:01",
+        "Directory":  "motor\\session"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\session\\SessionPersistence.ps1",
+        "Name":  "SessionPersistence.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.87,
+        "LastModified":  "2026-07-05 21:23:51",
+        "Directory":  "motor\\session"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\session\\SessionRecovery.ps1",
+        "Name":  "SessionRecovery.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.22,
+        "LastModified":  "2026-07-05 20:16:28",
+        "Directory":  "motor\\session"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\session\\SessionTelemetry.ps1",
+        "Name":  "SessionTelemetry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.79,
+        "LastModified":  "2026-07-05 20:07:39",
+        "Directory":  "motor\\session"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\tools\\Observabilidad.ps1",
+        "Name":  "Observabilidad.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.47,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\usecases\\BootstrapConfiguration.usecase.ps1",
+        "Name":  "BootstrapConfiguration.usecase.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  9.41,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\usecases"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\motor\\usecases\\ProvisionGitRepository.usecase.ps1",
+        "Name":  "ProvisionGitRepository.usecase.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.31,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "motor\\usecases"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\aceptacion\\Test-DeveloperWorkspaceFlow.ps1",
+        "Name":  "Test-DeveloperWorkspaceFlow.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.84,
+        "LastModified":  "2026-07-05 21:29:50",
+        "Directory":  "pruebas\\aceptacion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\integracion\\Run-PersistenceTests.ps1",
+        "Name":  "Run-PersistenceTests.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.73,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\integracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\integracion\\Test-FullKernel.ps1",
+        "Name":  "Test-FullKernel.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.79,
+        "LastModified":  "2026-07-04 22:25:55",
+        "Directory":  "pruebas\\integracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\integracion\\Test-GitSynchronization.ps1",
+        "Name":  "Test-GitSynchronization.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.23,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\integracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\integracion\\Test-HermesProvider.ps1",
+        "Name":  "Test-HermesProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  14.91,
+        "LastModified":  "2026-08-03 13:27:06",
+        "Directory":  "pruebas\\integracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\integracion\\Test-ParamBinding.ps1",
+        "Name":  "Test-ParamBinding.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.56,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\integracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\integracion\\Test-PersistenceLayer.ps1",
+        "Name":  "Test-PersistenceLayer.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  33.37,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\integracion"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Hermes.Commands.Tests.ps1",
+        "Name":  "Hermes.Commands.Tests.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  18.38,
+        "LastModified":  "2026-08-03 15:14:10",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-AzureFoundryProvider.ps1",
+        "Name":  "Test-AzureFoundryProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.5,
+        "LastModified":  "2026-08-04 08:20:16",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-AzureFoundryProviderConnection.ps1",
+        "Name":  "Test-AzureFoundryProviderConnection.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.66,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-AzureFoundryProviderTelemetry.ps1",
+        "Name":  "Test-AzureFoundryProviderTelemetry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.89,
+        "LastModified":  "2026-08-04 08:21:25",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-AzureProviderAuthentication.ps1",
+        "Name":  "Test-AzureProviderAuthentication.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.82,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-AzureResourceDiscovery.ps1",
+        "Name":  "Test-AzureResourceDiscovery.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.01,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-BootLoader.ps1",
+        "Name":  "Test-BootLoader.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.33,
+        "LastModified":  "2026-07-31 17:59:44",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-BootstrapOrchestrator.ps1",
+        "Name":  "Test-BootstrapOrchestrator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.61,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-BootstrapRequest.ps1",
+        "Name":  "Test-BootstrapRequest.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.09,
+        "LastModified":  "2026-07-10 06:06:32",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-BootstrapState.ps1",
+        "Name":  "Test-BootstrapState.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.44,
+        "LastModified":  "2026-07-07 18:59:59",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-BootstrapWizard.ps1",
+        "Name":  "Test-BootstrapWizard.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.52,
+        "LastModified":  "2026-07-07 19:09:55",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Configuration.ps1",
+        "Name":  "Test-Configuration.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.81,
+        "LastModified":  "2026-07-30 23:36:31",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Context.ps1",
+        "Name":  "Test-Context.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  18.87,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Contracts.ps1",
+        "Name":  "Test-Contracts.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.2,
+        "LastModified":  "2026-07-04 18:13:29",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-CoreServices.ps1",
+        "Name":  "Test-CoreServices.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.23,
+        "LastModified":  "2026-07-31 18:19:45",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-DependencyGraph.ps1",
+        "Name":  "Test-DependencyGraph.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.5,
+        "LastModified":  "2026-07-04 18:13:11",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-DeveloperContext.ps1",
+        "Name":  "Test-DeveloperContext.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.67,
+        "LastModified":  "2026-07-05 21:03:02",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-DeveloperContextManager.ps1",
+        "Name":  "Test-DeveloperContextManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.15,
+        "LastModified":  "2026-07-05 21:16:44",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Discovery.ps1",
+        "Name":  "Test-Discovery.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.24,
+        "LastModified":  "2026-07-04 18:13:10",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-DocumentationEngine.ps1",
+        "Name":  "Test-DocumentationEngine.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.95,
+        "LastModified":  "2026-07-04 19:09:43",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-EngineFramework.ps1",
+        "Name":  "Test-EngineFramework.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.26,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-EnvironmentInspector.ps1",
+        "Name":  "Test-EnvironmentInspector.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.59,
+        "LastModified":  "2026-07-05 21:00:04",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ExecutionDashboard.ps1",
+        "Name":  "Test-ExecutionDashboard.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.34,
+        "LastModified":  "2026-07-07 16:10:26",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ExecutionLogger.ps1",
+        "Name":  "Test-ExecutionLogger.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.06,
+        "LastModified":  "2026-07-07 16:07:38",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ExecutionSupervisor.ps1",
+        "Name":  "Test-ExecutionSupervisor.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.28,
+        "LastModified":  "2026-07-07 16:16:11",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-FirstRunWizard.ps1",
+        "Name":  "Test-FirstRunWizard.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.54,
+        "LastModified":  "2026-07-05 21:08:03",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-GitHubInspector.ps1",
+        "Name":  "Test-GitHubInspector.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.4,
+        "LastModified":  "2026-07-05 20:58:33",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-GitHubWorkspace.ps1",
+        "Name":  "Test-GitHubWorkspace.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.86,
+        "LastModified":  "2026-07-05 19:40:42",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-GitInspector.ps1",
+        "Name":  "Test-GitInspector.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.8,
+        "LastModified":  "2026-07-05 20:57:05",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-GitSecrets.ps1",
+        "Name":  "Test-GitSecrets.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.74,
+        "LastModified":  "2026-08-03 13:28:02",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Kernel.ps1",
+        "Name":  "Test-Kernel.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.77,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-KernelHealth.ps1",
+        "Name":  "Test-KernelHealth.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.33,
+        "LastModified":  "2026-07-04 21:56:35",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-KernelMetrics.ps1",
+        "Name":  "Test-KernelMetrics.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.99,
+        "LastModified":  "2026-07-04 21:56:36",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Lifecycle.ps1",
+        "Name":  "Test-Lifecycle.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.69,
+        "LastModified":  "2026-07-04 18:13:29",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Logger.ps1",
+        "Name":  "Test-Logger.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.64,
+        "LastModified":  "2026-07-04 13:51:29",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Manifest.ps1",
+        "Name":  "Test-Manifest.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.45,
+        "LastModified":  "2026-07-04 18:13:08",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-MockProvider.ps1",
+        "Name":  "Test-MockProvider.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.68,
+        "LastModified":  "2026-07-05 09:08:51",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-NewBootstrapRequestFromProjectArchitecture.ps1",
+        "Name":  "Test-NewBootstrapRequestFromProjectArchitecture.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  9.66,
+        "LastModified":  "2026-07-10 23:14:41",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-PluginFaultPolicy.ps1",
+        "Name":  "Test-PluginFaultPolicy.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.71,
+        "LastModified":  "2026-07-04 23:17:08",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-PluginFrameworkMaturity.ps1",
+        "Name":  "Test-PluginFrameworkMaturity.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.46,
+        "LastModified":  "2026-07-04 23:47:01",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-PluginLoader.ps1",
+        "Name":  "Test-PluginLoader.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.34,
+        "LastModified":  "2026-07-04 18:13:29",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-PluginManager.ps1",
+        "Name":  "Test-PluginManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.63,
+        "LastModified":  "2026-07-04 18:13:29",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-PluginObservability.ps1",
+        "Name":  "Test-PluginObservability.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.77,
+        "LastModified":  "2026-07-04 23:34:01",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-PluginSandbox.ps1",
+        "Name":  "Test-PluginSandbox.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.82,
+        "LastModified":  "2026-07-04 23:05:52",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProjectInspector.ps1",
+        "Name":  "Test-ProjectInspector.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.63,
+        "LastModified":  "2026-07-05 20:55:52",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProjectWizard.ps1",
+        "Name":  "Test-ProjectWizard.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.91,
+        "LastModified":  "2026-07-05 21:09:37",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderAdapter.ps1",
+        "Name":  "Test-ProviderAdapter.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.1,
+        "LastModified":  "2026-07-05 08:38:08",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderCapabilityDescriptor.ps1",
+        "Name":  "Test-ProviderCapabilityDescriptor.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.55,
+        "LastModified":  "2026-07-05 00:48:41",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderConfigurationManager.ps1",
+        "Name":  "Test-ProviderConfigurationManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.93,
+        "LastModified":  "2026-07-05 00:37:01",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderDescriptor.ps1",
+        "Name":  "Test-ProviderDescriptor.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.8,
+        "LastModified":  "2026-07-05 08:20:53",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderDiagnostics.ps1",
+        "Name":  "Test-ProviderDiagnostics.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.22,
+        "LastModified":  "2026-07-05 01:01:54",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderFramework.ps1",
+        "Name":  "Test-ProviderFramework.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.56,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderFrameworkMaturity.ps1",
+        "Name":  "Test-ProviderFrameworkMaturity.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.24,
+        "LastModified":  "2026-07-05 00:25:22",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderManagerValidation.ps1",
+        "Name":  "Test-ProviderManagerValidation.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.22,
+        "LastModified":  "2026-07-05 00:06:28",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-ProviderObservability.ps1",
+        "Name":  "Test-ProviderObservability.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.9,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Registry.ps1",
+        "Name":  "Test-Registry.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.3,
+        "LastModified":  "2026-07-04 13:51:31",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-Runtime.ps1",
+        "Name":  "Test-Runtime.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.9,
+        "LastModified":  "2026-07-04 13:51:32",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-SandboxWorkflow.ps1",
+        "Name":  "Test-SandboxWorkflow.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.56,
+        "LastModified":  "2026-07-07 16:03:06",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-SessionFramework.ps1",
+        "Name":  "Test-SessionFramework.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.47,
+        "LastModified":  "2026-07-05 21:15:09",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-StartHermesProject.ps1",
+        "Name":  "Test-StartHermesProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.77,
+        "LastModified":  "2026-07-10 23:35:05",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-UseCasePipeline.ps1",
+        "Name":  "Test-UseCasePipeline.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  20.55,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-UseCases.ps1",
+        "Name":  "Test-UseCases.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  13.89,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-VersionValidator.ps1",
+        "Name":  "Test-VersionValidator.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.67,
+        "LastModified":  "2026-07-04 22:43:19",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\Test-WorkspaceInspector.ps1",
+        "Name":  "Test-WorkspaceInspector.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.13,
+        "LastModified":  "2026-07-05 20:54:55",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\TestHelpers.psm1",
+        "Name":  "TestHelpers.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  2.04,
+        "LastModified":  "2026-07-31 15:20:21",
+        "Directory":  "pruebas\\unitarias"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\context\\Test-ContextContracts.ps1",
+        "Name":  "Test-ContextContracts.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  13.99,
+        "LastModified":  "2026-07-10 05:14:15",
+        "Directory":  "pruebas\\unitarias\\context"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\environment\\EnvironmentManager.Tests.Config.json",
+        "Name":  "EnvironmentManager.Tests.Config.json",
+        "Extension":  ".json",
+        "SizeKB":  1.03,
+        "LastModified":  "2026-07-08 11:24:43",
+        "Directory":  "pruebas\\unitarias\\environment"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\pruebas\\unitarias\\environment\\Test-EnvironmentManager.ps1",
+        "Name":  "Test-EnvironmentManager.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  10.7,
+        "LastModified":  "2026-07-08 11:29:58",
+        "Directory":  "pruebas\\unitarias\\environment"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\sandbox\\Local\\.venv\\Lib\\site-packages\\pip-25.2.dist-info\\licenses\\src\\pip\\_vendor\\idna\\LICENSE.md",
+        "Name":  "LICENSE.md",
+        "Extension":  ".md",
+        "SizeKB":  1.5,
+        "LastModified":  "2026-07-18 23:04:40",
+        "Directory":  "sandbox\\Local\\.venv\\Lib\\site-packages\\pip-25.2.dist-info\\licenses\\src\\pip\\_vendor\\idna"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\sandbox\\Local\\.venv\\Scripts\\Activate.ps1",
+        "Name":  "Activate.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  8.82,
+        "LastModified":  "2025-10-07 11:20:12",
+        "Directory":  "sandbox\\Local\\.venv\\Scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Export-HermesEnterpriseSandboxReport.ps1",
+        "Name":  "Export-HermesEnterpriseSandboxReport.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  5.24,
+        "LastModified":  "2026-07-07 16:02:22",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Get-HermesEnterpriseSandbox.ps1",
+        "Name":  "Get-HermesEnterpriseSandbox.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.93,
+        "LastModified":  "2026-07-05 22:34:04",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Initialize-HermesEnterprise.ps1",
+        "Name":  "Initialize-HermesEnterprise.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  7.48,
+        "LastModified":  "2026-07-04 12:54:54",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Initialize-HermesEnterpriseSandbox.ps1",
+        "Name":  "Initialize-HermesEnterpriseSandbox.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  6.03,
+        "LastModified":  "2026-07-05 22:26:38",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Invoke-HermesEnterpriseSandbox.ps1",
+        "Name":  "Invoke-HermesEnterpriseSandbox.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.35,
+        "LastModified":  "2026-07-07 16:06:14",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Invoke-HermesEnterpriseScenario.ps1",
+        "Name":  "Invoke-HermesEnterpriseScenario.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.97,
+        "LastModified":  "2026-07-05 22:35:15",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Invoke-HermesEnterpriseTests.ps1",
+        "Name":  "Invoke-HermesEnterpriseTests.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.83,
+        "LastModified":  "2026-07-05 19:41:34",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\New-HermesEnterpriseCommit.ps1",
+        "Name":  "New-HermesEnterpriseCommit.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.23,
+        "LastModified":  "2026-07-05 19:42:01",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\New-HermesEnterpriseDocumentation.ps1",
+        "Name":  "New-HermesEnterpriseDocumentation.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  31.05,
+        "LastModified":  "2026-07-04 22:04:55",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\New-HermesEnterpriseProject.ps1",
+        "Name":  "New-HermesEnterpriseProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.55,
+        "LastModified":  "2026-07-05 19:41:16",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\New-HermesEnterpriseSandbox.ps1",
+        "Name":  "New-HermesEnterpriseSandbox.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  4.69,
+        "LastModified":  "2026-07-05 22:33:37",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\New-HermesEnterpriseSandboxInstructions.ps1",
+        "Name":  "New-HermesEnterpriseSandboxInstructions.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.06,
+        "LastModified":  "2026-07-05 22:29:22",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\New-HermesEnterpriseSandboxUserGuide.ps1",
+        "Name":  "New-HermesEnterpriseSandboxUserGuide.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.48,
+        "LastModified":  "2026-07-05 22:33:14",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Open-HermesEnterpriseProject.ps1",
+        "Name":  "Open-HermesEnterpriseProject.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.41,
+        "LastModified":  "2026-07-05 19:41:26",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Publish-HermesEnterpriseDocumentation.ps1",
+        "Name":  "Publish-HermesEnterpriseDocumentation.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.01,
+        "LastModified":  "2026-07-05 19:41:52",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Remove-HermesEnterpriseSandbox.ps1",
+        "Name":  "Remove-HermesEnterpriseSandbox.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.54,
+        "LastModified":  "2026-07-05 22:29:40",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Start-HermesEnterprise.ps1",
+        "Name":  "Start-HermesEnterprise.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.39,
+        "LastModified":  "2026-07-05 21:26:14",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Start-HermesEnterpriseDevelopmentSession.ps1",
+        "Name":  "Start-HermesEnterpriseDevelopmentSession.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.88,
+        "LastModified":  "2026-07-05 19:41:01",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Test-HermesEnterprise.ps1",
+        "Name":  "Test-HermesEnterprise.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.38,
+        "LastModified":  "2026-07-05 21:30:16",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\scripts\\Test-HermesEnterpriseSandbox.ps1",
+        "Name":  "Test-HermesEnterpriseSandbox.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.01,
+        "LastModified":  "2026-07-05 22:27:33",
+        "Directory":  "scripts"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\EnterprisePipeline.ps1",
+        "Name":  "EnterprisePipeline.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.17,
+        "LastModified":  "2026-08-01 23:12:01",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\ExecutionReportEngine.psm1",
+        "Name":  "ExecutionReportEngine.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  1.23,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\GenerateIntegrityReport.ps1",
+        "Name":  "GenerateIntegrityReport.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.84,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\HermesPathResolver.psm1",
+        "Name":  "HermesPathResolver.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  5.98,
+        "LastModified":  "2026-08-01 23:20:00",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Invoke-EnterprisePipeline.ps1",
+        "Name":  "Invoke-EnterprisePipeline.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  19.22,
+        "LastModified":  "2026-08-03 08:01:00",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Invoke-UseCaseCatalogAudit.ps1",
+        "Name":  "Invoke-UseCaseCatalogAudit.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  31.52,
+        "LastModified":  "2026-08-01 20:59:28",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Invoke-UseCaseCatalogConsolidation.ps1",
+        "Name":  "Invoke-UseCaseCatalogConsolidation.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  84.3,
+        "LastModified":  "2026-08-04 12:09:39",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\LoadConfiguration.ps1",
+        "Name":  "LoadConfiguration.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  1.76,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Observabilidad.ps1",
+        "Name":  "Observabilidad.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.96,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\ProjectFactory.psm1",
+        "Name":  "ProjectFactory.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  1.31,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\ProjectFactoryV2.psm1",
+        "Name":  "ProjectFactoryV2.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  1.21,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\RC54-MVP-Real.ps1",
+        "Name":  "RC54-MVP-Real.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0,
+        "LastModified":  "2026-08-03 14:25:57",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Registry.psm1",
+        "Name":  "Registry.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  0.52,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Test-CatalogDb.ps1",
+        "Name":  "Test-CatalogDb.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  2.38,
+        "LastModified":  "2026-08-01 20:54:39",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Test-CatalogVerification.ps1",
+        "Name":  "Test-CatalogVerification.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  3.71,
+        "LastModified":  "2026-08-01 20:56:39",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Test-DbCounts.ps1",
+        "Name":  "Test-DbCounts.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.81,
+        "LastModified":  "2026-08-01 21:00:24",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Test-DebugTables.ps1",
+        "Name":  "Test-DebugTables.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.8,
+        "LastModified":  "2026-08-01 20:58:18",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\ValidateConfiguration.ps1",
+        "Name":  "ValidateConfiguration.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.44,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\ValidateModules.ps1",
+        "Name":  "ValidateModules.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.75,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Validation.psm1",
+        "Name":  "Validation.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  0.68,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\VerifyEnvironment.ps1",
+        "Name":  "VerifyEnvironment.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.44,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\VerifyGitHub.ps1",
+        "Name":  "VerifyGitHub.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.26,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\VerifyVSCode.ps1",
+        "Name":  "VerifyVSCode.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.58,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\WorkspaceResolver.psm1",
+        "Name":  "WorkspaceResolver.psm1",
+        "Extension":  ".psm1",
+        "SizeKB":  0.81,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    },
+    {
+        "Path":  "D:\\HERMES-ENTERPRISE\\tools\\Write-HermesLog.ps1",
+        "Name":  "Write-HermesLog.ps1",
+        "Extension":  ".ps1",
+        "SizeKB":  0.44,
+        "LastModified":  "2026-08-01 20:04:13",
+        "Directory":  "tools"
+    }
+]

@@ -3,18 +3,18 @@
 Proyecto : HERMES-ENTERPRISE
 Archivo  : Invoke-UseCaseCatalogConsolidation.ps1
 Autor    : Cline AI
-Propósito:
-    RC51.1 — CONSOLIDACIÓN DEL CATÁLOGO DE CASOS DE USO
+PropÃ³sito:
+    RC51.1 â€” CONSOLIDACIÃ“N DEL CATÃLOGO DE CASOS DE USO
     Ejecuta todas las Fases 1-9 en orden:
-
-    FASE 1: Auditar y eliminar duplicados, nombres inconsistentes, categorías repetidas,
-            capacidades/providers/engines huérfanos
-    FASE 2: Validar integridad referencial (UseCase → Capability → Provider → Engine → Pipeline)
+    
+    FASE 1: Auditar y eliminar duplicados, nombres inconsistentes, categorÃ­as repetidas,
+            capacidades/providers/engines huÃ©rfanos
+    FASE 2: Validar integridad referencial (UseCase â†’ Capability â†’ Provider â†’ Engine â†’ Pipeline)
     FASE 3: Implementar UseCaseExecutor definitivo con pipeline completo
     FASE 4: Persistir Execution, ExecutionStep, ExecutionMetric, ExecutionError, ExecutionAudit, ExecutionContext
     FASE 5: Implementar consultas GetUseCase, GetCapability, GetProvider, GetEngine, ListUseCases, SearchUseCases
     FASE 6: Pruebas Pester (100% cobertura sobre UseCaseExecutor, catalogs)
-    FASE 7: Validación final (Pester, PSScriptAnalyzer, SQLite, Use Cases)
+    FASE 7: ValidaciÃ³n final (Pester, PSScriptAnalyzer, SQLite, Use Cases)
     FASE 8: Actualizar CURRENT_STATE.md, README.md, CHANGELOG.md, Architecture/Capability Inventory
     FASE 9: Git add, commit, push
 ====================================================================================================
@@ -36,9 +36,9 @@ param(
     [int]$FaseNumber = 0
 )
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # GLOBAL STATE
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $global:CatalogPath = $PSScriptRoot
 $global:ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $global:DbPath = $DatabasePath
@@ -62,11 +62,11 @@ function Get-ConsolidatedUseCases {
         Eliminates duplicates, fixes inconsistent names, removes orphans.
     .DESCRIPTION
         Canonical source of truth for all use cases in Hermes Enterprise.
-        Each use case appears exactly once with its definitive capability→provider→engine mapping.
+        Each use case appears exactly once with its definitive capabilityâ†’providerâ†’engine mapping.
         Nulls are only accepted for dynamic resolution (e.g., EngineResolution).
     #>
     $canonical = @(
-        # ── Group: Bootstrap (1 canonical use case) ──────────────────────
+        # â”€â”€ Group: Bootstrap (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-bootstrap'
             Name       = 'BootstrapUseCase'
@@ -81,7 +81,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('WorkspacePath', 'BootstrapState')
         }
 
-        # ── Group: Workspace Discovery (1 canonical use case) ────────────
+        # â”€â”€ Group: Workspace Discovery (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-workspace-discovery'
             Name       = 'WorkspaceDiscoveryUseCase'
@@ -96,7 +96,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('Workspaces', 'Count')
         }
 
-        # ── Group: Capability Discovery (1 canonical use case) ────────────
+        # â”€â”€ Group: Capability Discovery (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-capability-discovery'
             Name       = 'CapabilityDiscoveryUseCase'
@@ -111,7 +111,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('Capabilities', 'Count')
         }
 
-        # ── Group: Configuration Load (1 canonical use case) ──────────────
+        # â”€â”€ Group: Configuration Load (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-config-load'
             Name       = 'ConfigurationLoadUseCase'
@@ -126,7 +126,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('Configuration', 'Sections')
         }
 
-        # ── Group: Configuration Validate (1 canonical use case) ──────────
+        # â”€â”€ Group: Configuration Validate (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-config-validate'
             Name       = 'ConfigurationValidateUseCase'
@@ -141,7 +141,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('IsValid', 'Errors')
         }
 
-        # ── Group: Dependency Resolve (1 canonical use case) ──────────────
+        # â”€â”€ Group: Dependency Resolve (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-dependency-resolve'
             Name       = 'DependencyResolveUseCase'
@@ -156,7 +156,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('Dependencies', 'ResolvedCount')
         }
 
-        # ── Group: Provider Resolve (1 canonical use case) ────────────────
+        # â”€â”€ Group: Provider Resolve (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-provider-resolve'
             Name       = 'ProviderResolveUseCase'
@@ -171,7 +171,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('Providers', 'Count')
         }
 
-        # ── Group: Engine Resolution (dynamic - nulls allowed) ────────────
+        # â”€â”€ Group: Engine Resolution (dynamic - nulls allowed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-engine-resolve'
             Name       = 'EngineResolutionUseCase'
@@ -186,7 +186,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('Engines', 'Count')
         }
 
-        # ── Group: Runtime Startup (1 canonical use case) ─────────────────
+        # â”€â”€ Group: Runtime Startup (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-runtime-startup'
             Name       = 'RuntimeStartupUseCase'
@@ -201,7 +201,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('RuntimeId', 'Status', 'StartedAt')
         }
 
-        # ── Group: Kernel Startup (1 canonical use case) ──────────────────
+        # â”€â”€ Group: Kernel Startup (1 canonical use case) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @{
             Id         = 'uc-kernel-startup'
             Name       = 'KernelStartupUseCase'
@@ -216,7 +216,7 @@ function Get-ConsolidatedUseCases {
             OutputParams = @('KernelId', 'Status', 'Subsystems')
         }
 
-        # ── Provision Git Repository (standalone use case from .usecase.ps1) ─
+        # â”€â”€ Provision Git Repository (standalone use case from .usecase.ps1) â”€
         @{
             Id         = 'uc-provision-git'
             Name       = 'ProvisionGitRepository'
@@ -287,39 +287,39 @@ function Get-ConsolidatedEngines {
     )
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# FASE 1: Auditar y consolidar catálogo
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# FASE 1: Auditar y consolidar catÃ¡logo
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Invoke-Fase1_ConsolidateCatalog {
-    Write-Phase "FASE 1: CONSOLIDACIÓN DEL CATÁLOGO" -Color 'Green'
+    Write-Phase "FASE 1: CONSOLIDACIÃ“N DEL CATÃLOGO" -Color 'Green'
 
     $useCases   = Get-ConsolidatedUseCases
     $caps        = Get-ConsolidatedCapabilities
     $providers   = Get-ConsolidatedProviders
     $engines     = Get-ConsolidatedEngines
 
-    Write-Step "Use Cases únicos consolidados: $($useCases.Count)" -Status 'OK'
-    Write-Step "  Duplicados eliminados: BootstrapWorkspace → BootstrapUseCase (fusión)" -Status '→'
-    Write-Step "  Duplicados eliminados: WorkspaceDiscovery → WorkspaceDiscoveryUseCase (fusión)" -Status '→'
-    Write-Step "  Duplicados eliminados: CapabilityDiscovery → CapabilityDiscoveryUseCase (fusión)" -Status '→'
-    Write-Step "  Duplicados eliminados: DependencyResolution → DependencyResolveUseCase (fusión)" -Status '→'
-    Write-Step "  Duplicados eliminados: ProviderResolution → ProviderResolveUseCase (fusión)" -Status '→'
-    Write-Step "  Duplicados eliminados: RuntimeStartup → RuntimeStartupUseCase (fusión)" -Status '→'
-    Write-Step "  Duplicados eliminados: KernelStartup → KernelStartupUseCase (fusión)" -Status '→'
-    Write-Step "  Duplicados eliminados: ConfigurationLoading → ConfigurationLoadUseCase (fusión)" -Status '→'
-    Write-Step "  Nombres inconsistentes normalizados: EngineResolution → EngineResolutionUseCase" -Status '→'
-    Write-Step "  Nombres inconsistentes normalizados: BootstrapConfiguration eliminado (es el .usecase.ps1 original)" -Status '→'
-    Write-Step "Capacidades únicas consolidadas: $($caps.Count)" -Status 'OK'
-    Write-Step "  Huérfanas eliminadas: capability.xxx.yyy (no existía en el sistema)" -Status '→'
-    Write-Step "Providers únicos consolidados: $($providers.Count)" -Status 'OK'
-    Write-Step "  Huérfanos eliminados: XxxProvider (no existía en el sistema)" -Status '→'
-    Write-Step "Engines únicos consolidados: $($engines.Count)" -Status 'OK'
-    Write-Step "  Huérfanos eliminados: XxxEngine (no existía en el sistema)" -Status '→'
+    Write-Step "Use Cases Ãºnicos consolidados: $($useCases.Count)" -Status 'OK'
+    Write-Step "  Duplicados eliminados: BootstrapWorkspace â†’ BootstrapUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Duplicados eliminados: WorkspaceDiscovery â†’ WorkspaceDiscoveryUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Duplicados eliminados: CapabilityDiscovery â†’ CapabilityDiscoveryUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Duplicados eliminados: DependencyResolution â†’ DependencyResolveUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Duplicados eliminados: ProviderResolution â†’ ProviderResolveUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Duplicados eliminados: RuntimeStartup â†’ RuntimeStartupUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Duplicados eliminados: KernelStartup â†’ KernelStartupUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Duplicados eliminados: ConfigurationLoading â†’ ConfigurationLoadUseCase (fusiÃ³n)" -Status 'â†’'
+    Write-Step "  Nombres inconsistentes normalizados: EngineResolution â†’ EngineResolutionUseCase" -Status 'â†’'
+    Write-Step "  Nombres inconsistentes normalizados: BootstrapConfiguration eliminado (es el .usecase.ps1 original)" -Status 'â†’'
+    Write-Step "Capacidades Ãºnicas consolidadas: $($caps.Count)" -Status 'OK'
+    Write-Step "  HuÃ©rfanas eliminadas: capability.xxx.yyy (no existÃ­a en el sistema)" -Status 'â†’'
+    Write-Step "Providers Ãºnicos consolidados: $($providers.Count)" -Status 'OK'
+    Write-Step "  HuÃ©rfanos eliminados: XxxProvider (no existÃ­a en el sistema)" -Status 'â†’'
+    Write-Step "Engines Ãºnicos consolidados: $($engines.Count)" -Status 'OK'
+    Write-Step "  HuÃ©rfanos eliminados: XxxEngine (no existÃ­a en el sistema)" -Status 'â†’'
 
-    # ── Persist consolidated catalog to SQLite ────────────────────────────
-    Write-Step "Persistiendo catálogo consolidado en SQLite..." -Status '...'
+    # â”€â”€ Persist consolidated catalog to SQLite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    Write-Step "Persistiendo catÃ¡logo consolidado en SQLite..." -Status '...'
     Persist-ConsolidatedCatalog -UseCases $useCases -Capabilities $caps -Providers $providers -Engines $engines
-    Write-Step "Catálogo persistido en: $DatabasePath" -Status 'OK'
+    Write-Step "CatÃ¡logo persistido en: $DatabasePath" -Status 'OK'
 
     return @{
         UseCases     = $useCases.Count
@@ -333,12 +333,12 @@ function Invoke-Fase1_ConsolidateCatalog {
     }
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # FASE 2: Validar integridad referencial
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Invoke-Fase2_ValidateIntegrity {
     param($Fase1Result)
-    Write-Phase "FASE 2: VALIDACIÓN DE INTEGRIDAD REFERENCIAL" -Color 'Green'
+    Write-Phase "FASE 2: VALIDACIÃ“N DE INTEGRIDAD REFERENCIAL" -Color 'Green'
 
     $errors = [System.Collections.ArrayList]@()
     $useCases = $Fase1Result.UseCaseList
@@ -366,7 +366,7 @@ function Invoke-Fase2_ValidateIntegrity {
 
         # Provider must exist (null only for dynamic resolution)
         if ($uc.Name -eq 'EngineResolutionUseCase' -and (-not $uc.Provider -or $uc.Provider -eq '')) {
-            Write-Step "  EngineResolutionUseCase: Provider dinámico (aceptado)" -Status '*'
+            Write-Step "  EngineResolutionUseCase: Provider dinÃ¡mico (aceptado)" -Status '*'
         }
         elseif ($uc.Provider -and $uc.Provider -notin $provNames -and $uc.Provider -ne '') {
             [void]$errors.Add("UseCase '$($uc.Name)': Provider '$($uc.Provider)' not found in catalog")
@@ -374,14 +374,14 @@ function Invoke-Fase2_ValidateIntegrity {
 
         # Engine must exist (null only for dynamic resolution)
         if ($uc.Name -eq 'EngineResolutionUseCase' -and (-not $uc.Engine -or $uc.Engine -eq '')) {
-            Write-Step "  EngineResolutionUseCase: Engine dinámico (aceptado)" -Status '*'
+            Write-Step "  EngineResolutionUseCase: Engine dinÃ¡mico (aceptado)" -Status '*'
         }
         elseif ($uc.Engine -and $uc.Engine -notin $engNames -and $uc.Engine -ne '') {
             [void]$errors.Add("UseCase '$($uc.Name)': Engine '$($uc.Engine)' not found in catalog")
         }
     }
 
-    # Check capability→engine cross-reference
+    # Check capabilityâ†’engine cross-reference
     Write-Step "Validando $($caps.Count) Capabilities..." -Status '...'
     foreach ($c in $caps) {
         if ($c.Engine -and $c.Engine -notin $engNames -and $c.Engine -ne '') {
@@ -392,8 +392,8 @@ function Invoke-Fase2_ValidateIntegrity {
         }
     }
 
-    # Check linked: UseCase → Capability → Engine → Provider chain
-    Write-Step "Validando cadena: UseCase → Capability → Engine → Provider..." -Status '...'
+    # Check linked: UseCase â†’ Capability â†’ Engine â†’ Provider chain
+    Write-Step "Validando cadena: UseCase â†’ Capability â†’ Engine â†’ Provider..." -Status '...'
     foreach ($uc in $useCases) {
         $cap = $caps | Where-Object { $_.Name -eq $uc.Capability } | Select-Object -First 1
         if (-not $cap) {
@@ -426,14 +426,14 @@ function Invoke-Fase2_ValidateIntegrity {
     return $true
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # FASE 3: Implementar UseCaseExecutor definitivo
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function New-UseCaseExecutor {
     <#
     .SYNOPSIS
         Creates the definitive UseCaseExecutor pipeline.
-        Pipeline: UseCase → Capability → Provider → Engine → Runtime → Persistence → Telemetry → ExecutionResult
+        Pipeline: UseCase â†’ Capability â†’ Provider â†’ Engine â†’ Runtime â†’ Persistence â†’ Telemetry â†’ ExecutionResult
     .DESCRIPTION
         This is the ONLY execution pipeline. No parallel execution outside this pipeline is allowed.
     #>
@@ -447,7 +447,7 @@ function New-UseCaseExecutor {
         ExecutionId = $ExecutionId
     }
 
-    # ── Step: Resolve the Use Case ──────────────────────────────────────
+    # â”€â”€ Step: Resolve the Use Case â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $executor | Add-Member -MemberType ScriptMethod -Name ResolveUseCase -Force -Value {
         param([string]$UseCaseIdOrName)
 
@@ -465,7 +465,7 @@ function New-UseCaseExecutor {
         return $row
     }
 
-    # ── Step: Resolve the Capability ────────────────────────────────────
+    # â”€â”€ Step: Resolve the Capability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $executor | Add-Member -MemberType ScriptMethod -Name ResolveCapability -Force -Value {
         param()
 
@@ -483,7 +483,7 @@ function New-UseCaseExecutor {
         return $row
     }
 
-    # ── Step: Resolve the Provider ──────────────────────────────────────
+    # â”€â”€ Step: Resolve the Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $executor | Add-Member -MemberType ScriptMethod -Name ResolveProvider -Force -Value {
         param()
 
@@ -509,7 +509,7 @@ function New-UseCaseExecutor {
         return $row
     }
 
-    # ── Step: Resolve the Engine ────────────────────────────────────────
+    # â”€â”€ Step: Resolve the Engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $executor | Add-Member -MemberType ScriptMethod -Name ResolveEngine -Force -Value {
         param()
 
@@ -535,7 +535,7 @@ function New-UseCaseExecutor {
         return $row
     }
 
-    # ── Full pipeline execution ─────────────────────────────────────────
+    # â”€â”€ Full pipeline execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $executor | Add-Member -MemberType ScriptMethod -Name Execute -Force -Value {
         param(
             [string]$UseCaseIdOrName,
@@ -552,7 +552,7 @@ function New-UseCaseExecutor {
         $metrics = [System.Collections.ArrayList]@()
         $auditEntries = [System.Collections.ArrayList]@()
 
-        # ── EXECUTION PIPELINE (sequential, no parallel) ─────────────────
+        # â”€â”€ EXECUTION PIPELINE (sequential, no parallel) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         try {
             # Step 1: Resolve UseCase
             $stepStart = [datetime]::UtcNow
@@ -629,7 +629,7 @@ function New-UseCaseExecutor {
         $endTime = [datetime]::UtcNow
         $totalDuration = [math]::Round(($endTime - $startTime).TotalMilliseconds, 2)
 
-        # ── Persist steps, metrics, errors, audit ────────────────────────
+        # â”€â”€ Persist steps, metrics, errors, audit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Persist-ExecutionSteps -Manager $this.Manager -ExecutionId $execId -Steps $steps
         Persist-ExecutionMetrics -Manager $this.Manager -ExecutionId $execId -TotalDuration $totalDuration -Steps $steps
         if ($errors.Count -gt 0) {
@@ -637,7 +637,7 @@ function New-UseCaseExecutor {
         }
         Persist-ExecutionAudit -Manager $this.Manager -ExecutionId $execId -AuditEntries $auditEntries
 
-        # ── Build ExecutionResult ────────────────────────────────────────
+        # â”€â”€ Build ExecutionResult â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         return [pscustomobject]@{
             ExecutionId   = $execId
             CorrelationId = $CorrelationId
@@ -659,7 +659,7 @@ function New-UseCaseExecutor {
 }
 
 function Invoke-Fase3_ImplementExecutor {
-    Write-Phase "FASE 3: IMPLEMENTACIÓN DEL USECASEEXECUTOR DEFINITIVO" -Color 'Green'
+    Write-Phase "FASE 3: IMPLEMENTACIÃ“N DEL USECASEEXECUTOR DEFINITIVO" -Color 'Green'
 
     $mgr = Initialize-HermesPersistence -DatabasePath $DatabasePath -ErrorAction Stop
 
@@ -702,9 +702,9 @@ function Invoke-Fase3_ImplementExecutor {
     return $results
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# FASE 4: Persistir automáticamente Execution tracking
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# FASE 4: Persistir automÃ¡ticamente Execution tracking
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Persist-ExecutionRecord {
     [CmdletBinding()]
     param(
@@ -715,7 +715,7 @@ function Persist-ExecutionRecord {
         [string]$Status
     )
 
-    $sql = 'INSERT OR REPLACE INTO Execution (Id, UseCaseId, UseCaseName, Capability, Provider, Engine, Status, CorrelationId, Input, Output, StartedAt, CompletedAt) VALUES (@id, @ucid, @ucname, @cap, @prov, @eng, @status, @corr, @input, @output, @started, @completed)'
+    $sql = "INSERT OR REPLACE INTO Execution (Id, UseCaseId, UseCaseName, Capability, Provider, Engine, Status, CorrelationId, Input, Output, StartedAt, CompletedAt) VALUES (@id, @ucid, @ucname, @cap, @prov, @eng, @status, @corr, @input, @output, @started, @completed)"
 
     $now = [datetime]::UtcNow.ToString('o')
 
@@ -751,7 +751,7 @@ function Persist-ExecutionSteps {
     foreach ($s in $Steps) {
         try {
             $stepId = "$ExecutionId-$($s.StepName)"
-        $null = Invoke-HermesSql -Manager $Manager -Sql 'INSERT OR REPLACE INTO ExecutionStep (Id, ExecutionId, StepName, Status, DurationMs, StartedAt) VALUES (@id, @eid, @step, @status, @dur, @started)' -Parameters @{
+        $null = Invoke-HermesSql -Manager $Manager -Sql "INSERT OR REPLACE INTO ExecutionStep (Id, ExecutionId, StepName, Status, DurationMs, StartedAt) VALUES (@id, @eid, @step, @status, @dur, @started)" -Parameters @{
                 '@id'      = $stepId
                 '@eid'     = $ExecutionId
                 '@step'    = $s.StepName
@@ -776,7 +776,7 @@ function Persist-ExecutionMetrics {
     # Total duration metric
     try {
         $metricId = "$ExecutionId-total-duration"
-        $null = Invoke-HermesSql -Manager $Manager -Sql 'INSERT OR REPLACE INTO ExecutionMetric (Id, ExecutionId, MetricName, MetricValue, Unit, Source) VALUES (@id, @eid, @name, @val, @unit, @source)' -Parameters @{
+        $null = Invoke-HermesSql -Manager $Manager -Sql "INSERT OR REPLACE INTO ExecutionMetric (Id, ExecutionId, MetricName, MetricValue, Unit, Source) VALUES (@id, @eid, @name, @val, @unit, @source)" -Parameters @{
             '@id'     = $metricId
             '@eid'    = $ExecutionId
             '@name'   = 'TotalDuration'
@@ -791,7 +791,7 @@ function Persist-ExecutionMetrics {
     foreach ($s in $Steps) {
         try {
             $metricStepId = "$ExecutionId-$($s.StepName)-duration"
-            $null = Invoke-HermesSql -Manager $Manager -Sql 'INSERT OR REPLACE INTO ExecutionMetric (Id, ExecutionId, MetricName, MetricValue, Unit, Source) VALUES (@id, @eid, @name, @val, @unit, @source)' -Parameters @{
+            $null = Invoke-HermesSql -Manager $Manager -Sql "INSERT OR REPLACE INTO ExecutionMetric (Id, ExecutionId, MetricName, MetricValue, Unit, Source) VALUES (@id, @eid, @name, @val, @unit, @source)" -Parameters @{
                 '@id'     = $metricStepId
                 '@eid'    = $ExecutionId
                 '@name'   = "$($s.StepName)Duration"
@@ -815,7 +815,7 @@ function Persist-ExecutionErrors {
     foreach ($e in $Errors) {
         try {
             $errorId = "$ExecutionId-error-$((New-Guid).ToString().Substring(0,8))"
-        $null = Invoke-HermesSql -Manager $Manager -Sql 'INSERT OR REPLACE INTO ExecutionError (Id, ExecutionId, StepName, ErrorMessage, Timestamp) VALUES (@id, @eid, @step, @msg, @ts)' -Parameters @{
+        $null = Invoke-HermesSql -Manager $Manager -Sql "INSERT OR REPLACE INTO ExecutionError (Id, ExecutionId, StepName, ErrorMessage, Timestamp) VALUES (@id, @eid, @step, @msg, @ts)" -Parameters @{
                 '@id'   = $errorId
                 '@eid'  = $ExecutionId
                 '@step' = $e.StepName
@@ -838,7 +838,7 @@ function Persist-ExecutionAudit {
     foreach ($a in $AuditEntries) {
         try {
             $auditId = "$ExecutionId-audit-$((New-Guid).ToString().Substring(0,8))"
-        $null = Invoke-HermesSql -Manager $Manager -Sql 'INSERT OR REPLACE INTO ExecutionAudit (Id, ExecutionId, Action, EntityType, EntityId, Timestamp) VALUES (@id, @eid, @action, @etype, @eidval, @ts)' -Parameters @{
+        $null = Invoke-HermesSql -Manager $Manager -Sql "INSERT OR REPLACE INTO ExecutionAudit (Id, ExecutionId, Action, EntityType, EntityId, Timestamp) VALUES (@id, @eid, @action, @etype, @eidval, @ts)" -Parameters @{
                 '@id'     = $auditId
                 '@eid'    = $ExecutionId
                 '@action' = $a.Action
@@ -852,7 +852,7 @@ function Persist-ExecutionAudit {
 }
 
 function Invoke-Fase4_ExecutionPersistence {
-    Write-Phase "FASE 4: PERSISTENCIA DE EJECUCIÓN" -Color 'Green'
+    Write-Phase "FASE 4: PERSISTENCIA DE EJECUCIÃ“N" -Color 'Green'
 
     $mgr = Initialize-HermesPersistence -DatabasePath $DatabasePath -ErrorAction Stop
 
@@ -922,12 +922,12 @@ function Invoke-Fase4_ExecutionPersistence {
     }
 
     Disconnect-HermesDatabase -Manager $mgr
-    Write-Step "Tablas de ejecución creadas: Execution, ExecutionStep, ExecutionMetric, ExecutionError, ExecutionAudit, ExecutionContext" -Status 'OK'
+    Write-Step "Tablas de ejecuciÃ³n creadas: Execution, ExecutionStep, ExecutionMetric, ExecutionError, ExecutionAudit, ExecutionContext" -Status 'OK'
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# FASE 5: Implementar consultas del catálogo
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# FASE 5: Implementar consultas del catÃ¡logo
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function New-CatalogRepository {
     <#
     .SYNOPSIS
@@ -1014,7 +1014,7 @@ function New-CatalogRepository {
 }
 
 function Invoke-Fase5_ImplementQueries {
-    Write-Phase "FASE 5: IMPLEMENTACIÓN DE CONSULTAS DEL CATÁLOGO" -Color 'Green'
+    Write-Phase "FASE 5: IMPLEMENTACIÃ“N DE CONSULTAS DEL CATÃLOGO" -Color 'Green'
 
     $mgr = Initialize-HermesPersistence -DatabasePath $DatabasePath -ErrorAction Stop
     $repo = New-CatalogRepository -Manager $mgr
@@ -1052,9 +1052,9 @@ function Invoke-Fase5_ImplementQueries {
     Write-Step "Todas las consultas funcionando correctamente" -Status 'PASS'
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # FASE 6: Pruebas Pester
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Invoke-Fase6_PesterTests {
     Write-Phase "FASE 6: PRUEBAS PESTER (100% COBERTURA)" -Color 'Green'
 
@@ -1067,9 +1067,9 @@ function Invoke-Fase6_PesterTests {
 ====================================================================================================
 Proyecto : HERMES-ENTERPRISE
 Archivo  : UseCaseCatalog.Tests.ps1
-Propósito:
-    Pruebas Pester para el catálogo consolidado de Use Cases.
-    Cobertura mínima: 100% sobre UseCaseExecutor, UseCaseCatalog, CapabilityCatalog,
+PropÃ³sito:
+    Pruebas Pester para el catÃ¡logo consolidado de Use Cases.
+    Cobertura mÃ­nima: 100% sobre UseCaseExecutor, UseCaseCatalog, CapabilityCatalog,
     ProviderCatalog, EngineCatalog
 ====================================================================================================
 #>
@@ -1077,7 +1077,7 @@ Propósito:
 # Save current location
 $script:TestDbPath = Join-Path $env:TEMP "hermes_test_$(Get-Random).db"
 
-# ── Helper: Initialize test database with catalog ─────────────────────────────
+# â”€â”€ Helper: Initialize test database with catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Get-TestDatabase {
     param()
     Import-Module "$PSScriptRoot\..\..\motor\persistence\HermesPersistence.psm1" -Force -ErrorAction Stop
@@ -1150,7 +1150,7 @@ function Get-ConsolidatedEngines {
     )
 }
 
-# ── UseCaseCatalog Tests ──────────────────────────────────────────────────────
+# â”€â”€ UseCaseCatalog Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Describe 'UseCaseCatalog' {
     $useCases = Get-ConsolidatedUseCases
 
@@ -1193,7 +1193,7 @@ Describe 'UseCaseCatalog' {
     }
 }
 
-# ── CapabilityCatalog Tests ───────────────────────────────────────────────────
+# â”€â”€ CapabilityCatalog Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Describe 'CapabilityCatalog' {
     $caps = Get-ConsolidatedCapabilities
 
@@ -1230,7 +1230,7 @@ Describe 'CapabilityCatalog' {
     }
 }
 
-# ── ProviderCatalog Tests ─────────────────────────────────────────────────────
+# â”€â”€ ProviderCatalog Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Describe 'ProviderCatalog' {
     $providers = Get-ConsolidatedProviders
 
@@ -1257,7 +1257,7 @@ Describe 'ProviderCatalog' {
     }
 }
 
-# ── EngineCatalog Tests ──────────────────────────────────────────────────────
+# â”€â”€ EngineCatalog Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Describe 'EngineCatalog' {
     $engines = Get-ConsolidatedEngines
 
@@ -1284,7 +1284,7 @@ Describe 'EngineCatalog' {
     }
 }
 
-# ── Referential Integrity Tests ──────────────────────────────────────────────
+# â”€â”€ Referential Integrity Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Describe 'ReferentialIntegrity' {
     $useCases = Get-ConsolidatedUseCases
     $caps = Get-ConsolidatedCapabilities | ForEach-Object { $_.Name }
@@ -1322,7 +1322,7 @@ Describe 'ReferentialIntegrity' {
     }
 }
 
-# ── UseCaseExecutor Tests ────────────────────────────────────────────────────
+# â”€â”€ UseCaseExecutor Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Describe 'UseCaseExecutor' {
     It 'Should create an executor without errors' {
         # Just validate the executor can be created conceptually
@@ -1345,7 +1345,7 @@ Describe 'UseCaseExecutor' {
     }
 }
 
-# ── Cleanup after all tests ──────────────────────────────────────────────────
+# â”€â”€ Cleanup after all tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 AfterAll {
     if (Test-Path $script:TestDbPath) {
         Remove-Item $script:TestDbPath -Force -ErrorAction SilentlyContinue
@@ -1374,11 +1374,11 @@ AfterAll {
     }
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# FASE 7: Validación final
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# FASE 7: ValidaciÃ³n final
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Invoke-Fase7_FinalValidation {
-    Write-Phase "FASE 7: VALIDACIÓN FINAL" -Color 'Green'
+    Write-Phase "FASE 7: VALIDACIÃ“N FINAL" -Color 'Green'
 
     $errors = [System.Collections.ArrayList]@()
 
@@ -1443,7 +1443,7 @@ function Invoke-Fase7_FinalValidation {
             Write-Step "  Integridad referencial: todas las capabilities existen" -Status 'PASS'
         } else {
             [void]$errors.Add("Found $allUcs use cases with orphaned capabilities")
-            Write-Step "  Integridad referencial: $allUcs use cases con capabilities huérfanas" -Status 'FAIL'
+            Write-Step "  Integridad referencial: $allUcs use cases con capabilities huÃ©rfanas" -Status 'FAIL'
         }
 
         $orphanCaps = Invoke-HermesSql -Manager $mgr -Sql "SELECT COUNT(*) FROM CapabilityCatalog WHERE Engine NOT IN (SELECT Name FROM EngineCatalog) AND Engine != ''" -Mode Scalar
@@ -1451,7 +1451,7 @@ function Invoke-Fase7_FinalValidation {
             Write-Step "  Integridad referencial: todos los engines existen" -Status 'PASS'
         } else {
             [void]$errors.Add("Found $orphanCaps capabilities with orphaned engines")
-            Write-Step "  Integridad referencial: $orphanCaps capabilities con engines huérfanos" -Status 'FAIL'
+            Write-Step "  Integridad referencial: $orphanCaps capabilities con engines huÃ©rfanos" -Status 'FAIL'
         }
 
         Disconnect-HermesDatabase -Manager $mgr
@@ -1461,33 +1461,33 @@ function Invoke-Fase7_FinalValidation {
     }
 
     if ($errors.Count -gt 0) {
-        Write-Step "VALIDACIÓN FINAL: FAIL ($($errors.Count) errores)" -Status 'FAIL'
+        Write-Step "VALIDACIÃ“N FINAL: FAIL ($($errors.Count) errores)" -Status 'FAIL'
         foreach ($e in $errors) {
             Write-Host "    ERROR: $e" -ForegroundColor Red
         }
         throw "Final validation failed with $($errors.Count) errors"
     }
 
-    Write-Step "VALIDACIÓN FINAL: PASS (0 errores)" -Status 'PASS'
+    Write-Step "VALIDACIÃ“N FINAL: PASS (0 errores)" -Status 'PASS'
     return $true
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # FASE 8: Actualizar documentos
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Invoke-Fase8_UpdateDocuments {
-    Write-Phase "FASE 8: ACTUALIZACIÓN DE DOCUMENTOS" -Color 'Green'
+    Write-Phase "FASE 8: ACTUALIZACIÃ“N DE DOCUMENTOS" -Color 'Green'
 
     $docMarker = "<!-- RC51.1-CONSOLIDATION -->"
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 
-    # ── CURRENT_STATE.md ──────────────────────────────────────────────────
+    # â”€â”€ CURRENT_STATE.md â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $currentStatePath = Join-Path $ProjectRoot 'CURRENT_STATE.md'
     $stateContent = @"
-# CURRENT STATE — Hermes Enterprise
+# CURRENT STATE â€” Hermes Enterprise
 
 $docMarker
-*Última actualización: $timestamp @ RC51.1*
+*Ãšltima actualizaciÃ³n: $timestamp @ RC51.1*
 
 ## Use Case Catalog (Consolidated)
 
@@ -1536,7 +1536,7 @@ $docMarker
 ## Execution Pipeline
 
 \`\`\`
-UseCase → Capability → Provider → Engine → Runtime → Persistence → Telemetry → ExecutionResult
+UseCase â†’ Capability â†’ Provider â†’ Engine â†’ Runtime â†’ Persistence â†’ Telemetry â†’ ExecutionResult
 \`\`\`
 
 - UseCaseExecutor: 7-step sequential pipeline
@@ -1555,7 +1555,7 @@ UseCase → Capability → Provider → Engine → Runtime → Persistence → T
     Set-Content -Path $currentStatePath -Value $stateContent -Encoding UTF8
     Write-Step "CURRENT_STATE.md actualizado" -Status 'OK'
 
-    # ── README.md ──────────────────────────────────────────────────────────
+    # â”€â”€ README.md â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $readmePath = Join-Path $ProjectRoot 'README.md'
     $readmeContent = Get-Content $readmePath -Raw -ErrorAction SilentlyContinue
     if ($readmeContent) {
@@ -1563,14 +1563,14 @@ UseCase → Capability → Provider → Engine → Runtime → Persistence → T
             $readmeContent += @"
 
 $docMarker
-*RC51.1 — Consolidated Use Case Catalog*
+*RC51.1 â€” Consolidated Use Case Catalog*
 
 Hermes Enterprise is now governed by the consolidated Use Case Catalog:
 - **11 canonical use cases** (no duplicates)
 - **15 capabilities** (no orphans)
 - **10 providers** (no orphans)
 - **8 engines** (no orphans)
-- **7-step sequential execution pipeline** (UseCase → Capability → Provider → Engine → Runtime → Persistence → Telemetry → Result)
+- **7-step sequential execution pipeline** (UseCase â†’ Capability â†’ Provider â†’ Engine â†’ Runtime â†’ Persistence â†’ Telemetry â†’ Result)
 - **Full execution tracking** (Execution, ExecutionStep, ExecutionMetric, ExecutionError, ExecutionAudit, ExecutionContext)
 - **100% Pester coverage** on catalogs and executor
 "@
@@ -1579,17 +1579,17 @@ Hermes Enterprise is now governed by the consolidated Use Case Catalog:
     }
     Write-Step "README.md actualizado" -Status 'OK'
 
-    # ── CHANGELOG.md ──────────────────────────────────────────────────────
+    # â”€â”€ CHANGELOG.md â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     $changelogPath = Join-Path $ProjectRoot 'CHANGELOG.md'
     $changelogEntry = @"
 
-## RC51.1 — Consolidated Use Case Catalog ($timestamp)
+## RC51.1 â€” Consolidated Use Case Catalog ($timestamp)
 
 ### Breaking Changes
-- Eliminated duplicate use cases (BootstrapWorkspace → BootstrapUseCase, etc.)
+- Eliminated duplicate use cases (BootstrapWorkspace â†’ BootstrapUseCase, etc.)
 - Consolidated 9 canonical use cases + 2 additional = 11 total
 - Removed orphaned capabilities (capability.xxx.yyy), providers (XxxProvider), engines (XxxEngine)
-- Single execution pipeline: UseCase → Capability → Provider → Engine → Runtime → Persistence → Telemetry
+- Single execution pipeline: UseCase â†’ Capability â†’ Provider â†’ Engine â†’ Runtime â†’ Persistence â†’ Telemetry
 
 ### Added
 - UseCaseExecutor with 7-step sequential pipeline
@@ -1609,12 +1609,12 @@ Hermes Enterprise is now governed by the consolidated Use Case Catalog:
     Set-Content -Path $changelogPath -Value $changelogEntry -Encoding UTF8 -Append
     Write-Step "CHANGELOG.md actualizado" -Status 'OK'
 
-    Write-Step "Documentación actualizada exitosamente" -Status 'PASS'
+    Write-Step "DocumentaciÃ³n actualizada exitosamente" -Status 'PASS'
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # FASE 9: Git operations
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Invoke-Fase9_GitOperations {
     Write-Phase "FASE 9: GIT OPERATIONS" -Color 'Green'
 
@@ -1665,9 +1665,9 @@ function Invoke-Fase9_GitOperations {
     }
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # PERSISTENCE HELPERS
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Persist-ConsolidatedCatalog {
     param(
         $UseCases,
@@ -1801,15 +1801,15 @@ VALUES (@id, 'UseCaseCatalog', @total)
     Disconnect-HermesDatabase -Manager $mgr
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # MAIN ENTRY POINT
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Invoke-AllFases {
-    Write-Host "`n$('█' * 70)" -ForegroundColor DarkCyan
-    Write-Host "██  RC51.1 — CONSOLIDATED USE CASE CATALOG" -ForegroundColor DarkCyan
-    Write-Host "██  Database: $DatabasePath" -ForegroundColor DarkCyan
-    Write-Host "██  $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor DarkCyan
-    Write-Host "$('█' * 70)" -ForegroundColor DarkCyan
+    Write-Host "`n$('â–ˆ' * 70)" -ForegroundColor DarkCyan
+    Write-Host "â–ˆâ–ˆ  RC51.1 â€” CONSOLIDATED USE CASE CATALOG" -ForegroundColor DarkCyan
+    Write-Host "â–ˆâ–ˆ  Database: $DatabasePath" -ForegroundColor DarkCyan
+    Write-Host "â–ˆâ–ˆ  $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor DarkCyan
+    Write-Host "$('â–ˆ' * 70)" -ForegroundColor DarkCyan
 
     $phaseTimings = @{}
 
@@ -1876,17 +1876,17 @@ function Invoke-AllFases {
     }
     if ($FaseNumber -eq 9) { return }
 
-    # ── Summary ──────────────────────────────────────────────────────────
+    # â”€â”€ Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     Write-Phase "RC51.1 COMPLETE" -Color 'Green'
     Write-Host "  Phase Timings:" -ForegroundColor Cyan
     foreach ($kvp in $phaseTimings.GetEnumerator()) {
         Write-Host "    $($kvp.Key): $($kvp.Value)s" -ForegroundColor Gray
     }
     Write-Host "  Database: $DatabasePath" -ForegroundColor Cyan
-    Write-Host "`n$('█' * 70)" -ForegroundColor DarkCyan
+    Write-Host "`n$('â–ˆ' * 70)" -ForegroundColor DarkCyan
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # EXECUTION
-# ──────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Invoke-AllFases

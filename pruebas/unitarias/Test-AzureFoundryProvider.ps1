@@ -30,9 +30,9 @@ $env:AZURE_FOUNDRY_API_KEY = ""
 
 # Determinar si hay acceso real a Azure (Azure AD o Key Vault).
 $HayAccesoAzure = $false
-try { if (-not [string]::IsNullOrWhiteSpace((az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv 2>$null))) { $HayAccesoAzure = $true } } catch { Write-Debug "No Azure access token available" }
+try { $token = az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv 2>$null; $HayAccesoAzure = -not [string]::IsNullOrWhiteSpace($token) } catch { Write-Debug "No Azure access token available" }
 if (-not $HayAccesoAzure) {
-    try { if (-not [string]::IsNullOrWhiteSpace((az keyvault secret show --vault-name kv-hermes-enterprise-ur --name AzureOpenAI-Endpoint --query value -o tsv 2>$null))) { $HayAccesoAzure = $true } } catch { Write-Debug "No Key Vault access available" }
+    try { $secret = az keyvault secret show --vault-name kv-hermes-enterprise-ur --name AzureOpenAI-Endpoint --query value -o tsv 2>$null; $HayAccesoAzure = -not [string]::IsNullOrWhiteSpace($secret) } catch { Write-Debug "No Key Vault access available" }
 }
 
 try {

@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="16" errors="0" failures="2" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2026-08-04" time="19:06:04">
+  <environment user-domain="UROSARIO" clr-version="" user="fredya.sarmiento" os-version="10.0.26200" machine-name="CNF111860" nunit-version="2.5.8.0" platform="Microsoft Windows 11 Enterprise|C:\WINDOWS|\Device\Harddisk0\Partition3" cwd="D:\HERMES-ENTERPRISE" />
+  <culture-info current-culture="es-CO" current-uiculture="es-MX" />
+  <test-suite type="Powershell" name="Pester" executed="True" result="Failure" success="False" time="7.5137" asserts="0">
+    <results>
+      <test-suite type="TestFixture" name="Distribution Integrity" executed="True" result="Success" success="True" time="0.68" asserts="0" description="Distribution Integrity">
+        <results>
+          <test-case description="Should have dist/ directory" name="Distribution Integrity.Should have dist/ directory" time="0.4132" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have RELEASE_NOTES.md" name="Distribution Integrity.Should have RELEASE_NOTES.md" time="0.0662" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have SHA256SUMS.txt" name="Distribution Integrity.Should have SHA256SUMS.txt" time="0.057" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have Hermes.Commands module in dist/" name="Distribution Integrity.Should have Hermes.Commands module in dist/" time="0.0758" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have DISTRIBUTION_REPORT.txt" name="Distribution Integrity.Should have DISTRIBUTION_REPORT.txt" time="0.0678" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Hermes Installer Scripts" executed="True" result="Success" success="True" time="2.6962" asserts="0" description="Hermes Installer Scripts">
+        <results>
+          <test-case description="Should have Install-Hermes.ps1 in Install/" name="Hermes Installer Scripts.Should have Install-Hermes.ps1 in Install/" time="2.2348" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have Update-Hermes.ps1 in Install/" name="Hermes Installer Scripts.Should have Update-Hermes.ps1 in Install/" time="0.3352" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have Uninstall-Hermes.ps1 in Install/" name="Hermes Installer Scripts.Should have Uninstall-Hermes.ps1 in Install/" time="0.0733" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have Repair-HermesInstallation public command" name="Hermes Installer Scripts.Should have Repair-HermesInstallation public command" time="0.0529" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Install-Hermes Syntax" executed="True" result="Failure" success="False" time="1.8809" asserts="0" description="Install-Hermes Syntax">
+        <results>
+          <test-case description="Should parse without errors" name="Install-Hermes Syntax.Should parse without errors" time="1.2808" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should define param block" name="Install-Hermes Syntax.Should define param block" time="0.6" asserts="0" success="False" result="Failure" executed="True">
+            <failure>
+              <message>Expected: {True}
+But was:  {False}</message>
+              <stack-trace>at line: 55 in D:\HERMES-ENTERPRISE\pruebas\unitarias\Hermes.Installer.RC63.Tests.ps1
+55:         ($ast.ParamBlock -ne $null) | Should Be $true</stack-trace>
+            </failure>
+          </test-case>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Repair-HermesInstallation" executed="True" result="Failure" success="False" time="0.744" asserts="0" description="Repair-HermesInstallation">
+        <results>
+          <test-case description="Should be a command" name="Repair-HermesInstallation.Should be a command" time="0.3976" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have -Path parameter" name="Repair-HermesInstallation.Should have -Path parameter" time="0.1915" asserts="0" success="False" result="Failure" executed="True">
+            <failure>
+              <message>Expected: {True}
+But was:  {False}</message>
+              <stack-trace>at line: 89 in D:\HERMES-ENTERPRISE\pruebas\unitarias\Hermes.Installer.RC63.Tests.ps1
+89:         $cmd.Parameters.ContainsKey('Path') | Should Be $true</stack-trace>
+            </failure>
+          </test-case>
+          <test-case description="Should have -Force parameter (optional)" name="Repair-HermesInstallation.Should have -Force parameter (optional)" time="0.1549" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Uninstall-Hermes Syntax" executed="True" result="Success" success="True" time="0.4569" asserts="0" description="Uninstall-Hermes Syntax">
+        <results>
+          <test-case description="Should parse without errors" name="Uninstall-Hermes Syntax.Should parse without errors" time="0.4569" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Update-Hermes Syntax" executed="True" result="Success" success="True" time="1.0558" asserts="0" description="Update-Hermes Syntax">
+        <results>
+          <test-case description="Should parse without errors" name="Update-Hermes Syntax.Should parse without errors" time="1.0558" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

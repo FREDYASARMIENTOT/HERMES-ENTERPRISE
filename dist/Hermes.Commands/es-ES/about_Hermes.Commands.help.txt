@@ -1,0 +1,50 @@
+Hermes.Commands
+================
+
+DESCRIPCION BREVE
+    Hermes Enterprise - Módulo global de PowerShell para gestión de proyectos.
+
+DESCRIPCION DETALLADA
+    Hermes.Commands proporciona cmdlets profesionales para gestionar
+    proyectos Hermes: creación, apertura, cierre, eliminación, publicación,
+    actualización, clonación, importación, exportación, respaldo,
+    restauración, renombrado, entornos virtuales (venv/conda), workspaces,
+    configuración y diagnóstico.
+
+COMANDOS DISPONIBLES (25)
+
+Proyecto (13):
+    New-HermesProject       Crea un nuevo proyecto Hermes.
+    Open-HermesProject      Abre un proyecto Hermes en VSCode.
+    Close-HermesProject     Cierra un proyecto Hermes.
+    Remove-HermesProject    Elimina un proyecto Hermes.
+    Update-HermesProject    Actualiza la configuración del proyecto.
+    Publish-HermesProject   Publica un proyecto en GitHub.
+    Clone-HermesProject     Clona un repositorio GitHub como proyecto.
+    Import-HermesProject    Importa un proyecto desde archivo.
+    Export-HermesProject    Exporta un proyecto a archivo.
+    Backup-HermesProject    Crea backup del proyecto (.zip).
+    Restore-HermesProject   Restaura proyecto desde backup.
+    Rename-HermesProject    Renombra un proyecto Hermes.
+    Get-HermesProject       Obtiene información de proyectos.
+
+Workspace (3):
+    Get-HermesWorkspace     Obtiene información del workspace.
+    Open-HermesWorkspace    Abre un workspace en VSCode.
+    Close-HermesWorkspace   Cierra un workspace.
+
+Entorno (5):
+    Get-HermesEnvironment   Obtiene info del entorno virtual.
+    New-HermesEnvironment   Crea entorno virtual (venv/conda).
+    Enter-HermesEnvironment Activa el entorno virtual.
+    Update-HermesEnvironment Actualiza configuración del entorno.
+    Remove-HermesEnvironment Elimina el entorno virtual.
+
+Sistema (4):
+    Get-HermesVersion       Muestra la versión del sistema.
+    Get-HermesConfiguration Obtiene valor de configuración.
+    Set-HermesConfiguration Establece valor de configuración.
+    Repair-HermesInstallation Repara la instalación de Hermes.
+
+VERSION
+    RC63 — 25 comandos públicos.

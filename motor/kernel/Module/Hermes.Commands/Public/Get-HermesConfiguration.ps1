@@ -11,14 +11,17 @@
 function Get-HermesConfiguration {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, Position = 0)]
-        [string]$Key,
+        [Parameter(Mandatory = $false, Position = 0)]
+        [string]$Key = '',
 
         [Parameter(Mandatory = $false)]
         [string]$Default = ''
     )
 
-    return _Get-ConfigValue -Key $Key -Default $Default
+    if ($Key) {
+        return _Get-ConfigValue -Key $Key -Default $Default
+    }
+    return _Get-AllConfigValues
 }
 
 <#

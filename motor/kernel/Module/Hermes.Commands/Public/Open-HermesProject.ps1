@@ -3,22 +3,26 @@
     Abre un proyecto Hermes en VSCode.
 .DESCRIPTION
     Abre el proyecto en la ruta especificada usando code.
-.PARAMETER ProjectPath
+.PARAMETER Path
     Ruta del proyecto.
 #>
 function Open-HermesProject {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, Position = 0)]
-        [ValidateScript({ Test-Path $_ }, ErrorMessage = "Path not found: '{0}'")]
-        [string]$ProjectPath
+        [Parameter(Mandatory = $false, Position = 0)]
+        [string]$Path = ''
     )
 
-    $ProjectPath = (Resolve-Path $ProjectPath).Path
-    $result = _Open-ProjectInVSCode -ProjectPath $ProjectPath
+    if (-not $Path) {
+        $Path = Get-Location
+    }
+    $resolvedPath = if (Test-Path $Path) { (Resolve-Path $Path).Path } else { $Path }
+    $result = _Open-ProjectInVSCode -Path $resolvedPath
     if ($result) {
-        Write-Host "[OK] Opened $ProjectPath in VSCode" -ForegroundColor Green
+        Write-Host "[OK] Opened $resolvedPath in VSCode" -ForegroundColor Green
+        return $true
     } else {
         Write-Error "Failed to open VSCode."
+        return $false
     }
 }

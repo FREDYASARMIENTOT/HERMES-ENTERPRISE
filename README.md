@@ -4,11 +4,13 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 
 ## Status
 
-**RC62 — Hermes Commands Finalized with 100% Test Coverage**
+**RC68 — Azure Shared Infrastructure + Canonical Commands — 100% Test Coverage**
 
-- 21 PowerShell commands for project lifecycle, environment management, and workspace operations
-- 64/64 Pester unit tests passing (Pester 3.4.0 compatible)
-- 10 comprehensive documentation guides (Installation, Quick Start, User Manual, Troubleshooting, FAQ, Command Reference, Examples, Architecture Overview, User Acceptance Tests)
+- 25 canonical PowerShell commands in pure English (project lifecycle, workspace, environment, system)
+- 7 Azure providers: Resource Group, App Service Plan, Storage Account, App Insights, Log Analytics, Key Vault, Managed Identity
+- 4 Azure orchestration use cases: Create, Verify, Delete, Export Report
+- 86/86 Pester unit tests passing (Pester 3.4.0 compatible)
+- 10 comprehensive documentation guides
 - 0 PSScriptAnalyzer errors in module and manifest
 - Environment providers: VenvEnvironment and CondaEnvironment
 - SQLite persistence via HermesSQLiteProvider
@@ -16,59 +18,70 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 ## Quick Start
 
 ```powershell
-Import-Module .\motor\kernel\Hermes.Commands.psd1 -Force
+Import-Module .\motor\kernel\Module\Hermes.Commands\Hermes.Commands.psd1 -Force
 
 # Create a new project
-Crear-HermesProyecto -NombreProyecto "MiProyecto" -TipoEntorno venv
+New-HermesProject -ProjectPath "D:\Workspace\MiProyecto" -TipoEntorno venv
 
-# Start a session
-Start-HermesProject -ProjectPath "D:\Workspace\MiProyecto"
+# Open the project in VS Code
+Open-HermesProject -Path "D:\Workspace\MiProyecto"
+
+# Get workspace info
+Get-HermesWorkspace
 ```
 
 ## Key Components
 
 | Module | Description |
 |--------|-------------|
-| `Hermes.Commands.psm1` | 21 public commands: project, environment, workspace, utility |
+| `Hermes.Commands.psm1` | 25 public commands: project, workspace, environment, system |
 | `Hermes.Commands.psd1` | Module manifest with aliases and exports |
 | `Providers/EnvironmentProvider.ps1` | Virtual environment provider (venv/conda) |
 | `Providers/ProviderBase.ps1` | Base provider contract implementation |
-| `Pruebas/Unitarias/Hermes.Commands.Tests.ps1` | 64 Pester unit tests |
+| `pruebas/unitarias/Hermes.Commands.RC63.Tests.ps1` | 64 Pester unit tests |
 
-## 21 Public Commands
+## 25 Public Commands
 
-### Project Lifecycle (8)
+### Project Lifecycle (13)
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `Crear-HermesProyecto` | `chp` | Create new Hermes project |
-| `Start-HermesProject` | `shp` | Initialize project workspace |
-| `Abrir-HermesProyecto` | `ahp` | Open project in VS Code |
-| `Publicar-HermesProyecto` | `uhp` | Publish to GitHub |
-| `Cerrar-HermesProyecto` | `ghp` | Close project (cleanup) |
-| `Eliminar-HermesProyecto` | `ghpe` | Delete project permanently |
-| `Get-HermesProyecto` | — | Get project status |
-| `Get-HermesProyectos` | `php` | List all projects in workspace |
+| `New-HermesProject` | `nhp` | Create new Hermes project with optional venv/conda |
+| `Open-HermesProject` | `ohp` | Open project in VS Code |
+| `Close-HermesProject` | `chp` | Close project (cleanup logs, .venv) |
+| `Remove-HermesProject` | `rhp` | Permanently delete project |
+| `Update-HermesProject` | `uhp` | Update project structure and dependencies |
+| `Publish-HermesProject` | `php` | Publish project to GitHub repository |
+| `Clone-HermesProject` | `clhp` | Clone a project from Git |
+| `Import-HermesProject` | `ihp` | Import project from archive |
+| `Export-HermesProject` | `ehp` | Export project to archive |
+| `Backup-HermesProject` | `bhp` | Backup project data |
+| `Restore-HermesProject` | `rshp` | Restore project from backup |
+| `Rename-HermesProject` | `rnhp` | Rename an existing project |
+| `Get-HermesProject` | `ghp` | Get project status and structure |
 
-### Environment Management (6)
+### Workspace Management (3)
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `New-HermesVenv` | `nhv` | Create Python venv |
-| `Enter-HermesVenv` | `ehv` | Activate venv |
-| `Remove-HermesVenv` | `rhv` | Remove venv |
-| `New-HermesConda` | `nhc2` | Create Conda environment |
-| `Enter-HermesConda` | `ehc` | Activate Conda environment |
-| `Remove-HermesConda` | `rhc` | Remove Conda environment |
-
-### Workspace & Utilities (7)
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `New-HermesWorkspace` | `nhw` | Create workspace directory |
-| `Open-HermesWorkspace` | `ohw` | Open workspace in VS Code |
 | `Get-HermesWorkspace` | `ghw` | Get workspace info |
-| `New-HermesDocumentacion` | `nhd` | Generate documentation |
-| `New-HermesCommit` | `nhc` | Create git commit |
-| `Test-HermesPython` | `chp2` | Test Python availability |
-| `Install-ProjectFromFactory` | `ipf` | Install from project factory |
+| `Open-HermesWorkspace` | `ohw` | Open workspace in VS Code |
+| `Close-HermesWorkspace` | `chw` | Close workspace session |
+
+### Environment Management (5)
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `Get-HermesEnvironment` | `ghe` | Get environment details |
+| `New-HermesEnvironment` | `nhe` | Create venv/conda environment |
+| `Enter-HermesEnvironment` | `ehe` | Activate environment |
+| `Update-HermesEnvironment` | `uhe` | Update environment packages |
+| `Remove-HermesEnvironment` | `rhe` | Delete environment |
+
+### System Commands (4)
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `Get-HermesVersion` | `ghv` | Get Hermes version info |
+| `Get-HermesConfiguration` | `ghc` | Read Hermes configuration |
+| `Set-HermesConfiguration` | `shc` | Write configuration settings |
+| `Repair-HermesInstallation` | `rhi` | Fix module path, symlinks, DB, env vars |
 
 ## Test Results
 

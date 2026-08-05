@@ -18,13 +18,10 @@ function Clone-HermesProject {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [Parameter(Mandatory = $true, Position = 0)]
-        [string]$RepositoryUrl,
+        [string]$Path,
 
         [Parameter(Mandatory = $false)]
-        [string]$DestinationPath = '',
-
-        [Parameter(Mandatory = $false)]
-        [string]$ProjectName = '',
+        [string]$Destination = '',
 
         [Parameter(Mandatory = $false)]
         [string]$Branch = '',
@@ -33,9 +30,9 @@ function Clone-HermesProject {
         [switch]$NoInit
     )
 
-    if ($PSCmdlet.ShouldProcess($RepositoryUrl, "Clone Hermes project")) {
+    if ($PSCmdlet.ShouldProcess($Path, "Clone Hermes project")) {
         try {
-            $result = _Clone-FromGitHub -RepositoryUrl $RepositoryUrl -DestinationPath $DestinationPath -ProjectName $ProjectName -Branch $Branch -NoInit:$NoInit
+            $result = _Clone-FromGitHub -RepositoryUrl $Path -DestinationPath $Destination -ProjectName $Path.Split('/')[-1] -Branch $Branch -NoInit:$NoInit
             if ($result) {
                 Write-Host "[OK] Project cloned: $($result.ProjectPath)" -ForegroundColor Green
                 return $result
@@ -66,16 +63,16 @@ function Import-HermesProject {
         [string]$Path,
 
         [Parameter(Mandatory = $true)]
-        [string]$DestinationPath,
+        [string]$Destination,
 
         [Parameter(Mandatory = $false)]
         [switch]$Force
     )
 
-    if ($PSCmdlet.ShouldProcess($Path, "Import Hermes project to '$DestinationPath'")) {
+    if ($PSCmdlet.ShouldProcess($Path, "Import Hermes project to '$Destination'")) {
         try {
-            _Import-ProjectArchive -Path $Path -DestinationPath $DestinationPath -Force:$Force
-            Write-Host "[OK] Project imported to $DestinationPath" -ForegroundColor Green
+            _Import-ProjectArchive -Path $Path -DestinationPath $Destination -Force:$Force
+            Write-Host "[OK] Project imported to $Destination" -ForegroundColor Green
         } catch {
             Write-Error "Failed to import: $_"
         }

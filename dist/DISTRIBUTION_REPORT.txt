@@ -1,0 +1,15 @@
+Hermes Enterprise Distribution Report
+======================================
+Version: 63.0.0
+Date: 2026-08-04 19:00:44
+Output: D:\HERMES-ENTERPRISE\tools\..\dist
+
+Modules:
+  - Hermes.Commands
+   - Hermes.ProjectManager
+   - Hermes.ArchitectureAnalyzer
+   - Hermes.Bootstrap
+
+
+Total Files: 48
+Total Size: 0,25 MB

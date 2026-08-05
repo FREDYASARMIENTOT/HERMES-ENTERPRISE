@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="70" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2026-08-05" time="08:38:54">
+  <environment user="fredya.sarmiento" cwd="D:\HERMES-ENTERPRISE" nunit-version="2.5.8.0" clr-version="" os-version="10.0.26200" machine-name="CNF111860" platform="Microsoft Windows 11 Enterprise|C:\WINDOWS|\Device\Harddisk0\Partition3" user-domain="UROSARIO" />
+  <culture-info current-culture="es-CO" current-uiculture="es-MX" />
+  <test-suite type="Powershell" name="Pester" executed="True" result="Success" success="True" time="8.3486" asserts="0">
+    <results>
+      <test-suite type="TestFixture" name="Backup-HermesProject" executed="True" result="Success" success="True" time="0.0685" asserts="0" description="Backup-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Backup-HermesProject.Should exist" time="0.0604" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Backup-HermesProject.Should have mandatory -Path" time="0.0081" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Clone-HermesProject" executed="True" result="Success" success="True" time="0.0666" asserts="0" description="Clone-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Clone-HermesProject.Should exist" time="0.0537" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path and optional -Destination" name="Clone-HermesProject.Should have mandatory -Path and optional -Destination" time="0.0129" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Close-HermesProject" executed="True" result="Success" success="True" time="0.077" asserts="0" description="Close-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Close-HermesProject.Should exist" time="0.0669" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Close-HermesProject.Should have mandatory -Path" time="0.0102" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Close-HermesWorkspace" executed="True" result="Success" success="True" time="0.0457" asserts="0" description="Close-HermesWorkspace">
+        <results>
+          <test-case description="Should exist" name="Close-HermesWorkspace.Should exist" time="0.0457" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Enter-HermesEnvironment" executed="True" result="Success" success="True" time="0.2058" asserts="0" description="Enter-HermesEnvironment">
+        <results>
+          <test-case description="Should exist" name="Enter-HermesEnvironment.Should exist" time="0.1832" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Name" name="Enter-HermesEnvironment.Should have mandatory -Name" time="0.0077" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should return $null for non-existent environment" name="Enter-HermesEnvironment.Should return $null for non-existent environment" time="0.0149" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Export-HermesProject" executed="True" result="Success" success="True" time="0.0616" asserts="0" description="Export-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Export-HermesProject.Should exist" time="0.0528" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Export-HermesProject.Should have mandatory -Path" time="0.0087" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Get-HermesConfiguration" executed="True" result="Success" success="True" time="0.0603" asserts="0" description="Get-HermesConfiguration">
+        <results>
+          <test-case description="Should exist" name="Get-HermesConfiguration.Should exist" time="0.0527" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have optional -Key parameter" name="Get-HermesConfiguration.Should have optional -Key parameter" time="0.0076" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Get-HermesEnvironment" executed="True" result="Success" success="True" time="0.0834" asserts="0" description="Get-HermesEnvironment">
+        <results>
+          <test-case description="Should exist" name="Get-HermesEnvironment.Should exist" time="0.0834" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Get-HermesProject" executed="True" result="Success" success="True" time="0.0732" asserts="0" description="Get-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Get-HermesProject.Should exist" time="0.0428" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have optional -Path (omit to list all)" name="Get-HermesProject.Should have optional -Path (omit to list all)" time="0.0072" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should return $null for non-existent path" name="Get-HermesProject.Should return $null for non-existent path" time="0.0233" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Get-HermesVersion" executed="True" result="Success" success="True" time="0.0819" asserts="0" description="Get-HermesVersion">
+        <results>
+          <test-case description="Should exist" name="Get-HermesVersion.Should exist" time="0.0637" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should return version information (not null)" name="Get-HermesVersion.Should return version information (not null)" time="0.0182" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Get-HermesWorkspace" executed="True" result="Success" success="True" time="0.0535" asserts="0" description="Get-HermesWorkspace">
+        <results>
+          <test-case description="Should exist" name="Get-HermesWorkspace.Should exist" time="0.0535" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Hermes.Commands RC63 Module" executed="True" result="Success" success="True" time="0.6134" asserts="0" description="Hermes.Commands RC63 Module">
+        <results>
+          <test-case description="Should import without errors" name="Hermes.Commands RC63 Module.Should import without errors" time="0.5474" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should export exactly 25 commands" name="Hermes.Commands RC63 Module.Should export exactly 25 commands" time="0.0507" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have version 63.0.0" name="Hermes.Commands RC63 Module.Should have version 63.0.0" time="0.0068" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should export 25 aliases" name="Hermes.Commands RC63 Module.Should export 25 aliases" time="0.0084" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Import-HermesProject" executed="True" result="Success" success="True" time="0.0639" asserts="0" description="Import-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Import-HermesProject.Should exist" time="0.0553" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Import-HermesProject.Should have mandatory -Path" time="0.0087" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="New-HermesEnvironment" executed="True" result="Success" success="True" time="0.4091" asserts="0" description="New-HermesEnvironment">
+        <results>
+          <test-case description="Should exist" name="New-HermesEnvironment.Should exist" time="0.2404" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Name" name="New-HermesEnvironment.Should have mandatory -Name" time="0.0248" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have -Type with ValidateSet" name="New-HermesEnvironment.Should have -Type with ValidateSet" time="0.1439" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="New-HermesProject" executed="True" result="Success" success="True" time="0.0456" asserts="0" description="New-HermesProject">
+        <results>
+          <test-case description="Should exist and be a Function" name="New-HermesProject.Should exist and be a Function" time="0.0268" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Name parameter" name="New-HermesProject.Should have mandatory -Name parameter" time="0.0111" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have -WhatIf support" name="New-HermesProject.Should have -WhatIf support" time="0.0078" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Open-HermesProject" executed="True" result="Success" success="True" time="1.257" asserts="0" description="Open-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Open-HermesProject.Should exist" time="0.0278" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have optional -Path parameter" name="Open-HermesProject.Should have optional -Path parameter" time="0.0054" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should not throw for non-existent path" name="Open-HermesProject.Should not throw for non-existent path" time="1.2238" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Open-HermesWorkspace" executed="True" result="Success" success="True" time="1.3647" asserts="0" description="Open-HermesWorkspace">
+        <results>
+          <test-case description="Should exist" name="Open-HermesWorkspace.Should exist" time="0.0421" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Open-HermesWorkspace.Should have mandatory -Path" time="0.0072" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should return null for non-existent path" name="Open-HermesWorkspace.Should return null for non-existent path" time="1.3154" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Publish-HermesProject" executed="True" result="Success" success="True" time="0.0713" asserts="0" description="Publish-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Publish-HermesProject.Should exist" time="0.0534" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Publish-HermesProject.Should have mandatory -Path" time="0.0091" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have optional -RepoName" name="Publish-HermesProject.Should have optional -RepoName" time="0.0089" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="RC63 Command Help" executed="True" result="Success" success="True" time="0.1981" asserts="0" description="RC63 Command Help">
+        <results>
+          <test-case description="All commands should have synopsis in help" name="RC63 Command Help.All commands should have synopsis in help" time="0.1123" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Commands with parameters should show parameter help" name="RC63 Command Help.Commands with parameters should show parameter help" time="0.0858" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="RC63 Command Names and Aliases" executed="True" result="Success" success="True" time="0.1327" asserts="0" description="RC63 Command Names and Aliases">
+        <results>
+          <test-case description="Should have all 25 expected command names" name="RC63 Command Names and Aliases.Should have all 25 expected command names" time="0.1327" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="RC63 Error Handling" executed="True" result="Success" success="True" time="2.7051" asserts="0" description="RC63 Error Handling">
+        <results>
+          <test-case description="Should handle invalid paths without throwing" name="RC63 Error Handling.Should handle invalid paths without throwing" time="2.7051" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="RC63 Module File Structure" executed="True" result="Success" success="True" time="0.0902" asserts="0" description="RC63 Module File Structure">
+        <results>
+          <test-case description="Should have manifest in module root" name="RC63 Module File Structure.Should have manifest in module root" time="0.0465" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have root module file (.psm1)" name="RC63 Module File Structure.Should have root module file (.psm1)" time="0.0073" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have Public directory" name="RC63 Module File Structure.Should have Public directory" time="0.0096" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have Private directory" name="RC63 Module File Structure.Should have Private directory" time="0.0071" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have Install directory" name="RC63 Module File Structure.Should have Install directory" time="0.0074" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have 29 Public/*.ps1 files" name="RC63 Module File Structure.Should have 29 Public/*.ps1 files" time="0.0122" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Remove-HermesEnvironment" executed="True" result="Success" success="True" time="0.0598" asserts="0" description="Remove-HermesEnvironment">
+        <results>
+          <test-case description="Should exist" name="Remove-HermesEnvironment.Should exist" time="0.0527" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Name" name="Remove-HermesEnvironment.Should have mandatory -Name" time="0.007" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Remove-HermesProject" executed="True" result="Success" success="True" time="0.0679" asserts="0" description="Remove-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Remove-HermesProject.Should exist" time="0.0586" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Remove-HermesProject.Should have mandatory -Path" time="0.0093" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Rename-HermesProject" executed="True" result="Success" success="True" time="0.0823" asserts="0" description="Rename-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Rename-HermesProject.Should exist" time="0.0573" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path and -NewName" name="Rename-HermesProject.Should have mandatory -Path and -NewName" time="0.025" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Repair-HermesInstallation" executed="True" result="Success" success="True" time="0.0572" asserts="0" description="Repair-HermesInstallation">
+        <results>
+          <test-case description="Should exist" name="Repair-HermesInstallation.Should exist" time="0.0444" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have optional -ModulePath" name="Repair-HermesInstallation.Should have optional -ModulePath" time="0.006" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have -Force switch" name="Repair-HermesInstallation.Should have -Force switch" time="0.0068" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Restore-HermesProject" executed="True" result="Success" success="True" time="0.0653" asserts="0" description="Restore-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Restore-HermesProject.Should exist" time="0.0559" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Restore-HermesProject.Should have mandatory -Path" time="0.0094" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Set-HermesConfiguration" executed="True" result="Success" success="True" time="0.0634" asserts="0" description="Set-HermesConfiguration">
+        <results>
+          <test-case description="Should exist" name="Set-HermesConfiguration.Should exist" time="0.0458" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Key and -Value" name="Set-HermesConfiguration.Should have mandatory -Key and -Value" time="0.011" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have -Scope with ValidateSet" name="Set-HermesConfiguration.Should have -Scope with ValidateSet" time="0.0067" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Update-HermesEnvironment" executed="True" result="Success" success="True" time="0.0682" asserts="0" description="Update-HermesEnvironment">
+        <results>
+          <test-case description="Should exist" name="Update-HermesEnvironment.Should exist" time="0.0605" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Name" name="Update-HermesEnvironment.Should have mandatory -Name" time="0.0077" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="Update-HermesProject" executed="True" result="Success" success="True" time="0.0557" asserts="0" description="Update-HermesProject">
+        <results>
+          <test-case description="Should exist" name="Update-HermesProject.Should exist" time="0.0471" asserts="0" success="True" result="Success" executed="True" />
+          <test-case description="Should have mandatory -Path" name="Update-HermesProject.Should have mandatory -Path" time="0.0086" asserts="0" success="True" result="Success" executed="True" />
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

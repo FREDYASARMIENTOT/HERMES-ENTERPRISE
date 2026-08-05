@@ -1,0 +1,10 @@
+{
+    "Azure": {
+        "Location": "eastus",
+        "ResourceGroupAplicaciones": "RG-Hermes-Proyectos",
+        "ResourceGroupPlan": "RG-Datamining-SII2.0-Dev",
+        "AppServicePlan": "ASP-IAUR",
+        "StorageAccount": "saurhermesproyectos",
+        "UseSharedInfrastructure": true
+    }
+}

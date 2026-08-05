@@ -3,6 +3,23 @@
 ## Sprint History
 - A.26: Memoria persistente y normalización documental
 
+## RC69 — Azure Configuration Canonical (2026-08-05)
+
+### Added
+- `config/Hermes.Azure.json` — canonical single source of truth for Azure shared infrastructure
+- `AzureConfigurationProvider.ps1` (`Private/AzureConfiguration.ps1`) — read, validate, resolve resolution chain
+- `Get-HermesAzureConfiguration` — public command to read canonical config (with `-ConfigPath`, `-SubscriptionId`)
+- `Set-HermesAzureConfiguration` — public command to update config fields with validation
+- `Resolve-HermesAppServicePlanId` — resolve full ASP resource ID from config values
+- `Invoke-HermesBootstrapAzureConfig` — interactive Azure configuration phase in BootstrapWizard.ps1
+- SQLite persistence: `AzureConfigurationHistory` table records every config change
+
+### Changed
+- `New-HermesProject` — new optional `-AzureConfigPath` parameter for custom config file
+- `docs/ArchitectureState.md` — documented RC69 configuration layer
+- `CURRENT_STATE.md` — updated to RC69 milestone
+- `CHANGELOG.md` — updated for RC69
+
 ## RC68 — Azure Shared Infrastructure (2026-08-05)
 
 ### Added

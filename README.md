@@ -4,13 +4,16 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 
 ## Status
 
-**RC68 — Azure Shared Infrastructure + Canonical Commands — 100% Test Coverage**
+**RC69 — Azure Infrastructure + Configuration Canonical — 100% Test Coverage**
 
-- 25 canonical PowerShell commands in pure English (project lifecycle, workspace, environment, system)
+- 28 canonical PowerShell commands in pure English (project lifecycle, workspace, environment, system, + Azure config)
 - 7 Azure providers: Resource Group, App Service Plan, Storage Account, App Insights, Log Analytics, Key Vault, Managed Identity
 - 4 Azure orchestration use cases: Create, Verify, Delete, Export Report
+- 3 Azure configuration commands: `Get-HermesAzureConfiguration`, `Set-HermesAzureConfiguration`, `Resolve-HermesAppServicePlanId`
+- Canonical Azure configuration at `config/Hermes.Azure.json`
+- Interactive Azure config phase in BootstrapWizard
 - 86/86 Pester unit tests passing (Pester 3.4.0 compatible)
-- 10 comprehensive documentation guides
+- 10+ comprehensive documentation guides
 - 0 PSScriptAnalyzer errors in module and manifest
 - Environment providers: VenvEnvironment and CondaEnvironment
 - SQLite persistence via HermesSQLiteProvider

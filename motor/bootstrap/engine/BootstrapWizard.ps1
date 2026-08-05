@@ -16,6 +16,107 @@ Set-StrictMode -Version Latest
 $script:HERMES_NOMBRE_REGEX = '^[A-Za-z][A-Za-z0-9_-]{2,63}$'
 
 # ─────────────────────────────────────────────────────────────────
+# CONFIGURACION AZURE (RC69)
+# ─────────────────────────────────────────────────────────────────
+
+$script:AZURE_DEFAULTS = [PSCustomObject]@{
+    Location                  = 'eastus'
+    ResourceGroupAplicaciones = 'RG-Hermes-Proyectos'
+    ResourceGroupPlan         = 'RG-Datamining-SII2.0-Dev'
+    AppServicePlan            = 'ASP-IAUR'
+    StorageAccount            = 'saurhermesproyectos'
+    UseSharedInfrastructure   = $true
+}
+
+function Invoke-HermesBootstrapAzureConfig {
+    <#
+    .SYNOPSIS
+        Fase interactiva de configuración Azure (RC69).
+    .DESCRIPTION
+        Pregunta al usuario si desea configurar Azure. Si sí, solicita
+        los valores de infraestructura compartida y persiste en
+        config/Hermes.Azure.json.
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param()
+
+    Write-Host "`n+-- AZURE INFRASTRUCTURE CONFIG (RC69) ----------------------+" -Fo Cyan
+    Write-Host "| Configure aqui los valores para infraestructura compartida. |" -Fo Cyan
+    Write-Host "| Si omite, se usaran los valores por defecto del wizard.    |" -Fo Cyan
+    Write-Host "+-------------------------------------------------------------+`n" -Fo Cyan
+
+    $respuesta = Read-Host "Desea configurar Azure? (s/N)"
+    if ($respuesta -notmatch '^(s|S|y|Y|si|SI|Si|yes)$') {
+        Write-Host "[OK] Azure config omitida. Se usaran valores por defecto." -Fo Green
+        return $null
+    }
+
+    Write-Host "[..] Leyendo configuracion actual (si existe)..." -ForegroundColor Gray
+    $current = _Read-AzureConfiguration
+
+    $loc = Read-Host "Location [$($current.Location ?? $script:AZURE_DEFAULTS.Location)]"
+    if ([string]::IsNullOrWhiteSpace($loc)) { $loc = $current.Location ?? $script:AZURE_DEFAULTS.Location }
+
+    $rgA = Read-Host "ResourceGroupAplicaciones [$($current.ResourceGroupAplicaciones ?? $script:AZURE_DEFAULTS.ResourceGroupAplicaciones)]"
+    if ([string]::IsNullOrWhiteSpace($rgA)) { $rgA = $current.ResourceGroupAplicaciones ?? $script:AZURE_DEFAULTS.ResourceGroupAplicaciones }
+
+    $rgP = Read-Host "ResourceGroupPlan [$($current.ResourceGroupPlan ?? $script:AZURE_DEFAULTS.ResourceGroupPlan)]"
+    if ([string]::IsNullOrWhiteSpace($rgP)) { $rgP = $current.ResourceGroupPlan ?? $script:AZURE_DEFAULTS.ResourceGroupPlan }
+
+    $asp = Read-Host "AppServicePlan [$($current.AppServicePlan ?? $script:AZURE_DEFAULTS.AppServicePlan)]"
+    if ([string]::IsNullOrWhiteSpace($asp)) { $asp = $current.AppServicePlan ?? $script:AZURE_DEFAULTS.AppServicePlan }
+
+    $sa  = Read-Host "StorageAccount [$($current.StorageAccount ?? $script:AZURE_DEFAULTS.StorageAccount)]"
+    if ([string]::IsNullOrWhiteSpace($sa)) { $sa = $current.StorageAccount ?? $script:AZURE_DEFAULTS.StorageAccount }
+
+    $sharedStr = if ($current.UseSharedInfrastructure ?? $script:AZURE_DEFAULTS.UseSharedInfrastructure) { 'true' } else { 'false' }
+    $si = Read-Host "UseSharedInfrastructure ($sharedStr)"
+    if ([string]::IsNullOrWhiteSpace($si)) {
+        $sharedBool = [bool]($current.UseSharedInfrastructure ?? $script:AZURE_DEFAULTS.UseSharedInfrastructure)
+    } else {
+        $sharedBool = ($si -match '^(true|si|s|y|yes|1)$')
+    }
+
+    # Build config object
+    $configObj = [PSCustomObject][ordered]@{
+        Location                  = $loc
+        ResourceGroupAplicaciones = $rgA
+        ResourceGroupPlan         = $rgP
+        AppServicePlan            = $asp
+        StorageAccount            = $sa
+        UseSharedInfrastructure   = $sharedBool
+    }
+
+    # Validate
+    $validation = _Validate-AzureConfiguration -Configuration $configObj
+    if (-not $validation.IsValid) {
+        Write-Host "[X] Validacion fallida:" -Fo Red
+        foreach ($err in $validation.Errors) { Write-Host "    - $err" -Fo Red }
+        return $null
+    }
+
+    # Persist
+    try {
+        _Write-AzureConfiguration -Configuration $configObj -FilePath $null
+        Write-Host "[OK] config/Hermes.Azure.json escrito exitosamente." -Fo Green
+
+        Write-Host "`nResumen:" -Fo Cyan
+        Write-Host "  Location               : $loc" -Fo White
+        Write-Host "  ResourceGroupAplicaciones: $rgA" -Fo White
+        Write-Host "  ResourceGroupPlan      : $rgP" -Fo White
+        Write-Host "  AppServicePlan         : $asp" -Fo White
+        Write-Host "  StorageAccount         : $sa" -Fo White
+        Write-Host "  UseSharedInfrastructure: $sharedBool" -Fo White
+
+        return $configObj
+    } catch {
+        Write-Host "[X] Error al escribir configuracion: $_" -Fo Red
+        return $null
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────
 # VALIDACION DE NOMBRE
 # ─────────────────────────────────────────────────────────────────
 

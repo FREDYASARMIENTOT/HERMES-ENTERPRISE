@@ -1,7 +1,7 @@
-# Architecture State — Hermes Enterprise RC68
+# Architecture State — Hermes Enterprise RC69
 
 ## Current Phase
-**RC67 → RC68**: Infraestructura Compartida Azure (MVP)
+**RC68 → RC69**: Azure Configuration Canonical
 
 ## State Overview
 
@@ -52,11 +52,69 @@
 8. RBAC: MI as Contributor on RG + KV Secrets User on KV
 ```
 
-## Test Coverage (RC67)
-- **86/86 tests passing** (Parser, PSSA, Pester, Architecture Analyzer)
+## RC69 — Azure Configuration Canonical Layer
+
+### Files Added
+
+| File | Purpose |
+|------|---------|
+| `config/Hermes.Azure.json` | Canonical configuration file (single source of truth) |
+| `Private/AzureConfiguration.ps1` | AzureConfigurationProvider: read, validate, resolve |
+| `Public/Get-HermesAzureConfiguration.ps1` | Public command to read config |
+| `Public/Set-HermesAzureConfiguration.ps1` | Public command to update config |
+| `Public/Resolve-HermesAppServicePlanId.ps1` | Resolve full ASP resource ID |
+| `BootstrapWizard.ps1` | Interactive Azure phase (`Invoke-HermesBootstrapAzureConfig`) |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `New-HermesProject.ps1` | Added `-AzureConfigPath` optional parameter |
+
+### Resolution Chain
+
+The AzureConfigurationProvider follows a layered resolution:
+1. **Default values** (hardcoded in provider)
+2. **BootstrapWizard defaults** (interactive phase)
+3. **config/Hermes.Azure.json** (canonical file, if exists)
+4. **-ConfigPath override** (explicit parameter)
+
+### Schema (`config/Hermes.Azure.json`)
+
+```json
+{
+  "Azure": {
+    "Location": "eastus",
+    "ResourceGroupAplicaciones": "RG-Hermes-Proyectos",
+    "ResourceGroupPlan": "RG-Datamining-SII2.0-Dev",
+    "AppServicePlan": "ASP-IAUR",
+    "StorageAccount": "saurhermesproyectos",
+    "UseSharedInfrastructure": true
+  }
+}
+```
+
+### SQLite Persistence
+
+The `AzureConfigurationHistory` table in `HermesSQLiteProvider` records every write with:
+- `ConfigId` (UUID), `JsonContent`, `SourceFile`, `CreatedBy`, `CreatedAt`
+
+### BootstrapWizard Integration
+
+`Invoke-HermesBootstrapAzureConfig` is an interactive phase that:
+1. Asks user if they want to configure Azure
+2. Prompts for each field with current-value defaults
+3. Validates all inputs
+4. Writes to `config/Hermes.Azure.json`
+5. Logs to SQLite history
+
+## Test Coverage (RC69)
+- **86/86 tests passing** (Baseline from RC68)
+- RC69 test suite added: `AzureConfiguration` (parser, PSSA, stub)
 
 ## Known Issues / Next Steps
-- [ ] RC69: Per-project Web App deployment on shared Plan
-- [ ] RC70: Portal deployment under RG-Hermes-Proyectos
-- [ ] RC71: DNS + Front Door for global routing
-- [ ] RC72: SQL Database for per-project data
+- [x] RC69: Azure Configuration Canonical — COMPLETED
+- [ ] RC70: Per-project Web App deployment on shared Plan
+- [ ] RC71: Portal deployment under RG-Hermes-Proyectos
+- [ ] RC72: DNS + Front Door for global routing
+- [ ] RC73: SQL Database for per-project data

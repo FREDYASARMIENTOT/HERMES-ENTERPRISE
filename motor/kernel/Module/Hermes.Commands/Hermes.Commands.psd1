@@ -21,7 +21,7 @@ Stable Public API — Professional PowerShell Module
     # Compatible PowerShell Editions
     CompatiblePSEditions = @('Core', 'Desktop')
 
-    # Functions to export — 25 commands (API pública estable)
+    # Functions to export — 28 commands (API pública estable)
     FunctionsToExport = @(
         # Proyecto (13)
         'New-HermesProject',
@@ -54,7 +54,12 @@ Stable Public API — Professional PowerShell Module
         'Get-HermesVersion',
         'Get-HermesConfiguration',
         'Set-HermesConfiguration',
-        'Repair-HermesInstallation'
+        'Repair-HermesInstallation',
+
+        # Azure (3)
+        'Get-HermesAzureConfiguration',
+        'Set-HermesAzureConfiguration',
+        'Resolve-HermesAppServicePlanId'
     )
 
     # Cmdlets to export (none)
@@ -96,7 +101,12 @@ Stable Public API — Professional PowerShell Module
         'ghv',    # Get-HermesVersion
         'ghc',    # Get-HermesConfiguration
         'shc',    # Set-HermesConfiguration
-        'rhi'     # Repair-HermesInstallation
+        'rhi',    # Repair-HermesInstallation
+
+        # Azure
+        'ghac',   # Get-HermesAzureConfiguration
+        'shac',   # Set-HermesAzureConfiguration
+        'rhaid'   # Resolve-HermesAppServicePlanId
     )
 
     # Module dependencies
@@ -135,7 +145,11 @@ Stable Public API — Professional PowerShell Module
         'Public\Get-HermesConfiguration.ps1',
         'Public\Set-HermesConfiguration.ps1',
         'Public\Repair-HermesInstallation.ps1',
+        'Public\Get-HermesAzureConfiguration.ps1',
+        'Public\Set-HermesAzureConfiguration.ps1',
+        'Public\Resolve-HermesAppServicePlanId.ps1',
         'Private\HermesHelpers.ps1',
+        'Private\AzureConfiguration.ps1',
         'Private\DatabaseOperations.ps1',
         'Private\PathResolver.ps1',
         'Private\Validation.ps1',
@@ -159,7 +173,7 @@ Stable Public API — Professional PowerShell Module
             ProjectUri   = 'https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE'
             LicenseUri   = 'https://opensource.org/licenses/MIT'
             IconUri      = ''
-            ReleaseNotes = 'RC63 — Global PowerShell Module. 25 comandos públicos: 13 proyecto, 3 workspace, 5 entorno, 4 sistema. Instalación global via PSModulePath. PowerShell 7+.'
+            ReleaseNotes = 'RC69 — Global PowerShell Module. 28 comandos públicos: 13 proyecto, 3 workspace, 5 entorno, 4 sistema, 3 azure. Instalación global via PSModulePath. PowerShell 7+.'
             Prerelease   = ''
             RequireLicenseAcceptance = $false
             ExternalModuleDependencies = @()

@@ -1,0 +1,30 @@
+# ====================================================================
+# requirements.txt — Dependencias Python para Hermes.Web
+# ====================================================================
+# RC71: Dependencias auditadas — solo las realmente importadas
+# Versión: 2.3.0
+# Fecha: 2026-08-07
+# Plataforma: Azure App Service (Python 3.14+)
+# Entorno: D:\HermesRuntime\Environments\HermesEnterprise
+# Nota: NUNCA instalar con pip global. Usar solo el venv de Hermes.
+# ====================================================================
+
+# === Backend API ===
+fastapi>=0.110.0
+uvicorn[standard]>=0.30.0
+
+# === Serialización y validación ===
+pydantic>=2.7.0
+
+# === Plantillas HTML ===
+jinja2>=3.1.0
+
+# === Utilidades de sistema ===
+python-dotenv>=1.0.0
+
+# === Testing (no desplegadas en producción) ===
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+
+# === Servidor de producción (solo Azure Linux) ===
+gunicorn>=22.0.0

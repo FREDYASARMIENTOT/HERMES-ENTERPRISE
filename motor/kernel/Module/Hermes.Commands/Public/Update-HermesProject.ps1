@@ -9,7 +9,7 @@
 .PARAMETER ProjectName
     Nuevo nombre del proyecto (opcional).
 .PARAMETER TipoEntorno
-    Nuevo tipo de entorno (venv/conda).
+    Nuevo tipo de entorno (venv). RC70-D: Conda eliminado.
 .EXAMPLE
     Update-HermesProject -Path "C:\Projects\MiProyecto" -ProjectName "NuevoNombre"
 #>
@@ -23,7 +23,7 @@ function Update-HermesProject {
         [string]$ProjectName,
 
         [Parameter(Mandatory = $false)]
-        [ValidateSet('venv', 'conda')]
+        [ValidateSet('venv')]
         [string]$TipoEntorno
     )
 

@@ -15,7 +15,7 @@
 .PARAMETER ProjectName
     Nombre del proyecto (por defecto: nombre de la carpeta).
 .PARAMETER TipoEntorno
-    Tipo de entorno virtual: 'venv' o 'conda'.
+    Tipo de entorno virtual: 'venv'. RC70-D: Conda eliminado.
 .PARAMETER InicializarGit
     Inicializa repositorio Git.
 .PARAMETER CrearRepositorioGitHub
@@ -53,9 +53,9 @@ function New-HermesProject {
         [Parameter(Mandatory = $false)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory = $false)]
-        [ValidateSet('venv', 'conda')]
-        [string]$TipoEntorno = 'venv',
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('venv')]
+    [string]$TipoEntorno = 'venv',
 
         [Parameter(Mandatory = $false)]
         [switch]$InicializarGit,
@@ -148,7 +148,7 @@ function New-HermesProject {
                 } catch { $subscription = 'unknown' }
 
                 _Write-AzureHistory -Action 'ProjectCreate' `
-                    -Subscription ($subscription ?? 'unknown') `
+                    -Subscription $(if ($subscription) { $subscription } else { 'unknown' }) `
                     -Location $azureConfig.Location `
                     -ResourceGroupAplicaciones $azureConfig.ResourceGroupAplicaciones `
                     -ResourceGroupPlan $azureConfig.ResourceGroupPlan `
@@ -168,19 +168,17 @@ function New-HermesProject {
         if ($result) {
             Write-Host "[OK] Project '$ProjectName' created successfully." -ForegroundColor Green
 
-            # Create venv if requested
+            # RC70-D: Usar Runtime Hermes Enterprise (no crear .venv local)
             if ($TipoEntorno -eq 'venv') {
-                $provider = New-EnvironmentProvider -Id (New-Guid) -Name "env-$ProjectName" -Version '1.0.0' -ProviderType 'VenvEnvironment'
-                $venvResult = New-VenvEnvironment -Provider $provider -Name $Name -PythonVersion $PythonVersion -ProjectName $ProjectName
-                if ($venvResult) {
-                    Write-Host "[OK] Virtual environment created at $(Join-Path $Name '.venv')" -ForegroundColor Green
+                $pythonConfig = $null
+                $pythonConfigPath = Join-Path $PSScriptRoot "..\..\..\..\config\Hermes.Python.json"
+                if (Test-Path $pythonConfigPath) {
+                    $pythonConfig = Get-Content $pythonConfigPath -Raw | ConvertFrom-Json
+                    Write-Host "[OK] Runtime Hermes Enterprise configurado: $($pythonConfig.RutaPython)" -ForegroundColor Green
+                    Write-Host "[INFO] El proyecto usara el Runtime compartido. No se crea .venv local." -ForegroundColor Cyan
+                } else {
+                    Write-Warning "[Hermes] config/Hermes.Python.json no encontrado. Ejecute Install-HermesPythonRuntime.ps1"
                 }
-            }
-
-            # Create environment.yml for conda
-            if ($TipoEntorno -eq 'conda') {
-                _Create-EnvYml -Name $Name -EnvironmentName $ProjectName -PythonVersion $PythonVersion
-                Write-Host "[OK] environment.yml created for conda environment '$ProjectName'" -ForegroundColor Green
             }
 
             # Create basic requirements.txt

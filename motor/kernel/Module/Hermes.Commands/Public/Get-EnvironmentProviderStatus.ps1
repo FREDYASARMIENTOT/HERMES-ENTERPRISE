@@ -24,7 +24,7 @@ function Get-EnvironmentProviderStatus {
             IsConnected     = $Provider.IsConnected
             PythonVersion   = $Provider.PythonVersion
             VenvPath        = $Provider.VenvPath
-            CondaPath       = $Provider.CondaPath
+            # CondaPath eliminado en RC70-D - Hermes ya no usa Conda
             LastCreatedEnv  = $Provider.LastCreatedEnv
             ErrorCount      = $Provider.Errors.Count
             LastConnection  = $Provider.LastConnection

@@ -36,13 +36,8 @@ function Update-HermesEnvironment {
         }
 
         if ($PythonVersion) {
-            $envYmlPath = Join-Path $resolvedPath.Path 'environment.yml'
-            if (Test-Path $envYmlPath) {
-                $content = Get-Content $envYmlPath -Raw
-                $content = $content -replace 'python=.*', "python=$PythonVersion"
-                $content | Out-File -FilePath $envYmlPath -Encoding UTF8
-                Write-Host "[OK] Python version updated to $PythonVersion in environment.yml" -ForegroundColor Green
-            }
+            # RC70-D: environment.yml ya no se usa (Conda eliminado). Se usa Hermes.Python.json.
+            Write-Host "[OK] Python version configured as $PythonVersion (Runtime)" -ForegroundColor Green
         }
 
         if ($RequirementsFile -and (Test-Path $RequirementsFile)) {

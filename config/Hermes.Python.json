@@ -1,0 +1,9 @@
+{
+    "VersionPython": "3.14",
+    "RutaEntornoVirtual": "D:\\HermesRuntime\\Environments\\HermesEnterprise",
+    "RutaPython": "D:\\HermesRuntime\\Environments\\HermesEnterprise\\Scripts\\python.exe",
+    "RutaPip": "D:\\HermesRuntime\\Environments\\HermesEnterprise\\Scripts\\pip.exe",
+    "ArchivoRequirements": "Hermes.Web/requirements.txt",
+    "FechaCreacion": "2026-08-07",
+    "VersionConfiguracion": "2.0.0"
+}

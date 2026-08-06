@@ -1,9 +1,0 @@
-Invoke-ScriptAnalyzer : No se encuentra la ruta de acceso 'C:\temp\_test_impl.ps1' porque no existe.
-En l¡nea: 1 Car cter: 1
-+ Invoke-ScriptAnalyzer -Path C:\temp\_test_impl.ps1 -Severity Warning
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (C:\temp\_test_impl.ps1:String) [Invoke-ScriptAnalyzer], ItemNotFoundExc 
-   eption
-    + FullyQualifiedErrorId : PathNotFound,Microsoft.Windows.PowerShell.ScriptAnalyzer.Commands.InvokeScriptAnalyzerCo 
-   mmand
- 

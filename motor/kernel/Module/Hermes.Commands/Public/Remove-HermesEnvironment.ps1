@@ -2,7 +2,7 @@
 .SYNOPSIS
     Elimina el entorno virtual de un proyecto Hermes.
 .DESCRIPTION
-    Elimina el entorno virtual (venv/conda) asociado al proyecto.
+    Elimina el entorno virtual (venv) asociado al proyecto. RC70-D: Conda eliminado.
     Función canónica (RC63).
 .PARAMETER ProjectPath
     Ruta del proyecto cuyo entorno se eliminará.
@@ -38,10 +38,6 @@ function Remove-HermesEnvironment {
             Write-Host "[WARN] No virtual environment found at: $venvPath" -ForegroundColor Yellow
         }
 
-        $envYmlPath = Join-Path $resolvedPath.Path 'environment.yml'
-        if (Test-Path $envYmlPath) {
-            Remove-Item -Path $envYmlPath -Force
-            Write-Host "[OK] environment.yml removed." -ForegroundColor Green
-        }
+        # RC70-D: environment.yml ya no se usa (Conda eliminado)
     }
 }

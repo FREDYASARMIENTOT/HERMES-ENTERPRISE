@@ -18,7 +18,43 @@
 .OUTPUTS
     string
 .NOTES
-    Definida en Private/AzureConfiguration.ps1
+    RC70-D: Migrado desde Private/AzureConfiguration.ps1 a Public/
 #>
-# La implementación real está en Private/AzureConfiguration.ps1
-# Este archivo existe para que el módulo exporte la función automáticamente.
+function Resolve-HermesAppServicePlanId {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ResourceGroupPlan,
+
+        [Parameter(Mandatory = $true)]
+        [string]$AppServicePlan
+    )
+
+    Write-Host "[..] Resolving App Service Plan ResourceId..." -ForegroundColor Yellow
+    Write-Host "     Resource Group: $ResourceGroupPlan" -ForegroundColor Gray
+    Write-Host "     Plan Name     : $AppServicePlan" -ForegroundColor Gray
+
+    try {
+        $result = & az appservice plan show `
+            --resource-group $ResourceGroupPlan `
+            --name $AppServicePlan `
+            --query id `
+            --output tsv 2>&1
+
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrEmpty($result)) {
+            Write-Error "Failed to resolve App Service Plan '$AppServicePlan' in resource group '$ResourceGroupPlan'. Verify the plan exists and you have permission to access it."
+            Write-Host "     az exit code: $LASTEXITCODE" -ForegroundColor Red
+            Write-Host "     az output   : $result" -ForegroundColor Red
+            return $null
+        }
+
+        $resourceId = $result.Trim()
+        Write-Host "[OK] ResourceId: $resourceId" -ForegroundColor Green
+        return $resourceId
+    }
+    catch {
+        Write-Error "Failed to resolve App Service Plan ResourceId: $_"
+        return $null
+    }
+}

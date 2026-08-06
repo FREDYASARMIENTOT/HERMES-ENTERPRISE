@@ -16,7 +16,44 @@
 .OUTPUTS
     PSCustomObject
 .NOTES
-    Definida en Private/AzureConfiguration.ps1
+    RC70-D: Migrado desde Private/AzureConfiguration.ps1 a Public/
 #>
-# La implementación real está en Private/AzureConfiguration.ps1
-# Este archivo existe para que el módulo exporte la función automáticamente.
+function Get-HermesAzureConfiguration {
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$Path
+    )
+
+    if ($Path) {
+        if (-not (Test-Path $Path)) {
+            Write-Error "Azure configuration file not found: $Path"
+            return $null
+        }
+        try {
+            $raw = Get-Content -Path $Path -Raw -ErrorAction Stop
+            $parsed = $raw | ConvertFrom-Json -ErrorAction Stop
+            $azure = $parsed.Azure
+            if (-not $azure) {
+                Write-Error "Invalid Azure configuration: missing 'Azure' root key"
+                return $null
+            }
+            return [PSCustomObject]@{
+                PSTypeName                = 'Hermes.AzureConfiguration'
+                Location                  = $azure.Location
+                ResourceGroupAplicaciones = $azure.ResourceGroupAplicaciones
+                ResourceGroupPlan         = $azure.ResourceGroupPlan
+                AppServicePlan            = $azure.AppServicePlan
+                StorageAccount            = if ($azure.PSObject.Properties.Name -contains 'StorageAccount') { $azure.StorageAccount } else { '' }
+                UseSharedInfrastructure   = [bool]$azure.UseSharedInfrastructure
+            }
+        }
+        catch {
+            Write-Error "Failed to parse Azure configuration: $_"
+            return $null
+        }
+    }
+
+    return _Read-AzureConfiguration
+}

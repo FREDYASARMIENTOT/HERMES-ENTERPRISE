@@ -1,7 +1,83 @@
 # CHANGELOG
 
 ## Sprint History
+- A.29: RC72 — Prueba Integral de Aceptación "Crear-HermesProyecto"
+- A.28: Quality & CI — RC71-B
+- A.27: Auditoría de deuda técnica RC71-A
 - A.26: Memoria persistente y normalización documental
+
+## RC71-B — Quality & CI Execution (2026-08-07)
+
+### Added
+- `.github/workflows/ci.yml` — CI/CD pipeline with 4 jobs: Python validation, PowerShell validation, documentation validation, deploy check
+- `docs/SmokeTest_RC71.md` — 9-phase smoke test plan covering Runtime Python, dependencies, backend imports, uvicorn, landing page, API endpoints, documentation, CI/CD, and Azure App Service
+- `docs/QualityReport_RC71.md` — Quality report documenting all changes, eliminated packages, risks, and next steps
+- PSScriptAnalyzer suppression: `gui` pseudo-commandlet excluded from Verb-Noun checks in `PSScriptAnalyzerSettings.psd1`
+- 8 dependencies now in `Hermes.Web/requirements.txt` (was 13): `fastapi>=0.110.0`, `uvicorn[standard]>=0.30.0`, `pydantic>=2.7.0`, `jinja2>=3.1.0`, `python-dotenv>=1.0.0`, `gunicorn>=22.0.0` (for Azure Linux), `pytest>=8.0.0`, `pytest-asyncio>=0.24.0`
+
+### Changed
+- **`Hermes.Web/requirements.txt`** — Auditado: eliminados `aiofiles`, `python-multipart`, `pydantic-settings`, `httpx`, `pyyaml`, `cryptography`. Agregados `python-dotenv`, `gunicorn`, `pytest`, `pytest-asyncio`. Ahora contiene SOLO dependencias reales con uso comprobado en código
+- **`requirements.txt` (raíz)** — Ahora delega exclusivamente en `Hermes.Web/requirements.txt` con `-r`
+- **`PSScriptAnalyzerSettings.psd1`** — Excluir `gui` (pseudo-commandlet) de reglas Verb-Noun; eliminar advertencias falsas positivas
+- Index.html — Eliminada referencia a `framework` en favicon (no existe); eliminados imports sin usar (`pathlib`, `json`) de `main.py`
+
+### Removed
+- `$null` (archivo huérfano en raíz del proyecto)
+- `temp_analysis.txt` (archivo temporal de auditoría)
+- Paquetes sin uso real en código: `aiofiles`, `python-multipart`, `pydantic-settings`, `httpx`, `pyyaml`, `cryptography`
+- Código comentado en `index.html` (referencia a favicon framework)
+- Imports no utilizados en `main.py`: `pathlib`, `json`
+
+## RC71-A — Technical Debt Audit (2026-08-05)
+
+### Added
+- `docs/TechnicalDebt_RC71.md` — Comprehensive technical debt audit report covering 23 Python files, ~80+ PowerShell cmdlets, Azure deployment, CI/CD, testing, and quality tooling
+- FASE 1: Full audit of all imports — identified `sys.path.insert`, `MetaPathFinder`, `HermesWebPackageLoader`, duplicated subprocess logic, circular import risks, dead code, stub endpoints
+- FASE 2: Risk classification — 6 critical, 12 high, 18 medium, 25 low findings with impact/probability/complexity scoring
+- FASE 3: Hermes.Web vs Hermes/Web/ migration study — recommends maintaining MetaPathFinder for RC71, deferring directory restructure to RC72
+- FASE 4: pyproject.toml evaluation — recommends migration in RC72 when test suite and CI/CD are established
+- FASE 5: Dependency classification — identified 5 unnecessary packages in requirements.txt (httpx, aiofiles, python-multipart, pydantic-settings, gunicorn); proposed 4-category split (runtime, dev, test, azure)
+- FASE 6: Quality tooling proposal — ruff, black, isort, mypy, bandit, pip-audit with recommended configurations
+- FASE 7: Testing gap analysis — 0 Python tests, only 85 Pester tests; proposed complete pytest + Pester suite structure
+- FASE 8: PowerShell audit — Verb-Noun compliance verified (all 16 cmdlets approved); identified missing tests for ~40 cmdlets
+- FASE 9: Azure deployment analysis — verified startup.sh uses `python -m` patterns; proposed environment variables for App Service
+- FASE 10: CI/CD pipeline design — full GitHub Actions workflow with quality, test, build, and Azure deploy stages with quality gates
+- FASE 11: Documentation audit — verified RC70-D docs are current; identified gaps for RC72
+
+### Changed
+- **No source code modifications** — RC71-A is an audit-only release
+- **Backlog** defined with 16 prioritized tasks across 4 priority levels (CRITICAL, HIGH, MEDIUM, LOW)
+
+### Removed
+- No files removed
+
+## RC70-D — Python Runtime Hermes Enterprise (2026-08-05)
+
+### Added
+- `config/Hermes.Python.json` — canonical configuration for the Hermes Enterprise Python Runtime
+- `Install-HermesPythonRuntime.ps1` — script to create the shared venv at `D:\HermesRuntime\Environments\HermesEnterprise\`
+- `Invoke-HermesBootstrapValidacionRuntime` — new BootstrapWizard phase for Runtime validation (RC70-D)
+- Pester tests for Python Runtime validation (`pruebas/unitarias/Hermes.Runtime.RC70-D.Tests.ps1`)
+
+### Changed
+- **Architecture**: Migrated from Conda/global Python to a single shared `venv` at `D:\HermesRuntime\Environments\HermesEnterprise\`
+- **`New-HermesProject`**: Removed `conda` from `ValidateSet(TipoEntorno)`, removed `environment.yml` creation, changed default `PythonVersion` to `3.14`, uses Runtime from `Hermes.Python.json` instead of local `.venv`
+- **`Hermes.Web/requirements.txt`**: Updated all dependency versions to cp314 wheels (Python 3.14+); removed `sqlite3>=2.6.0` (built-in), removed duplicate `httpx`, added `gunicorn` in main section
+- **`requirements.txt` (root)**: Updated to reference `Hermes.Web/requirements.txt` as source of truth; removed `pyyaml` dependency
+- **`config/Hermes.Python.json`**: Now points to Python 3.14 runtime at `D:\HermesRuntime\Environments\HermesEnterprise`
+- **`VerifyEnvironment.ps1`**: Eliminated all `where python`, `Get-Command python`, PATH, Conda, Miniconda, Anaconda lookups. Now reads exclusively from `Hermes.Python.json`
+- **`BootstrapWizard.ps1`**: Added `Invoke-HermesBootstrapValidacionRuntime` phase that validates Hermes.Python.json, python.exe, pip.exe, venv, pyvenv.cfg, requirements.txt
+- **`startup.sh`**: Azure App Service startup now uses `python3 -m pip` / `python -m gunicorn` instead of raw `pip`/`gunicorn`
+- **`requirements.txt` (root)**: Now references `Hermes.Web/requirements.txt` only; removed `pyyaml` dependency
+- **`Hermes.Web/requirements.txt`**: Removed `sqlite3>=2.6.0` (built-in), removed duplicate `httpx`, reordered `gunicorn` to main section
+
+### Removed
+- Conda references across the entire project (Conda, Miniconda, Anaconda)
+- `environment.yml` file and all environment.yml generation
+- `where python` / `Get-Command python` from VerifyEnvironment.ps1
+- Local `.venv` creation per project (uses shared Runtime instead)
+- Dependence on Windows PATH for Python discovery
+- Dependence on global Python installation
 
 ## RC69 — Azure Configuration Canonical (2026-08-05)
 

@@ -1,0 +1,22 @@
+# ====================================================================
+# startup.txt — Configuración de inicio para Azure App Service
+# ====================================================================
+# RC70-D: Migrado a Runtime Hermes Enterprise (venv compartido)
+# ====================================================================
+# Para Azure App Service (Linux):
+#   Configuración → Stack: Python 3.12
+#   Configuración → Startup Command: bash Hermes.Web/deployment/startup.sh
+#
+# Variables de entorno requeridas:
+#   HERMES_WEB_PORT = 8000
+#   HERMES_WEB_LOG_LEVEL = info
+#   AZURE_CLIENT_ID = <managed-identity-client-id>
+#   AZURE_TENANT_ID = <tenant-id>
+#   AZURE_SUBSCRIPTION_ID = <subscription-id>
+#   HERMES_AZURE_RESOURCE_GROUP = rg-hermes-enterprise
+#   HERMES_AZURE_APP_SERVICE_PLAN = asp-hermes-enterprise
+#   HERMES_AZURE_LOCATION = eastus
+#
+# Startup Command:
+#   Hermes.Web/deployment/startup.sh
+# ====================================================================

@@ -4,10 +4,29 @@ No exportadas. Solo uso interno.
 #>
 
 function _Test-PythonAvailable {
+    <#
+    .SYNOPSIS
+        Verifica que el Runtime Python Hermes Enterprise esté disponible.
+        NO busca en PATH. Usa exclusivamente config/Hermes.Python.json (RC70-D).
+    #>
     try {
-        $v = & python --version 2>&1
+        $configPath = Join-Path $PSScriptRoot "..\..\..\..\config\Hermes.Python.json"
+        if (-not (Test-Path $configPath)) {
+            Write-Verbose "[Hermes] config/Hermes.Python.json no encontrado en: $configPath"
+            return $false
+        }
+        $config = Get-Content $configPath -Raw | ConvertFrom-Json
+        if (-not $config.RutaPython) { return $false }
+        if (-not (Test-Path $config.RutaPython)) {
+            Write-Verbose "[Hermes] Python Runtime no encontrado en: $($config.RutaPython)"
+            return $false
+        }
+        $v = & $config.RutaPython --version 2>&1
         return ($LASTEXITCODE -eq 0) -and (-not [string]::IsNullOrEmpty($v))
-    } catch { return $false }
+    } catch {
+        Write-Verbose "[Hermes] Error verificando Python Runtime: $_"
+        return $false
+    }
 }
 
 function _Test-GitAvailable {
@@ -70,13 +89,23 @@ function _Test-ValidPath {
 }
 
 function _Get-PythonVersion {
+    <#
+    .SYNOPSIS
+        Obtiene la versión del Runtime Python Hermes Enterprise desde config/Hermes.Python.json (RC70-D).
+        NO busca en PATH. Usa exclusivamente la ruta configurada.
+    #>
     try {
-        $v = & python --version 2>&1
+        $configPath = Join-Path $PSScriptRoot "..\..\..\..\config\Hermes.Python.json"
+        if (-not (Test-Path $configPath)) { return $null }
+        $config = Get-Content $configPath -Raw | ConvertFrom-Json
+        if (-not $config.RutaPython) { return $null }
+        if (-not (Test-Path $config.RutaPython)) { return $null }
+        $v = & $config.RutaPython --version 2>&1
         if ($LASTEXITCODE -eq 0 -and $v) {
             return ($v -replace 'Python ', '').Trim()
         }
     } catch {
-        Write-Verbose "Python not found: $_"
+        Write-Verbose "[Hermes] Error obteniendo versión Python: $_"
     }
     return $null
 }

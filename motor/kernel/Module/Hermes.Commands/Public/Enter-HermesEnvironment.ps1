@@ -2,7 +2,7 @@
 .SYNOPSIS
     Activa el entorno virtual de un proyecto Hermes.
 .DESCRIPTION
-    Activa el entorno virtual (venv/conda) del proyecto especificado en la sesión actual.
+    Activa el entorno virtual (venv) del proyecto especificado. RC70-D: Conda eliminado.
     Función canónica (RC63).
 .PARAMETER ProjectPath
     Ruta del proyecto cuyo entorno virtual se activará.

@@ -1,4 +1,4 @@
-# Architecture Overview
+# Architecture Overview (RC70-D)
 
 ## High-Level Architecture
 
@@ -7,7 +7,7 @@
 |                        USER INTERFACE                               |
 |              PowerShell CLI / VS Code Integration                   |
 +--------------------------------------------------------------------+
-                              |
+                               |
 +--------------------------------------------------------------------+
 |                    PUBLIC API LAYER                                 |
 |                Hermes.Commands (21 commands)                        |
@@ -15,7 +15,7 @@
 |  Project Mgmt  |  Environment  |  Workspace  |  Utilities          |
 |  (8 commands)  |  (6 commands)  |  (3 cmds)   |  (4 commands)       |
 +--------------------------------------------------------------------+
-                              |
+                               |
 +--------------------------------------------------------------------+
 |                    KERNEL LAYER                                     |
 |                                                                     |
@@ -33,7 +33,7 @@
 |  | - Workspace       |                                              |
 |  +-------------------+                                              |
 +--------------------------------------------------------------------+
-                              |
+                               |
 +--------------------------------------------------------------------+
 |                    PERSISTENCE LAYER                                |
 |                                                                     |
@@ -57,7 +57,7 @@ motor/kernel/
   Hermes.Commands.psm1          -- Public command implementations
   Providers/
     ProviderBase.ps1            -- Base provider class
-    EnvironmentProvider.ps1     -- venv/Conda environment management
+    EnvironmentProvider.ps1     -- venv environment management
     FileSystemProvider.ps1      -- File system operations
     GitHubProvider.ps1          -- GitHub API integration
     CapabilityProvider.ps1      -- Capability detection
@@ -73,6 +73,35 @@ motor/kernel/
     RC56-EnterprisePipeline.ps1 -- RC56 pipeline orchestration
     PipelineOrchestrator.ps1    -- Pipeline execution engine
 ```
+
+## Python Runtime Architecture (RC70-D)
+
+```
+D:\HermesRuntime\                              ← Hermes Python Runtime root
+└── Environments\
+    └── HermesEnterprise\                      ← Único Runtime oficial
+        ├── Scripts\                           ← python.exe, pip.exe, activate
+        ├── Lib\                               ← site-packages (FastAPI, Uvicorn, etc.)
+        ├── Include\                           ← C headers
+        └── pyvenv.cfg                         ← Venv configuration
+
+config/Hermes.Python.json                      ← Configuración canónica
+{
+    "VersionPython": "3.14",
+    "RutaEntornoVirtual": "D:\\HermesRuntime\\Environments\\HermesEnterprise",
+    "RutaPython": "D:\\HermesRuntime\\Environments\\HermesEnterprise\\Scripts\\python.exe",
+    "RutaPip": "D:\\HermesRuntime\\Environments\\HermesEnterprise\\Scripts\\pip.exe",
+    "ArchivoRequirements": "requirements.txt"
+}
+```
+
+**Principios:**
+- ✓ Único Runtime centralizado (no .venv por proyecto)
+- ✓ Sin Conda, Sin Miniconda, Sin Anaconda
+- ✓ Sin dependencia de Python global
+- ✓ Sin búsqueda por PATH
+- ✓ Todos los módulos leen `config/Hermes.Python.json`
+- ✓ FastAPI/Uvicorn ejecutados con `RutaPython -m uvicorn`
 
 ## Key Design Principles
 
@@ -112,8 +141,13 @@ Hermes.Commands exports exactly 21 commands, each with:
 User Command --> Hermes.Commands.psm1 --> Provider Layer --> SQLite DB
                     |                           |
                     v                           v
-              Pipeline Orchestrator      File System / GitHub / Conda
+              Pipeline Orchestrator      File System / GitHub / Hermes Runtime
 ```
+
+The Hermes Runtime (`python.exe`) is always resolved from `config/Hermes.Python.json`. All Python operations use:
+- `$RutaPython -m pip install ...`
+- `$RutaPython -m uvicorn ...`
+- `$RutaPython -c "import ..."`
 
 ## Provider Contract
 
@@ -137,3 +171,4 @@ Each provider must implement:
 - GitHub tokens managed via `gh auth`
 - Database access via parameterized SQL
 - PowerShell execution policy respected
+- Python Runtime isolated from system Python

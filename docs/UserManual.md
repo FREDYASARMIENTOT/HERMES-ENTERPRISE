@@ -1,4 +1,4 @@
-# Hermes Enterprise User Manual
+# Hermes Enterprise User Manual (RC70-D)
 
 ## Table of Contents
 
@@ -16,16 +16,19 @@
 
 ## Introduction
 
-Hermes Enterprise is an enterprise-grade PowerShell framework for system automation, project scaffolding, and environment management. It provides a complete workflow for creating, managing, and deploying Python projects with virtual environment support (venv/Conda), Git integration, and GitHub publishing.
+Hermes Enterprise is an enterprise-grade PowerShell framework for system automation, project scaffolding, and environment management. It provides a complete workflow for creating, managing, and deploying Python projects with a centralized Hermes Python Runtime (venv-based), Git integration, and GitHub publishing.
+
+> **Architecture Update (RC70-D):** Hermes Enterprise now uses a **single centralized Python Runtime** at `D:\HermesRuntime\Environments\HermesEnterprise\`. All Python execution uses the interpreter configured in `config/Hermes.Python.json`. No Conda, no global Python, no PATH dependency.
 
 ## System Requirements
 
 - **PowerShell**: Version 5.0 or higher (PowerShell 7 recommended)
-- **Python**: Version 3.8 or higher
+- **Hermes Python Runtime**: Installed via `Install-HermesPythonRuntime.ps1`
 - **Git**: Version 2.30 or higher
 - **GitHub CLI**: Version 2.0 or higher (for GitHub features)
 - **VS Code**: Latest version (optional, for workspace features)
-- **SQLite**: Version 3.x (included with Windows 10+)
+
+> **Note:** Python is bundled in the Hermes Python Runtime. No separate Python installation is required.
 
 ## Installation
 
@@ -36,6 +39,7 @@ See [Installation Guide](Installation.md) for detailed instructions.
 ```powershell
 git clone https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git
 cd HERMES-ENTERPRISE
+.\Install-HermesPythonRuntime.ps1
 Import-Module .\motor\kernel\Hermes.Commands.psd1 -Force
 ```
 
@@ -64,20 +68,14 @@ Get-Help Get-HermesProyecto -Examples
 
 ### Create a New Project
 
-Creates a complete project structure with optional Git initialization, GitHub repository, and virtual environment.
+Creates a complete project structure with optional Git initialization and GitHub repository.
 
 ```powershell
 # Basic project
 Crear-HermesProyecto -NombreProyecto "MiProyecto"
 
-# Project with Conda environment
-Crear-HermesProyecto -NombreProyecto "MiProyecto" -TipoEntorno "conda"
-
 # Full setup with Git and GitHub
 Crear-HermesProyecto -NombreProyecto "MiProyecto" -InicializarGit -CrearRepositorioGitHub
-
-# Custom Python version
-Crear-HermesProyecto -NombreProyecto "MiProyecto" -PythonVersion "3.12"
 
 # Open in VS Code after creation
 Crear-HermesProyecto -NombreProyecto "MiProyecto" -AbrirVSCode
@@ -110,7 +108,7 @@ Publicar-HermesProyecto -ProjectPath "D:\Proyectos\MiProyecto" -GitHubUser "FRED
 
 ### Close a Project
 
-Closes the project by cleaning temporary files and the virtual environment.
+Closes the project by cleaning temporary files.
 
 ```powershell
 Cerrar-HermesProyecto -ProjectPath "D:\Proyectos\MiProyecto"
@@ -139,43 +137,29 @@ Get-HermesProyectos -WorkspaceRoot "C:\Users\MiUser\Projects"
 
 ## Environment Management
 
-### Create Virtual Environment (venv)
+All environment operations use the **Hermes Python Runtime** at `D:\HermesRuntime\Environments\HermesEnterprise\`.
+
+### Create Project Environment
 
 ```powershell
-New-HermesVenv -ProjectPath "D:\Proyectos\MiProyecto" -PythonVersion "3.12"
+New-HermesEnvironment -NombreProyecto "MiProyecto" -TipoEntorno "venv"
 ```
 
-### Activate venv
+Creates a `.venv` symlink/copy inside the project referencing the Hermes Python Runtime.
+
+### Activate Environment
 
 Returns the activation command for PowerShell:
 
 ```powershell
-$activateCmd = Enter-HermesVenv -ProjectPath "D:\Proyectos\MiProyecto"
+$activateCmd = Enter-HermesEnvironment -NombreProyecto "MiProyecto"
 Invoke-Expression $activateCmd
 ```
 
-### Remove venv
+### Remove Environment
 
 ```powershell
-Remove-HermesVenv -ProjectPath "D:\Proyectos\MiProyecto"
-```
-
-### Create Conda Environment
-
-```powershell
-New-HermesConda -ProjectPath "D:\Proyectos\MiProyecto" -EnvironmentName "mi-entorno" -PythonVersion "3.12"
-```
-
-### Activate Conda Environment
-
-```powershell
-Enter-HermesConda -EnvironmentName "mi-entorno"
-```
-
-### Remove Conda Environment
-
-```powershell
-Remove-HermesConda -EnvironmentName "mi-entorno"
+Remove-HermesEnvironment -NombreProyecto "MiProyecto"
 ```
 
 ## Workspace Management
@@ -240,6 +224,8 @@ New-HermesDocumentacion -ProjectPath "D:\Proyectos\MiProyecto" -ProjectName "MiP
 Test-HermesPython
 ```
 
+Verifies that the Hermes Python Runtime is properly configured and all dependencies are installed.
+
 ## Complete Workflow Example
 
 ```powershell
@@ -252,8 +238,8 @@ Crear-HermesProyecto -NombreProyecto "DemoProject" -InicializarGit
 # 3. Generate documentation
 New-HermesDocumentacion -ProjectPath "D:\Proyectos\DemoProject" -ProjectName "DemoProject"
 
-# 4. Create environment
-New-HermesVenv -ProjectPath "D:\Proyectos\DemoProject"
+# 4. Create environment (uses Hermes Python Runtime)
+New-HermesEnvironment -NombreProyecto "DemoProject" -TipoEntorno "venv"
 
 # 5. Commit
 New-HermesCommit -ProjectPath "D:\Proyectos\DemoProject" -Mensaje "Initial setup"

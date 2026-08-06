@@ -8,12 +8,12 @@ Stable Public API — Professional PowerShell Module
 
     # Module identifier
     RootModule           = 'Hermes.Commands.psm1'
-    ModuleVersion        = '63.0.0'
+    ModuleVersion        = '70.0.0'
     GUID                 = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
     Author               = 'Fredy Alejandro Sarmiento Torres'
     CompanyName          = 'Hermes Enterprise'
     Copyright            = '(c) Hermes Enterprise. All rights reserved.'
-    Description          = 'Hermes Enterprise — Global PowerShell Module. Proporciona cmdlets profesionales para gestionar proyectos Hermes: creacion, apertura, cierre, eliminacion, publicacion, actualizacion, clonacion, importacion, exportacion, respaldo, restauracion, renombrado, entornos virtuales (venv/conda), workspaces, configuracion y diagnostico.'
+    Description          = 'Hermes Enterprise — Global PowerShell Module. Proporciona cmdlets profesionales para gestionar proyectos Hermes: creacion, apertura, cierre, eliminacion, publicacion, actualizacion, clonacion, importacion, exportacion, respaldo, restauracion, renombrado, entornos virtuales (venv), workspaces, configuracion y diagnostico. RC70-D: Conda eliminado, stubs Public/ corregidos, AzureConfiguration migrado, Runtime Python unificado.'
 
     # Minimum PowerShell version (PowerShell 7+)
     PowerShellVersion    = '7.0'
@@ -22,6 +22,8 @@ Stable Public API — Professional PowerShell Module
     CompatiblePSEditions = @('Core', 'Desktop')
 
     # Functions to export — 28 commands (API pública estable)
+    # RC70-D: Get-HermesAzureConfiguration, Set-HermesAzureConfiguration,
+    #         Resolve-HermesAppServicePlanId migrados de Private/ a Public/
     FunctionsToExport = @(
         # Proyecto (13)
         'New-HermesProject',
@@ -169,7 +171,7 @@ Stable Public API — Professional PowerShell Module
     # Private data
     PrivateData = @{
         PSData = @{
-            Tags         = @('Hermes', 'Enterprise', 'Project', 'Python', 'Venv', 'Conda', 'Git', 'GitHub', 'DevOps', 'PowerShell')
+            Tags         = @('Hermes', 'Enterprise', 'Project', 'Python', 'Venv', 'Git', 'GitHub', 'DevOps', 'PowerShell')
             ProjectUri   = 'https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE'
             LicenseUri   = 'https://opensource.org/licenses/MIT'
             IconUri      = ''

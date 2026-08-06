@@ -180,13 +180,115 @@ function Invoke-HermesBootstrapWizardNombre {
     } while ($true)
 }
 
+function Invoke-HermesBootstrapValidacionRuntime {
+    <#
+    .SYNOPSIS
+        Fase de validacion del Runtime Python Hermes Enterprise (RC70-D).
+    .DESCRIPTION
+        Verifica:
+          - Hermes.Python.json existe en config/
+          - python.exe existe en la ruta especificada
+          - pip.exe existe en la ruta especificada
+          - El entorno virtual existe
+          - pyvenv.cfg existe
+          - requirements.txt existe
+        NO intenta reparar automaticamente.
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param()
+
+    Write-Host "`n+-- VALIDACION RUNTIME PYTHON (RC70-D) ----------------------+" -Fo Cyan
+    Write-Host "| Verificando el entorno virtual Hermes Enterprise...          |" -Fo Cyan
+    Write-Host "+-------------------------------------------------------------+`n" -Fo Cyan
+
+    $errores = [System.Collections.ArrayList]::new()
+    $configPath = Join-Path $PSScriptRoot "..\..\..\config\Hermes.Python.json"
+
+    # 1. Verificar que Hermes.Python.json existe
+    if (-not (Test-Path $configPath)) {
+        $null = $errores.Add("config\Hermes.Python.json no encontrado en: $configPath")
+    } else {
+        Write-Host "[OK] config/Hermes.Python.json encontrado." -Fo Green
+        $config = Get-Content $configPath -Raw | ConvertFrom-Json
+
+        # 2. Verificar python.exe
+        if (Test-Path $config.RutaPython) {
+            try {
+                $ver = & $config.RutaPython --version 2>&1
+                Write-Host "[OK] Python Runtime: $($ver.Trim())" -Fo Green
+            } catch {
+                $null = $errores.Add("python.exe no ejecutable en: $($config.RutaPython)")
+            }
+        } else {
+            $null = $errores.Add("python.exe no encontrado en: $($config.RutaPython)")
+        }
+
+        # 3. Verificar pip.exe
+        if (Test-Path $config.RutaPip) {
+            try {
+                $ver = & $config.RutaPip --version 2>&1
+                Write-Host "[OK] Pip Runtime: $($ver.Trim())" -Fo Green
+            } catch {
+                $null = $errores.Add("pip.exe no ejecutable en: $($config.RutaPip)")
+            }
+        } else {
+            $null = $errores.Add("pip.exe no encontrado en: $($config.RutaPip)")
+        }
+
+        # 4. Verificar entorno virtual existe
+        if (Test-Path $config.RutaEntornoVirtual) {
+            Write-Host "[OK] Entorno virtual existe: $($config.RutaEntornoVirtual)" -Fo Green
+        } else {
+            $null = $errores.Add("Entorno virtual no encontrado en: $($config.RutaEntornoVirtual)")
+        }
+
+        # 5. Verificar pyvenv.cfg
+        $pyvenv = Join-Path $config.RutaEntornoVirtual "pyvenv.cfg"
+        if (Test-Path $pyvenv) {
+            Write-Host "[OK] pyvenv.cfg encontrado." -Fo Green
+        } else {
+            $null = $errores.Add("pyvenv.cfg no encontrado en el entorno virtual.")
+        }
+
+        # 6. Verificar requirements.txt
+        $reqsPath = Join-Path $PSScriptRoot "..\..\..\$($config.ArchivoRequirements)"
+        if (Test-Path $reqsPath) {
+            Write-Host "[OK] $($config.ArchivoRequirements) encontrado." -Fo Green
+        } else {
+            $null = $errores.Add("$($config.ArchivoRequirements) no encontrado en: $reqsPath")
+        }
+    }
+
+    if ($errores.Count -gt 0) {
+        Write-Host "`n[X] ERRORES DE VALIDACION DEL RUNTIME PYTHON:" -Fo Red
+        foreach ($err in $errores) {
+            Write-Host "    - $err" -Fo Red
+        }
+        Write-Host "`n[!] Ejecute Install-HermesPythonRuntime.ps1 para crear el Runtime." -Fo Magenta
+        Write-Host "    Luego ejecute este wizard nuevamente." -Fo Magenta
+        return [PSCustomObject][ordered]@{
+            PSTypeName = 'Hermes.Bootstrap.RuntimeValidationResult'
+            EsValido   = $false
+            Errores    = $errores.ToArray()
+        }
+    }
+
+    Write-Host "`n[OK] Runtime Python Hermes Enterprise validado correctamente." -Fo Green
+    return [PSCustomObject][ordered]@{
+        PSTypeName = 'Hermes.Bootstrap.RuntimeValidationResult'
+        EsValido   = $true
+        Errores    = @()
+    }
+}
+
 function Invoke-HermesBootstrapWizard {
     <#
     .SYNOPSIS
-        Wizard Sprint 2: recoleccion minima del nombre.
+        Wizard Sprint 2: recoleccion minima del nombre + validacion Runtime.
     .DESCRIPTION
-        Devuelve un objeto WizardResult. El resto de preguntas
-        pertenecen a sprints posteriores.
+        Devuelve un objeto WizardResult. Incluye validacion del Runtime
+        Python Hermes Enterprise (RC70-D).
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
@@ -194,10 +296,14 @@ function Invoke-HermesBootstrapWizard {
 
     $nombre = Invoke-HermesBootstrapWizardNombre
 
+    # RC70-D: Validacion del Runtime Python
+    $runtimeValidation = Invoke-HermesBootstrapValidacionRuntime
+
     return [PSCustomObject][ordered]@{
-        PSTypeName       = 'Hermes.Bootstrap.WizardResult'
-        NombreProyecto   = $nombre
-        Timestamp        = [datetime]::UtcNow.ToString('o')
-        SprintCompletado = 2
+        PSTypeName          = 'Hermes.Bootstrap.WizardResult'
+        NombreProyecto      = $nombre
+        RuntimeValidation   = $runtimeValidation
+        Timestamp           = [datetime]::UtcNow.ToString('o')
+        SprintCompletado    = 3
     }
 }

@@ -2,7 +2,7 @@
 .SYNOPSIS
     Obtiene información del entorno virtual de un proyecto Hermes.
 .DESCRIPTION
-    Muestra el estado del entorno virtual (venv/conda) de un proyecto.
+    Muestra el estado del entorno virtual (venv) de un proyecto. RC70-D: Conda eliminado.
     Función canónica (RC63).
 .PARAMETER Path
     Ruta del proyecto. Si se omite, usa el directorio actual.

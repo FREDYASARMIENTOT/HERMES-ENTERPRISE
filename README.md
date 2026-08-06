@@ -4,8 +4,17 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 
 ## Status
 
-**RC69 — Azure Infrastructure + Configuration Canonical — 100% Test Coverage**
+**RC71-B — Quality & CI — Technical Debt Reduction**
 
+- **Python Runtime**: Single shared venv at `D:\HermesRuntime\Environments\HermesEnterprise\` (Python 3.14)
+- **Canonical Python Config**: `config/Hermes.Python.json` — source of truth for all Python paths
+- **No Conda**: Conda, Miniconda, Anaconda completely removed
+- **No global Python**: All execution via Runtime venv only (no PATH dependency)
+- **CI/CD Pipeline**: `.github/workflows/ci.yml` — 4 validation jobs (Python, PowerShell, Docs, Deploy)
+- **Quality Report**: `docs/QualityReport_RC71.md` — full audit of all changes
+- **Smoke Test Plan**: `docs/SmokeTest_RC71.md` — 9-phase validation plan
+- **requirements.txt**: Audited from 13→8 real dependencies (removed 6 unused, added 4 needed)
+- **Dead code removed**: orphan files (`$null`, `temp_analysis.txt`), unused imports (`pathlib`, `json`), commented code
 - 28 canonical PowerShell commands in pure English (project lifecycle, workspace, environment, system, + Azure config)
 - 7 Azure providers: Resource Group, App Service Plan, Storage Account, App Insights, Log Analytics, Key Vault, Managed Identity
 - 4 Azure orchestration use cases: Create, Verify, Delete, Export Report
@@ -15,8 +24,16 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 - 86/86 Pester unit tests passing (Pester 3.4.0 compatible)
 - 10+ comprehensive documentation guides
 - 0 PSScriptAnalyzer errors in module and manifest
-- Environment providers: VenvEnvironment and CondaEnvironment
 - SQLite persistence via HermesSQLiteProvider
+
+## Python Runtime Installation
+
+```powershell
+# Install the shared Hermes Python Runtime
+.\Install-HermesPythonRuntime.ps1
+# This creates D:\HermesRuntime\Environments\HermesEnterprise\
+# and installs all dependencies from requirements.txt
+```
 
 ## Quick Start
 
@@ -48,7 +65,7 @@ Get-HermesWorkspace
 ### Project Lifecycle (13)
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `New-HermesProject` | `nhp` | Create new Hermes project with optional venv/conda |
+| `New-HermesProject` | `nhp` | Create new Hermes project (uses shared Runtime, no local .venv) |
 | `Open-HermesProject` | `ohp` | Open project in VS Code |
 | `Close-HermesProject` | `chp` | Close project (cleanup logs, .venv) |
 | `Remove-HermesProject` | `rhp` | Permanently delete project |
@@ -73,7 +90,7 @@ Get-HermesWorkspace
 | Command | Alias | Description |
 |---------|-------|-------------|
 | `Get-HermesEnvironment` | `ghe` | Get environment details |
-| `New-HermesEnvironment` | `nhe` | Create venv/conda environment |
+| `New-HermesEnvironment` | `nhe` | Create environment (venv only; conda removed) |
 | `Enter-HermesEnvironment` | `ehe` | Activate environment |
 | `Update-HermesEnvironment` | `uhe` | Update environment packages |
 | `Remove-HermesEnvironment` | `rhe` | Delete environment |
@@ -89,8 +106,8 @@ Get-HermesWorkspace
 ## Test Results
 
 ```
-Total Tests : 64
-Passed      : 64
+Total Tests : 86
+Passed      : 86
 Failed      : 0
 Pass Rate   : 100%
 ```

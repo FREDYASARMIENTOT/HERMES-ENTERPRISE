@@ -70,25 +70,10 @@ function _Resolve-VenvPath {
     return $null
 }
 
-function _Resolve-CondaPath {
-    $up = (Resolve-Path ~).Path
-    $condaPaths = @(
-        "$up\miniconda3\condabin\conda.bat",
-        "$up\miniconda3\Scripts\conda.exe",
-        "C:\ProgramData\miniconda3\condabin\conda.bat",
-        "C:\Users\fredya.sarmiento\miniconda3\condabin\conda.bat"
-    )
-    foreach ($cp in $condaPaths) {
-        if (Test-Path $cp) { return $cp }
-    }
-    try {
-        $whereResult = where.exe conda 2>$null
-        if ($whereResult) { return $whereResult[0].Trim() }
-    } catch {
-        Write-Verbose "Conda not found via where.exe: $_"
-    }
-    return $null
-}
+# _Resolve-CondaPath eliminada en RC70-D.
+# Hermes Enterprise ya NO utiliza Conda. El Runtime Python se define exclusivamente
+# mediante config/Hermes.Python.json apuntando a D:\HermesRuntime\Environments\HermesEnterprise.
+# NO buscar conda en PATH ni en ubicaciones hardcodeadas.
 
 function _Is-HermesProject {
     param([string]$Path)

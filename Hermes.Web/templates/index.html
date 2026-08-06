@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Enterprise — Portal Web</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --hermes-primary: #0d6efd;
+            --hermes-accent: #6f42c1;
+            --hermes-success: #198754;
+            --hermes-warning: #ffc107;
+            --hermes-danger: #dc3545;
+        }
+        body {
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--hermes-primary), var(--hermes-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card {
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .card-header {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--hermes-primary);
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .metric-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.6);
+        }
+        .footer {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+        }
+        .loading-spinner {
+            display: none;
+        }
+        .error-state {
+            display: none;
+        }
+        .data-loaded .loading-spinner { display: none !important; }
+        .data-loaded .error-state { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark border-bottom border-light border-opacity-10">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-shield-fill-check me-2"></i>Hermes Enterprise
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-primary bg-opacity-25 text-primary status-badge" id="version-badge">v2.0.0</span>
+                <a href="/swagger" class="btn btn-outline-primary btn-sm" target="_blank">
+                    <i class="bi bi-file-earmark-code me-1"></i>Swagger
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold" style="background: linear-gradient(135deg, #0d6efd, #6f42c1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                Portal Web Canónico
+            </h1>
+            <p class="text-secondary">Sistema de Automatización y Gestión de Proyectos Hermes</p>
+        </div>
+
+        <!-- System Status Cards Row -->
+        <div class="row g-3 mb-4" id="system-status">
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                        <div class="metric-value text-success mt-2" id="status-api">OK</div>
+                        <div class="metric-label">API Status</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-database-fill text-info fs-1"></i>
+                        <div class="metric-value text-info mt-2" id="status-db">N/A</div>
+                        <div class="metric-label">SQLite</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-cloud-fill text-primary fs-1"></i>
+                        <div class="metric-value text-primary mt-2" id="status-azure">N/A</div>
+                        <div class="metric-label">Azure</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-git text-warning fs-1"></i>
+                        <div class="metric-value text-warning mt-2" id="status-git">N/A</div>
+                        <div class="metric-label">Git</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints Cards -->
+        <div class="row g-3 mb-4" id="api-endpoints">
+            <div class="col-12">
+                <h5 class="text-light mb-3"><i class="bi bi-hdd-stack me-2"></i>Endpoints de la API</h5>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/version">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/version</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Versión del Sistema</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Commit:</span>
+                                <span id="version-commit" class="text-light">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="text-secondary">Branch:</span>
+                                <span id="version-branch" class="text-light">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="text-secondary">Python:</span>
+                                <span id="version-python" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/proyecto">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/proyecto</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Estado del Proyecto</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="proyecto-estado" class="text-light">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="text-secondary">Raíz:</span>
+                                <span id="proyecto-raiz" class="text-light text-truncate" style="max-width:200px">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/workspace">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/workspace</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Workspace</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="workspace-estado" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/git">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/git</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Git Local</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="git-estado" class="text-light">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="text-secondary">Branch:</span>
+                                <span id="git-branch" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/github">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/github</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">GitHub Remoto</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="github-estado" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/entorno">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/entorno</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Entorno Python</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Python:</span>
+                                <span id="entorno-python" class="text-light">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="text-secondary">Plataforma:</span>
+                                <span id="entorno-plataforma" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/azure">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/azure</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Azure</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="azure-estado" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/sqlite">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/sqlite</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">SQLite</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="sqlite-estado" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/despliegue">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/despliegue</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Despliegue</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="despliegue-estado" class="text-light">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="text-secondary">Plataforma:</span>
+                                <span id="despliegue-plataforma" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/telemetria">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/telemetria</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Telemetría</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="telemetria-estado" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" data-endpoint="/api/bootstrap">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">GET</span>
+                        <span class="endpoint-url">/api/bootstrap</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Bootstrap</h6>
+                        <div class="response-data">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">Estado:</span>
+                                <span id="bootstrap-estado" class="text-light">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Check -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="card" id="health-card">
+                    <div class="card-header">
+                        <i class="bi bi-heart-pulse-fill text-success me-2"></i>Health Check
+                    </div>
+                    <div class="card-body">
+                        <pre id="health-data" class="mb-0 text-light" style="font-size:0.85rem;">Cargando...</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer text-center py-3">
+        <div class="container">
+            <small>&copy; {{ anio_actual }} Hermes Enterprise — v{{ version }} | Backend FastAPI</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function fetchJSON(url) {
+            try {
+                const res = await fetch(url);
+                return await res.json();
+            } catch(e) {
+                return { error: e.message };
+            }
+        }
+
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value || '-';
+        }
+
+        async function loadAll() {
+            // Health
+            const health = await fetchJSON('/health');
+            const healthEl = document.getElementById('health-data');
+            if (healthEl) healthEl.textContent = JSON.stringify(health, null, 2);
+            if (health && health.estado) {
+                setText('status-api', health.estado === 'saludable' ? 'OK' : health.estado);
+            }
+
+            // /api/version
+            const v = await fetchJSON('/api/version');
+            setText('version-commit', v.commit);
+            setText('version-branch', v.branch);
+            setText('version-python', v.python_version);
+            if (v.version) setText('version-badge', 'v' + v.version);
+
+            // /api/proyecto
+            const p = await fetchJSON('/api/proyecto');
+            setText('proyecto-estado', p.estado);
+            setText('proyecto-raiz', p.raiz || '-');
+
+            // /api/workspace
+            const w = await fetchJSON('/api/workspace');
+            setText('workspace-estado', w.estado);
+
+            // /api/git
+            const g = await fetchJSON('/api/git');
+            setText('git-estado', g.estado);
+            setText('git-branch', g.branch);
+            if (g.estado !== '-') setText('status-git', g.branch || 'OK');
+
+            // /api/github
+            const gh = await fetchJSON('/api/github');
+            setText('github-estado', gh.estado);
+
+            // /api/entorno
+            const e = await fetchJSON('/api/entorno');
+            setText('entorno-python', e.python_version);
+            setText('entorno-plataforma', e.plataforma);
+
+            // /api/bootstrap
+            const b = await fetchJSON('/api/bootstrap');
+            setText('bootstrap-estado', b.estado);
+
+            // /api/telemetria
+            const t = await fetchJSON('/api/telemetria');
+            setText('telemetria-estado', t.estado);
+
+            // /api/azure
+            const az = await fetchJSON('/api/azure');
+            setText('azure-estado', az.estado);
+            if (az.estado && az.estado !== '-') setText('status-azure', az.estado === 'no_configurado' ? 'N/A' : 'OK');
+
+            // /api/sqlite
+            const sq = await fetchJSON('/api/sqlite');
+            setText('sqlite-estado', sq.estado);
+            if (sq.estado && sq.estado !== '-') setText('status-db', sq.estado === 'no_verificado' ? 'N/A' : sq.estado);
+
+            // /api/despliegue
+            const d = await fetchJSON('/api/despliegue');
+            setText('despliegue-estado', d.estado);
+            setText('despliegue-plataforma', d.plataforma);
+        }
+
+        loadAll();
+    </script>
+</body>
+</html>

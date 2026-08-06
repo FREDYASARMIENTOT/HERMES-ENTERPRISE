@@ -1,4 +1,8 @@
-# HermesEnterprise Python dependencies
-# This project is PowerShell-based; Python is used for tooling/scripts.
-# Dependencies installed via Conda environment HermesEnterprise.
-pyyaml>=6.0
+# ====================================================================
+# requirements.txt — Punto de entrada canónico (raíz)
+# ====================================================================
+# RC70-D: Este archivo DELEGA en Hermes.Web/requirements.txt
+# El Runtime oficial es D:\HermesRuntime\Environments\HermesEnterprise
+# NO instalar nada con pip global. Usar solo el venv de Hermes.
+# ====================================================================
+-r Hermes.Web/requirements.txt

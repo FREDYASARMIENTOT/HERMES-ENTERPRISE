@@ -6,6 +6,33 @@
 - A.27: Auditoría de deuda técnica RC71-A
 - A.26: Memoria persistente y normalización documental
 
+## RC70-D Final — Closure (2026-08-07)
+
+### Completed
+- **Runtime Python**: Migrated from Conda/global Python to single shared venv at `D:\HermesRuntime\Environments\HermesEnterprise\`
+- **Config**: `config/Hermes.Python.json` established as canonical source of truth
+- **CI/CD**: `.github/workflows/ci.yml` — 4 validation jobs (Python, PowerShell, Docs, Deploy)
+- **Quality**: 0 PSScriptAnalyzer errors, Smoke Test plan, Quality Report published
+- **Architecture**: No Conda, no PATH, no global Python — exclusively Runtime official
+- **All execution**: Via `python -m` patterns (pip, uvicorn, gunicorn)
+
+### Frozen Components
+- Runtime Python — no further modifications
+- CI/CD pipeline — no further modifications
+- BootstrapWizard — no further modifications
+- VerifyEnvironment — no further modifications
+- Hermes.Python.json — no further modifications
+- Hermes.Azure.json — no further modifications
+- Hermes Web structure (MetaPathFinder, directory layout) — no further modifications
+
+### Deferred to RC72
+- pyproject.toml
+- pytest test suite
+- Python Quality Tools (ruff, black, isort)
+- Hermes.Web→Hermes/Web/ directory restructure → RC73
+
+---
+
 ## RC71-B — Quality & CI Execution (2026-08-07)
 
 ### Added

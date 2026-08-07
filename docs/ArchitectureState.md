@@ -174,6 +174,24 @@ The `AzureConfigurationHistory` table in `HermesSQLiteProvider` records every wr
 4. Writes to `config/Hermes.Azure.json`
 5. Logs to SQLite history
 
+## RC70-D Final — Closure
+**Closed:** 2026-08-07  
+**Status:** ✅ DEFINITIVAMENTE COMPLETADO  
+**Runtime definitivo:** `D:\HermesRuntime\Environments\HermesEnterprise\` (shared venv, Python 3.14)  
+**Config definitiva:** `config/Hermes.Python.json` (canonical source of truth)  
+**CI/CD definitivo:** `.github/workflows/ci.yml` — 4 jobs (Python, PowerShell, Docs, Deploy)  
+**Arquitectura definitiva:** Sin Conda, sin PATH, sin global Python — solo Runtime oficial
+
+### Architecture Frozen at RC70-D
+The following components are frozen and must NOT be modified:
+- Runtime Python (`D:\HermesRuntime\Environments\HermesEnterprise\`)
+- CI/CD pipeline (`.github/workflows/ci.yml`)
+- BootstrapWizard (`motor/bootstrap/engine/BootstrapWizard.ps1`)
+- VerifyEnvironment (`tools/VerifyEnvironment.ps1`)
+- Hermes.Python.json (`config/Hermes.Python.json`)
+- Hermes.Azure.json (`config/Hermes.Azure.json`)
+- Hermes Web structure (MetaPathFinder, directory layout)
+
 ## Test Coverage (RC70-D)
 - **86/86 tests passing** (Baseline from RC68)
 - RC69 test suite added: `AzureConfiguration` (parser, PSSA, stub)

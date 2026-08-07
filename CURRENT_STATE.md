@@ -161,3 +161,38 @@ HERMES_WEB_LOG_LEVEL = info
 1. **RC72:** Python Tests + pyproject.toml — pytest suite for all API endpoints, pyproject.toml, ruff/black/isort config
 2. **RC73:** Hermes.Web → Hermes/Web/ — Directory restructure, MetaPathFinder removal, relative imports, test suite migration
 3. **RC74:** Azure Deploy + Production — Full GitHub Actions deploy to Azure App Service, environment variables, monitoring
+
+---
+
+## RC70-D Closure Summary
+
+**Closed:** 2026-08-07  
+**Status:** ✅ DEFINITIVAMENTE COMPLETADO  
+**Runtime definitivo:** `D:\HermesRuntime\Environments\HermesEnterprise\` (shared venv, Python 3.14)  
+**Config definitiva:** `config/Hermes.Python.json` (canonical source of truth)  
+**CI/CD definitivo:** `.github/workflows/ci.yml` — 4 jobs (Python, PowerShell, Docs, Deploy)  
+**Arquitectura definitiva:** Sin Conda, sin PATH, sin global Python — solo Runtime oficial  
+**Calidad:** 0 errores PSSA, Smoke Test plan documentado, Quality Report publicado  
+**Deuda diferida:** pyproject.toml → RC72, Hermes.Web→Hermes/Web/ → RC73, Azure deploy → RC74
+
+### What RC70-D delivered
+1. Migrated from Conda/global Python to a single shared venv
+2. Created `config/Hermes.Python.json` as the canonical Python config
+3. All execution via `python -m` patterns (pip, uvicorn, gunicorn)
+4. Eliminated all PATH/Conda/global Python dependencies
+5. Added Runtime validation in BootstrapWizard
+6. CI/CD pipeline with 4 validation jobs (RC71-B)
+7. Quality report and smoke test plan documented (RC71-B)
+8. requirements.txt audit: 13→8 real dependencies (RC71-B)
+9. Zero PSScriptAnalyzer errors (RC71-B)
+10. Orphan files removed from repository (RC71-B)
+
+### Architecture frozen at RC70-D
+**No further modifications to:**
+- Runtime Python
+- CI/CD pipeline
+- BootstrapWizard
+- VerifyEnvironment
+- Hermes.Python.json
+- Hermes.Azure.json
+- Hermes Web structure (MetaPathFinder, directory layout)

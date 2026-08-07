@@ -27,6 +27,20 @@ function Invoke-EliminarInfraestructuraAzure {
     Write-Host "[UseCase] This will DELETE all resources in RG '$ResourceGroupName'" -ForegroundColor Red
     Write-Host "[UseCase] Subscription: $SubscriptionId" -ForegroundColor Yellow
 
+    # ── Guardian protection check ────────────────────────────────────────────
+    $guardianPath = Join-Path $PSScriptRoot '..\..\kernel\Security\AzureInfrastructureGuardian.ps1'
+    if (Test-Path $guardianPath) {
+        . $guardianPath
+        $policy = Get-HermesInfrastructurePolicy
+        Write-Host "[Guardian] Protection Policy: $($policy.PolicyName) v$($policy.Version)" -ForegroundColor Cyan
+        Write-Host "[Guardian] Protected RGs: $($policy.ProtectedResourceGroups -join ', ')" -ForegroundColor DarkGray
+        Write-Host "[Guardian] Protected ASPs: $($policy.ProtectedAppServicePlans -join ', ')" -ForegroundColor DarkGray
+        Write-Host "[Guardian] Protected Storage: $($policy.ProtectedStorageAccounts -join ', ')" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Warning "[Guardian] NOT FOUND. Destructive operations proceed WITHOUT protection."
+    }
+
     if (-not $Force) {
         $confirm = Read-Host "Are you sure? Type 'YES' to confirm"
         if ($confirm -ne 'YES') {

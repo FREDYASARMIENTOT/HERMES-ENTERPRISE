@@ -189,6 +189,13 @@ function Remove-HermesAzureKeyVault {
         [switch]$Force
     )
 
+    # ── Guardian validation ───────────────────────────────────────────────
+    $guardianPath = Join-Path $PSScriptRoot '..\..\Security\AzureInfrastructureGuardian.ps1'
+    if (Test-Path $guardianPath) {
+        . $guardianPath
+        Invoke-InfrastructureGuardian -Operation 'KeyVault' -ResourceName $Name -ResourceGroupName $ResourceGroupName -Force:$Force
+    }
+
     Write-Host "[AzureKeyVault] Removing Key Vault '$Name'" -ForegroundColor Yellow
 
     if ($Force -or $PSCmdlet.ShouldProcess($Name, 'Remove Azure Key Vault')) {

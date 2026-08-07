@@ -253,11 +253,78 @@ The following components are frozen and must NOT be modified:
 
 **Full details:** See `docs/TechnicalDebt_RC71.md`
 
+## RC73-A — Azure Infrastructure Guardian (Protection Layer)
+
+**Status:** ✅ COMPLETADO  
+**Date:** 2026-08-07  
+
+### Problem Solved
+- Destructive Azure operations (Remove-HermesAzureResourceGroup, etc.) had no protection layer
+- A single mistake could delete production infrastructure (RG-Hermes-Proyectos)
+- No policy-based guardrail existed to prevent accidental destruction of shared resources
+- Each provider had its own `-Force` switch but no centralized validation
+
+### Solution
+- **Policy file**: `config/Hermes.InfrastructureProtection.json` defines protected resources
+- **Guardian module**: `motor/kernel/Security/AzureInfrastructureGuardian.ps1` with `Invoke-InfrastructureGuardian`
+- **Wired into all 8 Azure providers**: Every `Remove-*` function invokes Guardian before executing
+- **Immutability**: Protected resources cannot be deleted even with `-Force`
+
+### New Files
+| File | Purpose |
+|------|---------|
+| `config/Hermes.InfrastructureProtection.json` | Policy: Protected RGs, ASPs, Storage, Key Vaults |
+| `motor/kernel/Security/AzureInfrastructureGuardian.ps1` | Guardian: `Get-HermesInfrastructurePolicy`, `Invoke-InfrastructureGuardian` |
+
+### Modified Files
+| File | Change |
+|------|--------|
+| 8 Azure Providers | Added Guardian call in each `Remove-*` function |
+| `Eliminar-InfraestructuraAzure.usecase.ps1` | Displays Guardian policy, protected resources, protection status |
+
+### Architecture
+```
+motor/kernel/Security/
+└── AzureInfrastructureGuardian.ps1
+    ├── Get-HermesInfrastructurePolicy     → reads config/Hermes.InfrastructureProtection.json
+    └── Invoke-InfrastructureGuardian       → validates Operation/ResourceName against policy
+        ├── If protected → throws [Guardian] BLOCKED error
+        └── If not protected → returns $true (operation allowed)
+        
+config/
+└── Hermes.InfrastructureProtection.json   ← Policy file (JSON)
+    ├── PolicyName, Version
+    ├── ProtectedResourceGroups
+    │   └── RG-Hermes-Proyectos (PreventDelete: true)
+    ├── ProtectedAppServicePlans
+    ├── ProtectedStorageAccounts
+    └── ProtectedKeyVaults
+```
+
+### Design Decisions
+1. **Guardian operates at provider level** — Every `Remove-*` function invokes Guardian independently, ensuring protection even when called outside the use case orchestration
+2. **Policy is JSON-based** — Non-developers can modify it; no PowerShell changes needed to add/remove protected resources
+3. **Immutability by policy** — `PreventDelete: true` is enforced regardless of `-Force` flag; only changing the policy file can bypass protection
+4. **New `motor/kernel/Security/` directory** — Separation of concerns: security logic isolated from business providers
+5. **No functional changes to frozen components** — Runtime Python, CI/CD, Bootstrap, VerifyEnvironment, Hermes.Python.json, Hermes.Azure.json remain untouched
+
+### Files Changed (detailed)
+| Provider | Function Wired |
+|----------|---------------|
+| AzureResourceGroupProvider.ps1 | Remove-HermesAzureResourceGroup |
+| AzureAppServicePlanProvider.ps1 | Remove-HermesAzureAppServicePlan |
+| AzureKeyVaultProvider.ps1 | Remove-HermesAzureKeyVault (both) |
+| AzureApplicationInsightsProvider.ps1 | Remove-HermesAzureApplicationInsights |
+| AzureLogAnalyticsProvider.ps1 | Remove-HermesAzureLogAnalytics |
+| AzureStorageProvider.ps1 | Remove-HermesAzureStorageAccount |
+| AzureManagedIdentityProvider.ps1 | Remove-HermesAzureManagedIdentityRole + Remove-HermesAzureManagedIdentity |
+
 ## Known Issues / Next Steps
 - [x] RC69: Azure Configuration Canonical — COMPLETED
 - [x] RC70-D: Python Runtime Hermes Enterprise — COMPLETED
 - [x] RC71-A: Technical Debt Audit — COMPLETED
 - [x] RC71-B: Hardening (tests, subprocess unify, startup validation)
+- [x] RC73-A: Azure Infrastructure Guardian — COMPLETED
 - [ ] RC71-C: Quality (HTTPS, ruff, cleanup)
 - [ ] RC72-A: Packaging + CI/CD
 - [ ] RC72-B: Directory restructure (Hermes.Web → Hermes/Web/)

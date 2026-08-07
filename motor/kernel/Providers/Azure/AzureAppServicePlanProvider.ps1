@@ -110,6 +110,13 @@ function Remove-HermesAzureAppServicePlan {
         [switch]$Force
     )
 
+    # ── Guardian validation ───────────────────────────────────────────────
+    $guardianPath = Join-Path $PSScriptRoot '..\..\Security\AzureInfrastructureGuardian.ps1'
+    if (Test-Path $guardianPath) {
+        . $guardianPath
+        Invoke-InfrastructureGuardian -Operation 'AppServicePlan' -ResourceName $Name -ResourceGroupName $ResourceGroupName -Force:$Force
+    }
+
     Write-Host "[AzureAppServicePlan] Removing plan '$Name'" -ForegroundColor Yellow
 
     if ($Force -or $PSCmdlet.ShouldProcess($Name, 'Remove Azure App Service Plan')) {

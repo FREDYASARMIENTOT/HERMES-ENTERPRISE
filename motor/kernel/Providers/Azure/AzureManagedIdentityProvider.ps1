@@ -150,6 +150,13 @@ function Remove-HermesAzureManagedIdentityRole {
         [string]$SubscriptionId
     )
 
+    # ── Guardian validation ───────────────────────────────────────────────
+    $guardianPath = Join-Path $PSScriptRoot '..\..\Security\AzureInfrastructureGuardian.ps1'
+    if (Test-Path $guardianPath) {
+        . $guardianPath
+        Invoke-InfrastructureGuardian -Operation 'ManagedIdentity' -ResourceName $Scope -ResourceGroupName (($Scope -split '/')[4]) -Force:$Force
+    }
+
     Write-Host "[AzureManagedIdentity] Removing role '$RoleDefinitionName' from principal '$PrincipalId'" -ForegroundColor Yellow
 
     if ($PSCmdlet.ShouldProcess($RoleDefinitionName, "Remove RBAC Role Assignment")) {
@@ -178,6 +185,13 @@ function Remove-HermesAzureManagedIdentity {
 
         [switch]$Force
     )
+
+    # ── Guardian validation ───────────────────────────────────────────────
+    $guardianPath = Join-Path $PSScriptRoot '..\..\Security\AzureInfrastructureGuardian.ps1'
+    if (Test-Path $guardianPath) {
+        . $guardianPath
+        Invoke-InfrastructureGuardian -Operation 'ManagedIdentity' -ResourceName $Name -ResourceGroupName $ResourceGroupName -Force:$Force
+    }
 
     Write-Host "[AzureManagedIdentity] Removing Managed Identity '$Name'" -ForegroundColor Yellow
 

@@ -141,6 +141,13 @@ function Remove-HermesAzureLogAnalytics {
         [switch]$Force
     )
 
+    # ── Guardian validation ───────────────────────────────────────────────
+    $guardianPath = Join-Path $PSScriptRoot '..\..\Security\AzureInfrastructureGuardian.ps1'
+    if (Test-Path $guardianPath) {
+        . $guardianPath
+        Invoke-InfrastructureGuardian -Operation 'LogAnalytics' -ResourceName $Name -ResourceGroupName $ResourceGroupName -Force:$Force
+    }
+
     Write-Host "[AzureLogAnalytics] Removing workspace '$Name'" -ForegroundColor Yellow
 
     if ($Force -or $PSCmdlet.ShouldProcess($Name, 'Remove Azure Log Analytics Workspace')) {

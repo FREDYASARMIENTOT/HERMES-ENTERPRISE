@@ -187,6 +187,25 @@ HERMES_WEB_LOG_LEVEL = info
 9. Zero PSScriptAnalyzer errors (RC71-B)
 10. Orphan files removed from repository (RC71-B)
 
+## RC73-A — Azure Infrastructure Guardian (Protection Layer)
+
+**Status:** ✅ COMPLETADO  
+**Date:** 2026-08-07  
+
+### What RC73-A delivered
+1. **`config/Hermes.InfrastructureProtection.json`** — Policy file listing protected resource groups, App Service Plans, storage accounts, and Key Vaults
+2. **`motor/kernel/Security/AzureInfrastructureGuardian.ps1`** — Guardian module with `Invoke-InfrastructureGuardian` that validates any destructive operation against the protection policy; fails with `[Guardian] BLOCKED` if the resource is protected
+3. **Wired into all 8 Azure destruction providers:**
+   - `AzureResourceGroupProvider.ps1` (Remove-HermesAzureResourceGroup)
+   - `AzureAppServicePlanProvider.ps1` (Remove-HermesAzureAppServicePlan)
+   - `AzureKeyVaultProvider.ps1` (Remove-HermesAzureKeyVault)
+   - `AzureApplicationInsightsProvider.ps1` (Remove-HermesAzureApplicationInsights)
+   - `AzureLogAnalyticsProvider.ps1` (Remove-HermesAzureLogAnalytics)
+   - `AzureStorageProvider.ps1` (Remove-HermesAzureStorageAccount)
+   - `AzureManagedIdentityProvider.ps1` (Remove-HermesAzureManagedIdentity + Remove-HermesAzureManagedIdentityRole)
+4. **`Eliminar-InfraestructuraAzure.usecase.ps1`** — Updated to display Guardian policy, protection status, and warning if Guardian is missing
+5. **No functional changes to runtime, CI/CD, Bootstrap, or Python config** — fully non-invasive
+
 ### Architecture frozen at RC70-D
 **No further modifications to:**
 - Runtime Python

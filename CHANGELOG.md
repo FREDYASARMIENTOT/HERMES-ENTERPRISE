@@ -1,10 +1,29 @@
 # CHANGELOG
 
 ## Sprint History
+- A.30: RC73-A — Azure Infrastructure Guardian
 - A.29: RC72 — Prueba Integral de Aceptación "Crear-HermesProyecto"
 - A.28: Quality & CI — RC71-B
 - A.27: Auditoría de deuda técnica RC71-A
 - A.26: Memoria persistente y normalización documental
+
+## RC73-A — Azure Infrastructure Guardian (2026-08-07)
+
+### Added
+- **`config/Hermes.InfrastructureProtection.json`** — Policy file defining protected Azure resources (RGs, ASPs, Storage, Key Vaults) with configurable `PreventDelete` flag
+- **`motor/kernel/Security/AzureInfrastructureGuardian.ps1`** — Guardian module with `Invoke-InfrastructureGuardian` function that validates any destructive operation against the protection policy; blocks destruction of protected resources with clear error message
+- **Guardian wired into 8 Azure providers**: `AzureResourceGroupProvider`, `AzureAppServicePlanProvider`, `AzureKeyVaultProvider`, `AzureApplicationInsightsProvider`, `AzureLogAnalyticsProvider`, `AzureStorageProvider`, `AzureManagedIdentityProvider` (2 Remove functions)
+- **`Eliminar-InfraestructuraAzure.usecase.ps1`** — Now displays Guardian policy, protected resources, and warning status before execution
+
+### Changed
+- All 8 Azure providers now invoke `Invoke-InfrastructureGuardian` in their `Remove-*` functions before executing destructive operations
+- `Eliminar-InfraestructuraAzure.usecase.ps1` shows Guardian protection status at startup
+- `CURRENT_STATE.md` updated with RC73-A section
+
+### Security
+- New `motor/kernel/Security/` directory created for security-related infrastructure
+- Protection policy prevents accidental deletion of production resource groups (`RG-Hermes-Proyectos`), App Service Plans, storage accounts, and Key Vaults
+- Force flag bypass is prevented for protected resources (immutable protection)
 
 ## RC70-D Final — Closure (2026-08-07)
 

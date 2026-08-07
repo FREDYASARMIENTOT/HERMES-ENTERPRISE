@@ -96,6 +96,13 @@ function Remove-HermesAzureResourceGroup {
         [switch]$Force
     )
 
+    # ── Guardian validation ───────────────────────────────────────────────
+    $guardianPath = Join-Path $PSScriptRoot '..\..\Security\AzureInfrastructureGuardian.ps1'
+    if (Test-Path $guardianPath) {
+        . $guardianPath
+        Invoke-InfrastructureGuardian -Operation 'ResourceGroup' -ResourceName $Name -ResourceGroupName $Name -Force:$Force
+    }
+
     if ($Force -or $PSCmdlet.ShouldProcess($Name, 'Remove Azure Resource Group')) {
         $confirm = if ($Force) { '--yes' } else { '' }
         az group delete --name $Name --subscription $SubscriptionId $confirm --no-wait 2>&1 | Out-Null

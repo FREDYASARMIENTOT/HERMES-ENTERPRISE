@@ -81,25 +81,39 @@ jobs:
       - name: Validar sintaxis scripts PowerShell
         shell: pwsh
         run: |
-          $errors = @()
+          $parseErrors = @()
           $scripts = @(
             "motor/bootstrap/engine/BootstrapWizard.ps1",
-            "tools/VerifyEnvironment.ps1"
+            "tools/VerifyEnvironment.ps1",
+            "motor/kernel/Security/AzureInfrastructureGuardian.ps1",
+            "motor/kernel/Providers/Azure/AzureResourceGroupProvider.ps1",
+            "motor/kernel/Providers/Azure/AzureAppServicePlanProvider.ps1",
+            "motor/kernel/Providers/Azure/AzureStorageProvider.ps1",
+            "motor/kernel/Providers/Azure/AzureKeyVaultProvider.ps1",
+            "motor/kernel/Providers/Azure/AzureApplicationInsightsProvider.ps1",
+            "motor/kernel/Providers/Azure/AzureLogAnalyticsProvider.ps1",
+            "motor/kernel/Providers/Azure/AzureManagedIdentityProvider.ps1",
+            "motor/usecases/Azure/Eliminar-InfraestructuraAzure.usecase.ps1"
           )
           foreach ($script in $scripts) {
             if (Test-Path $script) {
-              $result = Invoke-Expression -Command "powershell -NoProfile -Command `"`$errors = 0; `$null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $script -Raw), [ref]`$errors); `$errors.Count`""
-              if ($result -gt 0) {
-                $errors += "ERROR: $script tiene $result errores de sintaxis"
+              $tokens = $null
+              $parseErr = $null
+              $tokens = [System.Management.Automation.PSParser]::Tokenize((Get-Content $script -Raw), [ref]$parseErr)
+              if ($parseErr -and $parseErr.Count -gt 0) {
+                $parseErrors += "ERROR: $script tiene $($parseErr.Count) errores de sintaxis"
+                foreach ($err in $parseErr) {
+                  Write-Host "  L$($err.Token.StartLine): $($err.Message)"
+                }
               } else {
-                Write-Host "OK: $script sin errores de sintaxis"
+                Write-Host "OK: $script sin errores de sintaxis ($($tokens.Count) tokens)"
               }
             } else {
-              $errors += "ERROR: $script no encontrado"
+              $parseErrors += "ERROR: $script no encontrado"
             }
           }
-          if ($errors.Count -gt 0) {
-            $errors | ForEach-Object { Write-Host $_ }
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Host $_ }
             exit 1
           }
           Write-Host "Todos los scripts PowerShell válidos"

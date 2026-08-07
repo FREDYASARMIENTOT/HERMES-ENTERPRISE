@@ -1,28 +1,57 @@
 {
-    "Version": "1.0.0",
+    "Version": "1.1.0",
     "PolicyName": "Hermes Azure Infrastructure Protection Policy",
-    "Description": "Centralized protection policy preventing accidental destruction of shared Azure infrastructure",
+    "Description": "Hardened protection policy preventing accidental destruction of ALL shared Azure infrastructure. RC73-B Hardening.",
     "Enforcement": "hard",
     "Created": "2026-08-07",
+    "Updated": "2026-08-07",
     "ProtectedResourceGroups": [
-        "RG-Hermes-Proyectos",
-        "RG-Datamining-SII2.0-Dev"
+        "RG-Datamining-SII2.0-Dev",
+        "RG-Datamining-IA-UR",
+        "RG-Hermes-Proyectos"
     ],
     "ProtectedAppServicePlans": [
         "ASP-IAUR",
+        "ASP-Hermes",
+        "ASP-HermesEnterprise",
         "Plan-Hermes-Proyectos"
     ],
     "ProtectedStorageAccounts": [
         "saurhermesproyectos"
     ],
     "ProtectedKeyVaults": [],
+    "ProtectedWebApps": [
+        "AS-HermesEnterprise"
+    ],
+    "ProtectedAIServices": [],
+    "ProtectedApplicationInsights": [],
+    "ProtectedLogAnalytics": [],
+    "ProtectedDatabases": [],
     "RequiredTags": {
         "HermesManaged": "true"
+    },
+    "EnvironmentProtectionTags": {
+        "Environment": "Production",
+        "Protected": "true"
     },
     "BlockedOperations": [
         "Remove-AzureRmResourceGroup",
         "Remove-AzResourceGroup",
-        "az group delete"
+        "Remove-AzureRmAppServicePlan",
+        "Remove-AzAppServicePlan",
+        "Remove-AzureRmStorageAccount",
+        "Remove-AzStorageAccount",
+        "Remove-AzureRmKeyVault",
+        "Remove-AzKeyVault",
+        "Remove-AzureRmWebApp",
+        "Remove-AzWebApp",
+        "Remove-AzureRmApplicationInsights",
+        "Remove-AzureRmLogAnalytics",
+        "az group delete",
+        "az resource delete",
+        "az storage delete",
+        "az webapp delete",
+        "az appservice plan delete"
     ],
     "ValidationRules": {
         "RequireHermesOrigin": true,
@@ -31,13 +60,25 @@
         "DenyProtectedResourceGroupDeletion": true,
         "DenyProtectedAppServicePlanDeletion": true,
         "DenyProtectedStorageDeletion": true,
+        "DenyProtectedKeyVaultDeletion": true,
+        "DenyProtectedWebAppDeletion": true,
+        "DenyProtectedAIServiceDeletion": true,
+        "DenyProtectedApplicationInsightsDeletion": true,
+        "DenyProtectedLogAnalyticsDeletion": true,
+        "DenyProtectedDatabaseDeletion": true,
+        "DenyEnvironmentProductionDeletion": true,
+        "DenyProtectedTagDeletion": true,
         "DenyUntaggedResourceDeletion": true,
         "RequireDependencyCheck": true
     },
+    "BlockMessage": "OPERACIÓN BLOQUEADA\nRecurso protegido por Azure Infrastructure Guardian.\nNo está permitido eliminar infraestructura compartida.\nSi requiere eliminar este recurso,\nutilice una suscripción de laboratorio\no elimine primero la protección\nmediante el procedimiento administrativo.",
     "Audit": {
         "LogAllAttempts": true,
         "LogToSQLite": true,
         "LogToTelemetry": true,
-        "SeverityLevel": "Critical"
+        "SeverityLevel": "Critical",
+        "LogUser": true,
+        "LogCommand": true,
+        "LogCorrelationId": true
     }
 }

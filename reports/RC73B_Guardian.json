@@ -1,0 +1,58 @@
+{
+  "report": "RC73-B: Azure Infrastructure Guardian Hardening",
+  "status": "COMPLETED",
+  "date": "2026-08-07",
+  "duration_minutes": 22,
+  "test_results": {
+    "total": 46,
+    "passed": 46,
+    "failed": 0,
+    "groups": [
+      { "name": "Policy Loading", "total": 6, "passed": 6, "failed": 0 },
+      { "name": "Protected Resource Groups", "total": 4, "passed": 4, "failed": 0 },
+      { "name": "Protected App Service Plans", "total": 5, "passed": 5, "failed": 0 },
+      { "name": "Protected Storage Accounts", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Protected Key Vaults", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Protected Web Apps", "total": 1, "passed": 1, "failed": 0 },
+      { "name": "AI Services", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Application Insights", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Log Analytics", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Databases", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Environment=Production Tag", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Protected=true Tag", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Untagged Resources", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Force Bypass Prevention", "total": 3, "passed": 3, "failed": 0 },
+      { "name": "Standardized BLOCKED Message", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Protected RG Containment", "total": 3, "passed": 3, "failed": 0 },
+      { "name": "CorrelationId Tracking", "total": 1, "passed": 1, "failed": 0 },
+      { "name": "Violation Logging", "total": 2, "passed": 2, "failed": 0 },
+      { "name": "Cache", "total": 1, "passed": 1, "failed": 0 }
+    ]
+  },
+  "changes": {
+    "config": "Hermes.InfrastructureProtection.json v1.1.0",
+    "guardian": "motor/kernel/Security/AzureInfrastructureGuardian.ps1 — hardened with 10 resource types, block message, tags, correlationId",
+    "tests": "pruebas/unitarias/Hermes.InfrastructureGuardian.Tests.ps1 — 46 tests",
+    "resource_types": [
+      "ResourceGroup", "AppServicePlan", "StorageAccount", "KeyVault",
+      "WebApp", "AIService", "ApplicationInsights", "LogAnalytics",
+      "Database", "ManagedIdentity"
+    ]
+  },
+  "coverage": {
+    "policy_loading": true,
+    "all_10_resource_types": true,
+    "standardized_block_message": true,
+    "environment_tag_protection": true,
+    "protected_tag_protection": true,
+    "hermes_tag_validation": true,
+    "protected_rg_containment": true,
+    "force_bypass_prevention": true,
+    "correlation_id_tracking": true,
+    "user_command_logging": true,
+    "jsonl_audit_log": true,
+    "cache_with_clear": true,
+    "fallback_safe_defaults": true
+  },
+  "final_state": "RC73-B completed successfully. Guardian operative as central protection layer for all Azure destructive operations."
+}

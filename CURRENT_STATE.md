@@ -158,9 +158,9 @@ HERMES_WEB_LOG_LEVEL = info
 
 ### Next Steps
 
-1. **RC72:** Python Tests + pyproject.toml — pytest suite for all API endpoints, pyproject.toml, ruff/black/isort config
-2. **RC73:** Hermes.Web → Hermes/Web/ — Directory restructure, MetaPathFinder removal, relative imports, test suite migration
-3. **RC74:** Azure Deploy + Production — Full GitHub Actions deploy to Azure App Service, environment variables, monitoring
+1. **RC73-C:** Python Tests + pyproject.toml — pytest suite for all API endpoints, pyproject.toml, ruff/black/isort config
+2. **RC74:** Hermes.Web → Hermes/Web/ — Directory restructure, MetaPathFinder removal, relative imports
+3. **RC75:** Azure Deploy + Production — Full GitHub Actions deploy to Azure App Service, environment variables, monitoring
 
 ---
 
@@ -215,3 +215,15 @@ HERMES_WEB_LOG_LEVEL = info
 - Hermes.Python.json
 - Hermes.Azure.json
 - Hermes Web structure (MetaPathFinder, directory layout)
+
+## RC73-B — Guardian Hardened — All 10 Resource Types
+
+**Status:** ✅ COMPLETADO  
+**Date:** 2026-08-07  
+
+### What RC73-B delivered
+1. **`config/Hermes.InfrastructureProtection.json` v1.1.0** — Expanded to 10 resource types: ResourceGroup, AppServicePlan, StorageAccount, KeyVault, WebApp, AIService, ApplicationInsights, LogAnalytics, Database, ManagedIdentity
+2. **`motor/kernel/Security/AzureInfrastructureGuardian.ps1`** — Hardened with standardized BLOCKED message, tag protections (Environment=Production, Protected=true, HermesManaged), RG containment, CorrelationId, JSONL logging, Force bypass prevention, fallback safe defaults
+3. **`pruebas/unitarias/Hermes.InfrastructureGuardian.Tests.ps1`** — 46 Pester tests covering all resource types, tag protections, RG containment, message format, correlation tracking, and logging
+4. **`reports/RC73B_Guardian.md`**, `.html`, `.json` — Three-format report
+5. **46/46 tests PASSED** — no architectural changes, fully non-invasive

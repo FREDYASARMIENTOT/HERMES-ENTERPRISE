@@ -325,7 +325,19 @@ config/
 - [x] RC71-A: Technical Debt Audit — COMPLETED
 - [x] RC71-B: Hardening (tests, subprocess unify, startup validation)
 - [x] RC73-A: Azure Infrastructure Guardian — COMPLETED
-- [ ] RC71-C: Quality (HTTPS, ruff, cleanup)
-- [ ] RC72-A: Packaging + CI/CD
-- [ ] RC72-B: Directory restructure (Hermes.Web → Hermes/Web/)
-- [ ] RC73: Azure deployment pipeline + SQL Database
+- [x] RC73-B: Guardian Hardened (10 resource types, 46 tests) — COMPLETED
+- [ ] RC73-C: Python Tests + pyproject.toml
+- [ ] RC74: Hermes.Web → Hermes/Web/ directory restructure
+- [ ] RC75: Azure deployment pipeline + production monitoring
+
+## RC73-B — Guardian Hardened — All 10 Resource Types
+
+**Status:** ✅ COMPLETADO  
+**Date:** 2026-08-07  
+
+### What RC73-B delivered
+1. **`config/Hermes.InfrastructureProtection.json` v1.1.0** — Expanded to 10 resource types
+2. **Guardian hardened** with standardized BLOCKED message, tag protections (Environment=Production, Protected=true, HermesManaged), RG containment, CorrelationId, JSONL logging, Force bypass prevention, fallback safe defaults
+3. **46 Pester tests** covering all resource types, tag protections, RG containment, message format, correlation tracking, and logging
+4. **`reports/RC73B_Guardian.md`**, `.html`, `.json` — Three-format report
+5. **46/46 tests PASSED** — no architectural changes

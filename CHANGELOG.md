@@ -1,11 +1,43 @@
 # CHANGELOG
 
 ## Sprint History
+- A.31: RC73-B — Guardian Hardened (10 resource types, 46 tests)
 - A.30: RC73-A — Azure Infrastructure Guardian
 - A.29: RC72 — Prueba Integral de Aceptación "Crear-HermesProyecto"
 - A.28: Quality & CI — RC71-B
 - A.27: Auditoría de deuda técnica RC71-A
 - A.26: Memoria persistente y normalización documental
+
+## RC73-B — Guardian Hardened — All 10 Resource Types (2026-08-07)
+
+### Added
+- **`config/Hermes.InfrastructureProtection.json` v1.1.0** — Expanded protection lists to 10 resource types: ResourceGroup, AppServicePlan, StorageAccount, KeyVault, WebApp, AIService, ApplicationInsights, LogAnalytics, Database
+- **`motor/kernel/Security/AzureInfrastructureGuardian.ps1`** — Hardened with:
+  - 10 resource type validation (all types above + ManagedIdentity)
+  - Standardized ASCII-safe BLOCKED message with `Detalle:` reason
+  - Environment tag protection (`Environment=Production` blocks deletion)
+  - Protected tag protection (`Protected=true` blocks deletion)
+  - Hermes tag validation (`HermesManaged` tag required)
+  - Protected RG containment (resources inside protected RGs are blocked)
+  - CorrelationId tracking per operation
+  - User and command logging
+  - JSONL audit log to `data/logs/guardian_violations.jsonl`
+  - Force bypass prevention (`-Force` has no effect on protected resources)
+  - Fallback safe defaults when policy file missing
+- **`pruebas/unitarias/Hermes.InfrastructureGuardian.Tests.ps1`** — 46 Pester tests covering all resource types, tag protections, RG containment, message format, correlation tracking, and logging
+- **`reports/RC73B_Guardian.md`**, `.html`, `.json` — Three-format report with test results, changes, and coverage
+
+### Changed
+- All 8 Azure providers continue to use Guardian as before (no provider changes needed)
+- No architectural changes — fully non-invasive hardening
+
+### Security
+- Production resources (Environment=Production tag) now cannot be deleted
+- Protected=true tagged resources now blocked
+- Resources without HermesManaged tag are now blocked (prevention of untagged deletion)
+- Resources in protected RGs are automatically protected regardless of individual resource lists
+
+### Test Results: 46/46 PASSED
 
 ## RC73-A — Azure Infrastructure Guardian (2026-08-07)
 

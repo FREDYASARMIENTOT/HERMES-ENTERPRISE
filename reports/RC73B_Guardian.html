@@ -1,0 +1,64 @@
+<html>
+<head><meta charset="UTF-8"/><title>RC73-B Guardian Hardening Report</title>
+<style>body{font-family:Arial,sans-serif;margin:40px;background:#f5f5f5;color:#333}h1{color:#1a5276}h2{color:#2e86c1}.pass{color:green;font-weight:bold}.fail{color:red;font-weight:bold}table{border-collapse:collapse;width:100%;margin:20px 0}th,td{border:1px solid #ddd;padding:12px;text-align:left}th{background:#1a5276;color:white}tr:nth-child(even){background:#f9f9f9}.summary{background:#d4edda;padding:20px;border-radius:8px;margin:20px 0}.coverage li{color:green}.coverage li.missing{color:red}</style></head>
+<body>
+<h1>RC73-B: Azure Infrastructure Guardian Hardening</h1>
+<div class="summary">
+<h2>Resultado: COMPLETADO ✓</h2>
+<p><strong>Fecha:</strong> 2026-08-07</p>
+<p><strong>Estado:</strong> 46/46 pruebas pasaron exitosamente</p>
+<p><strong>Duración:</strong> ~22 minutos</p>
+</div>
+
+<h2>Cambios Realizados</h2>
+<ul>
+<li><strong>config/Hermes.InfrastructureProtection.json</strong> — v1.1.0 con listas de protección para 10 tipos de recursos</li>
+<li><strong>motor/kernel/Security/AzureInfrastructureGuardian.ps1</strong> — Guardian endurecido con mensaje estandarizado, protección por tags, CorrelationId, y logging JSONL</li>
+<li><strong>pruebas/unitarias/Hermes.InfrastructureGuardian.Tests.ps1</strong> — 46 tests con cobertura completa</li>
+</ul>
+
+<h2>Resultados de Pruebas</h2>
+<table>
+<tr><th>Grupo</th><th>Tests</th><th>Passed</th><th>Failed</th></tr>
+<tr><td>Policy Loading</td><td>6</td><td class="pass">6</td><td class="fail">0</td></tr>
+<tr><td>Protected Resource Groups</td><td>4</td><td class="pass">4</td><td class="fail">0</td></tr>
+<tr><td>Protected App Service Plans</td><td>5</td><td class="pass">5</td><td class="fail">0</td></tr>
+<tr><td>Protected Storage Accounts</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Protected Key Vaults</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Protected Web Apps</td><td>1</td><td class="pass">1</td><td class="fail">0</td></tr>
+<tr><td>AI Services</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Application Insights</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Log Analytics</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Databases</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Environment=Production Tag</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Protected=true Tag</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Untagged Resources</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Force Bypass Prevention</td><td>3</td><td class="pass">3</td><td class="fail">0</td></tr>
+<tr><td>Standardized BLOCKED Message</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Protected RG Containment</td><td>3</td><td class="pass">3</td><td class="fail">0</td></tr>
+<tr><td>CorrelationId Tracking</td><td>1</td><td class="pass">1</td><td class="fail">0</td></tr>
+<tr><td>Violation Logging</td><td>2</td><td class="pass">2</td><td class="fail">0</td></tr>
+<tr><td>Cache</td><td>1</td><td class="pass">1</td><td class="fail">0</td></tr>
+<tr style="font-weight:bold;background:#d4edda"><td>TOTAL</td><td>46</td><td class="pass">46</td><td class="fail">0</td></tr>
+</table>
+
+<h2>Cobertura Funcional</h2>
+<ul class="coverage">
+<li>✓ Policy loading from JSON config file</li>
+<li>✓ All 10 resource types validated</li>
+<li>✓ Standardized BLOCKED message with Detalle</li>
+<li>✓ Environment=Production tag protection</li>
+<li>✓ Protected=true tag protection</li>
+<li>✓ HermesManaged tag validation</li>
+<li>✓ Protected RG containment</li>
+<li>✓ Force bypass prevention</li>
+<li>✓ CorrelationId tracking</li>
+<li>✓ User and command logging</li>
+<li>✓ JSONL audit log</li>
+<li>✓ Cache with clear capability</li>
+<li>✓ Fallback safe defaults when config missing</li>
+</ul>
+
+<p><em>Reporte generado el 2026-08-07 12:08</em></p>
+</body>
+</html>

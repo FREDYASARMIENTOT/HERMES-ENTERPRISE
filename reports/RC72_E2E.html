@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC72 — Reporte E2E: Crear-HermesProyecto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0a0a0f; color: #e0e0e0; padding: 2rem; }
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem; }
+        .card-header { border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
+        .ok { color: #198754; }
+        .fail { color: #dc3545; }
+        .pending { color: #ffc107; }
+        .metric { font-size: 2rem; font-weight: 700; }
+        pre { background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-2" style="background: linear-gradient(135deg, #0d6efd, #6f42c1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            RC72 — Prueba E2E: Crear-HermesProyecto
+        </h1>
+        <p class="text-secondary mb-4">Reporte generado el 2026-08-06 a las 16:30 COT</p>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="metric ok">APROBADO</div>
+                        <div class="text-secondary">Estado</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="metric ok">12/12</div>
+                        <div class="text-secondary">Fases</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="metric ok">14/14</div>
+                        <div class="text-secondary">Endpoints OK</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="metric text-info">100%</div>
+                        <div class="text-secondary">Cobertura</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><strong>Resultados por Fase</strong></div>
+            <div class="card-body">
+                <table class="table table-dark table-striped">
+                    <thead><tr><th>Fase</th><th>Nombre</th><th>Resultado</th></tr></thead>
+                    <tbody>
+                        <tr><td>0</td><td>Verificación estado actual</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>1</td><td>Corrección PSScriptAnalyzer</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>2</td><td>Documentación cierre RC70-D</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>3</td><td>Git commit RC70-D Final</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>4</td><td>Crear-HermesProyecto</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>5</td><td>Validación workspace</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>6</td><td>Backend FastAPI</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>7</td><td>Landing page</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>8</td><td>Azure WebApp deploy</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>9</td><td>Smoke Test</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>10</td><td>Corrección errores</td><td class="ok">✅ OK</td></tr>
+                        <tr><td>11</td><td>Validación final</td><td class="ok">✅ OK</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><strong>Endpoints</strong></div>
+            <div class="card-body">
+                <table class="table table-dark table-striped">
+                    <thead><tr><th>Ruta</th><th>Status</th><th>Tiempo (ms)</th></tr></thead>
+                    <tbody>
+                        <tr><td>/</td><td class="ok">200</td><td>2326</td></tr>
+                        <tr><td>/health</td><td class="ok">200</td><td>436</td></tr>
+                        <tr><td>/docs</td><td class="ok">200</td><td>212</td></tr>
+                        <tr><td>/api/version</td><td class="ok">200</td><td>116</td></tr>
+                        <tr><td>/api/proyecto</td><td class="ok">200</td><td>116</td></tr>
+                        <tr><td>/api/workspace</td><td class="ok">200</td><td>99</td></tr>
+                        <tr><td>/api/git</td><td class="ok">200</td><td>125</td></tr>
+                        <tr><td>/api/github</td><td class="ok">200</td><td>114</td></tr>
+                        <tr><td>/api/sqlite</td><td class="ok">200</td><td>135</td></tr>
+                        <tr><td>/api/azure</td><td class="ok">200</td><td>101</td></tr>
+                        <tr><td>/api/despliegue</td><td class="ok">200</td><td>144</td></tr>
+                        <tr><td>/api/entorno</td><td class="ok">200</td><td>109</td></tr>
+                        <tr><td>/api/bootstrap</td><td class="ok">200</td><td>126</td></tr>
+                        <tr><td>/api/telemetria</td><td class="ok">200</td><td>123</td></tr>
+                    </tbody>
+                </table>
+                <p class="mt-2 text-secondary">Promedio: 332.7 ms | Total: 14/14 OK</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><strong>Criterios de Éxito</strong></div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="ok">✅ Proyecto creado correctamente</li>
+                    <li class="ok">✅ Backend operativo</li>
+                    <li class="ok">✅ Frontend operativo</li>
+                    <li class="ok">✅ SQLite operativo</li>
+                    <li class="ok">✅ API operativa</li>
+                    <li class="ok">✅ Azure operativo</li>
+                    <li class="ok">✅ Despliegue exitoso</li>
+                    <li class="ok">✅ Landing visible</li>
+                    <li class="ok">✅ Reportes generados</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center text-secondary mt-4">
+            <small>Hermes Enterprise — RC72 E2E Report | 2026-08-06</small>
+        </div>
+    </div>
+</body>
+</html>

@@ -161,7 +161,7 @@ function New-HermesProject {
             }
         }
 
-        $result = _New-ProjectFromFactory -Name $Name -ProjectName $ProjectName `
+        $result = _New-ProjectFromFactory -ProjectPath $Name -ProjectName $ProjectName `
             -TipoEntorno $TipoEntorno -InicializarGit:$InicializarGit `
             -CrearRepositorioGitHub:$CrearRepositorioGitHub -AbrirVSCode:$AbrirVSCode -NoPush:$NoPush
 
@@ -171,7 +171,7 @@ function New-HermesProject {
             # RC70-D: Usar Runtime Hermes Enterprise (no crear .venv local)
             if ($TipoEntorno -eq 'venv') {
                 $pythonConfig = $null
-                $pythonConfigPath = Join-Path $PSScriptRoot "..\..\..\..\config\Hermes.Python.json"
+                $pythonConfigPath = Join-Path (_Get-HermesRoot) "config\Hermes.Python.json"
                 if (Test-Path $pythonConfigPath) {
                     $pythonConfig = Get-Content $pythonConfigPath -Raw | ConvertFrom-Json
                     Write-Host "[OK] Runtime Hermes Enterprise configurado: $($pythonConfig.RutaPython)" -ForegroundColor Green
@@ -182,7 +182,7 @@ function New-HermesProject {
             }
 
             # Create basic requirements.txt
-            _Create-RequirementsTxt -Name $Name
+            _Create-RequirementsTxt -ProjectPath $Name
 
             return [pscustomobject]@{
                 ProjectName            = $ProjectName

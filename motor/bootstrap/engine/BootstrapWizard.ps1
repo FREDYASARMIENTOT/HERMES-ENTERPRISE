@@ -55,25 +55,31 @@ function Invoke-HermesBootstrapAzureConfig {
     Write-Host "[..] Leyendo configuracion actual (si existe)..." -ForegroundColor Gray
     $current = _Read-AzureConfiguration
 
-    $loc = Read-Host "Location [$($current.Location ?? $script:AZURE_DEFAULTS.Location)]"
-    if ([string]::IsNullOrWhiteSpace($loc)) { $loc = $current.Location ?? $script:AZURE_DEFAULTS.Location }
+    $locDefault = if ($null -ne $current.Location) { $current.Location } else { $script:AZURE_DEFAULTS.Location }
+    $loc = Read-Host "Location [$locDefault]"
+    if ([string]::IsNullOrWhiteSpace($loc)) { $loc = $locDefault }
 
-    $rgA = Read-Host "ResourceGroupAplicaciones [$($current.ResourceGroupAplicaciones ?? $script:AZURE_DEFAULTS.ResourceGroupAplicaciones)]"
-    if ([string]::IsNullOrWhiteSpace($rgA)) { $rgA = $current.ResourceGroupAplicaciones ?? $script:AZURE_DEFAULTS.ResourceGroupAplicaciones }
+    $rgADefault = if ($null -ne $current.ResourceGroupAplicaciones) { $current.ResourceGroupAplicaciones } else { $script:AZURE_DEFAULTS.ResourceGroupAplicaciones }
+    $rgA = Read-Host "ResourceGroupAplicaciones [$rgADefault]"
+    if ([string]::IsNullOrWhiteSpace($rgA)) { $rgA = $rgADefault }
 
-    $rgP = Read-Host "ResourceGroupPlan [$($current.ResourceGroupPlan ?? $script:AZURE_DEFAULTS.ResourceGroupPlan)]"
-    if ([string]::IsNullOrWhiteSpace($rgP)) { $rgP = $current.ResourceGroupPlan ?? $script:AZURE_DEFAULTS.ResourceGroupPlan }
+    $rgPDefault = if ($null -ne $current.ResourceGroupPlan) { $current.ResourceGroupPlan } else { $script:AZURE_DEFAULTS.ResourceGroupPlan }
+    $rgP = Read-Host "ResourceGroupPlan [$rgPDefault]"
+    if ([string]::IsNullOrWhiteSpace($rgP)) { $rgP = $rgPDefault }
 
-    $asp = Read-Host "AppServicePlan [$($current.AppServicePlan ?? $script:AZURE_DEFAULTS.AppServicePlan)]"
-    if ([string]::IsNullOrWhiteSpace($asp)) { $asp = $current.AppServicePlan ?? $script:AZURE_DEFAULTS.AppServicePlan }
+    $aspDefault = if ($null -ne $current.AppServicePlan) { $current.AppServicePlan } else { $script:AZURE_DEFAULTS.AppServicePlan }
+    $asp = Read-Host "AppServicePlan [$aspDefault]"
+    if ([string]::IsNullOrWhiteSpace($asp)) { $asp = $aspDefault }
 
-    $sa  = Read-Host "StorageAccount [$($current.StorageAccount ?? $script:AZURE_DEFAULTS.StorageAccount)]"
-    if ([string]::IsNullOrWhiteSpace($sa)) { $sa = $current.StorageAccount ?? $script:AZURE_DEFAULTS.StorageAccount }
+    $saDefault = if ($null -ne $current.StorageAccount) { $current.StorageAccount } else { $script:AZURE_DEFAULTS.StorageAccount }
+    $sa  = Read-Host "StorageAccount [$saDefault]"
+    if ([string]::IsNullOrWhiteSpace($sa)) { $sa = $saDefault }
 
-    $sharedStr = if ($current.UseSharedInfrastructure ?? $script:AZURE_DEFAULTS.UseSharedInfrastructure) { 'true' } else { 'false' }
+    $sharedCurrent = if ($null -ne $current.UseSharedInfrastructure) { $current.UseSharedInfrastructure } else { $script:AZURE_DEFAULTS.UseSharedInfrastructure }
+    $sharedStr = if ($sharedCurrent) { 'true' } else { 'false' }
     $si = Read-Host "UseSharedInfrastructure ($sharedStr)"
     if ([string]::IsNullOrWhiteSpace($si)) {
-        $sharedBool = [bool]($current.UseSharedInfrastructure ?? $script:AZURE_DEFAULTS.UseSharedInfrastructure)
+        $sharedBool = [bool]($sharedCurrent)
     } else {
         $sharedBool = ($si -match '^(true|si|s|y|yes|1)$')
     }

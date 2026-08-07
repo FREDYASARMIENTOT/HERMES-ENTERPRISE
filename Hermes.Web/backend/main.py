@@ -5,7 +5,6 @@ Este archivo inicializa la aplicacion FastAPI, configura el Middleware,
 registra los routers de la API Publica y expone el servidor web.
 
 Modo de ejecucion directa:
-    cd d:\\HERMES-ENTERPRISE
     python -c "import Hermes.Web.backend.main"
     
     # O desde uvicorn:
@@ -288,7 +287,16 @@ else:
 # ──────────────────────────────────────────────────────────────
 
 if RUTA_TEMPLATES.exists():
-    templates = Jinja2Templates(directory=str(RUTA_TEMPLATES))
+    # Jinja2 3.1.x LRUCache bug: cache key (name, globals) where globals is a dict -> unhashable
+    # Solucion: usar cache_size=0 para deshabilitar cache o usar Cache passthrough.
+    # Usamos Environment con FileSystemLoader y cache_size=0 para evitar el bug.
+    from jinja2 import Environment, FileSystemLoader
+    _jinja_env = Environment(
+        loader=FileSystemLoader(str(RUTA_TEMPLATES)),
+        auto_reload=False,
+        cache_size=0
+    )
+    templates = Jinja2Templates(env=_jinja_env)
     logger.info(f"Templates Jinja2 configurados desde: {RUTA_TEMPLATES}")
 else:
     templates = None
@@ -317,83 +325,61 @@ else:
 # ──────────────────────────────────────────────────────────────
 # Importacion y registro de los routers de la API Publica
 # ──────────────────────────────────────────────────────────────
+# Estrategia: cargar modulos via importlib.util desde las rutas
+# directas a los archivos. Esto evita depender del MetaPathFinder
+# (HermesWebFinder) que falla en Azure Linux.
+#
+# Los modulos se almacenan en sys.modules para que las referencias
+# internas entre modulos funcionen correctamente.
+# ──────────────────────────────────────────────────────────────
 
-try:
-    from Hermes.Web.api.api_version import router as router_version
-    app.include_router(router_version, prefix="/api", tags=["Version"])
-    logger.info("Router /api/version registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/version no disponible: {error}")
+_API_DIR = _HERMES_WEB_DIR / "api"
 
-try:
-    from Hermes.Web.api.api_proyecto import router as router_proyecto
-    app.include_router(router_proyecto, prefix="/api", tags=["Proyecto"])
-    logger.info("Router /api/proyecto registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/proyecto no disponible: {error}")
+_router_modules = [
+    ("version", "Version"),
+    ("proyecto", "Proyecto"),
+    ("workspace", "Workspace"),
+    ("git", "Git"),
+    ("github", "GitHub"),
+    ("entorno", "Entorno"),
+    ("bootstrap", "Bootstrap"),
+    ("telemetria", "Telemetria"),
+    ("azure", "Azure"),
+    ("sqlite", "SQLite"),
+    ("despliegue", "Despliegue"),
+]
 
-try:
-    from Hermes.Web.api.api_workspace import router as router_workspace
-    app.include_router(router_workspace, prefix="/api", tags=["Workspace"])
-    logger.info("Router /api/workspace registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/workspace no disponible: {error}")
+# Cargar __init__.py de api/ primero si existe
+_api_init = _API_DIR / "__init__.py"
+if _api_init.exists():
+    _spec = importlib.util.spec_from_file_location("Hermes.Web.api", str(_api_init))
+    if _spec and _spec.loader:
+        _mod_api = importlib.util.module_from_spec(_spec)
+        sys.modules["Hermes.Web.api"] = _mod_api
+        _spec.loader.exec_module(_mod_api)
 
-try:
-    from Hermes.Web.api.api_git import router as router_git
-    app.include_router(router_git, prefix="/api", tags=["Git"])
-    logger.info("Router /api/git registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/git no disponible: {error}")
-
-try:
-    from Hermes.Web.api.api_github import router as router_github
-    app.include_router(router_github, prefix="/api", tags=["GitHub"])
-    logger.info("Router /api/github registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/github no disponible: {error}")
-
-try:
-    from Hermes.Web.api.api_entorno import router as router_entorno
-    app.include_router(router_entorno, prefix="/api", tags=["Entorno"])
-    logger.info("Router /api/entorno registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/entorno no disponible: {error}")
-
-try:
-    from Hermes.Web.api.api_bootstrap import router as router_bootstrap
-    app.include_router(router_bootstrap, prefix="/api", tags=["Bootstrap"])
-    logger.info("Router /api/bootstrap registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/bootstrap no disponible: {error}")
-
-try:
-    from Hermes.Web.api.api_telemetria import router as router_telemetria
-    app.include_router(router_telemetria, prefix="/api", tags=["Telemetria"])
-    logger.info("Router /api/telemetria registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/telemetria no disponible: {error}")
-
-try:
-    from Hermes.Web.api.api_azure import router as router_azure
-    app.include_router(router_azure, prefix="/api", tags=["Azure"])
-    logger.info("Router /api/azure registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/azure no disponible: {error}")
-
-try:
-    from Hermes.Web.api.api_sqlite import router as router_sqlite
-    app.include_router(router_sqlite, prefix="/api", tags=["SQLite"])
-    logger.info("Router /api/sqlite registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/sqlite no disponible: {error}")
-
-try:
-    from Hermes.Web.api.api_despliegue import router as router_despliegue
-    app.include_router(router_despliegue, prefix="/api", tags=["Despliegue"])
-    logger.info("Router /api/despliegue registrado.")
-except ImportError as error:
-    logger.warning(f"Router /api/despliegue no disponible: {error}")
+for _mod_name, _tag in _router_modules:
+    _router_obj = None
+    _module_fullname = f"Hermes.Web.api.api_{_mod_name}"
+    _file_path = _API_DIR / f"api_{_mod_name}.py"
+    
+    if _file_path.exists():
+        try:
+            _spec = importlib.util.spec_from_file_location(_module_fullname, str(_file_path))
+            if _spec and _spec.loader:
+                _mod = importlib.util.module_from_spec(_spec)
+                sys.modules[_module_fullname] = _mod
+                _spec.loader.exec_module(_mod)
+                _router_obj = getattr(_mod, "router", None)
+        except Exception as _import_err:
+            logger.warning(f"Router /api/{_mod_name} error: {_import_err}")
+            _router_obj = None
+    
+    if _router_obj is not None:
+        app.include_router(_router_obj, prefix="/api", tags=[_tag])
+        logger.info(f"Router /api/{_mod_name} registrado.")
+    else:
+        logger.warning(f"Router /api/{_mod_name} no disponible.")
 
 # ──────────────────────────────────────────────────────────────
 # Funcion auxiliar para ejecutar comandos PowerShell
@@ -475,6 +461,7 @@ async def raiz_portal_web(request: Request):
     """Renderiza la pagina principal del Portal Web de Hermes Enterprise."""
     if templates:
         return templates.TemplateResponse(
+            request,
             "index.html",
             {
                 "request": request,

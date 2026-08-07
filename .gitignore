@@ -40,6 +40,10 @@ bin/
 obj/
 artifacts/
 release/
+*.zip
+deploy_pkg/
+deploy_pkg.zip
+temp-cred*.json
 *.ps1xml
 *.pdb
 *.cache

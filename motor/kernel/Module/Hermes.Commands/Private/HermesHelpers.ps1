@@ -9,6 +9,8 @@ function _Get-HermesRoot {
     $d = Split-Path -Parent $PSScriptRoot
     $d = Split-Path -Parent $d
     $d = Split-Path -Parent $d
+    $d = Split-Path -Parent $d
+    $d = Split-Path -Parent $d
     return (Resolve-Path $d).Path
 }
 

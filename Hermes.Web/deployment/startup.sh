@@ -2,25 +2,33 @@
 # ====================================================================
 # startup.sh — Script de inicio para Azure App Service (Linux)
 # ====================================================================
-# RC70-D: Usa python -m pip / python -m gunicorn para garantizar
-# que se utiliza el mismo interprete configurado en el Runtime.
+# RC72: Los archivos se despliegan con prefijo Hermes.Web/
+# para mantener compatibilidad con imports como:
+#   from Hermes.Web.api.api_version import router
 # ====================================================================
 
 set -e
 
+HERMES_WEB_DIR="/home/site/wwwroot/Hermes.Web"
 echo "========================================="
 echo "Hermes.Web — Inicio en Azure App Service"
 echo "========================================="
 echo "Fecha: $(date)"
 echo "Python: $(python3 --version 2>&1)"
-echo "Directorio: $(pwd)"
+echo "Directorio base: /home/site/wwwroot"
+echo "Hermes.Web: $HERMES_WEB_DIR"
+echo "Contenido: $(ls -la /home/site/wwwroot/)"
 echo "========================================="
 
-# 1. Instalar dependencias (RC70-D: usar python -m pip)
-echo "[1/3] Instalando dependencias desde Hermes.Web/requirements.txt..."
-python3 -m pip install -r Hermes.Web/requirements.txt --no-cache-dir 2>&1
+# 1. Instalar dependencias
+echo "[1/3] Instalando dependencias desde requirements.txt..."
+if [ -f "/home/site/wwwroot/requirements.txt" ]; then
+    python3 -m pip install -r /home/site/wwwroot/requirements.txt --no-cache-dir 2>&1
+elif [ -f "$HERMES_WEB_DIR/requirements.txt" ]; then
+    python3 -m pip install "$HERMES_WEB_DIR/requirements.txt" --no-cache-dir 2>&1
+fi
 
-# 2. Verificar dependencias críticas (RC70-D: usar python -c)
+# 2. Verificar dependencias críticas
 echo "[2/3] Verificando dependencias críticas..."
 python3 -c "
 import fastapi
@@ -32,14 +40,21 @@ print(f'Jinja2: {jinja2.__version__}')
 print('Dependencias OK')
 " 2>&1
 
-# 3. Iniciar servidor con Gunicorn + Uvicorn (RC70-D: usar python -m gunicorn)
-echo "[3/3] Iniciando servidor Gunicorn + Uvicorn (python -m)..."
+# 3. Cambiar al directorio Hermes.Web
+echo "[2b/3] Cambiando a $HERMES_WEB_DIR..."
+cd "$HERMES_WEB_DIR"
+echo "Contenido de Hermes.Web: $(ls -la)"
+echo "PYTHONPATH: $HERMES_WEB_DIR"
+
+# 4. Iniciar servidor Gunicorn + Uvicorn
+echo "[3/3] Iniciando servidor Gunicorn + Uvicorn..."
 echo "Host: 0.0.0.0"
 echo "Puerto: ${PORT:-8000}"
 echo "Workers: ${WEB_CONCURRENCY:-4}"
 echo "========================================="
 
-python3 -m gunicorn Hermes.Web.backend.main:app \
+PYTHONPATH="$HERMES_WEB_DIR" python3 -m gunicorn \
+    backend.main:app \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:${PORT:-8000} \
     --workers ${WEB_CONCURRENCY:-4} \

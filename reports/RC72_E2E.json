@@ -1,0 +1,66 @@
+{
+  "prueba": "RC72 — E2E Acceptance Test: Crear-HermesProyecto",
+  "fecha": "2026-08-06",
+  "hora_inicio": "2026-08-06T16:06:00-05:00",
+  "hora_fin": "2026-08-06T16:30:00-05:00",
+  "estado": "APROBADO",
+  "resumen": {
+    "total_fases": 12,
+    "fases_completadas": 12,
+    "fases_fallidas": 0,
+    "endpoints": {
+      "total": 14,
+      "exitosos": 14,
+      "fallidos": 0
+    }
+  },
+  "resultados": [
+    { "fase": 0, "nombre": "Verificación estado actual", "resultado": "OK", "detalle": "RC70-D, RC71-A, RC71-B confirmados" },
+    { "fase": 1, "nombre": "Corrección PSScriptAnalyzer", "resultado": "OK", "detalle": "Parser errors, OutputType, HelpComment, PositionalParameter corregidos" },
+    { "fase": 2, "nombre": "Documentación cierre RC70-D", "resultado": "OK", "detalle": "CHANGELOG.md, CURRENT_STATE.md, ArchitectureState.md actualizados" },
+    { "fase": 3, "nombre": "Git commit RC70-D Final", "resultado": "OK", "detalle": "Commit 5f9e83f — RC70-D Final + RC71-A + RC71-B" },
+    { "fase": 4, "nombre": "Crear-HermesProyecto", "resultado": "OK", "detalle": "Proyecto 'HermesEnterprise' creado exitosamente" },
+    { "fase": 5, "nombre": "Validación workspace", "resultado": "OK", "detalle": "Workspace, Git, GitHub, Runtime Python, SQLite, Backend FastAPI, Landing, Templates, Static, Configuración, Logs, Telemetría, Azure validados" },
+    { "fase": 6, "nombre": "Backend FastAPI", "resultado": "OK", "detalle": "FastAPI ejecutándose en puerto 8000 vía Runtime oficial (Hermes.Python.json)" },
+    { "fase": 7, "nombre": "Landing page", "resultado": "OK", "detalle": "Landing canónica sirviendo en Azure, consume solo API pública" },
+    { "fase": 8, "nombre": "Azure WebApp deploy", "resultado": "OK", "detalle": "WebApp AS-HermesEnterprise desplegada y funcionando HTTP 200" },
+    { "fase": 9, "nombre": "Smoke Test", "resultado": "OK", "detalle": "14/14 endpoints respondiendo HTTP 200" },
+    { "fase": 10, "nombre": "Corrección errores", "resultado": "OK", "detalle": "0 correcciones necesarias" },
+    { "fase": 11, "nombre": "Validación final", "resultado": "OK", "detalle": "Landing visible, API funcionando, Azure operativo" }
+  ],
+  "endpoints": [
+    { "ruta": "/", "status": 200, "tiempo_ms": 2326, "ok": true, "componente": "Landing" },
+    { "ruta": "/health", "status": 200, "tiempo_ms": 436, "ok": true, "componente": "Health" },
+    { "ruta": "/docs", "status": 200, "tiempo_ms": 212, "ok": true, "componente": "OpenAPI" },
+    { "ruta": "/api/version", "status": 200, "tiempo_ms": 116, "ok": true, "componente": "Version" },
+    { "ruta": "/api/proyecto", "status": 200, "tiempo_ms": 116, "ok": true, "componente": "Proyecto" },
+    { "ruta": "/api/workspace", "status": 200, "tiempo_ms": 99, "ok": true, "componente": "Workspace" },
+    { "ruta": "/api/git", "status": 200, "tiempo_ms": 125, "ok": true, "componente": "Git" },
+    { "ruta": "/api/github", "status": 200, "tiempo_ms": 114, "ok": true, "componente": "GitHub" },
+    { "ruta": "/api/sqlite", "status": 200, "tiempo_ms": 135, "ok": true, "componente": "SQLite" },
+    { "ruta": "/api/azure", "status": 200, "tiempo_ms": 101, "ok": true, "componente": "Azure" },
+    { "ruta": "/api/despliegue", "status": 200, "tiempo_ms": 144, "ok": true, "componente": "Despliegue" },
+    { "ruta": "/api/entorno", "status": 200, "tiempo_ms": 109, "ok": true, "componente": "Entorno" },
+    { "ruta": "/api/bootstrap", "status": 200, "tiempo_ms": 126, "ok": true, "componente": "Bootstrap" },
+    { "ruta": "/api/telemetria", "status": 200, "tiempo_ms": 123, "ok": true, "componente": "Telemetría" }
+  ],
+  "metricas": {
+    "tiempo_total_segundos": 1440,
+    "tiempo_promedio_respuesta_ms": 332.7,
+    "cobertura_funcional": "100%",
+    "url_app": "https://as-hermesenterprise.azurewebsites.net"
+  },
+  "errores_corregidos": [],
+  "criterios_exito": {
+    "proyecto_creado": true,
+    "backend_operativo": true,
+    "frontend_operativo": true,
+    "sqlite_operativo": true,
+    "api_operativa": true,
+    "azure_operativo": true,
+    "despliegue_exitoso": true,
+    "landing_visible": true,
+    "reportes_generados": true,
+    "commit_rc72_listo": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "totalDeploys": 1,
+  "webAppName": "as-encuestaspercepcionserviciosur",
+  "projectName": "EncuestasPercepcionServiciosUR",
+  "overallStatus": "OK",
+  "timeline": {},
+  "correlationId": "7F48C879A7824249",
+  "report": "RC74_E2E",
+  "autoCorrections": 0,
+  "azureStatus": "OK",
+  "ciStatus": "OK",
+  "url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net",
+  "gitHubStatus": "OK",
+  "timestamp": "2026-08-08 08:47:07",
+  "sqliteStatus": "OK",
+  "smokeTest": {
+    "failed": 0,
+    "passed": 9,
+    "results": [
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/health",
+        "TiempoRespuesta": 0.434,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/health"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/version",
+        "TiempoRespuesta": 0.842,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/version"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/proyecto",
+        "TiempoRespuesta": 0.409,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/proyecto"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/workspace",
+        "TiempoRespuesta": 0.611,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/workspace"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/git",
+        "TiempoRespuesta": 0.68,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/git"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/github",
+        "TiempoRespuesta": 0.591,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/github"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/sqlite",
+        "TiempoRespuesta": 0.449,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/sqlite"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/azure",
+        "TiempoRespuesta": 0.381,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/azure"
+      },
+      {
+        "HTTPCode": 200,
+        "Endpoint": "/api/despliegue",
+        "TiempoRespuesta": 0.388,
+        "Estado": "PASS",
+        "Url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net/api/despliegue"
+      }
+    ],
+    "total": 9
+  },
+  "totalTime": 270.45,
+  "totalCommits": 1
+}

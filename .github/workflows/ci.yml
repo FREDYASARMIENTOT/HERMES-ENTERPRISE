@@ -1,0 +1,139 @@
+# ====================================================================
+# CI/CD Pipeline — Hermes Enterprise RC71
+# ====================================================================
+# RC71: CI mínimo para validar el Runtime Python, dependencias,
+# estilo de código y pruebas unitarias.
+# ====================================================================
+# Tecnologías: Python 3.14+, PowerShell, PSScriptAnalyzer
+# Entorno: GitHub Actions (ubuntu-latest)
+# Runtime: D:\HermesRuntime\Environments\HermesEnterprise
+# ====================================================================
+
+name: Hermes Enterprise CI — RC75-A
+
+on:
+  push:
+    branches: [ main, develop, rc-* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-python:
+    name: Validar Python Runtime
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validar importaciones críticas
+        run: |
+          python -c "
+          import fastapi
+          import uvicorn
+          import jinja2
+          import pydantic
+          print(f'FastAPI: {fastapi.__version__}')
+          print(f'Jinja2: {jinja2.__version__}')
+          print(f'Pydantic: {pydantic.__version__}')
+          print('Todas las dependencias críticas OK')
+          "
+
+      - name: Ejecutar pruebas unitarias Python
+        run: |
+          python -m pytest pruebas/ --junitxml=test-results.xml -v --tb=short 2>&1
+
+      - name: Validar existencia de archivos canónicos
+        run: |
+          test -f config/Hermes.Python.json && echo "OK: Hermes.Python.json"
+          test -f Hermes/__init__.py && echo "OK: Hermes/__init__.py"
+          test -d Hermes.Web && echo "OK: Hermes.Web/"
+          test -d tools/Modules && echo "OK: tools/Modules/"
+          test -f tools/Crear-HermesProyecto.ps1 && echo "OK: Crear-HermesProyecto.ps1"
+          test -f config/Hermes.InfrastructureProtection.json && echo "OK: Guardian config"
+
+  validate-powershell:
+    name: Validar PowerShell
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Validar módulos PowerShell
+        shell: pwsh
+        run: |
+          $parseErrors = @()
+          $scripts = @(
+            "tools/Modules/Guardian.ps1",
+            "tools/Modules/Git.ps1",
+            "tools/Modules/GitHub.ps1",
+            "tools/Modules/Azure.ps1",
+            "tools/Modules/SQLite.ps1",
+            "tools/Modules/Packaging.ps1",
+            "tools/Modules/Workspace.ps1",
+            "tools/Modules/Reporting.ps1",
+            "tools/Crear-HermesProyecto.ps1"
+          )
+          foreach ($script in $scripts) {
+            if (Test-Path $script) {
+              $tokens = $null
+              $parseErr = $null
+              $tokens = [System.Management.Automation.PSParser]::Tokenize((Get-Content $script -Raw), [ref]$parseErr)
+              if ($parseErr -and $parseErr.Count -gt 0) {
+                $parseErrors += "ERROR: $script tiene $($parseErr.Count) errores de sintaxis"
+                foreach ($err in $parseErr) { Write-Host "  L$($err.Token.StartLine): $($err.Message)" }
+              } else {
+                Write-Host "OK: $script ($($tokens.Count) tokens)"
+              }
+            } else {
+              $parseErrors += "ERROR: $script no encontrado"
+            }
+          }
+          if ($parseErrors.Count -gt 0) { $parseErrors | ForEach-Object { Write-Host $_ }; exit 1 }
+          Write-Host "Todos los scripts PowerShell válidos"
+
+  validate-documentation:
+    name: Validar documentación
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Validar archivos de documentación
+        run: |
+          missing=0
+          for f in README.md CURRENT_STATE.md CHANGELOG.md docs/ArchitectureState.md; do
+            if [ -f "$f" ]; then echo "OK: $f"; else echo "MISSING: $f"; missing=$((missing + 1)); fi
+          done
+          exit $missing
+
+  validate-actions:
+    name: Validate GitHub Actions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate workflows compile
+        run: |
+          python -c "
+          import yaml, sys
+          for wf in ['.github/workflows/ci.yml', '.github/workflows/deploy.yml', 'tools/Templates/github/ci.yml', 'tools/Templates/github/deploy.yml']:
+              with open(wf) as f:
+                  data = yaml.safe_load(f)
+              if data and 'jobs' in data:
+                  print(f'OK: {wf} ({len(data[\"jobs\"])} jobs)')
+              else:
+                  print(f'ERROR: {wf}')
+                  sys.exit(1)
+          "

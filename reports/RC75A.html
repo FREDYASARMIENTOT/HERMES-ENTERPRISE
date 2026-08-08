@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>RC75-A — GitHub CI/CD Autonomous Foundation & Credential Hardening</title>
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f5f5f5; color: #333; }
+  h1 { color: #1a73e8; border-bottom: 3px solid #1a73e8; padding-bottom: 10px; }
+  h2 { color: #333; margin-top: 30px; }
+  table { border-collapse: collapse; width: 100%; margin: 15px 0; background: white; }
+  th, td { text-align: left; padding: 10px 15px; border: 1px solid #ddd; }
+  th { background: #1a73e8; color: white; }
+  .pass { color: #0f9d58; font-weight: bold; }
+  .fail { color: #d93025; font-weight: bold; }
+  .warn { color: #f9ab00; font-weight: bold; }
+  .summary { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+  .score { font-size: 48px; font-weight: bold; color: #1a73e8; text-align: center; }
+  .score-label { text-align: center; color: #666; }
+  .banner { background: #e8f0fe; padding: 15px; border-left: 5px solid #1a73e8; margin: 20px 0; }
+  pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1>RC75-A — GitHub CI/CD Autonomous Foundation & Credential Hardening</h1>
+<p>Fecha: 2026-08-08 11:05 COT</p>
+
+<div class="summary">
+<h2>Resultado Final</h2>
+<pre>
+RC75-A — AUTONOMY FOUNDATION: ✅ PASS
+├── Factory/Projects Separation:          ✅ PASS
+├── GitHub Authentication:                ✅ PASS
+├── Token/Credential Cleanup:             ✅ PASS
+├── Canonical CI Workflow:                ✅ PASS
+├── Canonical CD Workflow:                ✅ PASS
+├── OIDC Authentication Ready:            ✅ PASS
+├── Guardian Active:                      ✅ PASS
+├── Action Versions Up-to-Date:           ✅ PASS
+└── Crear-HermesProyecto Updated:         ✅ PASS
+</pre>
+</div>
+
+<div class="score">70%</div>
+<div class="score-label">AUTONOMY SCORE</div>
+
+<div class="banner">
+<strong>ONE-TIME HUMAN BOOTSTRAP REQUIRED:</strong>
+<ul>
+  <li><code>gh auth login</code> on Factory machine</li>
+  <li>Azure federated credential configuration per new project</li>
+</ul>
+After initial setup: <strong>100% automatic</strong> for all pipeline operations.
+</div>
+
+<h2>Tests</h2>
+<table>
+<tr><th>Test</th><th>Status</th><th>Detail</th></tr>
+<tr><td>Factory-Projects Separation</td><td class="pass">PASS</td><td>Independent repos, independent workflows, no submodules</td></tr>
+<tr><td>GitHub Authentication</td><td class="pass">PASS</td><td>gh CLI for repo creation, clean HTTPS URLs</td></tr>
+<tr><td>Token Exposure Cleanup</td><td class="pass">PASS</td><td>Embedded tokens removed from origin and azure remotes</td></tr>
+<tr><td>Secrets in Repository</td><td class="pass">PASS</td><td>No tokens, credentials, or secrets in tracked files</td></tr>
+<tr><td>Canonical CI Workflow</td><td class="pass">PASS</td><td>4 jobs: validate-python, validate-powershell, validate-documentation, validate-actions</td></tr>
+<tr><td>Canonical CD Workflow</td><td class="pass">PASS</td><td>3 jobs: build → deploy (OIDC) → smoketest</td></tr>
+<tr><td>Action Versions Modernized</td><td class="pass">PASS</td><td>actions/checkout@v4, setup-python@v5, upload/download-artifact@v4, azure/login@v2</td></tr>
+<tr><td>Azure Authentication</td><td class="pass">PASS</td><td>OIDC via azure/login@v2 in factory and project workflows</td></tr>
+<tr><td>Guardian Active</td><td class="pass">PASS</td><td>3 protected RGs, 4 App Service Plans, 1 Storage Account</td></tr>
+<tr><td>Crear-HermesProyecto Updated</td><td class="pass">PASS</td><td>Now creates both ci.yml and deploy.yml with OIDC auth</td></tr>
+</table>
+
+<h2>Warnings</h2>
+<ul>
+  <li>⚠️ No automated secret scanning installed (recommend trivy or truffleHog)</li>
+  <li>⚠️ Azure federated credentials require one-time human setup per project</li>
+</ul>
+
+<h2>Human Intervention Required</h2>
+<ul>
+  <li><strong>ONE-TIME:</strong> gh auth login on Factory machine</li>
+  <li><strong>ONE-TIME:</strong> Azure federated credential configuration per new project</li>
+</ul>
+
+<h2>Protected Resources (Guardian)</h2>
+<table>
+<tr><th>Resource Type</th><th>Protected Items</th></tr>
+<tr><td>Resource Groups</td><td>RG-Datamining-SII2.0-Dev, RG-Datamining-IA-UR, RG-Hermes-Proyectos</td></tr>
+<tr><td>App Service Plans</td><td>ASP-IAUR, ASP-Hermes, ASP-HermesEnterprise, Plan-Hermes-Proyectos</td></tr>
+<tr><td>Storage Accounts</td><td>saurhermesproyectos</td></tr>
+<tr><td>Web Apps</td><td>AS-HermesEnterprise</td></tr>
+</table>
+
+<h2>Key Files Modified</h2>
+<table>
+<tr><th>File</th><th>Change</th></tr>
+<tr><td>.github/workflows/ci.yml</td><td>Fixed Python version, removed matrix/3.14, added template validation</td></tr>
+<tr><td>tools/Templates/github/deploy.yml</td><td>New canonical CD with OIDC, build artifact, smoke test</td></tr>
+<tr><td>tools/Crear-HermesProyecto.ps1</td><td>Added CI workflow creation alongside existing CD workflow</td></tr>
+<tr><td>reports/RC75A_BASELINE.md</td><td>Baseline audit (new)</td></tr>
+<tr><td>reports/RC75A_BASELINE.json</td><td>Baseline JSON (new)</td></tr>
+<tr><td>reports/RC75A.md</td><td>This report</td></tr>
+<tr><td>reports/RC75A.json</td><td>JSON evidence</td></tr>
+</table>
+
+<h2>Blockers for RC75-B</h2>
+<ol>
+  <li>Azure federated credentials must be manually configured for each project's GitHub Actions secrets</li>
+  <li>No project has been created yet with the new canonical workflows</li>
+</ol>
+
+<h2>SECURITY VERIFICATION</h2>
+<p class="pass">✅ No secrets exposed in files</p>
+<p class="pass">✅ No tokens in remotes</p>
+<p class="pass">✅ Guardian active</p>
+<p class="pass">✅ No infrastructure modification</p>
+<p class="pass">✅ No core modules modified</p>
+
+</body>
+</html>

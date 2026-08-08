@@ -1,0 +1,63 @@
+{
+  "phase": "RC75-A",
+  "title": "GitHub CI/CD Autonomous Foundation & Credential Hardening",
+  "status": "PASS",
+  "timestamp": "2026-08-08T11:05:00-05:00",
+  "duration_seconds": 0,
+  "tests": [
+    {"name": "Factory-Projects Separation", "status": "PASS", "detail": "Independent repos, independent workflows, no submodules"},
+    {"name": "GitHub Authentication", "status": "PASS", "detail": "gh CLI for repo creation, clean HTTPS URLs"},
+    {"name": "Token Exposure Cleanup", "status": "PASS", "detail": "Embedded tokens removed from origin and azure remotes"},
+    {"name": "Secrets in Repository", "status": "PASS", "detail": "No tokens, credentials, or secrets in tracked files"},
+    {"name": "Canonical CI Workflow", "status": "PASS", "detail": "4 jobs: validate-python, validate-powershell, validate-documentation, validate-actions"},
+    {"name": "Canonical CD Workflow", "status": "PASS", "detail": "3 jobs: build → deploy (OIDC) → smoketest"},
+    {"name": "Action Versions Modernized", "status": "PASS", "detail": "actions/checkout@v4, setup-python@v5, upload/download-artifact@v4, azure/login@v2"},
+    {"name": "Azure Authentication", "status": "PASS", "detail": "OIDC via azure/login@v2 in factory and project workflows"},
+    {"name": "Guardian Active", "status": "PASS", "detail": "3 protected RGs, 4 App Service Plans, 1 Storage Account"},
+    {"name": "Crear-HermesProyecto Updated", "status": "PASS", "detail": "Now creates both ci.yml and deploy.yml with OIDC auth"}
+  ],
+  "warnings": [
+    "No automated secret scanning installed (recommend trivy or truffleHog)",
+    "Azure federated credentials require one-time human setup per project"
+  ],
+  "errors": [],
+  "human_intervention": [
+    "ONE-TIME: gh auth login on Factory machine",
+    "ONE-TIME: Azure federated credential configuration per new project"
+  ],
+  "deployment": {
+    "factory_workflow": ".github/workflows/deploy.yml",
+    "project_ci_template": "tools/Templates/github/ci.yml",
+    "project_cd_template": "tools/Templates/github/deploy.yml",
+    "status": "READY"
+  },
+  "github": {
+    "factory_repo": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git",
+    "remote_clean": true,
+    "workflow_files": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/deploy.yml",
+      "tools/Templates/github/ci.yml",
+      "tools/Templates/github/deploy.yml"
+    ]
+  },
+  "azure": {
+    "resource_groups": ["RG-Datamining-SII2.0-Dev", "RG-Datamining-IA-UR", "RG-Hermes-Proyectos"],
+    "app_service_plans": ["ASP-IAUR", "ASP-Hermes", "ASP-HermesEnterprise", "Plan-Hermes-Proyectos"],
+    "storage_accounts": ["saurhermesproyectos"],
+    "auth_method": "OIDC (federated identity)"
+  },
+  "security": {
+    "guardian_active": true,
+    "secrets_exposed_found": false,
+    "tokens_in_remotes": false,
+    "tokens_in_files": false,
+    "secret_detected": false
+  },
+  "autonomy_score": 70,
+  "autonomy_detail": "100% automatic: Factory CI/CD, project workflow templates, Git operations. HUMAN_REQUIRED: gh auth login bootstrap, Azure federated credential setup per project",
+  "blockers_for_next_phase": [
+    "Azure federated credentials must be configured in each project's GitHub secrets",
+    "No test project has been created yet with canonical workflows"
+  ]
+}

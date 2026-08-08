@@ -1,0 +1,131 @@
+{
+  "phase": "RC75-A-BASELINE",
+  "status": "PASS",
+  "timestamp": "2026-08-08T10:36:00-05:00",
+  "git": {
+    "branch": "main",
+    "head": "04459efa132c8cc772b05f732ccb788e0967585a",
+    "latest_commit": "temp: remove workflow for scope-limited push",
+    "origin": "github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git",
+    "azure_remote": "as-hermesenterprise.scm.azurewebsites.net/AS-HermesEnterprise.git"
+  },
+  "remotes": {
+    "origin": {
+      "url_clean": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git",
+      "has_embedded_token": true,
+      "token_type": "PAT",
+      "severity": "CRITICAL"
+    },
+    "azure": {
+      "url_clean": "https://as-hermesenterprise.scm.azurewebsites.net/AS-HermesEnterprise.git",
+      "has_embedded_token": true,
+      "token_type": "OAuth",
+      "severity": "CRITICAL"
+    }
+  },
+  "workflows": {
+    "factory": ["ci.yml", "deploy.yml"],
+    "template": "tools/Templates/github/deploy.yml",
+    "issues": [
+      "Python 3.14 specified (not available)",
+      "continue-on-error: true masks test failures",
+      "Factory deploy uses AZURE_CREDENTIALS (long-lived SP secret)",
+      "Template workflow has no CI gate before deploy",
+      "Template uses AZURE_WEBAPP_PUBLISH_PROFILE instead of OIDC"
+    ]
+  },
+  "azure": {
+    "subscriptionId": "01bfad48-c092-4712-bc72-f141eb01a8d4",
+    "location": "eastus",
+    "resource_groups": {
+      "RG-Hermes-Proyectos": "exists",
+      "RG-Datamining-SII2.0-Dev": "exists",
+      "RG-Datamining-IA-UR": "exists"
+    },
+    "app_service_plan": "ASP-IAUR",
+    "storage_account": "saurhermesproyectos"
+  },
+  "guardian": {
+    "version": "1.1.0",
+    "enforcement": "hard",
+    "protected_resource_groups": 3,
+    "protected_app_service_plans": 4,
+    "protected_storage_accounts": 1,
+    "protected_web_apps": 1,
+    "blocked_operations": 14,
+    "validation_rules": 16,
+    "active": true
+  },
+  "risks": [
+    {
+      "id": "R1",
+      "description": "GitHub PAT token exposed in origin remote URL",
+      "severity": "CRITICAL",
+      "phase_to_fix": "FASE 2"
+    },
+    {
+      "id": "R2",
+      "description": "Azure OAuth token exposed in azure remote URL",
+      "severity": "CRITICAL",
+      "phase_to_fix": "FASE 2"
+    },
+    {
+      "id": "R3",
+      "description": "Python 3.14 in workflows (doesn't exist)",
+      "severity": "HIGH",
+      "phase_to_fix": "FASE 5"
+    },
+    {
+      "id": "R4",
+      "description": "Tests run with continue-on-error: true (masking failures)",
+      "severity": "HIGH",
+      "phase_to_fix": "FASE 5"
+    },
+    {
+      "id": "R5",
+      "description": "AZURE_CREDENTIALS long-lived secret",
+      "severity": "MEDIUM",
+      "phase_to_fix": "FASE 6"
+    },
+    {
+      "id": "R6",
+      "description": "No OIDC for GitHub->Azure auth",
+      "severity": "MEDIUM",
+      "phase_to_fix": "FASE 6"
+    },
+    {
+      "id": "R7",
+      "description": "Template workflow has no CI gate before deploy",
+      "severity": "HIGH",
+      "phase_to_fix": "FASE 4"
+    },
+    {
+      "id": "R8",
+      "description": "Project workflow uses publish profile instead of OIDC",
+      "severity": "MEDIUM",
+      "phase_to_fix": "FASE 4/6"
+    },
+    {
+      "id": "R9",
+      "description": "GitHub CLI auth status unknown",
+      "severity": "MEDIUM",
+      "phase_to_fix": "FASE 1"
+    },
+    {
+      "id": "R10",
+      "description": "gh workflow list returned empty — workflows may be disabled",
+      "severity": "MEDIUM",
+      "phase_to_fix": "FASE 5"
+    }
+  ],
+  "security": {
+    "secret_detected": true,
+    "secret_detected_remotes": true,
+    "secret_detected_workflows": false,
+    "secret_detected_logs": false,
+    "requires_human_rotation": true,
+    "human_intervention_required": ["Remove embedded tokens from git remotes"]
+  },
+  "phase0_complete": true,
+  "modifications_made": false
+}

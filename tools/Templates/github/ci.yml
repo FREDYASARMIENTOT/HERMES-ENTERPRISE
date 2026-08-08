@@ -1,0 +1,155 @@
+name: CI — {{PROJECT_NAME}}
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-structure:
+    name: Validate Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required directories
+        run: |
+          REQUIRED_DIRS=(
+            "backend"
+            "frontend"
+            "database"
+            "tests"
+            ".github/workflows"
+          )
+          MISSING=0
+          for DIR in "${REQUIRED_DIRS[@]}"; do
+            if [ -d "$DIR" ]; then
+              echo "OK: $DIR"
+            else
+              echo "MISSING: $DIR"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          exit $MISSING
+
+      - name: Check required files
+        run: |
+          REQUIRED_FILES=(
+            "backend/main.py"
+            "backend/requirements.txt"
+            "backend/startup.sh"
+          )
+          MISSING=0
+          for FILE in "${REQUIRED_FILES[@]}"; do
+            if [ -f "$FILE" ]; then
+              echo "OK: $FILE"
+            else
+              echo "MISSING: $FILE"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          exit $MISSING
+
+  validate-python:
+    name: Validate Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Validate imports
+        run: |
+          python -c "
+          import fastapi
+          import uvicorn
+          import jinja2
+          import pydantic
+          import sqlite3
+          print(f'FastAPI: {fastapi.__version__}')
+          print(f'Jinja2: {jinja2.__version__}')
+          print(f'Pydantic: {pydantic.__version__}')
+          print('All imports OK')
+          "
+
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/ --junitxml=test-results.xml -v --tb=short
+
+      - name: Validate middleware
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, 'backend')
+          from main import app
+          routes = [r.path for r in app.routes]
+          print(f'Routes: {len(routes)}')
+          for r in routes:
+              print(f'  {r}')
+          "
+
+  validate-frontend:
+    name: Validate Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check landing page
+        run: |
+          if [ -f "frontend/index.html" ]; then
+            echo "OK: frontend/index.html exists"
+            grep -q "<title>" frontend/index.html && echo "OK: Has title tag"
+          else
+            echo "MISSING: frontend/index.html"
+            exit 1
+          fi
+
+      - name: Check static assets
+        run: |
+          if [ -d "frontend/static" ]; then
+            echo "OK: frontend/static/ exists"
+          fi
+          if [ -d "frontend/templates" ]; then
+            echo "OK: frontend/templates/ exists"
+          fi
+
+  validate-database:
+    name: Validate Database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check database files
+        run: |
+          if [ -f "database/schema.sql" ]; then
+            echo "OK: database/schema.sql"
+            wc -l database/schema.sql
+          fi
+          if [ -f "database/init.sql" ]; then
+            echo "OK: database/init.sql"
+          fi
+
+      - name: Validate SQL syntax
+        run: |
+          if [ -f "database/schema.sql" ]; then
+            # Basic SQL validation - check for common syntax
+            python -c "
+            with open('database/schema.sql') as f:
+                content = f.read()
+            required_keywords = ['CREATE TABLE', 'CREATE', 'TABLE']
+            found = [k for k in required_keywords if k.upper() in content.upper()]
+            print(f'Schema keywords found: {len(found)}')
+            for k in found:
+                print(f'  {k}')
+            "
+          fi

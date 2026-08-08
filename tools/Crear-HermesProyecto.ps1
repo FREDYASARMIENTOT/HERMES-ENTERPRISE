@@ -80,9 +80,14 @@ try {
     $readmeContent = Get-Content $readmeTemplate -Raw -Encoding UTF8
     $readmeContent = $readmeContent -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto
     $readmeContent | Out-File (Join-Path $ProjRoot "README.md") -Encoding utf8
+    # Create CI workflow
+    $ciYml = Get-Content (Join-Path $HermesRoot "tools/Templates/github/ci.yml") -Raw
+    $ciYml = $ciYml -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto
+    # Create CD workflow (with OIDC authentication)
     $deployYml = Get-Content (Join-Path $HermesRoot "tools/Templates/github/deploy.yml") -Raw
     $deployYml = $deployYml -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto -replace '\{\{WEBAPP_NAME\}\}',$WebAppName
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot ".github/workflows") -Force | Out-Null
+    $ciYml | Out-File (Join-Path $ProjRoot ".github/workflows/ci.yml") -Encoding utf8
     $deployYml | Out-File (Join-Path $ProjRoot ".github/workflows/deploy.yml") -Encoding utf8
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot "templates") -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot "static") -Force | Out-Null

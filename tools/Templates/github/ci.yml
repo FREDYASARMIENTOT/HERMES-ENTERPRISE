@@ -1,5 +1,8 @@
 name: CI — {{PROJECT_NAME}}
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ main, develop ]

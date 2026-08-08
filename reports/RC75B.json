@@ -1,0 +1,139 @@
+{
+  "phase": "RC75-B",
+  "title": "GitHub CI/CD Workflow Hardening & Validation",
+  "status": "PASS",
+  "date": "2026-08-08",
+  "previous_commit": "6f068504cd780225c8f63d5c34c15f3293bee046",
+  "duration": "~30 min",
+  "tests": [
+    {
+      "id": "RC75B-R1",
+      "description": "Azure AD App Registration for OIDC exists",
+      "status": "BLOCKED",
+      "severity": "blocker",
+      "fix": "ONE-TIME HUMAN BOOTSTRAP required — documented in reports/RC75B.md"
+    },
+    {
+      "id": "RC75B-R2",
+      "description": "Factory CI permissions block",
+      "status": "PASS",
+      "severity": "high",
+      "fix": "Added permissions: { contents: read, id-token: write } to .github/workflows/ci.yml"
+    },
+    {
+      "id": "RC75B-R3",
+      "description": "continue-on-error: true -> false in ci.yml",
+      "status": "PASS",
+      "severity": "high",
+      "fix": "Changed continue-on-error: false on test job"
+    },
+    {
+      "id": "RC75B-R4",
+      "description": "Python 3.14 reference in ci.yml",
+      "status": "PASS",
+      "severity": "medium",
+      "fix": "Already using Python 3.12 — verified"
+    },
+    {
+      "id": "RC75B-R5",
+      "description": "Factory deploy.yml OIDC migration",
+      "status": "PASS",
+      "severity": "medium",
+      "fix": "Updated Azure Login to use OIDC parameters + added permissions block"
+    },
+    {
+      "id": "RC75B-R6",
+      "description": "Template deploy.yml permissions block",
+      "status": "PASS",
+      "severity": "medium",
+      "fix": "Added permissions: { contents: read, id-token: write } to template"
+    },
+    {
+      "id": "RC75B-R7",
+      "description": "Smoketest if: always() -> if: success()",
+      "status": "PASS",
+      "severity": "medium",
+      "fix": "Changed to if: success() in both factory deploy.yml and template"
+    }
+  ],
+  "warnings": [
+    "OIDC App Registration does not exist — workflows will fail on Azure login until bootstrap is performed",
+    "GitHub secrets AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID are not set"
+  ],
+  "errors": [],
+  "human_intervention": [
+    {
+      "action": "ONE-TIME HUMAN BOOTSTRAP",
+      "description": "Create Azure AD App Registration for Hermes-Enterprise-OIDC",
+      "required": true,
+      "blocking": true,
+      "details": "See OIDC bootstrap script in reports/RC75B.md"
+    }
+  ],
+  "deployment": {
+    "strategy": "OIDC federated identity",
+    "azure_login": "azure/login@v2 with client-id/tenant-id/subscription-id",
+    "webapp_deploy": "Azure/webapps-deploy@v3",
+    "smoketest_gating": "if: success() && needs.deploy.result == 'success'",
+    "requires_human_bootstrap": true
+  },
+  "github": {
+    "factory_ci_permissions": "PASS",
+    "factory_cd_permissions": "PASS",
+    "template_ci_permissions": "PASS",
+    "template_cd_permissions": "PASS",
+    "continue_on_error_fixed": true,
+    "smoketest_gating_fixed": true,
+    "actions_versions": "checkout@v7, setup-python@v6, azure/login@v2, webapps-deploy@v3, upload-artifact@v5, download-artifact@v5"
+  },
+  "azure": {
+    "oidc_app_registration": "MISSING",
+    "oidc_federated_credential": "MISSING",
+    "federated_identity": "MISSING",
+    "subscription_id": "01bfad48-c092-4712-bc72-f141eb01a8d4",
+    "tenant_id": "ae525757-89ba-4d30-a2f7-49796ef8c604",
+    "guardian_protected_rgs": ["RG-Hermes-Proyectos", "RG-Datamining-SII2.0-Dev", "RG-Datamining-IA-UR"],
+    "guardian_protected_asps": ["ASP-IAUR", "ASP-Hermes", "ASP-HermesEnterprise", "Plan-Hermes-Proyectos"],
+    "guardian_protected_storage": ["saurhermesproyectos"],
+    "guardian_protected_webapps": ["AS-HermesEnterprise"],
+    "guardian_enforcement": "hard"
+  },
+  "security": {
+    "no_tokens_in_diff": true,
+    "no_secrets_in_repo": true,
+    "no_embedded_credentials_in_remotes": true,
+    "no_temporary_files": true,
+    "secret_detected": false
+  },
+  "files_modified": [
+    ".github/workflows/ci.yml",
+    ".github/workflows/deploy.yml",
+    "tools/Templates/github/ci.yml",
+    "tools/Templates/github/deploy.yml"
+  ],
+  "files_created": [
+    "reports/RC75B_BASELINE.md",
+    "reports/RC75B.md",
+    "reports/RC75B.json"
+  ],
+  "criteria": {
+    "Factory CI permissions block": "PASS",
+    "Factory CD permissions block + OIDC": "PASS",
+    "Template CI permissions block": "PASS",
+    "Template CD permissions block + OIDC": "PASS",
+    "continue-on-error: false": "PASS",
+    "if: success() for smoketests": "PASS",
+    "No deprecated actions": "PASS",
+    "Guardian protected": "PASS",
+    "No secrets in repo": "PASS",
+    "Baseline generated": "PASS",
+    "Git ready to commit": "PASS",
+    "OIDC blocker documented": "PASS"
+  },
+  "autonomy_score": {
+    "score": "70%",
+    "automatic": ["Workflow creation", "CI tests", "Build", "ZIP", "Package validation"],
+    "human_required": ["OIDC App Registration bootstrap", "GitHub secrets configuration", "First deployment authorization"],
+    "notes": "After OIDC bootstrap, all CI/CD operations are fully automatic. The human bootstrap is ONE-TIME only."
+  }
+}

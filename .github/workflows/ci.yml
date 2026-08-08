@@ -17,6 +17,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   validate-python:
     name: Validar Python Runtime
@@ -51,6 +55,7 @@ jobs:
           "
 
       - name: Ejecutar pruebas unitarias Python
+        continue-on-error: false
         run: |
           python -m pytest pruebas/ --junitxml=test-results.xml -v --tb=short 2>&1
 

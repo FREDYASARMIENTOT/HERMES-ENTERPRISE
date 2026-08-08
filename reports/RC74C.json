@@ -7,7 +7,14 @@
     "name": "Crear-HermesProyecto",
     "steps": 25,
     "final_commit": true,
-    "final_push": true
+    "final_push": true,
+    "e2e_executed": true,
+    "project_name": "EncuestasPercepcionServiciosUR",
+    "project_path": "d:\\EncuestasPercepcionServiciosUR",
+    "deploy_url": "https://as-encuestaspercepcionserviciosur.azurewebsites.net",
+    "smoke_test": "HTTP 200",
+    "git_commit": "605518f RC74-C: Add E2E reports",
+    "deploy_status": "Build successful (3s)"
   },
   "summary": {
     "modules": 10,

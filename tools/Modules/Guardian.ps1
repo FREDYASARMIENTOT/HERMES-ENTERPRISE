@@ -28,18 +28,22 @@ function Test-GuardianRestrictions {
     $blockedOperations = @()
     $allowedOperations = @()
 
-    if ($config.PSObject.Properties.Name -contains "blockedOperations") {
+    if ($config.PSObject.Properties.Name -contains "BlockedOperations") {
+        $blockedOperations = $config.BlockedOperations
+    } elseif ($config.PSObject.Properties.Name -contains "blockedOperations") {
         $blockedOperations = $config.blockedOperations
     }
 
-    if ($config.PSObject.Properties.Name -contains "allowedOperations") {
+    if ($config.PSObject.Properties.Name -contains "AllowedOperations") {
+        $allowedOperations = $config.AllowedOperations
+    } elseif ($config.PSObject.Properties.Name -contains "allowedOperations") {
         $allowedOperations = $config.allowedOperations
     }
 
     $protectionRules = @{
         BlockedOperations = $blockedOperations
         AllowedOperations = $allowedOperations
-        ConfigVersion = $config.version
+        ConfigVersion = if ($config.PSObject.Properties.Name -contains "Version") { $config.Version } else { $config.version }
     }
 
     Write-Host "[Guardian] Protection rules loaded: $($blockedOperations.Count) blocked, $($allowedOperations.Count) allowed"

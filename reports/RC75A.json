@@ -1,63 +1,91 @@
 {
   "phase": "RC75-A",
   "title": "GitHub CI/CD Autonomous Foundation & Credential Hardening",
-  "status": "PASS",
-  "timestamp": "2026-08-08T11:05:00-05:00",
-  "duration_seconds": 0,
-  "tests": [
-    {"name": "Factory-Projects Separation", "status": "PASS", "detail": "Independent repos, independent workflows, no submodules"},
-    {"name": "GitHub Authentication", "status": "PASS", "detail": "gh CLI for repo creation, clean HTTPS URLs"},
-    {"name": "Token Exposure Cleanup", "status": "PASS", "detail": "Embedded tokens removed from origin and azure remotes"},
-    {"name": "Secrets in Repository", "status": "PASS", "detail": "No tokens, credentials, or secrets in tracked files"},
-    {"name": "Canonical CI Workflow", "status": "PASS", "detail": "4 jobs: validate-python, validate-powershell, validate-documentation, validate-actions"},
-    {"name": "Canonical CD Workflow", "status": "PASS", "detail": "3 jobs: build → deploy (OIDC) → smoketest"},
-    {"name": "Action Versions Modernized", "status": "PASS", "detail": "actions/checkout@v4, setup-python@v5, upload/download-artifact@v4, azure/login@v2"},
-    {"name": "Azure Authentication", "status": "PASS", "detail": "OIDC via azure/login@v2 in factory and project workflows"},
-    {"name": "Guardian Active", "status": "PASS", "detail": "3 protected RGs, 4 App Service Plans, 1 Storage Account"},
-    {"name": "Crear-HermesProyecto Updated", "status": "PASS", "detail": "Now creates both ci.yml and deploy.yml with OIDC auth"}
-  ],
-  "warnings": [
-    "No automated secret scanning installed (recommend trivy or truffleHog)",
-    "Azure federated credentials require one-time human setup per project"
-  ],
-  "errors": [],
-  "human_intervention": [
-    "ONE-TIME: gh auth login on Factory machine",
-    "ONE-TIME: Azure federated credential configuration per new project"
-  ],
-  "deployment": {
-    "factory_workflow": ".github/workflows/deploy.yml",
-    "project_ci_template": "tools/Templates/github/ci.yml",
-    "project_cd_template": "tools/Templates/github/deploy.yml",
-    "status": "READY"
+  "status": "IN_PROGRESS",
+  "last_updated": "2026-08-08T12:05:00-05:00",
+  "completed_phases": {
+    "FASE_0": {"status": "PASS", "description": "Audit and Baseline", "evidence": ["reports/RC75A_BASELINE.md", "reports/RC75A_BASELINE.json"]},
+    "FASE_1": {"status": "PASS", "description": "GitHub Credential Architecture Design"},
+    "FASE_2": {"status": "PASS", "description": "Clean embedded tokens from remotes"},
+    "FASE_3": {"status": "PASS", "description": "Factory vs Projects separation"},
+    "FASE_4": {"status": "PASS", "description": "Canonical project workflows (CI + CD)", "evidence": ["tools/Templates/github/ci.yml", "tools/Templates/github/deploy.yml"]},
+    "FASE_5": {"status": "PASS", "description": "Workflow warnings fixed"},
+    "FASE_6": {"status": "PASS", "description": "Azure OIDC Authentication", "evidence": ["docs/Azure-OIDC-Setup.md"]},
+    "FASE_7": {"status": "PASS", "description": "Guardian audit verification", "details": "Case sensitivity bug fixed in Test-GuardianRestrictions"}
   },
-  "github": {
-    "factory_repo": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git",
-    "remote_clean": true,
-    "workflow_files": [
-      ".github/workflows/ci.yml",
-      ".github/workflows/deploy.yml",
-      "tools/Templates/github/ci.yml",
-      "tools/Templates/github/deploy.yml"
+  "pipeline_integration": {
+    "OIDC_secrets_in_CrearHermesProyecto": true,
+    "OIDC_human_bootstrap_needed": true,
+    "secrets_written_to_files": false,
+    "secrets_via_gh_secret_set": true
+  },
+  "autonomy": {
+    "automatic": [
+      "Workspace creation",
+      "SQLite initialization",
+      "Template rendering",
+      "Landing page creation",
+      "Git initialization",
+      "Commit creation",
+      "GitHub repository creation",
+      "Push",
+      "OIDC secret configuration (when clientId available)",
+      "Azure configuration reading",
+      "Guardian validation",
+      "WebApp creation",
+      "ZIP creation and deployment",
+      "Smoke tests",
+      "Report generation"
+    ],
+    "human_required": [
+      "Azure AD App Registration and federated credential setup (ONE-TIME)",
+      "AZURE_CLIENT_ID configuration in environment or Hermes.Azure.json"
     ]
   },
-  "azure": {
-    "resource_groups": ["RG-Datamining-SII2.0-Dev", "RG-Datamining-IA-UR", "RG-Hermes-Proyectos"],
-    "app_service_plans": ["ASP-IAUR", "ASP-Hermes", "ASP-HermesEnterprise", "Plan-Hermes-Proyectos"],
-    "storage_accounts": ["saurhermesproyectos"],
-    "auth_method": "OIDC (federated identity)"
-  },
+  "risks": [
+    {
+      "risk": "OIDC clientId not configured in Azure",
+      "impact": "Projects use AZURE_CREDENTIALS fallback instead of OIDC",
+      "mitigation": "Documented in docs/Azure-OIDC-Setup.md, requires ONE-TIME HUMAN BOOTSTRAP"
+    },
+    {
+      "risk": "No real CI/CD test executed yet",
+      "impact": "CI/CD validity not verified in end-to-end flow",
+      "mitigation": "Pending FASE 10"
+    }
+  ],
   "security": {
+    "no_tokens_in_remotes": true,
+    "no_secrets_in_files": true,
     "guardian_active": true,
-    "secrets_exposed_found": false,
-    "tokens_in_remotes": false,
-    "tokens_in_files": false,
-    "secret_detected": false
+    "guardian_mode": "hard",
+    "oidc_architected": true
   },
-  "autonomy_score": 70,
-  "autonomy_detail": "100% automatic: Factory CI/CD, project workflow templates, Git operations. HUMAN_REQUIRED: gh auth login bootstrap, Azure federated credential setup per project",
-  "blockers_for_next_phase": [
-    "Azure federated credentials must be configured in each project's GitHub secrets",
-    "No test project has been created yet with canonical workflows"
+  "github": {
+    "origin_clean": true,
+    "workflows": ["ci.yml", "deploy.yml"],
+    "actions_versions_updated": true
+  },
+  "deployment": {},
+  "tests": [
+    {"category": "Workspace", "count": 4},
+    {"category": "Git", "count": 3},
+    {"category": "GitHub", "count": 2},
+    {"category": "SQLite", "count": 3},
+    {"category": "Runtime", "count": 3},
+    {"category": "Backend", "count": 3},
+    {"category": "Frontend", "count": 2},
+    {"category": "CI/CD", "count": 7},
+    {"category": "Security", "count": 1}
+  ],
+  "next_steps": [
+    "FASE 8: Crear-HermesProyecto review (90% complete)",
+    "FASE 9: Non-destructive validation suite (created)",
+    "FASE 10: Real CI/CD validation",
+    "FASE 11: Controlled failure test",
+    "FASE 12: Autonomy measurement",
+    "FASE 13: Observability reports",
+    "FASE 14: Git clean verification",
+    "FASE 15: Final commit"
   ]
 }

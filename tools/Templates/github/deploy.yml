@@ -9,10 +9,10 @@ jobs:
     name: Build and Package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: 'pip'
@@ -32,13 +32,13 @@ jobs:
           cp backend/startup.sh deploy/
           cp backend/requirements.txt deploy/
           cd deploy
-          zip -r ../{{PROJECT_NAME}}-deploy.zip . -x "*.git*" "*__pycache__*" "*.pyc"
+          zip -r "../{{PROJECT_NAME}}-deploy.zip" . -x "*.git*" "*__pycache__*" "*.pyc"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
-          name: {{PROJECT_NAME}}-deploy
-          path: {{PROJECT_NAME}}-deploy.zip
+          name: "{{PROJECT_NAME}}-deploy"
+          path: "{{PROJECT_NAME}}-deploy.zip"
 
   deploy:
     name: Deploy to Azure
@@ -46,9 +46,9 @@ jobs:
     needs: [build]
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
-          name: {{PROJECT_NAME}}-deploy
+          name: "{{PROJECT_NAME}}-deploy"
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
@@ -60,8 +60,8 @@ jobs:
       - name: Deploy to Azure Web App
         uses: Azure/webapps-deploy@v3
         with:
-          app-name: {{WEBAPP_NAME}}
-          package: {{PROJECT_NAME}}-deploy.zip
+          app-name: "{{WEBAPP_NAME}}"
+          package: "{{PROJECT_NAME}}-deploy.zip"
           clean: true
 
   smoketest:

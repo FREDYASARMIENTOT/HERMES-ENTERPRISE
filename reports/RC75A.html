@@ -1,117 +1,153 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>RC75-A — GitHub CI/CD Autonomous Foundation & Credential Hardening</title>
-<style>
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f5f5f5; color: #333; }
-  h1 { color: #1a73e8; border-bottom: 3px solid #1a73e8; padding-bottom: 10px; }
-  h2 { color: #333; margin-top: 30px; }
-  table { border-collapse: collapse; width: 100%; margin: 15px 0; background: white; }
-  th, td { text-align: left; padding: 10px 15px; border: 1px solid #ddd; }
-  th { background: #1a73e8; color: white; }
-  .pass { color: #0f9d58; font-weight: bold; }
-  .fail { color: #d93025; font-weight: bold; }
-  .warn { color: #f9ab00; font-weight: bold; }
-  .summary { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-  .score { font-size: 48px; font-weight: bold; color: #1a73e8; text-align: center; }
-  .score-label { text-align: center; color: #666; }
-  .banner { background: #e8f0fe; padding: 15px; border-left: 5px solid #1a73e8; margin: 20px 0; }
-  pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC75-A — GitHub CI/CD Autonomous Foundation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #58a6ff; font-size: 1.6em; margin-bottom: 4px; }
+        h2 { color: #79c0ff; font-size: 1.2em; margin: 20px 0 10px; border-bottom: 1px solid #21262d; padding-bottom: 6px; }
+        h3 { color: #8b949e; font-size: 1em; margin: 10px 0 5px; }
+        .subtitle { color: #8b949e; font-size: 0.85em; margin-bottom: 16px; }
+        .header { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .phase-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin: 10px 0; }
+        .phase-card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; }
+        .phase-card .num { color: #8b949e; font-size: 0.75em; }
+        .phase-card .name { color: #c9d1d9; font-size: 0.9em; }
+        .phase-card .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600; }
+        .status-pass { background: #1b3629; color: #58a6ff; }
+        .status-progress { background: #1b3629; color: #d29922; }
+        .status-blocked { background: #3d1c1c; color: #f85149; }
+        .pass { color: #3fb950; font-weight: 600; }
+        .fail { color: #f85149; font-weight: 600; }
+        .warn { color: #d29922; font-weight: 600; }
+        .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin: 10px 0; }
+        .box-title { color: #8b949e; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        ul { list-style: none; }
+        li { padding: 3px 0; font-size: 0.9em; }
+        li:before { content: "•"; color: #58a6ff; margin-right: 6px; }
+        .score { font-size: 2.5em; font-weight: 700; text-align: center; padding: 10px; }
+        .score-value { color: #3fb950; }
+        .score-sub { color: #8b949e; font-size: 0.35em; }
+        .mono { font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85em; }
+        .tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.75em; background: #21262d; color: #8b949e; margin: 2px; }
+        .footer { margin-top: 30px; border-top: 1px solid #21262d; padding-top: 10px; color: #8b949e; font-size: 0.8em; text-align: center; }
+    </style>
 </head>
 <body>
-<h1>RC75-A — GitHub CI/CD Autonomous Foundation & Credential Hardening</h1>
-<p>Fecha: 2026-08-08 11:05 COT</p>
+<div class="container">
+    <div class="header">
+        <h1>RC75-A — GitHub CI/CD Autonomous Foundation</h1>
+        <div class="subtitle">Credential Hardening &bull; FASE 7/15 &bull; 2026-08-08 12:05</div>
+        <div style="margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;">
+            <span><span class="pass">●</span> 8 phases PASS</span>
+            <span><span class="warn">●</span> IN PROGRESS</span>
+        </div>
+    </div>
 
-<div class="summary">
-<h2>Resultado Final</h2>
-<pre>
-RC75-A — AUTONOMY FOUNDATION: ✅ PASS
-├── Factory/Projects Separation:          ✅ PASS
-├── GitHub Authentication:                ✅ PASS
-├── Token/Credential Cleanup:             ✅ PASS
-├── Canonical CI Workflow:                ✅ PASS
-├── Canonical CD Workflow:                ✅ PASS
-├── OIDC Authentication Ready:            ✅ PASS
-├── Guardian Active:                      ✅ PASS
-├── Action Versions Up-to-Date:           ✅ PASS
-└── Crear-HermesProyecto Updated:         ✅ PASS
-</pre>
+    <h2>Fases Completadas</h2>
+    <div class="phase-grid">
+        <div class="phase-card"><div class="num">FASE 0</div><div class="name">Audit & Baseline</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 1</div><div class="name">GitHub Credential Architecture</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 2</div><div class="name">Token Cleanup from Remotes</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 3</div><div class="name">Factory vs Projects Separation</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 4</div><div class="name">Canonical Workflow Templates</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 5</div><div class="name">Workflow Warnings Fixed</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 6</div><div class="name">Azure OIDC Authentication</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 7</div><div class="name">Guardian Audit & Hardening</div><span class="status status-pass">PASS</span></div>
+        <div class="phase-card"><div class="num">FASE 8</div><div class="name">Crear-HermesProyecto Review</div><span class="status status-progress">90%</span></div>
+        <div class="phase-card"><div class="num">FASE 9</div><div class="name">Non-destructive Validation</div><span class="status status-progress">CREATED</span></div>
+    </div>
+
+    <h2>Key Results</h2>
+    <div class="box">
+        <div class="box-title">Infrastructure Protection (Guardian)</div>
+        <ul>
+            <li>Guardian mode: <span class="pass">hard enforcement</span></li>
+            <li>3 Resource Groups protected</li>
+            <li>4 App Service Plans protected</li>
+            <li>1 Storage Account protected</li>
+            <li>1 WebApp protected</li>
+            <li>17 destructive operations blocked</li>
+            <li>Case-sensitivity bug <span class="pass">fixed</span></li>
+        </ul>
+    </div>
+
+    <div class="box">
+        <div class="box-title">Security</div>
+        <ul>
+            <li>Git remote URLs: <span class="pass">clean</span> (no embedded tokens)</li>
+            <li>Secrets in files: <span class="pass">none found</span></li>
+            <li>OIDC architected for Azure auth</li>
+            <li>Secrets configured via <span class="mono">gh secret set</span></li>
+            <li>Human bootstrap required: <span class="warn">ONE-TIME</span> (Azure AD App Registration)</li>
+        </ul>
+    </div>
+
+    <div class="box">
+        <div class="box-title">Canonical CI/CD Pipeline</div>
+        <ul>
+            <li>CI: <span class="mono">ci.yml</span> (Python 3.11, lint, test, health check)</li>
+            <li>CD: <span class="mono">deploy.yml</span> (build, ZIP, Azure deploy, smoke test)</li>
+            <li>Failure gate: deploy only if CI passes</li>
+            <li>Actions versions: checkout@v4, setup-python@v5, azure/webapps-deploy@v3</li>
+            <li>0 warnings, 0 deprecated actions</li>
+        </ul>
+    </div>
+
+    <h2>Autonomy Assessment</h2>
+    <div class="box" style="text-align:center;">
+        <div class="score"><span class="score-value">~85%</span><br><span class="score-sub">AUTONOMY SCORE (Current)</span></div>
+        <div style="margin-top:8px;text-align:left;">
+            <p style="color:#3fb950;font-size:0.85em;margin-bottom:4px;">✓ AUTOMATIC:</p>
+            <ul>
+                <li>Project creation, SQLite, Git init, GitHub repo, Push</li>
+                <li>Workflow setup, OIDC secrets (when clientId available)</li>
+                <li>Azure WebApp creation, ZIP, Deploy, Smoke tests, Reports</li>
+            </ul>
+            <p style="color:#d29922;font-size:0.85em;margin:8px 0 4px;">✗ HUMAN REQUIRED (ONE-TIME):</p>
+            <ul>
+                <li>Azure AD App Registration + federated credentials</li>
+                <li>AZURE_CLIENT_ID initial configuration</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Validation Suite</h2>
+    <div class="box">
+        <div class="box-title">Non-Destructive Tests (Created)</div>
+        <ul>
+            <li>Workspace: directory structure, main.py, requirements.txt</li>
+            <li>Git: repo init, remote URL (no credentials), .gitignore</li>
+            <li>GitHub: repo exists, secrets configured</li>
+            <li>SQLite: database file, connection, schema</li>
+            <li>Python Runtime: version, dependencies, syntax</li>
+            <li>Backend: FastAPI app, health endpoint, CORS</li>
+            <li>Frontend: landing page, static assets</li>
+            <li>CI/CD: workflow files, tests, deploy, smoke test, secrets</li>
+            <li>Security: no hardcoded secrets in files</li>
+        </ul>
+        <p style="margin-top:8px;color:#8b949e;font-size:0.85em;">Script: <span class="mono">tools/Invoke-ProjectValidation.ps1</span></p>
+    </div>
+
+    <h2>Next Steps</h2>
+    <div class="box">
+        <ul>
+            <li>FASE 10: Real CI/CD validation (create test project)</li>
+            <li>FASE 11: Controlled failure test</li>
+            <li>FASE 12: Autonomy measurement</li>
+            <li>FASE 13: Observability reports</li>
+            <li>FASE 14: Git clean verification</li>
+            <li>FASE 15: Final commit</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        RC75-A — Hermes Enterprise &bull; Generated on 2026-08-08
+    </div>
 </div>
-
-<div class="score">70%</div>
-<div class="score-label">AUTONOMY SCORE</div>
-
-<div class="banner">
-<strong>ONE-TIME HUMAN BOOTSTRAP REQUIRED:</strong>
-<ul>
-  <li><code>gh auth login</code> on Factory machine</li>
-  <li>Azure federated credential configuration per new project</li>
-</ul>
-After initial setup: <strong>100% automatic</strong> for all pipeline operations.
-</div>
-
-<h2>Tests</h2>
-<table>
-<tr><th>Test</th><th>Status</th><th>Detail</th></tr>
-<tr><td>Factory-Projects Separation</td><td class="pass">PASS</td><td>Independent repos, independent workflows, no submodules</td></tr>
-<tr><td>GitHub Authentication</td><td class="pass">PASS</td><td>gh CLI for repo creation, clean HTTPS URLs</td></tr>
-<tr><td>Token Exposure Cleanup</td><td class="pass">PASS</td><td>Embedded tokens removed from origin and azure remotes</td></tr>
-<tr><td>Secrets in Repository</td><td class="pass">PASS</td><td>No tokens, credentials, or secrets in tracked files</td></tr>
-<tr><td>Canonical CI Workflow</td><td class="pass">PASS</td><td>4 jobs: validate-python, validate-powershell, validate-documentation, validate-actions</td></tr>
-<tr><td>Canonical CD Workflow</td><td class="pass">PASS</td><td>3 jobs: build → deploy (OIDC) → smoketest</td></tr>
-<tr><td>Action Versions Modernized</td><td class="pass">PASS</td><td>actions/checkout@v4, setup-python@v5, upload/download-artifact@v4, azure/login@v2</td></tr>
-<tr><td>Azure Authentication</td><td class="pass">PASS</td><td>OIDC via azure/login@v2 in factory and project workflows</td></tr>
-<tr><td>Guardian Active</td><td class="pass">PASS</td><td>3 protected RGs, 4 App Service Plans, 1 Storage Account</td></tr>
-<tr><td>Crear-HermesProyecto Updated</td><td class="pass">PASS</td><td>Now creates both ci.yml and deploy.yml with OIDC auth</td></tr>
-</table>
-
-<h2>Warnings</h2>
-<ul>
-  <li>⚠️ No automated secret scanning installed (recommend trivy or truffleHog)</li>
-  <li>⚠️ Azure federated credentials require one-time human setup per project</li>
-</ul>
-
-<h2>Human Intervention Required</h2>
-<ul>
-  <li><strong>ONE-TIME:</strong> gh auth login on Factory machine</li>
-  <li><strong>ONE-TIME:</strong> Azure federated credential configuration per new project</li>
-</ul>
-
-<h2>Protected Resources (Guardian)</h2>
-<table>
-<tr><th>Resource Type</th><th>Protected Items</th></tr>
-<tr><td>Resource Groups</td><td>RG-Datamining-SII2.0-Dev, RG-Datamining-IA-UR, RG-Hermes-Proyectos</td></tr>
-<tr><td>App Service Plans</td><td>ASP-IAUR, ASP-Hermes, ASP-HermesEnterprise, Plan-Hermes-Proyectos</td></tr>
-<tr><td>Storage Accounts</td><td>saurhermesproyectos</td></tr>
-<tr><td>Web Apps</td><td>AS-HermesEnterprise</td></tr>
-</table>
-
-<h2>Key Files Modified</h2>
-<table>
-<tr><th>File</th><th>Change</th></tr>
-<tr><td>.github/workflows/ci.yml</td><td>Fixed Python version, removed matrix/3.14, added template validation</td></tr>
-<tr><td>tools/Templates/github/deploy.yml</td><td>New canonical CD with OIDC, build artifact, smoke test</td></tr>
-<tr><td>tools/Crear-HermesProyecto.ps1</td><td>Added CI workflow creation alongside existing CD workflow</td></tr>
-<tr><td>reports/RC75A_BASELINE.md</td><td>Baseline audit (new)</td></tr>
-<tr><td>reports/RC75A_BASELINE.json</td><td>Baseline JSON (new)</td></tr>
-<tr><td>reports/RC75A.md</td><td>This report</td></tr>
-<tr><td>reports/RC75A.json</td><td>JSON evidence</td></tr>
-</table>
-
-<h2>Blockers for RC75-B</h2>
-<ol>
-  <li>Azure federated credentials must be manually configured for each project's GitHub Actions secrets</li>
-  <li>No project has been created yet with the new canonical workflows</li>
-</ol>
-
-<h2>SECURITY VERIFICATION</h2>
-<p class="pass">✅ No secrets exposed in files</p>
-<p class="pass">✅ No tokens in remotes</p>
-<p class="pass">✅ Guardian active</p>
-<p class="pass">✅ No infrastructure modification</p>
-<p class="pass">✅ No core modules modified</p>
-
 </body>
 </html>

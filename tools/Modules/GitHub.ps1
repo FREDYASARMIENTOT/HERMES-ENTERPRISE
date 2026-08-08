@@ -123,4 +123,75 @@ function Push-ProyectoToGitHub {
     }
 }
 
-Export-ModuleMember -Function Initialize-ProyectoGitHubRepo, Push-ProyectoToGitHub
+function Set-GitHubActionsSecrets {
+    <#
+    .SYNOPSIS
+        Configures GitHub Actions secrets required for Azure authentication (OIDC).
+        Uses gh secret set to securely store credentials without exposing them.
+    .PARAMETER RepoName
+        Name of the GitHub repository (OWNER/REPO).
+    .PARAMETER AzureClientId
+        Azure client ID for OIDC federated identity.
+    .PARAMETER AzureTenantId
+        Azure tenant ID.
+    .PARAMETER AzureSubscriptionId
+        Azure subscription ID.
+    .OUTPUTS
+        Hashtable with secrets configuration status.
+    .NOTES
+        This function uses GitHub CLI (gh) to set secrets.
+        Never writes secrets to files, logs, or output.
+    #>
+    param(
+        [Parameter(Mandatory)] [string] $RepoName,
+        [Parameter(Mandatory)] [string] $AzureClientId,
+        [Parameter(Mandatory)] [string] $AzureTenantId,
+        [Parameter(Mandatory)] [string] $AzureSubscriptionId
+    )
+
+    $startTime = Get-Date
+    $results = @{}
+
+    Write-Host "[GitHub] Configuring Actions secrets for: $RepoName"
+
+    # Secret AZURE_CLIENT_ID
+    $null = gh secret set AZURE_CLIENT_ID --repo $RepoName --body $AzureClientId 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $results["AZURE_CLIENT_ID"] = "OK"
+        Write-Host "[GitHub] Secret AZURE_CLIENT_ID configured"
+    } else {
+        $results["AZURE_CLIENT_ID"] = "FAIL"
+        Write-Warning "[GitHub] Failed to set AZURE_CLIENT_ID secret"
+    }
+
+    # Secret AZURE_TENANT_ID
+    $null = gh secret set AZURE_TENANT_ID --repo $RepoName --body $AzureTenantId 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $results["AZURE_TENANT_ID"] = "OK"
+        Write-Host "[GitHub] Secret AZURE_TENANT_ID configured"
+    } else {
+        $results["AZURE_TENANT_ID"] = "FAIL"
+        Write-Warning "[GitHub] Failed to set AZURE_TENANT_ID secret"
+    }
+
+    # Secret AZURE_SUBSCRIPTION_ID
+    $null = gh secret set AZURE_SUBSCRIPTION_ID --repo $RepoName --body $AzureSubscriptionId 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $results["AZURE_SUBSCRIPTION_ID"] = "OK"
+        Write-Host "[GitHub] Secret AZURE_SUBSCRIPTION_ID configured"
+    } else {
+        $results["AZURE_SUBSCRIPTION_ID"] = "FAIL"
+        Write-Warning "[GitHub] Failed to set AZURE_SUBSCRIPTION_ID secret"
+    }
+
+    $elapsed = (Get-Date) - $startTime
+    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+
+    return @{
+        Status = if ($results.Values -notcontains "FAIL") { "OK" } else { "PARTIAL" }
+        Secrets = $results
+        Duration = $duration
+    }
+}
+
+Export-ModuleMember -Function Initialize-ProyectoGitHubRepo, Push-ProyectoToGitHub, Set-GitHubActionsSecrets

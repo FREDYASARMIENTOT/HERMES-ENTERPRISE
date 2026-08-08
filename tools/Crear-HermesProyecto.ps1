@@ -138,11 +138,53 @@ try {
     $pushResult = Push-ProyectoToGitHub -ProjectDir $ProjRoot -Branch "main"
     Write-Step "Push" "OK" "Push completed"
 
-    # ===== 11. Read Azure Config =====
+    # ===== 11. Configure GitHub Actions Secrets (OIDC) =====
+    Write-Step "OIDC" "START" "Configuring Azure OIDC secrets for GitHub Actions"
+    try {
+        # Get tenant ID from current Azure session
+        $azContext = az account show --query "{tenantId:tenantId, subscriptionId:id}" -o json 2>&1 | ConvertFrom-Json
+        $tenantId = $azContext.tenantId
+        $subscriptionId = $azContext.subscriptionId
+        $clientId = $null
+
+        # Try to read clientId from environment or config
+        if ($env:AZURE_CLIENT_ID) {
+            $clientId = $env:AZURE_CLIENT_ID
+        } elseif (Test-Path $AzureConfigPath) {
+            $cfg = Get-Content $AzureConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($cfg.Azure.ClientId) { $clientId = $cfg.Azure.ClientId }
+        }
+
+        if ($clientId -and $tenantId -and $subscriptionId) {
+            $secretsResult = Set-GitHubActionsSecrets `
+                -RepoName $ghResult.RepoName `
+                -AzureClientId $clientId `
+                -AzureTenantId $tenantId `
+                -AzureSubscriptionId $subscriptionId
+            Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{OIDCConfigurado=$true}
+            Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "OK" -Detalle "Secrets configured: $($secretsResult.Status)"
+            Write-Step "OIDC" "OK" "GitHub Actions OIDC secrets configured: $($secretsResult.Status)"
+        } else {
+            $missing = @()
+            if (-not $clientId) { $missing += "AZURE_CLIENT_ID" }
+            if (-not $tenantId) { $missing += "AZURE_TENANT_ID" }
+            if (-not $subscriptionId) { $missing += "AZURE_SUBSCRIPTION_ID" }
+            Write-Step "OIDC" "WARN" "OIDC secrets not configured. Missing: $($missing -join ', ')"
+            Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "WARN" -Detalle "Missing: $($missing -join ', ')"
+            Write-Warning "[OIDC] Missing Azure OIDC configuration: $($missing -join ', ')"
+            Write-Warning "[OIDC] Configure Azure AD App and Federated Credentials per docs/Azure-OIDC-Setup.md"
+        }
+    } catch {
+        Write-Step "OIDC" "WARN" "Could not configure OIDC secrets: $_"
+        Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "WARN" -Detalle $_
+        Write-Warning "[OIDC] OIDC setup incomplete: $_"
+    }
+
+    # ===== 12. Read Azure Config =====
     Write-Step "AzureConfig" "START" "Reading Azure configuration"
     $azureConfig = Read-AzureConfiguration -ConfigPath $AzureConfigPath
 
-    # ===== 12. Validate Infrastructure =====
+    # ===== 13. Validate Infrastructure =====
     Write-Step "Guardian" "START" "Validating infrastructure protection"
     $guardianState = Test-GuardianRestrictions -ConfigPath $GuardianConfigPath
     Assert-ProyectoSafeToProceed -Operation "CreateWebApp" -GuardianState $guardianState | Out-Null
@@ -151,7 +193,7 @@ try {
     $azureValidation = Validate-AzureInfrastructure -AzureConfig $azureConfig
     Write-Step "Azure" "OK" "All infrastructure resources validated"
 
-    # ===== 13. Create WebApp Only =====
+    # ===== 14. Create WebApp Only =====
     Write-Step "WebApp" "START" "Creating Web App: $WebAppName"
     $webApp = New-ProyectoWebApp -WebAppName $WebAppName -AzureConfig $azureConfig
     Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{UrlPublica=$webApp.Url;EstadoAzure="CREADO"}
@@ -160,7 +202,7 @@ try {
     $Metadata.AzureStatus = "OK"
     $Metadata.Url = $webApp.Url
 
-    # ===== 14. Generate ZIP =====
+    # ===== 15. Generate ZIP =====
     Write-Step "ZIP" "START" "Creating deploy.zip"
     $exclude = @(".git", ".github", ".vscode", "logs", "__pycache__", "*.pyc", "temp")
     $zipResult = New-ProyectoDeployZip -SourceDir $ProjRoot -OutputPath (Join-Path $ProjRoot "deploy.zip") -ExcludePatterns $exclude
@@ -168,7 +210,7 @@ try {
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "ZIP" -Estado "OK" -Detalle "SHA256=$($zipResult.SHA256)"
     Write-Step "ZIP" "OK" "ZIP created: $($zipResult.SizeKB) KB, SHA256: $($zipResult.SHA256)"
 
-    # ===== 15. Zip Deploy =====
+    # ===== 16. Zip Deploy =====
     Write-Step "Deploy" "START" "Deploying ZIP to Web App"
     Push-Location $ProjRoot
     try {
@@ -181,12 +223,12 @@ try {
     Write-Step "Deploy" "OK" "Deploy completed in $($deployResult.Duration)s"
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Deploy" -Estado "OK"
 
-    # ===== 16. Wait for Web App =====
+    # ===== 17. Wait for Web App =====
     Write-Step "Ready" "START" "Waiting for Web App to respond"
     $ready = Wait-ProyectoWebAppReady -Url $webApp.Url -TimeoutSeconds 180
     if(-not $ready.Ready) { Write-Step "Ready" "WARN" "Web App not responding yet, continuing..." }
 
-    # ===== 17. Smoke Tests =====
+    # ===== 18. Smoke Tests =====
     Write-Step "SmokeTest" "START" "Smoke testing all endpoints"
     $smokeResult = Invoke-ProyectoSmokeTests -BaseUrl $webApp.Url -CorrelationId $CorrelationId -DbPath $DbPath
     $Metadata.SmokePassed = $smokeResult.Passed
@@ -220,21 +262,21 @@ try {
     }
     $Metadata.AutoCorrections = $TotalCorrections
 
-    # ===== 18. Update SQLite =====
+    # ===== 19. Update SQLite =====
     Write-Step "SQLiteUpdate" "START" "Updating SQLite with final state"
     Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{CommitHash=(Get-ProyectoGitStatus -ProjectDir $ProjRoot).CommitHash;Estado="COMPLETADO"}
     Write-Step "SQLiteUpdate" "OK" "SQLite updated"
     $Metadata.SQLiteStatus = "OK"
 
-    # ===== 19. Update Landing (second pass with live data) =====
+    # ===== 20. Update Landing (second pass with live data) =====
     Write-Step "LandingUpdate" "START" "Updating landing page with live data"
     New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto | Out-Null
     Write-Step "LandingUpdate" "OK" "Landing updated"
 
-    # ===== 20. Update Timeline =====
+    # ===== 21. Update Timeline =====
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Publicado" -Estado "OK"
 
-    # ===== 21. Generate Reports =====
+    # ===== 22. Generate Reports =====
     Write-Step "Reports" "START" "Generating reports"
     $totalTime = [math]::Round(((Get-Date)-$StartTime).TotalSeconds,2)
     $Metadata.TotalTime = $totalTime
@@ -248,11 +290,11 @@ try {
     New-ProyectoReportHTML -Metadata $Metadata -OutputPath (Join-Path $HermesRoot "reports/RC74_E2E.html")
     Write-Step "Reports" "OK" "Reports saved to reports/"
 
-    # ===== 22. Open URL =====
+    # ===== 23. Open URL =====
     Write-Step "Browser" "OK" "Opening $($webApp.Url)"
     Start-Process $webApp.Url
 
-    # ===== 23. Git Status Clean =====
+    # ===== 24. Git Status Clean =====
     Write-Step "GitStatus" "START" "Verifying Git status"
     $gitStatus = Get-ProyectoGitStatus -ProjectDir $ProjRoot
     if($gitStatus.IsClean) {
@@ -261,14 +303,14 @@ try {
         Write-Step "GitStatus" "WARN" "Uncommitted changes detected"
     }
 
-    # ===== 24. Commit Final =====
+    # ===== 25. Commit Final =====
     Write-Step "CommitFinal" "START" "Creating final commit"
     New-ProyectoGitCommit -ProjectDir $ProjRoot -Message "RC74-C - Pipeline completed: $NombreProyecto" | Out-Null
     $TotalCommits++
     $Metadata.TotalCommits = $TotalCommits
     Write-Step "CommitFinal" "OK" "Final commit #$TotalCommits created"
 
-    # ===== 25. Push Final =====
+    # ===== 26. Push Final =====
     Write-Step "PushFinal" "START" "Final push to GitHub"
     $pushFinal = Push-ProyectoToGitHub -ProjectDir $ProjRoot -Branch "main"
     Write-Step "PushFinal" "OK" "Final push completed"

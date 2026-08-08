@@ -1,129 +1,110 @@
 # RC75-A — GitHub CI/CD Autonomous Foundation & Credential Hardening
 
-## Executive Summary
+## Status: IN PROGRESS (FASE 7/15)
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| Factory-Projects Separation | ✅ PASS | Independent repos, independent workflows, no submodules |
-| GitHub Authentication | ✅ PASS | `gh` CLI used for repo creation; clean HTTPS URLs in remotes |
-| Token Exposure Cleanup | ✅ PASS | Embedded tokens removed from origin and azure remotes |
-| Secrets in Repository | ✅ PASS | No tokens, no credentials, no secrets in tracked files |
-| Canonical CI Workflow | ✅ PASS | 4 jobs: validate-python, validate-powershell, validate-documentation, validate-actions |
-| Canonical CD Workflow | ✅ PASS | 3 jobs: build → deploy (OIDC) → smoketest |
-| Action Versions Modernized | ✅ PASS | actions/checkout@v4, setup-python@v5, upload/download-artifact@v4, azure/login@v2 |
-| Azure Authentication | ✅ PASS | OIDC via `az login --federated` in workflows; template uses `AZURE_CLIENT_ID`/`TENANT_ID`/`SUBSCRIPTION_ID` |
-| Guardian Active | ✅ PASS | 3 protected RGs, 4 App Service Plans, 1 Storage Account, blocked operations list |
-| Crear-HermesProyecto Updated | ✅ PASS | Now creates both ci.yml and deploy.yml with OIDC auth |
-| No Modification of Core Modules | ✅ PASS | Hermes Python Runtime, Hermes.Python.json, BootstrapWizard, VerifyEnvironment untouched |
-| No Infrastructure Modification | ✅ PASS | No shared resources created, modified, or deleted |
+### Completed Phases
 
-## Credential Architecture
+| Fase | Status | Description |
+|------|--------|-------------|
+| FASE 0 | ✅ PASS | Audit and Baseline generated |
+| FASE 1 | ✅ PASS | GitHub Credential Architecture designed |
+| FASE 2 | ✅ PASS | Embedded tokens cleaned from remotes |
+| FASE 3 | ✅ PASS | Factory vs Projects separation enforced |
+| FASE 4 | ✅ PASS | Canonical CI/CD workflow templates created |
+| FASE 5 | ✅ PASS | Workflow warnings fixed |
+| FASE 6 | ✅ PASS | Azure OIDC authentication designed and documented |
+| FASE 7 | ✅ PASS | Guardian audited and hardened |
 
-### Identity Separation
+### FASE 0 — Audit and Baseline
+- Branch: main
+- HEAD: 04459efa132c8cc772b05f732ccb788e0967585a
+- Origin: https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git
+- Workflows: .github/workflows/ci.yml, .github/workflows/deploy.yml
+- Guardian: Active (hard enforcement)
+- Azure subscription: 01bfad48-c092-4712-bc72-f141eb01a8d4
+- Reports: RC75A_BASELINE.md, RC75A_BASELINE.json
 
-| Identity | Mechanism | Scope |
-|----------|-----------|-------|
-| **A) Factory → GitHub** | `gh` CLI (authenticated via `gh auth` + GITHUB_TOKEN or PAT) | Creates repos, sets remotes, pushes initial commits |
-| **B) Project → GitHub** | Git with clean HTTPS remote (`https://github.com/OWNER/REPO.git`) | Push/pull for project repositories |
-| **C) GitHub Actions → GitHub** | `GITHUB_TOKEN` (auto-generated per run) | CI checks, workflow triggers |
-| **D) GitHub Actions → Azure** | OIDC via `azure/login@v2` with `AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/`AZURE_SUBSCRIPTION_ID` | Deploy to App Service, smoke tests |
+### FASE 1 — GitHub Credential Architecture
+- Git Credential Manager configured for HTTPS
+- No PAT embedded in remote URLs
+- OIDC recommended for Azure auth from GitHub Actions
 
-### ONE-TIME HUMAN BOOTSTRAP
+### FASE 2 — Remote URL Cleanup
+- origin: Clean URL (no embedded token)
+- azure: Clean URL (no embedded token)
+- Verified: no tokens in remote URLs
 
-The following operations require an initial human setup:
+### FASE 3 — Factory vs Projects Separation
+- Hermes-Enterprise = Factory repository
+- Projects created have OWN independent repos:
+  - github.com/FREDYASARMIENTOT/<ProjectName>
+- Each project has:
+  - Independent git init
+  - Independent origin
+  - Independent workflow
+  - Independent CI/CD
 
-1. **Azure federated credentials**: Configure `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` as GitHub repository secrets for each project.
-2. **Factory GitHub authentication**: `gh auth login` (interactive) must be run once on the Factory machine.
+### FASE 4 — Canonical Workflow
+- tools/Templates/github/ci.yml — CI pipeline
+  - Setup Python 3.11
+  - Install dependencies
+  - Lint with flake8
+  - Run unit tests
+  - Run API health tests
+  - Validate frontend
+- tools/Templates/github/deploy.yml — CD pipeline
+  - Build and ZIP
+  - Azure Login (OIDC if configured, else AZURE_CREDENTIALS)
+  - Deploy to Azure WebApp
+  - Smoke test
+  - Conditional: deploy only if CI passes
 
-After these initial steps, all operations are automatic.
+### FASE 5 — Workflow Warnings Fixed
+- actions/checkout: v4 (latest stable)
+- actions/setup-python: v5 (latest)
+- azure/webapps-deploy: v3 (latest)
+- Azure Login: v2 (OIDC support)
+- Python version: 3.11 (explicit, valid)
+- continue-on-error removed from deploy jobs
+- All workflows clean of deprecation warnings
 
-## Workflow Structure
+### FASE 6 — Azure OIDC Authentication
+- Architecture: GitHub Actions → OIDC → Azure
+- docs/Azure-OIDC-Setup.md documents ONE-TIME HUMAN BOOTSTRAP
+- Secrets configured via `gh secret set`:
+  - AZURE_CLIENT_ID
+  - AZURE_TENANT_ID
+  - AZURE_SUBSCRIPTION_ID
+- Integration added to Crear-HermesProyecto (step 11)
+- Secrets never written to files
 
-### Factory CI (`.github/workflows/ci.yml`)
-```
-Validate Python → Validate PowerShell → Validate Documentation → Validate Actions
-```
+### FASE 7 — Guardian Audit
+- Guardian config: config/Hermes.InfrastructureProtection.json
+- Mode: hard enforcement
+- Protected resources verified:
+  - RG-Datamining-SII2.0-Dev
+  - RG-Datamining-IA-UR
+  - RG-Hermes-Proyectos
+  - ASP-IAUR, ASP-Hermes, ASP-HermesEnterprise, Plan-Hermes-Proyectos
+  - saurhermesproyectos
+  - AS-HermesEnterprise
+- Property case sensitivity bug fixed in Test-GuardianRestrictions
+- Blocked operations: 17 destructive commands
+- No -Force used, no real destructive tests
 
-### Factory CD (`.github/workflows/deploy.yml`)
-```
-Validate → Build → Deploy (OIDC) → Smoke Test
-```
+### Current Risks
+1. **OIDC clientId not yet configured in Azure** — requires human bootstrap
+   - Until configured, AZURE_CREDENTIALS fallback method used
+   - Documented in docs/Azure-OIDC-Setup.md
+2. **No project has been created with the new pipeline** — pending FASE 10
+3. **Azure credentials currently use PAT-based deployment** — to be replaced by OIDC
 
-### Project CI Template (`tools/Templates/github/ci.yml`)
-```
-Validate Structure → Validate Python → Validate Frontend → Validate Database
-```
-
-### Project CD Template (`tools/Templates/github/deploy.yml`)
-```
-Build → Deploy (OIDC) → Smoke Test
-```
-
-## Authentication Verification
-
-### Remote URLs (Git verified)
-```
-origin: https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git
-[azure remote removed: was embedded with token]
-```
-
-### Azure Config
-- Subscription: From `Hermes.Azure.json`
-- Resource Group: RG-Hermes-Proyectos (shared infrastructure)
-- App Service Plan: Plan-Hermes-Proyectos (shared)
-- Storage Account: saurhermesproyectos (shared)
-
-## Guardian Protection Status
-
-| Resource Type | Protected | Details |
-|--------------|-----------|---------|
-| Resource Groups | ✅ | RG-Datamining-SII2.0-Dev, RG-Datamining-IA-UR, RG-Hermes-Proyectos |
-| App Service Plans | ✅ | ASP-IAUR, ASP-Hermes, ASP-HermesEnterprise, Plan-Hermes-Proyectos |
-| Storage Accounts | ✅ | saurhermesproyectos |
-| Web Apps | ✅ | AS-HermesEnterprise |
-| Required Tags | ✅ | HermesManaged: true |
-
-## Risks Found
-
-| Risk | Severity | Status |
-|------|----------|--------|
-| Former embedded tokens in remotes | CRITICAL | ✅ RESOLVED — remotes cleaned |
-| Azure remote with token in workspace config | CRITICAL | ✅ RESOLVED — cleaned in RC75-A |
-| No automated secret scanning | MEDIUM | ⚠️ NOTED — requires trivy or similar |
-
-## Blockers for RC75-B
-
-1. **Azure federated credentials** must be manually configured for each project's GitHub Actions secrets
-2. **No project has been created yet** with the new canonical workflows (pending TEST 1 in RC75-B)
-
-## Key Files Modified in RC75-A
-
-| File | Change |
-|------|--------|
-| `.github/workflows/ci.yml` | Fixed Python version, removed matrix/3.14, added template validation, removed BootstrapWizard references |
-| `tools/Templates/github/deploy.yml` | New canonical CD with OIDC, build artifact, smoke test |
-| `tools/Templates/github/ci.yml` | Already correct canonical CI (no changes needed) |
-| `tools/Crear-HermesProyecto.ps1` | Added CI workflow creation alongside existing CD workflow |
-| `reports/RC75A_BASELINE.md` | Baseline audit (new) |
-| `reports/RC75A_BASELINE.json` | Baseline JSON (new) |
-
----
-
-## Final Result
-
-```
-RC75-A — AUTONOMY FOUNDATION: ✅ PASS
-├── Factory/Projects Separation:          ✅ PASS
-├── GitHub Authentication:                ✅ PASS
-├── Token/Credential Cleanup:             ✅ PASS
-├── Canonical CI Workflow:                ✅ PASS
-├── Canonical CD Workflow:                ✅ PASS
-├── OIDC Authentication Ready:            ✅ PASS
-├── Guardian Active:                      ✅ PASS
-├── Action Versions Up-to-Date:           ✅ PASS
-└── Crear-HermesProyecto Updated:         ✅ PASS
-```
-
-AUTONOMY_SCORE: **70%** (preliminary)
-- 100% automatic: Factory CI/CD, project workflow templates, Git operations
-- HUMAN_REQUIRED: `gh auth login` initial bootstrap, Azure federated credential setup per project
+### Next Steps
+- FASE 8: Complete Crear-HermesProyecto review
+- FASE 9: Non-destructive validation suite
+- FASE 10: Real CI/CD validation with controlled test project
+- FASE 11: Controlled failure test
+- FASE 12: Autonomy measurement
+- FASE 13: Observability reports
+- FASE 14: Git clean verification
+- FASE 15: Final commit

@@ -5,19 +5,27 @@
 # Validate → Build → Deploy → SmokeTest
 # ====================================================================
 
-name: Hermes Project Deploy
+name: Hermes CI/CD Pipeline
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       projectName:
-        description: 'Project name to deploy'
-        required: true
+        description: 'Project name to deploy (default: hermesenterprise)'
+        required: false
+        default: 'hermesenterprise'
         type: string
       correlationId:
         description: 'Correlation ID for tracking'
-        required: true
+        required: false
+        default: 'auto'
         type: string
+
+env:
+  PROJECT_NAME: ${{ inputs.projectName || 'hermesenterprise' }}
+  CORRELATION_ID: ${{ inputs.correlationId || github.sha }}
 
 jobs:
   validate:
@@ -29,11 +37,14 @@ jobs:
 
       - name: Validate project structure
         run: |
-          echo "Project: ${{ inputs.projectName }}"
-          echo "CorrelationId: ${{ inputs.correlationId }}"
+          echo "Project: ${PROJECT_NAME}"
+          echo "CorrelationId: ${CORRELATION_ID}"
           test -f config/Hermes.Azure.json && echo "OK: Azure config"
           test -f config/Hermes.Python.json && echo "OK: Python config"
           echo "Validation complete"
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          CORRELATION_ID: ${{ env.CORRELATION_ID }}
 
   build:
     name: Build
@@ -80,7 +91,7 @@ jobs:
       - name: Deploy to Azure Web App
         uses: Azure/webapps-deploy@v3
         with:
-          app-name: as-${{ inputs.projectName }}
+          app-name: as-${{ env.PROJECT_NAME }}
           slot-name: production
           package: .
           clean: true
@@ -98,7 +109,7 @@ jobs:
 
       - name: Test endpoints
         run: |
-          URL="https://as-${{ inputs.projectName }}.azurewebsites.net"
+          URL="https://as-${PROJECT_NAME}.azurewebsites.net"
           ENDPOINTS=("/health" "/api/version" "/api/proyecto" "/")
           ALL_PASS=true
           for EP in "${ENDPOINTS[@]}"; do
@@ -112,3 +123,5 @@ jobs:
           done
           if [ "$ALL_PASS" = false ]; then exit 1; fi
           echo "All smoke tests passed"
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}

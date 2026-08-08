@@ -1,5 +1,6 @@
 {
     "Azure": {
+        "subscriptionId": "01bfad48-c092-4712-bc72-f141eb01a8d4",
         "Location": "eastus",
         "ResourceGroupAplicaciones": "RG-Hermes-Proyectos",
         "ResourceGroupPlan": "RG-Datamining-SII2.0-Dev",

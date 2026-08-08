@@ -1,229 +1,111 @@
 # CURRENT_STATE
 
-Date: 2026-08-07
+Date: 2026-08-08
 
-## Last Milestone: RC70-D Final — Python Runtime Hermes Enterprise
+## RC74-C — Autonomous Project Factory (Closed)
 
-> **Estado:** ✅ COMPLETADO DEFINITIVAMENTE
-> **Runtime:** `D:\HermesRuntime\Environments\HermesEnterprise\` (shared venv)
-> **Config:** `config/Hermes.Python.json` (canonical source of truth)
-> **CI/CD:** `.github/workflows/ci.yml` — 4 jobs
-> **Quality:** `docs/QualityReport_RC71.md` | `docs/SmokeTest_RC71.md`
+> **Status:** ✅ COMPLETED
+> **Date:** 2026-08-08
+> **Pipeline:** Crear-HermesProyecto — 25 steps, end-to-end
 
-### ✅ Architecture State (Final)
-- **Runtime**: `D:\HermesRuntime\Environments\HermesEnterprise\` (shared venv)
-- **Config**: `config/Hermes.Python.json` (canonical source of truth)
-- **Python Version**: 3.14
-- **Backend**: FastAPI + Uvicorn (via `python -m uvicorn`)
-- **Azure**: Linux App Service via `startup.sh` (uses `python3 -m pip/gunicorn`)
-- **Environment Discovery**: EXCLUSIVELY from `config/Hermes.Python.json`
-- **No Conda**: Conda, Miniconda, Anaconda completely removed
-- **No PATH dependency**: Never searches for python/pip via PATH
-- **No global Python**: Only uses the configured Runtime venv
-- **CI/CD**: `.github/workflows/ci.yml` — 4 jobs: Python, PowerShell, Docs, Deploy
-- **Quality Report**: `docs/QualityReport_RC71.md`
-- **Smoke Test Plan**: `docs/SmokeTest_RC71.md`
-- **Module**: Hermes.Commands — 28 commands, imports correctly on pwsh
-- **Hermes.Web**: FastAPI backend — all middleware, API modules, templates operational
+### What RC74-C delivered
 
-### ✅ Known Deferred Debt (RC71-B → RC72)
-- MetaPathFinder en `main.py` — mantener por ahora; migrar en RC72 a estructura `Hermes/Web/`
-- Falta `pyproject.toml` — evaluado, diferido a RC72
-- Pruebas Python (pytest) — infraestructura lista, faltan casos de prueba
-- 0 pruebas Python actualmente — gap identificado y documentado
+1. **Crear-HermesProyecto.ps1** — Zero-touch orchestrator with fixed 25-step pipeline:
+   - Workspace → SQLite → Register → Render → Landing → README → Workspace File → Git Init → Commit → GitHub → Push → Azure Config → Validate Infra → Create WebApp → ZIP → Zip Deploy → Wait → Smoke Tests → Update SQLite → Update Landing → Timeline → Reports → Open URL → Git Status → Commit Final → Push Final
 
-### ✅ PSScriptAnalyzer: 0 Errors, 0 Warnings, ~486 Information
-```
-Errors      : 0
-Warnings    : 0
-Information : ~486 (trailing whitespace, comment help, output type)
-```
+2. **10 module files** under `tools/Modules/` — single entry point via `HermesProjectFactory.psm1`:
+   - Workspace.ps1, SQLite.ps1, Git.ps1, GitHub.ps1, Azure.ps1, Guardian.ps1, Packaging.ps1, RenderEngine.ps1, SmokeTests.ps1, Reporting.ps1
 
-### ✅ Gap Resolution (RC71-B)
-| Gap (RC70-D) | Status | Resolution |
-|-------------|--------|------------|
-| Python Tests = 0 | ❌ Still 0 | Infrastructure ready (pytest + pytest-asyncio added); test cases deferred to RC72 |
-| CI/CD Pipeline = None | ✅ RESOLVED | `.github/workflows/ci.yml` created with 4 validation jobs |
-| requirements.txt Audit = Pending | ✅ RESOLVED | Audit complete: 13→8 deps, 6 packages removed, 4 added |
-| Smoke Test Document = Pending | ✅ RESOLVED | `docs/SmokeTest_RC71.md` created with 9 validation phases |
-| Orphan files (`$null`, `temp_analysis.txt`) = Pending | ✅ RESOLVED | Both files deleted from repository |
+3. **Template files** under `tools/Templates/` — backend (FastAPI), project files, GitHub workflows
 
-### What was accomplished (RC70-D → RC71-B)
+4. **Project-centric landing page** — Only "Powered by Hermes Enterprise" in footer; no Hermes branding in content
 
-| # | Change | Component |
-|---|--------|-----------|
-| 1 | **CI/CD Pipeline**: Created `.github/workflows/ci.yml` with 4 validation jobs | CI/CD |
-| 2 | **Smoke Test Plan**: Created `docs/SmokeTest_RC71.md` — 9-phase validation | Documentation |
-| 3 | **Quality Report**: Created `docs/QualityReport_RC71.md` — full audit report | Documentation |
-| 4 | **requirements.txt Audit**: Eliminated 6 unused packages, added 4 real ones | Config |
-| 5 | **requirements.txt (root)**: Now delegates to `Hermes.Web/requirements.txt` with `-r` | Config |
-| 6 | **PSScriptAnalyzer**: Excluded `gui` pseudo-commandlet from Verb-Noun checks | Quality |
-| 7 | **Dead code removed**: Removed `$null`, `temp_analysis.txt`, orphan files | Quality |
-| 8 | **Unused imports removed**: Removed `pathlib`, `json` from `main.py` | Quality |
-| 9 | **Unused code removed**: Removed favicon framework reference from `index.html` | Quality |
-| 10 | **Documentation updated**: CHANGELOG.md, CURRENT_STATE.md updated | Documentation |
+5. **SQLite-based tracking** — Every event logged with CorrelationId
 
-### Architecture: Python Runtime Layer
+6. **Auto-correction loop** — Up to 5 cycles for smoke test failures
+
+7. **Guardian integration** — Blocks creation of protected resources
+
+8. **Report generation** — MD, HTML, JSON formats
+
+### Key Principles Enforced
+
+- Never creates: Resource Groups, Storage Accounts, App Service Plans, Key Vault, AI Services, Log Analytics, Application Insights, Managed Identity, shared databases
+- Only creates: Web App (using existing infrastructure from Hermes.Azure.json)
+- All infrastructure obtained from `config/Hermes.Azure.json`
+- Guardian blocks destructive operations
+- All tracking via SQLite with CorrelationId
+- Auto-correction up to 5 cycles
+- Project demo: "EncuestasPercepcionServiciosUR" — Universidad del Rosario
+
+### Code Quality
+
+- **Duplication eliminated:** All functions defined once, exported once. No double `Import-Module`, no double `Dot Source`.
+- **All `2>$null` fixed to `2>&1`:** Proper stderr handling throughout all modules.
+- **ZIP function simplified:** Pure packaging — no Azure, no Git, no SQL logic.
+- **No DemoVentas references:** Completely removed.
+- **Kernel reuse:** All functionality built on existing Kernel Hermes Enterprise modules where available.
+
+### Pipeline Flow
 
 ```
-D:\HermesRuntime\
-└── Environments\
-    └── HermesEnterprise\               # Shared venv (created by Install-HermesPythonRuntime.ps1)
-        ├── Scripts\
-        │   ├── python.exe              # Python 3.14
-        │   └── pip.exe                 # Pip 25.x+
-        ├── Lib\
-        │   └── site-packages\          # All Hermes dependencies
-        ├── Include\
-        └── pyvenv.cfg
-
-d:\HERMES-ENTERPRISE\
-├── config\
-│   └── Hermes.Python.json              # Canonical config (reads Runtime paths)
-├── Hermes.Web\
-│   ├── requirements.txt                # All Python dependencies (cp314)
-│   ├── deployment\
-│   │   ├── startup.sh                  # Azure App Service startup
-│   │   └── startup.txt                 # Azure config instructions
-│   ├── backend/                        # FastAPI backend
-│   ├── api/                            # API modules
-│   ├── middleware/                      # Middleware
-│   └── templates/                      # Jinja2 templates
-├── tools\
-│   └── VerifyEnvironment.ps1           # Reads Hermes.Python.json (no PATH/Conda)
-├── .github\workflows\
-│   └── ci.yml                          # CI/CD pipeline (4 jobs)
-└── docs\
-    ├── SmokeTest_RC71.md               # Smoke test plan (9 phases)
-    └── QualityReport_RC71.md           # Quality audit report
+Crear-HermesProyecto
+  ├── 1.  CorrelationId → generated
+  ├── 2.  Workspace → created
+  ├── 3.  SQLite → initialized
+  ├── 4.  Register → project registered
+  ├── 5.  Render → templates rendered
+  ├── 6.  Landing → created
+  ├── 7.  README → created
+  ├── 8.  Workspace File → created
+  ├── 9.  Git Init → initialized
+  ├── 10. First Commit → created
+  ├── 11. GitHub Repo → created
+  ├── 12. Push → completed
+  ├── 13. Azure Config → read
+  ├── 14. Validate Infra → passed
+  ├── 15. WebApp → created
+  ├── 16. ZIP → generated
+  ├── 17. Zip Deploy → deployed
+  ├── 18. Wait → ready
+  ├── 19. Smoke Tests → passed (auto-correction if needed)
+  ├── 20. Update SQLite → updated
+  ├── 21. Update Landing → updated
+  ├── 22. Timeline → updated
+  ├── 23. Reports → generated (MD, HTML, JSON)
+  ├── 24. Open URL → browser opened
+  ├── 25. Git Status → clean
+  ├── 26. Commit Final → created
+  └── 27. Push Final → completed
 ```
 
-### Canonical Configuration Schema (`config/Hermes.Python.json`)
+### Architecture State
 
-```json
-{
-    "VersionPython": "3.14",
-    "RutaEntornoVirtual": "D:\\HermesRuntime\\Environments\\HermesEnterprise",
-    "RutaPython":
-        "D:\\HermesRuntime\\Environments\\HermesEnterprise\\Scripts\\python.exe",
-    "RutaPip":
-        "D:\\HermesRuntime\\Environments\\HermesEnterprise\\Scripts\\pip.exe",
-    "ArchivoRequirements":
-        "requirements.txt"
-}
-```
+- **Runtime:** Frozen at RC70-D — shared venv `D:\HermesRuntime\Environments\HermesEnterprise`
+- **Config (Python):** `config/Hermes.Python.json` — canonical source of truth
+- **Config (Azure):** `config/Hermes.Azure.json` — infrastructure definitions
+- **Config (Guardian):** `config/Hermes.InfrastructureProtection.json` — protection policy
+- **Modules:** `tools/Modules/HermesProjectFactory.psm1` — single entry point
+- **Orchestrator:** `tools/Crear-HermesProyecto.ps1` — zero-touch pipeline
 
-### Public Commands (RC70-D changes)
+### Next Steps (Not Yet Started)
 
-```
-New-HermesProject       -TipoEntorno [venv] (conda removed)
-                        -PythonVersion [3.14] (default)
-                        Reads Python Runtime from Hermes.Python.json
-                        No local .venv created — uses shared Runtime
-```
-
-### Runtime Validation Flow
-
-```
-BootstrapWizard ──> Invoke-HermesBootstrapValidacionRuntime
-                         │
-                         ├── Hermes.Python.json exists?
-                         ├── python.exe exists?
-                         ├── pip.exe exists?
-                         ├── venv directory exists?
-                         ├── pyvenv.cfg exists?
-                         └── requirements.txt exists?
-                         
-                         If ANY fails → show error → abort
-                         No automatic repair
-```
-
-### Environment Variables (for Azure deployment)
-
-```
-HERMES_WEB_PORT = 8000
-HERMES_WEB_LOG_LEVEL = info
-```
-
-### Known Issues (From RC71-A Audit)
-
-| Severity | Count | Top Issues |
-|----------|-------|------------|
-| CRÍTICO | 6 | MetaPathFinder fragility, HermesWebPackageLoader exec delegation, 0 Python tests |
-| ALTO | 12 | 3 duplicated subprocess impls, `sys.path.insert`, `sys.executable`, God Object (570-line main.py) |
-| MEDIO | 18 | Logger init before basicConfig, circular import risk, stubs, no HTTPS |
-| BAJO | 25 | Dead code, global Python docstrings, no ruff/black/isort |
-
-**Full report:** `docs/TechnicalDebt_RC71.md`
-
-### Next Steps
-
-1. **RC73-C:** Python Tests + pyproject.toml — pytest suite for all API endpoints, pyproject.toml, ruff/black/isort config
-2. **RC74:** Hermes.Web → Hermes/Web/ — Directory restructure, MetaPathFinder removal, relative imports
-3. **RC75:** Azure Deploy + Production — Full GitHub Actions deploy to Azure App Service, environment variables, monitoring
+1. **RC76:** Azure Storage integration
+2. **Azure Foundry:** Future capability
+3. **Parquet:** Future capability
+4. **Blueprints:** Future capability
 
 ---
 
-## RC70-D Closure Summary
+## Previous Milestones
 
-**Closed:** 2026-08-07  
-**Status:** ✅ DEFINITIVAMENTE COMPLETADO  
-**Runtime definitivo:** `D:\HermesRuntime\Environments\HermesEnterprise\` (shared venv, Python 3.14)  
-**Config definitiva:** `config/Hermes.Python.json` (canonical source of truth)  
-**CI/CD definitivo:** `.github/workflows/ci.yml` — 4 jobs (Python, PowerShell, Docs, Deploy)  
-**Arquitectura definitiva:** Sin Conda, sin PATH, sin global Python — solo Runtime oficial  
-**Calidad:** 0 errores PSSA, Smoke Test plan documentado, Quality Report publicado  
-**Deuda diferida:** pyproject.toml → RC72, Hermes.Web→Hermes/Web/ → RC73, Azure deploy → RC74
+### RC73-B — Guardian Hardened (Completed 2026-08-07)
+- 10 resource types protected
+- 46/46 Pester tests passing
 
-### What RC70-D delivered
-1. Migrated from Conda/global Python to a single shared venv
-2. Created `config/Hermes.Python.json` as the canonical Python config
-3. All execution via `python -m` patterns (pip, uvicorn, gunicorn)
-4. Eliminated all PATH/Conda/global Python dependencies
-5. Added Runtime validation in BootstrapWizard
-6. CI/CD pipeline with 4 validation jobs (RC71-B)
-7. Quality report and smoke test plan documented (RC71-B)
-8. requirements.txt audit: 13→8 real dependencies (RC71-B)
-9. Zero PSScriptAnalyzer errors (RC71-B)
-10. Orphan files removed from repository (RC71-B)
+### RC73-A — Azure Infrastructure Guardian (Completed 2026-08-07)
+- Protection layer for all Azure resources
 
-## RC73-A — Azure Infrastructure Guardian (Protection Layer)
-
-**Status:** ✅ COMPLETADO  
-**Date:** 2026-08-07  
-
-### What RC73-A delivered
-1. **`config/Hermes.InfrastructureProtection.json`** — Policy file listing protected resource groups, App Service Plans, storage accounts, and Key Vaults
-2. **`motor/kernel/Security/AzureInfrastructureGuardian.ps1`** — Guardian module with `Invoke-InfrastructureGuardian` that validates any destructive operation against the protection policy; fails with `[Guardian] BLOCKED` if the resource is protected
-3. **Wired into all 8 Azure destruction providers:**
-   - `AzureResourceGroupProvider.ps1` (Remove-HermesAzureResourceGroup)
-   - `AzureAppServicePlanProvider.ps1` (Remove-HermesAzureAppServicePlan)
-   - `AzureKeyVaultProvider.ps1` (Remove-HermesAzureKeyVault)
-   - `AzureApplicationInsightsProvider.ps1` (Remove-HermesAzureApplicationInsights)
-   - `AzureLogAnalyticsProvider.ps1` (Remove-HermesAzureLogAnalytics)
-   - `AzureStorageProvider.ps1` (Remove-HermesAzureStorageAccount)
-   - `AzureManagedIdentityProvider.ps1` (Remove-HermesAzureManagedIdentity + Remove-HermesAzureManagedIdentityRole)
-4. **`Eliminar-InfraestructuraAzure.usecase.ps1`** — Updated to display Guardian policy, protection status, and warning if Guardian is missing
-5. **No functional changes to runtime, CI/CD, Bootstrap, or Python config** — fully non-invasive
-
-### Architecture frozen at RC70-D
-**No further modifications to:**
-- Runtime Python
-- CI/CD pipeline
-- BootstrapWizard
-- VerifyEnvironment
-- Hermes.Python.json
-- Hermes.Azure.json
-- Hermes Web structure (MetaPathFinder, directory layout)
-
-## RC73-B — Guardian Hardened — All 10 Resource Types
-
-**Status:** ✅ COMPLETADO  
-**Date:** 2026-08-07  
-
-### What RC73-B delivered
-1. **`config/Hermes.InfrastructureProtection.json` v1.1.0** — Expanded to 10 resource types: ResourceGroup, AppServicePlan, StorageAccount, KeyVault, WebApp, AIService, ApplicationInsights, LogAnalytics, Database, ManagedIdentity
-2. **`motor/kernel/Security/AzureInfrastructureGuardian.ps1`** — Hardened with standardized BLOCKED message, tag protections (Environment=Production, Protected=true, HermesManaged), RG containment, CorrelationId, JSONL logging, Force bypass prevention, fallback safe defaults
-3. **`pruebas/unitarias/Hermes.InfrastructureGuardian.Tests.ps1`** — 46 Pester tests covering all resource types, tag protections, RG containment, message format, correlation tracking, and logging
-4. **`reports/RC73B_Guardian.md`**, `.html`, `.json` — Three-format report
-5. **46/46 tests PASSED** — no architectural changes, fully non-invasive
+### RC70-D — Python Runtime Hermes Enterprise (Completed 2026-08-07)
+- Shared venv, no Conda, no PATH dependency
+- CI/CD with 4 validation jobs

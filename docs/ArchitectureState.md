@@ -1,7 +1,8 @@
-# Architecture State — Hermes Enterprise RC70-D
+# Architecture State — Hermes Enterprise RC74-C
 
 ## Current Phase
-**RC69 → RC70-D**: Python Runtime Hermes Enterprise
+**RC74-C**: Autonomous Project Factory — Closed
+Previous: RC70-D (Python Runtime), RC73 (Guardian)
 
 ## State Overview
 
@@ -341,3 +342,58 @@ config/
 3. **46 Pester tests** covering all resource types, tag protections, RG containment, message format, correlation tracking, and logging
 4. **`reports/RC73B_Guardian.md`**, `.html`, `.json` — Three-format report
 5. **46/46 tests PASSED** — no architectural changes
+
+---
+
+## RC74-C — Autonomous Project Factory (Fixed)
+
+**Status:** ✅ COMPLETADO
+**Date:** 2026-08-08
+
+### Architecture Overview
+
+Hermes Enterprise now has a **zero-touch autonomous project factory** closed and fully operational.
+The Crear-HermesProyecto orchestrator creates brand-new projects and deploys them to Azure with no human intervention.
+
+### Component Architecture
+
+```
+tools/
+├── Crear-HermesProyecto.ps1       # Orchestrator (296 lines)
+├── Modules/
+│   ├── Azure.ps1                  # Read config, validate infra, create Web App, deploy ZIP
+│   ├── Git.ps1                    # Init, commit, status
+│   ├── GitHub.ps1                 # Create repo, push
+│   ├── Guardian.ps1               # Validate infrastructure protection
+│   ├── HermesProjectFactory.psm1  # Single entry point (10 modules aggregated)
+│   ├── Packaging.ps1              # Create deploy.zip, verify SHA256/size/structure
+│   ├── RenderEngine.ps1           # Template rendering, landing page
+│   ├── Reporting.ps1              # MD/JSON/HTML reports
+│   ├── SmokeTests.ps1             # Smoke test suite (10+ endpoints)
+│   ├── SQLite.ps1                 # Database, events, metadata
+│   └── Workspace.ps1              # Workspace init
+└── Templates/
+    ├── backend/                   # main.py, requirements.txt, startup.sh
+    ├── database/schema.sql        # SQLite schema
+    ├── github/deploy.yml          # GitHub Actions CI/CD
+    └── project/                   # .gitignore, README.md
+```
+
+### Pipeline Flow (25 steps)
+
+1. CorrelationId → 2. Workspace → 3. SQLite → 4. Register → 5. Render → 6. Landing → 7. README → 8. Workspace File → 9. Git Init → 10. Commit → 11. GitHub → 12. Push → 13. Azure Config → 14. Validate Infra → 15. WebApp → 16. ZIP → 17. Zip Deploy → 18. Wait → 19. Smoke Tests → 20. Update SQLite → 21. Update Landing → 22. Timeline → 23. Reports → 24. Open URL → 25. Git Status → 26. Commit Final → 27. Push Final
+
+### Infrastructure Rules
+
+- Never creates: RGs, Storage, ASPs, Key Vault, AI, Log Analytics, App Insights, Managed ID, DBs
+- Only creates: Web App (using existing infrastructure from Hermes.Azure.json)
+- Guardian validates every operation against Hermes.InfrastructureProtection.json
+- Demo project: "EncuestasPercepcionServiciosUR" — Universidad del Rosario
+
+### Key Fixes Applied
+
+- All `2>$null` → `2>&1` (proper stderr handling)
+- Pipeline order corrected to match official specification
+- No DemoVentas/Sales/Orders references
+- Duplication eliminated: single entry point via HermesProjectFactory.psm1
+- New-ProyectoDeployZip simplified: pure packaging, no Azure/Git/SQL logic

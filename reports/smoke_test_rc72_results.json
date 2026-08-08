@@ -1,0 +1,90 @@
+[
+  {
+    "Endpoint": "Landing",
+    "URL": "http://localhost:8000/",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,085",
+    "Detail": "<!DOCTYPE html>\n<html lang=\"es\" data-bs-theme=\"dark\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial..."
+  },
+  {
+    "Endpoint": "Health",
+    "URL": "http://localhost:8000/health",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,105",
+    "Detail": "{\"estado\":\"saludable\",\"aplicacion\":\"Hermes Enterprise Web\",\"version\":\"2.0.0\",\"timestamp\":\"2026-08-07T06:18:05.484337+00:00\",\"python_version\":\"3.14.0\",..."
+  },
+  {
+    "Endpoint": "OpenAPI",
+    "URL": "http://localhost:8000/openapi.json",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,026",
+    "Detail": "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"Hermes Enterprise - API Publica\",\"description\":\"\\n# API Publica de Hermes Enterprise\\n\\nBienvenido a la API REST o..."
+  },
+  {
+    "Endpoint": "/api/version",
+    "URL": "http://localhost:8000/api/version",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,097",
+    "Detail": "{\"aplicacion\":\"Hermes Enterprise\",\"version\":\"2.0.0\",\"version_api\":\"2.0.0\",\"commit\":\"4407153\",\"branch\":\"main\",\"python_version\":\"3.14.0\",\"plataforma\":\"W..."
+  },
+  {
+    "Endpoint": "/api/proyecto",
+    "URL": "http://localhost:8000/api/proyecto",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,037",
+    "Detail": "{\"proyecto\":\"Hermes Enterprise\",\"estado\":\"activo\",\"raiz\":null}"
+  },
+  {
+    "Endpoint": "/api/workspace",
+    "URL": "http://localhost:8000/api/workspace",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,031",
+    "Detail": "{\"estado\":\"workspace_no_configurado\",\"nota\":\"Usar Get-HermesWorkspace desde PowerShell\"}"
+  },
+  {
+    "Endpoint": "/api/git",
+    "URL": "http://localhost:8000/api/git",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,044",
+    "Detail": "{\"estado\":\"repositorio_local_detectado\",\"branch\":\"main\",\"commits\":0}"
+  },
+  {
+    "Endpoint": "/api/github",
+    "URL": "http://localhost:8000/api/github",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,030",
+    "Detail": "{\"estado\":\"repositorio_remoto_detectado\",\"url\":\"https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE\"}"
+  },
+  {
+    "Endpoint": "/api/sqlite",
+    "URL": "http://localhost:8000/api/sqlite",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,023",
+    "Detail": "{\"estado\":\"no_verificado\",\"nota\":\"Usar comandos Hermes.Commands para consultas SQLite\"}"
+  },
+  {
+    "Endpoint": "/api/azure",
+    "URL": "http://localhost:8000/api/azure",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,030",
+    "Detail": "{\"estado\":\"no_configurado\",\"mensaje\":\"Usar Set-HermesAzureConfiguration desde PowerShell\"}"
+  },
+  {
+    "Endpoint": "/api/despliegue",
+    "URL": "http://localhost:8000/api/despliegue",
+    "Status": "PASS",
+    "HTTP": 200,
+    "Time": "2,015",
+    "Detail": "{\"estado\":\"produccion\",\"plataforma\":\"Azure App Service\",\"region\":\"East US\"}"
+  }
+]

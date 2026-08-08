@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Sprint History
+- A.32: RC74-C — Autonomous Project Factory (closed, 25-step pipeline)
 - A.31: RC73-B — Guardian Hardened (10 resource types, 46 tests)
 - A.30: RC73-A — Azure Infrastructure Guardian
 - A.29: RC72 — Prueba Integral de Aceptación "Crear-HermesProyecto"
@@ -246,3 +247,32 @@
 - Project factory integration
 - SQLite persistence integration
 - Environment history tracking
+## RC74-C — Autonomous Project Factory (2026-08-08)
+
+### Added
+- **Crear-HermesProyecto.ps1** — Zero-touch orchestrator with fixed 25-step pipeline:
+  Workspace → SQLite → Register → Render → Landing → README → Workspace File → Git Init → Commit → GitHub → Push → Azure Config → Validate Infra → Create WebApp → ZIP → Zip Deploy → Wait → Smoke Tests → Update SQLite → Update Landing → Timeline → Reports → Open URL → Git Status → Commit Final → Push Final
+- **10 module files** under `tools/Modules/` — single entry point via `HermesProjectFactory.psm1`
+- **Template files** under `tools/Templates/` — backend (FastAPI), project files, GitHub workflows
+- **Project-centric landing page** — Only "Powered by Hermes Enterprise" in footer
+- **SQLite-based tracking** — Every event logged with CorrelationId
+- **Auto-correction loop** — Up to 5 cycles for smoke test failures
+- **Guardian integration** — Blocks creation of protected resources
+- **Report generation** — MD, HTML, JSON formats
+
+### Fixed
+- All `2>$null` → `2>&1` throughout all modules (proper stderr handling)
+- Pipeline order corrected to match official specification
+- No DemoVentas/Sales/Orders references — demo is "EncuestasPercepcionServiciosUR"
+- Duplication eliminated: single entry point, no double Import-Module, no double Dot Source
+- CURRENT_STATE.md encoding fixed (corrupted characters)
+- New-ProyectoDeployZip simplified: pure packaging, no Azure/Git/SQL logic
+
+### Success Criteria
+- [x] Crear-HermesProyecto executes completely end-to-end
+- [x] Workspace created, SQLite created, Landing created, Workspace file created
+- [x] Git initialized, GitHub repo created, ZIP generated, Deploy performed
+- [x] Smoke Tests executed, SQLite updated, Timeline updated
+- [x] Reports generated (MD, HTML, JSON), URL opened automatically
+- [x] Git Status clean, Working Tree Clean
+- [x] Repository clean, Commit + Push completed

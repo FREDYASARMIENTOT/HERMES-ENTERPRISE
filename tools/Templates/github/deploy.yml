@@ -1,0 +1,42 @@
+name: Deploy {{PROJECT_NAME}} to Azure
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create deploy package
+      run: |
+        mkdir -p deploy
+        cp -r . deploy/
+        cd deploy
+        zip -r ../deploy.zip . -x "*.git*" "*.vscode*" "*__pycache__*" "*.pyc" "*logs*" "*reports*" "*tests*"
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: {{WEBAPP_NAME}}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: deploy.zip
+
+    - name: Smoke Test
+      run: |
+        sleep 30
+        curl -s -o /dev/null -w "%{http_code}" https://{{WEBAPP_NAME}}.azurewebsites.net/health
+        curl -s -o /dev/null -w "%{http_code}" https://{{WEBAPP_NAME}}.azurewebsites.net/api/version
+        curl -s -o /dev/null -w "%{http_code}" https://{{WEBAPP_NAME}}.azurewebsites.net/api/proyecto

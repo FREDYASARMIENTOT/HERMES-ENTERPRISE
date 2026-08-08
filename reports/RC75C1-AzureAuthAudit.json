@@ -1,0 +1,167 @@
+{
+  "phase": "RC75-C1",
+  "title": "Azure Authentication Audit & OIDC Migration Report",
+  "status": "BLOCKED",
+  "timestamp": "2026-08-08T12:57:00-05:00",
+  "duration_seconds": 0,
+  "blockers": [
+    {
+      "id": "APP_REGISTRATION_CREATION",
+      "severity": "HIGH",
+      "status": "BLOCKED",
+      "description": "Cannot create Azure AD App Registration — user lacks Application Administrator permissions",
+      "requires_human": true,
+      "human_action": "Request Azure AD admin to create App Registration 'Hermes-Enterprise-CI' with federated credentials for GitHub Actions"
+    },
+    {
+      "id": "GITHUB_SECRETS_MISSING",
+      "severity": "HIGH",
+      "status": "BLOCKED",
+      "description": "GitHub secrets AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID are not set",
+      "requires_human": true,
+      "human_action": "Set repository secrets after App Registration is created"
+    },
+    {
+      "id": "SUBSCRIPTION_ID_MISMATCH",
+      "severity": "LOW",
+      "status": "RESOLVED",
+      "description": "Azure.ps1 had old subscription ID fdc7c0e5...; actual is 01bfad48...",
+      "requires_human": false
+    }
+  ],
+  "authentication_architecture": {
+    "factory_deploy_workflow": {
+      "method": "OIDC via azure/login@v2",
+      "status": "NEEDS_SECRETS",
+      "secrets_required": ["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"]
+    },
+    "azure_cli_local": {
+      "method": "az login interactive",
+      "status": "WORKING"
+    },
+    "project_deploy_template": {
+      "method": "OIDC via azure/login@v2",
+      "status": "NEEDS_SECRETS"
+    },
+    "project_ci_template": {
+      "method": "none",
+      "status": "WORKING"
+    }
+  },
+  "app_registrations": {
+    "existing": [
+      {
+        "display_name": "Modelo-IA-UR-Modelo-IA-UR-Hermes-HermesEnterpriseSeniorCodingAgent-57d59-AgentIdentityBlueprint",
+        "app_id": "3ac1cae9-acd2-46cb-9d3f-1abd19510fd8",
+        "purpose": "Unknown/legacy"
+      }
+    ],
+    "required": [
+      {
+        "display_name": "Hermes-Enterprise-CI",
+        "purpose": "OIDC federated identity for Factory CI/CD",
+        "creation_status": "BLOCKED",
+        "creation_error": "Insufficient privileges to complete the operation"
+      }
+    ]
+  },
+  "github_secrets": {
+    "REPO": "FREDYASARMIENTOT/HERMES-ENTERPRISE",
+    "AZURE_CLIENT_ID": "NOT SET",
+    "AZURE_TENANT_ID": "NOT SET",
+    "AZURE_SUBSCRIPTION_ID": "NOT SET",
+    "AZURE_CREDENTIALS": "NOT SET"
+  },
+  "azure_subscription": {
+    "subscriptionId": "01bfad48-c092-4712-bc72-f141eb01a8d4",
+    "tenantId": "ae525757-89ba-4d30-a2f7-49796ef8c604",
+    "currentUser": "analiticaur@urosario.edu.co"
+  },
+  "oidc_readiness": {
+    "id_token_write_permission": true,
+    "azure_login_v2_usage": true,
+    "app_registration_created": false,
+    "federated_credential_created": false,
+    "github_secrets_configured": false,
+    "readiness_score_percent": 25
+  },
+  "migration_path": {
+    "phase_1": {
+      "name": "Manual App Registration Setup",
+      "human_required": true,
+      "estimated_minutes": 15,
+      "steps": [
+        "Create App Registration 'Hermes-Enterprise-CI'",
+        "Create federated credential for GitHub (issuer, subject, audience)",
+        "Grant Contributor role on subscription",
+        "Provide AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID"
+      ]
+    },
+    "phase_2": {
+      "name": "GitHub Secrets Configuration",
+      "human_required": true,
+      "estimated_minutes": 2,
+      "steps": [
+        "gh secret set AZURE_CLIENT_ID --body <value>",
+        "gh secret set AZURE_TENANT_ID --body <value>",
+        "gh secret set AZURE_SUBSCRIPTION_ID --body <value>"
+      ]
+    },
+    "phase_3": {
+      "name": "Project Template Enhancement",
+      "human_required": false,
+      "estimated_minutes": 30,
+      "description": "Enhance Crear-HermesProyecto.ps1 for automatic per-project secret management"
+    }
+  },
+  "service_principal_alternative": {
+    "recommended": false,
+    "method": "Service Principal with client secret as AZURE_CREDENTIALS JSON",
+    "reason": "Fallback if OIDC is permanently blocked by organization policy"
+  },
+  "autonomy_score": {
+    "oidc_workflow_structure": 100,
+    "app_registration_creation": 0,
+    "federated_credential_setup": 0,
+    "github_secrets_configuration": 0,
+    "project_secret_management": 0,
+    "overall_percent": 20
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "action": "Request App Registration creation from Azure AD administrator"
+    },
+    {
+      "priority": "HIGH",
+      "action": "Configure GitHub secrets once App Registration exists"
+    },
+    {
+      "priority": "MEDIUM",
+      "action": "Verify OIDC login with a manual GitHub Actions run post-setup"
+    },
+    {
+      "priority": "MEDIUM",
+      "action": "Document credentials policy for project repositories"
+    },
+    {
+      "priority": "LOW",
+      "action": "Implement Set-AzureGitHubSecrets function in Azure.ps1 for automation"
+    },
+    {
+      "priority": "LOW",
+      "action": "Add secret validation to Invoke-ProjectValidation.ps1"
+    }
+  ],
+  "warnings": [
+    "Azure subscription ID in Azure.ps1 (fdc7c0e5) differs from actual (01bfad48) — update config",
+    "Deploy workflows reference secrets that don't exist — will fail at runtime"
+  ],
+  "errors": [],
+  "human_intervention": [
+    "Create App Registration 'Hermes-Enterprise-CI' (Azure AD admin)",
+    "Create federated credential for GitHub Actions (Azure AD admin)",
+    "Grant Contributor role to service principal (Azure subscription admin)",
+    "Set three GitHub repository secrets (repo admin)"
+  ]
+}

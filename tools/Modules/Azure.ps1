@@ -296,4 +296,158 @@ function Wait-ProyectoWebAppReady {
     }
 }
 
-Export-ModuleMember -Function Read-AzureConfiguration, Validate-AzureInfrastructure, New-ProyectoWebApp, Deploy-ProyectoZipToAzure, Wait-ProyectoWebAppReady
+function Get-AzureIdentityMode {
+    <#
+    .SYNOPSIS
+        Returns the current Azure identity authentication mode from configuration.
+    .PARAMETER ConfigPath
+        Path to Hermes.Azure.json.
+    .OUTPUTS
+        Hashtable with identity mode details.
+    .NOTES
+        Supported modes:
+          - TemporaryExistingApp: Uses an existing App Registration (e.g. 'Hermes-Enterprise-OIDC')
+            with OIDC federated identity. HUMAN_REQUIRED for initial App Registration creation
+            and federated credential configuration.
+          - DedicatedHermesApp: A future state where Hermes creates its own App Registration
+            automatically (requires Application Administrator permissions).
+          - LEGACY: Uses local az CLI session for authentication.
+    #>
+    param(
+        [Parameter(Mandatory)] [string] $ConfigPath
+    )
+
+    if (-not (Test-Path $ConfigPath)) {
+        Write-Host "[AzureIdentity] WARNING: Configuration not found at $ConfigPath"
+        return @{
+            Mode = "UNKNOWN"
+            TenantId = ""
+            SubscriptionId = ""
+            TargetApp = ""
+            Scope = ""
+            ScopeType = ""
+            Description = "Configuration file not found"
+            IsReady = $false
+        }
+    }
+
+    $config = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+
+    # Support both flat and nested config formats
+    $cfg = $config
+    if ($config.PSObject.Properties.Name -contains "Azure") {
+        $cfg = $config.Azure
+    }
+
+    $mode = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityMode") { $cfg.AzureIdentityMode } else { "LEGACY" }
+    $tenantId = if ($cfg.PSObject.Properties.Name -contains "tenantId") { $cfg.tenantId } else { "" }
+    $subscriptionId = if ($cfg.PSObject.Properties.Name -contains "subscriptionId") { $cfg.subscriptionId } else { "" }
+    $targetApp = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityTargetApp") { $cfg.AzureIdentityTargetApp } else { "" }
+    $scope = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityScope") { $cfg.AzureIdentityScope } else { "" }
+    $scopeType = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityScopeType") { $cfg.AzureIdentityScopeType } else { "" }
+    $description = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityModeDescription") { $cfg.AzureIdentityModeDescription } else { "Legacy az CLI local session authentication" }
+
+    $isReady = $false
+    $blocker = ""
+
+    if ($mode -eq "TemporaryExistingApp" -or $mode -eq "DedicatedHermesApp") {
+        # OIDC readiness depends on GitHub secrets being configured
+        try {
+            $owner = "FREDYASARMIENTOT"
+            $repoName = "HERMES-ENTERPRISE"
+            $fullRepo = "$owner/$repoName"
+
+            $clientIdCheck = gh secret list --repo $fullRepo --json name 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                $secretInfo = $clientIdCheck | ConvertFrom-Json
+                $secretNames = $secretInfo | ForEach-Object { $_.name }
+                $hasClientId = $secretNames -contains "AZURE_CLIENT_ID"
+                $hasTenantId = $secretNames -contains "AZURE_TENANT_ID"
+                $hasSubId = $secretNames -contains "AZURE_SUBSCRIPTION_ID"
+                if ($hasClientId -and $hasTenantId -and $hasSubId) {
+                    $isReady = $true
+                } else {
+                    $missing = @()
+                    if (-not $hasClientId) { $missing += "AZURE_CLIENT_ID" }
+                    if (-not $hasTenantId) { $missing += "AZURE_TENANT_ID" }
+                    if (-not $hasSubId) { $missing += "AZURE_SUBSCRIPTION_ID" }
+                    $blocker = "GitHub secrets not configured: $($missing -join ', ')"
+                }
+            } else {
+                $blocker = "Cannot access GitHub secrets for $fullRepo. Ensure 'gh' is authenticated."
+            }
+        } catch {
+            $blocker = "Error checking GitHub secrets: $_"
+        }
+
+        if (-not $isReady) {
+            $blocker += " (HUMAN_REQUIRED)"
+        }
+    } elseif ($mode -eq "LEGACY" -or $mode -eq "UNKNOWN") {
+        # Legacy mode - check if az cli has active session
+        try {
+            $azCheck = az account show 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                $isReady = $true
+            } else {
+                $blocker = "No active az CLI session. Run 'az login'"
+            }
+        } catch {
+            $blocker = "az CLI not available: $_"
+        }
+    }
+
+    Write-Host "[AzureIdentity] Mode: $mode | Ready: $isReady"
+    if ($blocker) { Write-Host "[AzureIdentity] Blocker: $blocker" }
+
+    return @{
+        Mode = $mode
+        TenantId = $tenantId
+        SubscriptionId = $subscriptionId
+        TargetApp = $targetApp
+        Scope = $scope
+        ScopeType = $scopeType
+        Description = $description
+        IsReady = $isReady
+        Blocker = $blocker
+    }
+}
+
+function Assert-AzureIdentityReady {
+    <#
+    .SYNOPSIS
+        Validates that Azure identity authentication is ready for use.
+        Throws a descriptive error if not ready.
+    .PARAMETER ConfigPath
+        Path to Hermes.Azure.json.
+    .OUTPUTS
+        Hashtable with identity status.
+    #>
+    param(
+        [Parameter(Mandatory)] [string] $ConfigPath
+    )
+
+    $identityState = Get-AzureIdentityMode -ConfigPath $ConfigPath
+
+    if (-not $identityState.IsReady) {
+        $msg = "Azure identity is NOT ready. Mode: $($identityState.Mode). Blocker: $($identityState.Blocker)"
+        if ($identityState.Mode -eq "TemporaryExistingApp") {
+            $msg += "`n  HUMAN_REQUIRED: An Azure AD Administrator must:"
+            $msg += "`n    1. Create App Registration '$($identityState.TargetApp)' (NOT 'UR - App - SII 2.0')"
+            $msg += "`n    2. Create federated credential for this repository:"
+            $msg += "`n       Subject: repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production"
+            $msg += "`n       Issuer: https://token.actions.githubusercontent.com"
+            $msg += "`n       Audience: api://AzureADTokenExchange"
+            $msg += "`n    3. Grant Contributor role on $($identityState.ScopeType) '$($identityState.Scope)' (NOT subscription-wide)"
+            $msg += "`n    4. Set AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID as GitHub secrets"
+        } elseif ($identityState.Mode -eq "LEGACY" -or $identityState.Mode -eq "UNKNOWN") {
+            $msg += "`n  Run 'az login' to authenticate locally for LEGACY mode."
+        }
+        throw $msg
+    }
+
+    Write-Host "[AzureIdentity] Authentication ready: $($identityState.Mode) -> $($identityState.TargetApp)"
+    return $identityState
+}
+
+Export-ModuleMember -Function Read-AzureConfiguration, Validate-AzureInfrastructure, New-ProyectoWebApp, Deploy-ProyectoZipToAzure, Wait-ProyectoWebAppReady, Get-AzureIdentityMode, Assert-AzureIdentityReady

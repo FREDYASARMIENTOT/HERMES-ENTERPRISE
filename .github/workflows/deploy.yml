@@ -82,6 +82,7 @@ jobs:
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
+    environment: production
     needs: [build]
     steps:
       - name: Checkout
@@ -102,6 +103,12 @@ jobs:
           package: .
           clean: true
 
+      - name: Record deployment artifact
+        run: |
+          echo "DEPLOY_CORRELATION_ID=${{ env.CORRELATION_ID }}" >> $GITHUB_ENV
+          echo "DEPLOY_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+          echo "DEPLOY_SHA=${{ github.sha }}" >> $GITHUB_ENV
+
   smoketest:
     name: Smoke Test
     if: success() && needs.deploy.result == 'success'
@@ -117,18 +124,36 @@ jobs:
       - name: Test endpoints
         run: |
           URL="https://as-${PROJECT_NAME}.azurewebsites.net"
+          CORR_ID="${CORRELATION_ID}"
           ENDPOINTS=("/health" "/api/version" "/api/proyecto" "/")
           ALL_PASS=true
           for EP in "${ENDPOINTS[@]}"; do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL$EP")
             if [ "$CODE" -eq 200 ]; then
-              echo "PASS: $EP -> $CODE"
+              echo "PASS: $EP -> $CODE ($CORR_ID)"
             else
-              echo "FAIL: $EP -> $CODE"
+              echo "FAIL: $EP -> $CODE ($CORR_ID)"
               ALL_PASS=false
             fi
           done
           if [ "$ALL_PASS" = false ]; then exit 1; fi
-          echo "All smoke tests passed"
+          echo "All smoke tests passed (CorrelationId: $CORR_ID)"
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          CORRELATION_ID: ${{ env.CORRELATION_ID }}
+
+      - name: Check middleware headers
+        run: |
+          URL="https://as-${PROJECT_NAME}.azurewebsites.net"
+          echo "=== Checking middleware headers ==="
+          curl -sI "$URL/health" | head -20
+          echo "=== Correlation ID middleware [expecting X-Correlation-ID] ==="
+          CORR_HEADER=$(curl -sI "$URL/health" 2>&1 | grep -i "x-correlation-id" || echo "MISSING")
+          echo "Correlation header: $CORR_HEADER"
+          if echo "$CORR_HEADER" | grep -qi "x-correlation-id"; then
+            echo "PASS: Correlation ID middleware active"
+          else
+            echo "FAIL: Correlation ID middleware not detected (non-blocking)"
+          fi
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}

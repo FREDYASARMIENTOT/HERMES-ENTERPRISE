@@ -1,11 +1,17 @@
 {
     "Azure": {
         "subscriptionId": "01bfad48-c092-4712-bc72-f141eb01a8d4",
+        "tenantId": "ae525757-89ba-4d30-a2f7-49796ef8c604",
         "Location": "eastus",
         "ResourceGroupAplicaciones": "RG-Hermes-Proyectos",
         "ResourceGroupPlan": "RG-Datamining-SII2.0-Dev",
         "AppServicePlan": "ASP-IAUR",
         "StorageAccount": "saurhermesproyectos",
-        "UseSharedInfrastructure": true
+        "UseSharedInfrastructure": true,
+        "AzureIdentityMode": "TemporaryExistingApp",
+        "AzureIdentityTargetApp": "Hermes-Enterprise-OIDC",
+        "AzureIdentityScope": "RG-Hermes-Proyectos",
+        "AzureIdentityScopeType": "ResourceGroup",
+        "AzureIdentityModeDescription": "TemporaryExistingApp: OIDC via azure/login@v2 with federated identity targeting a NEW dedicated App Registration 'Hermes-Enterprise-OIDC' (NOT 'UR - App - SII 2.0'). HUMAN_REQUIRED: Azure AD Application Administrator must create Hermes-Enterprise-OIDC, add federated credential for repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production, and assign Contributor on RG-Hermes-Proyectos (NOT subscription-wide)."
     }
 }

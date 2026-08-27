@@ -1,0 +1,135 @@
+{
+    "Report": "RC77-ProvisionAppServiceAudit",
+    "Status": "RC77-PREPARED",
+    "Date": "2026-08-26",
+    "Architecture": {
+        "IdentityFlow": "GitHub Actions -> OIDC -> UR-Fabrica-Proyectos-AR -> RBAC -> RG-Hermes-Proyectos",
+        "UseClientSecret": false,
+        "UseAZURECREDENTIALS": false,
+        "UseFederatedIdentity": true,
+        "RBACScope": "ResourceGroup",
+        "RBACScopeName": "RG-Hermes-Proyectos"
+    },
+    "FilesAudited": [
+        ".github/workflows/provision-appservice.yml",
+        "config/Hermes.Azure.json",
+        "tools/Modules/Azure.ps1",
+        "tools/Modules/Guardian.ps1",
+        "config/Hermes.InfrastructureProtection.json",
+        ".github/workflows/deploy.yml"
+    ],
+    "Checks": {
+        "projectNameValidation": {
+            "status": "PASS",
+            "regex": "^[a-z0-9-]{3,40}$",
+            "details": "Rejects spaces, quotes, backticks, $, ;, &, |, /, \\, shell commands"
+        },
+        "oidcConfiguration": {
+            "status": "PASS",
+            "uses": "azure/login@v2",
+            "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
+            "tenantId": "${{ secrets.AZURE_TENANT_ID }}",
+            "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
+            "hardcodedGuids": "NONE",
+            "permissionsIdToken": true
+        },
+        "environment": {
+            "status": "PASS",
+            "name": "production",
+            "autoCreate": false
+        },
+        "resourceGroup": {
+            "status": "PASS",
+            "fixed": "RG-Hermes-Proyectos",
+            "readOnlyCheck": true,
+            "autoCreate": false
+        },
+        "appServicePlan": {
+            "status": "PASS",
+            "namingPattern": "asp-{projectName}",
+            "linux": true,
+            "idempotent": true,
+            "compatibilityValidation": ["kind", "location"],
+            "noSilentModify": true,
+            "noForce": true
+        },
+        "webApp": {
+            "status": "PASS",
+            "namingPattern": "as-{projectName}",
+            "idempotent": true,
+            "noDestroy": true,
+            "noReplace": true,
+            "noForce": true
+        },
+        "appSettings": {
+            "status": "PASS",
+            "secretsInSettings": "NONE",
+            "settingsApplied": ["PROJECT_NAME"],
+            "onlyOnCreate": true
+        },
+        "destructiveCommands": {
+            "status": "PASS",
+            "found": []
+        },
+        "embededSecrets": {
+            "status": "PASS",
+            "found": []
+        },
+        "identityConfig": {
+            "status": "PASS",
+            "AzureIdentityMode": "DedicatedApp",
+            "AzureIdentityTargetApp": "UR-Fabrica-Proyectos-AR",
+            "AzureIdentityTargetAppId": null,
+            "inventedClientId": false,
+            "servicePrincipalObjectIdUsedAsClientId": false
+        },
+        "guardianConfig": {
+            "status": "PASS",
+            "blockedOpsPresent": true,
+            "protectedRGsIncludeRGHP": true
+        }
+    },
+    "HumanRequired": [
+        {
+            "item": "APPLICATION_CLIENT_ID",
+            "status": "MISSING",
+            "command": "az ad app list --display-name \"UR-Fabrica-Proyectos-AR\" --query \"[0].appId\" -o tsv",
+            "note": "NO usar SP Object ID feb971aa-7655-4c6f-8aef-b9f3bb828f6b como Client ID"
+        },
+        {
+            "item": "GITHUB_SECRET_AZURE_CLIENT_ID",
+            "status": "MISSING",
+            "command": "gh secret set AZURE_CLIENT_ID --repo FREDYASARMIENTOT/HERMES-ENTERPRISE --body \"<ClientID>\""
+        },
+        {
+            "item": "GITHUB_SECRET_AZURE_TENANT_ID",
+            "status": "MISSING",
+            "command": "gh secret set AZURE_TENANT_ID --repo FREDYASARMIENTOT/HERMES-ENTERPRISE --body \"ae525757-89ba-4d30-a2f7-49796ef8c604\""
+        },
+        {
+            "item": "GITHUB_SECRET_AZURE_SUBSCRIPTION_ID",
+            "status": "MISSING",
+            "command": "gh secret set AZURE_SUBSCRIPTION_ID --repo FREDYASARMIENTOT/HERMES-ENTERPRISE --body \"01bfad48-c092-4712-bc72-f141eb01a8d4\""
+        },
+        {
+            "item": "GITHUB_ENVIRONMENT_PRODUCTION",
+            "status": "MISSING",
+            "note": "Crear en Settings > Environments > 'production'"
+        },
+        {
+            "item": "FEDERATED_CREDENTIAL",
+            "status": "MISSING",
+            "note": "Verificar federated credential con subject: repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production"
+        }
+    ],
+    "NextSteps": [
+        "1. Obtener Application (Client) ID desde Azure Portal o CLI",
+        "2. Crear GitHub Environment 'production'",
+        "3. Configurar 3 secrets en GitHub (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID)",
+        "4. Verificar federated credential en UR-Fabrica-Proyectos-AR",
+        "5. Push a main",
+        "6. Ejecutar workflow 'Provision App Service' manualmente con projectName de prueba",
+        "7. Verificar recursos creados en Azure Portal"
+    ],
+    "FinalVeredict": "RC77-PREPARED with HUMAN_REQUIRED dependencies. Code is hardened, secure, and ready for execution once identity secrets are configured."
+}

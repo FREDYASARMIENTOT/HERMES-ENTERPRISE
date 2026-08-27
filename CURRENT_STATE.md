@@ -1,11 +1,87 @@
 # CURRENT_STATE
 
-Date: 2026-08-08
+Date: 2026-08-27
 
-## RC74-C — Autonomous Project Factory (Closed)
+## RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (Closed)
 
-> **Status:** ✅ COMPLETED
-> **Date:** 2026-08-08
+> **Status:** ✅ COMPLETED (con BLOCKER_HUMAN)
+> **Date:** 2026-08-27
+> **Blocker:** Federated credential subject incompleto — requiere Application Administrator
+
+### What RC77 Series Delivered (3 phases)
+
+#### RC77 — Provision App Service Workflow (2026-08-26)
+1. **`.github/workflows/provision-appservice.yml`** — New workflow to provision App Service Plan + Web App in Azure:
+   - Idempotent: creates if not exists, validates if exists (no destroy/replace)
+   - Secure: OIDC-only (`azure/login@v2`), no client secrets, no AZURE_CREDENTIALS
+   - `projectName` validation: regex `^[a-z0-9-]{3,40}$` (rejects injection)
+   - Fixed Resource Group: `RG-Hermes-Proyectos` (read-only check, no auto-create)
+   - App Service Plan: `asp-{projectName}` (Linux, SKU selectable, idempotent)
+   - Web App: `as-{projectName}` (runtime selectable, idempotent)
+   - App Settings: only `PROJECT_NAME` (no secrets), applied only on create
+   - Logging enabled (filesystem, detailed errors, failed request tracing)
+   - Output summary without secrets or GUIDs
+2. **Audit report**: `reports/RC77-ProvisionAppServiceAudit.md` / `.json` — 13 checkpoints PASS
+
+#### RC77-C2 — Identity Finalization (2026-08-27)
+1. **Real identity confirmed**: App Registration `UR-Fabrica-Proyectos-AR`
+   - Application (Client) ID: `feb971aa-7655-4c6f-8aef-b9f3bb828f6b`
+   - SP Object ID: `5616db94-97be-44d4-8216-f38b704522c2`
+   - Tenant ID: `ae525757-89ba-4d30-a2f7-49796ef8c604`
+   - Subscription ID: `01bfad48-c092-4712-bc72-f141eb01a8d4`
+   - RBAC: Contributor on `RG-Hermes-Proyectos`
+2. **Config updated**: `config/Hermes.Azure.json` — `AzureIdentityMode: DedicatedApp`
+   - `AzureIdentityTargetApp: UR-Fabrica-Proyectos-AR`
+   - `AzureIdentityTargetAppId: feb971aa-...` (real Client ID)
+   - OIDC fields: `OIDCFederatedSubject`, `OIDCIssuer`, `OIDCAudience`
+3. **GitHub Environment**: `production` created (ID: 20686661565)
+4. **GitHub Secrets**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` — presence validated
+5. **Manual provision test**: `asp-test-prueba` (Linux B1) + `as-test-prueba` (Running) created
+6. **Documentation**: `docs/AzureIdentityMigration.md` completely rewritten with definitive architecture
+7. **Azure.ps1**: `DedicatedApp` mode added, relaxed required config (per-project AppServicePlan)
+
+#### RC77-C3 — OIDC Final Audit & Controlled Correction (2026-08-27)
+1. **Read-only inspection**: Federated credential `github-production` inspected
+   - Subject: `repo:FREDYASARMIENTOT/` ❌ INCOMPLETO
+   - Required: `repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production`
+2. **Correction attempted**: `az ad app federated-credential update` — BLOCKED
+   - Error: `Insufficient privileges to complete the operation.`
+   - User `analiticaur@urosario.edu.co` lacks Application Administrator role
+3. **No changes made**: Credential untouched. Verification confirmed.
+4. **HUMAN_REQUIRED**: Azure AD Application Administrator must correct the subject
+
+### Key Principles Enforced
+- Zero permanent secrets in GitHub (OIDC token per-run)
+- No `AZURE_CREDENTIALS` JSON file
+- No Client Secret stored
+- No subscription-wide permissions
+- Resource Group `RG-Hermes-Proyectos` fixed, read-only, no auto-create
+- Guardian protection active on `RG-Hermes-Proyectos`
+- All workflows audited: ci.yml, deploy.yml, provision-appservice.yml — all OIDC-correct
+
+### Known Blockers
+1. **BLOCKER**: Federated credential subject incompleto — requiere Application Administrator
+2. **MENOR**: `deploy.yml` no valida `projectName` input
+
+### Architecture State
+- **Runtime:** Frozen at RC70-D — shared venv `D:\\HermesRuntime\\Environments\\HermesEnterprise`
+- **Config (Python):** `config/Hermes.Python.json`
+- **Config (Azure):** `config/Hermes.Azure.json` — DedicatedApp mode, UR-Fabrica-Proyectos-AR
+- **Config (Guardian):** `config/Hermes.InfrastructureProtection.json` v1.1.0
+- **Identity Flow:** GitHub Actions → OIDC → UR-Fabrica-Proyectos-AR → RBAC → RG-Hermes-Proyectos
+- **Workflows:** ci.yml (CI), deploy.yml (deploy), provision-appservice.yml (provision)
+
+### Next Steps (Not Yet Started)
+1. **RC76:** Azure Storage integration
+2. **Azure Foundry:** Future capability
+3. **Parquet:** Future capability
+4. **Blueprints:** Future capability
+
+---
+
+## Previous Milestones
+
+### RC74-C — Autonomous Project Factory (Completed 2026-08-08)
 > **Pipeline:** Crear-HermesProyecto — 25 steps, end-to-end
 
 ### What RC74-C delivered

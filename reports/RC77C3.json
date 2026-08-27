@@ -1,0 +1,43 @@
+{
+  "report": "RC77-C3",
+  "title": "Identidad OIDC: Auditoría Definitiva y Corrección Controlada",
+  "date": "2026-08-27",
+  "status": "BLOCKED_HUMAN",
+  "blocker": {
+    "type": "INSUFFICIENT_PRIVILEGES_AZURE_AD",
+    "detail": "El usuario 'analiticaur@urosario.edu.co' autenticado en Azure CLI no tiene permisos para modificar federated credentials. Se requiere rol Application Administrator o Cloud Application Administrator en Azure AD.",
+    "command_attempted": "az ad app federated-credential update --id 4d08dcbb-... --federated-credential-id a2f3f6f7-...",
+    "error": "Insufficient privileges to complete the operation.",
+    "recommendation": "Ejecutar comando manual por un usuario con Azure AD Application Administrator"
+  },
+  "identity_before_correction": {
+    "credential_name": "github-production",
+    "credential_id": "a2f3f6f7-45a3-45c9-a822-a6501b2df9e5",
+    "old_subject": "repo:FREDYASARMIENTOT/",
+    "new_subject_required": "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production",
+    "correction_applied": false
+  },
+  "identity": {
+    "applicationClientId": "feb971aa-7655-4c6f-8aef-b9f3bb828f6b",
+    "servicePrincipalObjectId": "5616db94-97be-44d4-8216-f38b704522c2",
+    "appRegistrationObjectId": "4d08dcbb-3a57-449a-aac6-a28d6f7501cd",
+    "tenantId": "ae525757-89ba-4d30-a2f7-49796ef8c604",
+    "subscriptionId": "01bfad48-c092-4712-bc72-f141eb01a8d4",
+    "resourceGroup": "RG-Hermes-Proyectos",
+    "repository": "FREDYASARMIENTOT/HERMES-ENTERPRISE",
+    "githubEnvironment": "production"
+  },
+  "config": "VALID",
+  "github": {
+    "secrets_present": ["AZURE_CLIENT_ID","AZURE_TENANT_ID","AZURE_SUBSCRIPTION_ID"],
+    "environment_production": {"id":20686661565,"name":"production"}
+  },
+  "workflow": "VALID (azure/login@v2, secrets.*, sin hardcode)",
+  "e2e": "NOT_RUN - Bloqueado por federated credential no corregida",
+  "human_required": [
+    "1. [ALTA] Corregir federated credential: az ad app federated-credential update --id 4d08dcbb-3a57-449a-aac6-a28d6f7501cd --federated-credential-id a2f3f6f7-45a3-45c9-a822-a6501b2df9e5 --subject 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production'",
+    "   Alternativa Portal: Azure AD > App Registrations > UR-Fabrica-Proyectos-AR > Certificates & secrets > Federated credentials > github-production > Editar subject",
+    "2. [MEDIA] Verificar AZURE_CLIENT_ID = feb971aa-... (CLIENT_ID), NO = 5616db94-... (SP_OBJECT_ID)",
+    "3. [MEDIA] gh workflow run deploy.yml --repo FREDYASARMIENTOT/HERMES-ENTERPRISE --ref main"
+  ]
+}

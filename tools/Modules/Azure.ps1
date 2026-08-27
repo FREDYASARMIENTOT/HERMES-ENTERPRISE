@@ -17,7 +17,7 @@ function Read-AzureConfiguration {
 
     $config = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
-    $required = @("ResourceGroupAplicaciones", "AppServicePlan", "StorageAccount")
+    $required = @("ResourceGroupAplicaciones")
     $missing = @()
     $azure = @{}
 
@@ -29,15 +29,23 @@ function Read-AzureConfiguration {
 
     $azure["resourceGroup"] = $cfg.ResourceGroupAplicaciones
     $azure["resourceGroupPlan"] = if ($cfg.PSObject.Properties.Name -contains "ResourceGroupPlan") { $cfg.ResourceGroupPlan } else { $cfg.ResourceGroupAplicaciones }
-    $azure["appServicePlan"] = $cfg.AppServicePlan
-    $azure["storageAccount"] = $cfg.StorageAccount
+
+    # AppServicePlan is now per-project (asp-{projectName}); use config if present, else empty
+    if ($cfg.PSObject.Properties.Name -contains "AppServicePlan" -and $cfg.AppServicePlan -and $cfg.AppServicePlan -ne "") {
+        $azure["appServicePlan"] = $cfg.AppServicePlan
+    } else {
+        $azure["appServicePlan"] = ""  # Per-project dynamic (asp-{projectName})
+        Write-Host "[Azure] No static AppServicePlan configured. Using per-project naming (asp-{projectName})."
+    }
+
+    $azure["storageAccount"] = if ($cfg.PSObject.Properties.Name -contains "StorageAccount") { $cfg.StorageAccount } else { "" }
     $azure["keyVault"] = ""
 
     if ($cfg.PSObject.Properties.Name -contains "KeyVault") {
         $azure["keyVault"] = $cfg.KeyVault
     }
 
-    foreach ($prop in @("ResourceGroupAplicaciones", "ResourceGroupPlan", "AppServicePlan", "StorageAccount")) {
+    foreach ($prop in @("ResourceGroupAplicaciones")) {
         if ([string]::IsNullOrEmpty($cfg.$prop) -or $cfg.$prop -eq "") {
             $missing += $prop
         }
@@ -350,7 +358,7 @@ function Get-AzureIdentityMode {
     $isReady = $false
     $blocker = ""
 
-    if ($mode -eq "TemporaryExistingApp" -or $mode -eq "DedicatedHermesApp") {
+    if ($mode -eq "TemporaryExistingApp" -or $mode -eq "DedicatedHermesApp" -or $mode -eq "DedicatedApp") {
         # OIDC readiness depends on GitHub secrets being configured
         try {
             $owner = "FREDYASARMIENTOT"
@@ -431,7 +439,7 @@ function Assert-AzureIdentityReady {
 
     if (-not $identityState.IsReady) {
         $msg = "Azure identity is NOT ready. Mode: $($identityState.Mode). Blocker: $($identityState.Blocker)"
-        if ($identityState.Mode -eq "TemporaryExistingApp") {
+        if ($identityState.Mode -eq "TemporaryExistingApp" -or $identityState.Mode -eq "DedicatedApp" -or $identityState.Mode -eq "DedicatedHermesApp") {
             $msg += "`n  HUMAN_REQUIRED: An Azure AD Administrator must:"
             $msg += "`n    1. Create App Registration '$($identityState.TargetApp)' (NOT 'UR - App - SII 2.0')"
             $msg += "`n    2. Create federated credential for this repository:"

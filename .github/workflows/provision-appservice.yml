@@ -1,0 +1,252 @@
+# ====================================================================
+# Provision App Service — Hermes Enterprise CI/CD
+# ====================================================================
+# RC77-PREPARED: Provisiona App Service Plan + Web App en Azure.
+# Idempotente, seguro, sin secretos embebidos.
+# Arquitectura:
+#   GitHub Actions -> OIDC -> UR-Fabrica-Proyectos-AR -> RBAC -> RG-Hermes-Proyectos
+# ====================================================================
+
+name: Provision App Service
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      projectName:
+        description: 'Nombre del proyecto (solo minusculas, numeros y guiones)'
+        required: true
+        default: 'hermesenterprise'
+        type: string
+      location:
+        description: 'Region de Azure'
+        required: false
+        default: 'eastus'
+        type: string
+      sku:
+        description: 'SKU del App Service Plan'
+        required: false
+        default: 'B1'
+        type: choice
+        options:
+          - B1
+          - S1
+          - P1v2
+      runtime:
+        description: 'Runtime stack'
+        required: false
+        default: 'PYTHON:3.11'
+        type: choice
+        options:
+          - 'PYTHON:3.11'
+          - 'PYTHON:3.12'
+          - 'NODE:20-lts'
+
+env:
+  RESOURCE_GROUP: RG-Hermes-Proyectos
+
+jobs:
+  provision:
+    name: Provision Azure App Service
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      # ---------------------------------------------------------------
+      # STEP 1: Validar projectName (seguridad: evitar inyeccion)
+      # ---------------------------------------------------------------
+      - name: Validate projectName
+        shell: bash
+        run: |
+          PROJECT_NAME="${{ inputs.projectName }}"
+          echo "Validando projectName: ${PROJECT_NAME}"
+          if ! echo "${PROJECT_NAME}" | grep -qP '^[a-z0-9-]{3,40}$'; then
+            echo "ERROR: projectName invalido: '${PROJECT_NAME}'"
+            echo "Permitido: solo minusculas, numeros y guiones (3-40 caracteres)"
+            exit 1
+          fi
+          echo "projectName OK: ${PROJECT_NAME}"
+
+      # ---------------------------------------------------------------
+      # STEP 2: Checkout
+      # ---------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # ---------------------------------------------------------------
+      # STEP 3: Azure Login -- OIDC puro, sin client secret
+      # ---------------------------------------------------------------
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # ---------------------------------------------------------------
+      # STEP 4: Validar Resource Group (READ ONLY)
+      # ---------------------------------------------------------------
+      - name: Validate Resource Group
+        shell: bash
+        run: |
+          RG="${{ env.RESOURCE_GROUP }}"
+          echo "Verificando Resource Group: ${RG}"
+          STATE=$(az group show --name "${RG}" --query "properties.provisioningState" -o tsv 2>&1) || {
+            echo "FAIL: Resource Group '${RG}' NO existe."
+            echo "El Resource Group debe crearse manualmente."
+            echo "Accion: az group create --name ${RG} --location ${{ inputs.location }}"
+            exit 1
+          }
+          echo "Resource Group OK: ${STATE}"
+
+      # ---------------------------------------------------------------
+      # STEP 5: App Service Plan -- crear o validar compatibilidad
+      # ---------------------------------------------------------------
+      - name: App Service Plan -- Provision or Validate
+        shell: bash
+        run: |
+          ASP_NAME="asp-${{ inputs.projectName }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+          LOCATION="${{ inputs.location }}"
+          SKU="${{ inputs.sku }}"
+
+          echo "=== App Service Plan: ${ASP_NAME} ==="
+
+          EXISTING=$(az appservice plan show \
+            --name "${ASP_NAME}" \
+            --resource-group "${RG}" \
+            --query "{name:name, sku:sku.name, location:location, kind:kind}" \
+            -o json 2>/dev/null || echo "")
+
+          if [ -z "${EXISTING}" ]; then
+            echo "Creando App Service Plan (${SKU})..."
+            az appservice plan create \
+              --name "${ASP_NAME}" \
+              --resource-group "${RG}" \
+              --location "${LOCATION}" \
+              --sku "${SKU}" \
+              --is-linux \
+              --output table
+            echo "App Service Plan creado: ${ASP_NAME}"
+            echo "CREATED=true" >> $GITHUB_ENV
+          else
+            echo "Plan ya existe. Validando compatibilidad..."
+            KIND=$(echo "${EXISTING}" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('kind','').lower())")
+            LOC_ACTUAL=$(echo "${EXISTING}" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('location','').lower())")
+            SKU_ACTUAL=$(echo "${EXISTING}" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('sku',''))")
+
+            FAIL=false
+            if ! echo "$KIND" | grep -q "linux"; then
+              echo "FAIL: Kind mismatch - expected 'linux', got '$KIND'"
+              FAIL=true
+            fi
+            if [ "$LOC_ACTUAL" != "${LOCATION,,}" ]; then
+              echo "FAIL: Location mismatch - expected '$LOCATION', got '$LOC_ACTUAL'"
+              FAIL=true
+            fi
+            if [ "$FAIL" = true ]; then
+              exit 1
+            fi
+            echo "Plan compatible: SKU=$SKU_ACTUAL Location=$LOC_ACTUAL Kind=$KIND"
+            echo "CREATED=false" >> $GITHUB_ENV
+          fi
+
+      # ---------------------------------------------------------------
+      # STEP 6: Web App -- crear o mostrar estado
+      # ---------------------------------------------------------------
+      - name: Web App -- Provision or Show Status
+        shell: bash
+        run: |
+          APP_NAME="as-${{ inputs.projectName }}"
+          ASP_NAME="asp-${{ inputs.projectName }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+          RUNTIME="${{ inputs.runtime }}"
+
+          echo "=== Web App: ${APP_NAME} ==="
+
+          EXISTING=$(az webapp show \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --query "{name:name, state:state, url:defaultHostName, runtime:siteConfig.linuxFxVersion}" \
+            -o json 2>/dev/null || echo "")
+
+          if [ -z "${EXISTING}" ]; then
+            echo "Creando Web App (${RUNTIME})..."
+            az webapp create \
+              --name "${APP_NAME}" \
+              --resource-group "${RG}" \
+              --plan "${ASP_NAME}" \
+              --runtime "${RUNTIME}" \
+              --output table
+            echo "Web App creada: https://${APP_NAME}.azurewebsites.net"
+            echo "APP_CREATED=true" >> $GITHUB_ENV
+          else
+            echo "Web App ya existe: ${APP_NAME}"
+            echo "  State   : $(echo "${EXISTING}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('state',''))")"
+            echo "  URL     : https://$(echo "${EXISTING}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('defaultHostName',''))")"
+            echo "  Runtime : $(echo "${EXISTING}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('runtime',''))")"
+            echo "APP_CREATED=false" >> $GITHUB_ENV
+          fi
+
+      # ---------------------------------------------------------------
+      # STEP 7: App Settings (solo Web App nueva)
+      # NO se almacenan secretos de Azure en App Settings
+      # ---------------------------------------------------------------
+      - name: Configure App Settings (new Web App only)
+        shell: bash
+        if: env.APP_CREATED == 'true'
+        run: |
+          APP_NAME="as-${{ inputs.projectName }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+
+          echo "Configurando variables de entorno..."
+          az webapp config appsettings set \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --settings \
+              PROJECT_NAME="${{ inputs.projectName }}" \
+            --output none
+
+          echo "Configuracion aplicada (PROJECT_NAME)"
+
+      # ---------------------------------------------------------------
+      # STEP 8: Logging
+      # ---------------------------------------------------------------
+      - name: Enable Deployment Logging
+        shell: bash
+        run: |
+          APP_NAME="as-${{ inputs.projectName }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+
+          az webapp log config \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --application-logging filesystem \
+            --detailed-error-messages true \
+            --failed-request-tracing true \
+            --web-server-logging filesystem \
+            --output none
+
+          echo "Logging habilitado"
+
+      # ---------------------------------------------------------------
+      # STEP 9: Output Summary -- sin secretos ni GUIDs
+      # ---------------------------------------------------------------
+      - name: Output Summary
+        shell: bash
+        run: |
+          echo "=========================================="
+          echo "  PROVISIONING COMPLETE"
+          echo "=========================================="
+          echo "  Project       : ${{ inputs.projectName }}"
+          echo "  Resource Group: ${{ env.RESOURCE_GROUP }}"
+          echo "  Plan          : asp-${{ inputs.projectName }} (${{ inputs.sku }})"
+          echo "  Web App       : https://as-${{ inputs.projectName }}.azurewebsites.net"
+          echo "  Runtime       : ${{ inputs.runtime }}"
+          echo "  Location      : ${{ inputs.location }}"
+          echo "  Identity Mode : OIDC (UR-Fabrica-Proyectos-AR)"
+          echo "  OIDC Status   : via secrets.AZURE_CLIENT_ID"
+          echo "=========================================="

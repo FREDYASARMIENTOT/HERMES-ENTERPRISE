@@ -1,0 +1,90 @@
+{
+  "report": "RC77-C2",
+  "title": "Finalizar Identidad UR-Fabrica-Proyectos-AR y Validar Provisionamiento",
+  "date": "2026-08-27",
+  "status": "READY_FOR_E2E",
+  "blocker": true,
+  "blocker_reason": "Federated credential subject incompleto: 'repo:FREDYASARMIENTOT/' debe ser 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production'",
+  "identity": {
+    "appRegistration": "UR-Fabrica-Proyectos-AR",
+    "applicationClientId": "feb971aa-7655-4c6f-8aef-b9f3bb828f6b",
+    "servicePrincipalObjectId": "5616db94-97be-44d4-8216-f38b704522c2",
+    "sp_object_id_note": "Valor originalmente documentado como SP Object ID era en realidad el Client ID. El SP Object ID real es 5616db94-97be-44d4-8216-f38b704522c2",
+    "tenantId": "ae525757-89ba-4d30-a2f7-49796ef8c604",
+    "subscriptionId": "01bfad48-c092-4712-bc72-f141eb01a8d4",
+    "resourceGroup": "RG-Hermes-Proyectos"
+  },
+  "phases": {
+    "fase1_clientId": {
+      "status": "PASS",
+      "detail": "Client ID identificado: feb971aa-7655-4c6f-8aef-b9f3bb828f6b. DisplayName = UR-Fabrica-Proyectos-AR. Confirmado via az ad sp show y az ad app show"
+    },
+    "fase2_federatedCredential": {
+      "status": "BLOCKED",
+      "detail": "Federated credential 'github-production' existe pero subject incompleto. Subject actual: 'repo:FREDYASARMIENTOT/'. Requerido: 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production'. Issuer y audience OK."
+    },
+    "fase3_rbac": {
+      "status": "PASS",
+      "detail": "Contributor en /subscriptions/01bfad48-.../resourceGroups/RG-Hermes-Proyectos. PrincipalType: ServicePrincipal. SP Object ID: 5616db94-97be-44d4-8216-f38b704522c2"
+    },
+    "fase4_githubSecrets": {
+      "status": "PASS",
+      "detail": "AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID existentes. NO se creo AZURE_CREDENTIALS. NO se inspeccionaron valores."
+    },
+    "fase5_githubEnvironment": {
+      "status": "CREATED",
+      "detail": "Environment 'production' no existia. Creado exitosamente via gh api --method PUT"
+    },
+    "fase6_workflowAudit": {
+      "status": "PASS",
+      "findings": [
+        {"file": ".github/workflows/ci.yml", "oidc": true, "hardcodedSecrets": false, "notes": "CI only, no Azure login, id-token: write presente"},
+        {"file": ".github/workflows/deploy.yml", "oidc": true, "hardcodedSecrets": false, "notes": "azure/login@v2 correcto, secrets ausentes, projectName sin validacion"},
+        {"file": ".github/workflows/provision-appservice.yml", "oidc": true, "hardcodedSecrets": false, "notes": "Endurecido RC77, projectName validado"}
+      ]
+    },
+    "fase7_provisionedResources": {
+      "status": "PASS",
+      "resources": [
+        {"type": "AppServicePlan", "name": "asp-test-prueba", "sku": "B1", "kind": "linux", "location": "East US", "rg": "RG-Hermes-Proyectos"},
+        {"type": "WebApp", "name": "as-test-prueba", "state": "Running", "url": "as-test-prueba.azurewebsites.net", "rg": "RG-Hermes-Proyectos"}
+      ]
+    },
+    "fase8_guardian": {
+      "status": "PASS",
+      "detail": "Hermes.InfrastructureProtection.json version 1.1.0 activo. Sin bypass. Sin -Force. Destructive operations blocked."
+    },
+    "fase9_resourceLocks": {
+      "status": "INFO",
+      "detail": "No locks en RG-Hermes-Proyectos"
+    },
+    "fase10_config": {
+      "status": "UPDATED",
+      "detail": "config/Hermes.Azure.json: AzureIdentityTargetAppId actualizado a feb971aa-7655-4c6f-8aef-b9f3bb828f6b. AzureIdentityMode=DedicatedApp. AzureIdentityScope=RG-Hermes-Proyectos"
+    },
+    "fase11_documentation": {
+      "status": "UPDATED",
+      "detail": "docs/AzureIdentityMigration.md actualizado con arquitectura definitiva, tabla de estado, y bloqueo documentado"
+    }
+  },
+  "matrix": {
+    "A_azure_provisioning_manual": "PASS",
+    "B_app_registration": "EXISTENTE",
+    "C_service_principal": "EXISTENTE",
+    "D_rbac": "VALIDADO",
+    "E_oidc_federation": "PENDING_HUMAN",
+    "F_github_environment": "VALIDADO",
+    "G_github_secrets": "PRESENCIA_VALIDADA",
+    "H_github_actions_e2e": "NOT_RUN",
+    "I_seguridad": "FINDINGS"
+  },
+  "security_findings": [
+    "Federated credential subject incompleto: 'repo:FREDYASARMIENTOT/' en lugar de 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production'"
+  ],
+  "human_required_items": [
+    "1. Corregir federated credential subject usando: az ad app federated-credential update --id <appObjectId> --federated-credential-id a2f3f6f7-45a3-45c9-a822-a6501b2df9e5 --subject 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production'",
+    "2. Despues de corregir federated credential, ejecutar: gh workflow run deploy.yml --repo FREDYASARMIENTOT/HERMES-ENTERPRISE --ref main",
+    "3. Verificar resultado de GitHub Actions: gh run list --repo FREDYASARMIENTOT/HERMES-ENTERPRISE --workflow deploy.yml --limit 1"
+  ],
+  "recommendation": "Corregir federated credential subject ANTES de intentar cualquier ejecucion de GitHub Actions. El subject actual 'repo:FREDYASARMIENTOT/' no coincide con el claim que GitHub envia."
+}

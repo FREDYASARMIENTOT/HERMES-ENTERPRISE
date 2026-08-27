@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Sprint History
+- A.33: RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (con BLOCKER)
 - A.32: RC74-C — Autonomous Project Factory (closed, 25-step pipeline)
 - A.31: RC73-B — Guardian Hardened (10 resource types, 46 tests)
 - A.30: RC73-A — Azure Infrastructure Guardian
@@ -8,6 +9,75 @@
 - A.28: Quality & CI — RC71-B
 - A.27: Auditoría de deuda técnica RC71-A
 - A.26: Memoria persistente y normalización documental
+## RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (2026-08-27)
+
+> **Status:** ✅ COMPLETED (con BLOCKER_HUMAN)
+> **Blocker:** Federated credential subject incompleto — requiere Application Administrator
+
+### RC77 — Provision App Service Workflow (2026-08-26)
+
+#### Added
+- **`.github/workflows/provision-appservice.yml`** — New secure, idempotent workflow to provision App Service Plan + Web App in Azure:
+  - OIDC-only authentication via `azure/login@v2` (no client secrets, no AZURE_CREDENTIALS)
+  - `projectName` input validation: regex `^[a-z0-9-]{3,40}$` (rejects shell injection)
+  - Fixed Resource Group `RG-Hermes-Proyectos` (read-only check, no auto-create)
+  - Idempotent App Service Plan: `asp-{projectName}` (Linux, SKU selectable, validates compatibility)
+  - Idempotent Web App: `as-{projectName}` (runtime selectable, no destroy/replace)
+  - App Settings: only `PROJECT_NAME` (no secrets), applied only on new Web App
+  - Logging enabled (filesystem, detailed errors, failed request tracing)
+  - Environment protection: `environment: production` gate
+  - Guardian protection active (no destructive commands, no `--force`)
+- **`reports/RC77-ProvisionAppServiceAudit.md`** / `.json` — 13 security checkpoints all PASS
+- **`reports/RC77C2.md`** / `.json` — Identity Finalization report
+- **`reports/RC77C3.md`** / `.json` — OIDC Final Audit report
+
+### RC77-C2 — Identity Finalization (2026-08-27)
+
+#### Added
+- **Real identity confirmed**: App Registration `UR-Fabrica-Proyectos-AR`
+  - Client ID: `feb971aa-7655-4c6f-8aef-b9f3bb828f6b`
+  - SP Object ID: `5616db94-97be-44d4-8216-f38b704522c2`
+  - RBAC: Contributor on `RG-Hermes-Proyectos`
+- **GitHub Environment `production`** created (ID: 20686661565)
+- **GitHub Secrets validated**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
+
+#### Changed
+- **`config/Hermes.Azure.json`** — Migrated to `DedicatedApp` mode:
+  - `AzureIdentityTargetApp: UR-Fabrica-Proyectos-AR`
+  - `AzureIdentityTargetAppId: feb971aa-...` (real Client ID)
+  - Added `OIDCFederatedSubject`, `OIDCIssuer`, `OIDCAudience` fields
+  - Removed `ResourceGroupPlan` and `AppServicePlan` (per-project naming now)
+  - `UseSharedInfrastructure: false`, `StorageAccount` cleared
+- **`docs/AzureIdentityMigration.md`** — Completely rewritten: definitive architecture, identity table, blocker documentation
+- **`tools/Modules/Azure.ps1`** — Added `DedicatedApp` mode support in `Get-AzureIdentityMode` and `Assert-AzureIdentityReady`; relaxed required config fields (per-project AppServicePlan)
+
+#### Security
+- Zero permanent secrets in GitHub (OIDC token per-run)
+- No Client Secret stored
+- No subscription-wide permissions
+- No `AZURE_CREDENTIALS` JSON file
+- All 3 workflows audited: ci.yml, deploy.yml, provision-appservice.yml — OIDC correct
+
+### RC77-C3 — OIDC Final Audit & Controlled Correction (2026-08-27)
+
+#### Added
+- **Read-only inspection** of federated credential `github-production`:
+  - Subject found: `repo:FREDYASARMIENTOT/` ❌ INCOMPLETO
+  - Subject required: `repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production`
+- **Correction attempt documented**: `az ad app federated-credential update` — BLOCKED with `Insufficient privileges`
+- **No changes made** — credential untouched, verification confirmed
+- **Human instructions** provided for Azure AD Application Administrator (both CLI and Portal methods)
+
+#### Security
+- Controlled correction protocol: inspect → attempt → verify no change
+- Temporary file `credential.json` deleted after failed attempt
+- All identity data confirmed: Client ID, SP Object ID, App Object ID, Tenant, Subscription
+
+### Known Blockers
+1. **BLOCKER**: Federated credential subject incompleto — Azure AD Application Administrator must correct
+2. **MENOR**: `deploy.yml` does not validate `projectName` input
+
+---
 
 ## RC73-B — Guardian Hardened — All 10 Resource Types (2026-08-07)
 

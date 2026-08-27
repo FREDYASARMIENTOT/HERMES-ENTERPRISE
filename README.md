@@ -4,13 +4,25 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 
 ## Status
 
-**RC71-B — Quality & CI — Technical Debt Reduction**
+**RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (con BLOCKER_HUMAN)**
 
+- **Identity Architecture**: GitHub Actions → OIDC → `UR-Fabrica-Proyectos-AR` → RBAC → `RG-Hermes-Proyectos`
+- **OIDC Federated Subject**: `repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production` — ⚠️ requires Application Administrator to correct
+- **Azure Config**: `config/Hermes.Azure.json` — `DedicatedApp` mode, real Client ID, OIDC fields
+- **App Registration**: `UR-Fabrica-Proyectos-AR` (Client ID: `feb971aa-...`, RBAC Contributor on RG)
+- **GitHub Environment**: `production` created (ID: 20686661565)
+- **GitHub Secrets**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` — present and validated
+- **Workflows**:
+  - `.github/workflows/ci.yml` — 4 validation jobs (Python, PowerShell, Docs, Deploy)
+  - `.github/workflows/deploy.yml` — OIDC deploy with `environment: production` gate
+  - `.github/workflows/provision-appservice.yml` — **NEW** Idempotent App Service provisioning (OIDC, secure, validated)
+- **Provision App Service**: Idempotent workflow creates `asp-{projectName}` + `as-{projectName}`, validates compatibility, no destroy
+- **Security**: Zero permanent secrets, no AZURE_CREDENTIALS, no Client Secret, no subscription-wide permissions
+- **Guardian**: Active on `RG-Hermes-Proyectos`, blocks destructive operations
 - **Python Runtime**: Single shared venv at `D:\HermesRuntime\Environments\HermesEnterprise\` (Python 3.14)
 - **Canonical Python Config**: `config/Hermes.Python.json` — source of truth for all Python paths
 - **No Conda**: Conda, Miniconda, Anaconda completely removed
 - **No global Python**: All execution via Runtime venv only (no PATH dependency)
-- **CI/CD Pipeline**: `.github/workflows/ci.yml` — 4 validation jobs (Python, PowerShell, Docs, Deploy)
 - **Quality Report**: `docs/QualityReport_RC71.md` — full audit of all changes
 - **Smoke Test Plan**: `docs/SmokeTest_RC71.md` — 9-phase validation plan
 - **requirements.txt**: Audited from 13→8 real dependencies (removed 6 unused, added 4 needed)
@@ -25,6 +37,8 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 - 10+ comprehensive documentation guides
 - 0 PSScriptAnalyzer errors in module and manifest
 - SQLite persistence via HermesSQLiteProvider
+- **Provision App Service Workflow**: `.github/workflows/provision-appservice.yml` — idempotent, secure, OIDC-only
+- **Manual provision test**: `asp-test-prueba` (Linux B1) + `as-test-prueba` (Running) — confirmed working
 
 ## Python Runtime Installation
 

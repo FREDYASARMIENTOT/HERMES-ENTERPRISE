@@ -1,277 +1,163 @@
-# Azure Identity Migration — RC75-C
+# Azure Identity Migration — RC77-C2
 
-## From: Implicit `az` CLI session (local only)
+## Current State: Dedicated App / OIDC Preparado
 
-## To: OIDC federated identity for GitHub Actions
-
----
-
-## CRITICAL FINDING: "UR - App - SII 2.0" MUST NOT BE REUSED
-
-See **RC75-C0 App Registration Audit** for full details.
-
-| App Registration | Verdict | Reason |
-|---|---|---|
-| `UR - App - SII 2.0` | ❌ DO NOT REUSE | **Subscription-wide Contributor + 10 Microsoft Graph app roles + 17 delegated scopes.** Reusing would violate least privilege and expose SII 2.0 operations to potential GitHub Actions compromise. |
-| `Hermes-Enterprise-OIDC` (NEW) | ✅ MUST CREATE | **Clean, dedicated identity scoped only to `RG-Hermes-Proyectos` with zero Graph permissions.** |
+**Status:** `RC77-C2 PREPARED` (con 1 BLOCKER)
 
 ---
 
-## 1. Current State
+## Identidad Confirmada
 
-Hermes Enterprise and all generated projects use `az` CLI commands (via `Azure.ps1`) that depend on an interactive `az login` session. This works for local development but has **zero automation** for CI/CD.
-
-For GitHub Actions, the deploy workflows reference OIDC authentication (`azure/login@v2`) with secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` — but **these secrets are not configured** and the required App Registration `Hermes-Enterprise-OIDC` does not exist.
-
-The existing App Registration `UR - App - SII 2.0` (App ID: `05827bb6-addd-4b44-8c1e-b86d4a3f6fa7`) has excessive permissions including **subscription-wide Contributor** and **10 Microsoft Graph application roles**. Reusing it is architecturally prohibited per RC75-C0 audit.
-
-### Why This Matters
-
-| Without OIDC | With OIDC |
+| Atributo | Valor |
 |---|---|
-| Manual `az login` required | Fully automated |
-| No CI/CD Azure deployment | Autonomous deploy |
-| Secret management is ad-hoc | Federated, no permanent secrets |
-| Blocked for non-interactive use | Works in GitHub Actions |
+| **App Registration** | `UR-Fabrica-Proyectos-AR` |
+| **Application (Client) ID** | `feb971aa-7655-4c6f-8aef-b9f3bb828f6b` |
+| **Service Principal Object ID** | `5616db94-97be-44d4-8216-f38b704522c2` |
+| **Tenant ID** | `ae525757-89ba-4d30-a2f7-49796ef8c604` |
+| **Subscription ID** | `01bfad48-c092-4712-bc72-f141eb01a8d4` |
+
+> ⚠️ NOTA HISTÓRICA: `feb971aa-7655-4c6f-8aef-b9f3bb828f6b` documentado originalmente como "SP Object ID" pero tras verificación es el **Application (Client) ID**. El SP Object ID real es `5616db94-97be-44d4-8216-f38b704522c2`.
 
 ---
 
-## 2. Target Architecture
+## Arquitectura Definitiva
 
 ```
 GitHub Actions Runner
     |
-    |  id-token: write (in workflow YAML)
+    |  permissions: { id-token: write, contents: read }
     v
 GitHub OIDC Provider (token.actions.githubusercontent.com)
     |
-    |  Federated Identity Credential
+    |  Federated Identity Credential (subject actualmente INCOMPLETO)
     v
-Azure AD App Registration (Hermes-Enterprise-OIDC)
-    |  Created: NEW (NOT UR - App - SII 2.0)
-    |  RBAC: Contributor on RG-Hermes-Proyectos ONLY
-    |  Graph API Permissions: NONE
+Azure AD App Registration: UR-Fabrica-Proyectos-AR
+    |  App ID: feb971aa-7655-4c6f-8aef-b9f3bb828f6b
+    |  SP Object ID: 5616db94-97be-44d4-8216-f38b704522c2
+    |  Federated Credential: github-production
+    |    Subject: repo:FREDYASARMIENTOT/    ← INCOMPLETO
+    |    Expected: repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production
     v
-Azure Subscription (01bfad48-c092-4712-bc72-f141eb01a8d4)
-    |
+RBAC: Contributor
     |  Scope: /subscriptions/.../resourceGroups/RG-Hermes-Proyectos
     v
-Azure Web Apps (in RG-Hermes-Proyectos)
+RG-Hermes-Proyectos
+    |
+    v
+Azure App Services (per-project: as-{projectName})
 ```
 
-### Key Principle
+## Security Model
 
-**No permanent secrets** are stored in GitHub. The OIDC token is issued per-run, scoped to the specific workflow, repository, and branch.
+- **No permanent secrets** in GitHub (OIDC token per-run)
+- **No `AZURE_CREDENTIALS`** JSON file
+- **No Client Secret** stored
+- **No subscription-wide permissions**
+- **Zero Graph API permissions** on App Registration
+- **Guardian protection active** on `RG-Hermes-Proyectos`
 
 ---
 
-## 3. Migration Steps
+## Prerequisites Status
 
-### Step 1 — Create App Registration (HUMAN_REQUIRED)
+| Requirement | Status | Detail |
+|---|---|---|
+| App Registration `UR-Fabrica-Proyectos-AR` | ✅ EXISTENTE | Creado 2026-08-18 |
+| Service Principal | ✅ EXISTENTE | Object ID: `5616db94-97be-44d4-8216-f38b704522c2` |
+| RBAC Contributor | ✅ VALIDADO | Scope: `RG-Hermes-Proyectos` |
+| GitHub Secrets (3) | ✅ PRESENTES | AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID |
+| GitHub Environment `production` | ✅ CREADO | 2026-08-27 |
+| Federated Credential | ⚠️ BLOQUEO | Subject incompleto: `repo:FREDYASARMIENTOT/` |
+| OIDC E2E Test | ⏳ NOT_RUN | Pendiente de corregir federated credential |
 
-An Azure AD Administrator must create a **new, dedicated** App Registration.
-Do NOT reuse the existing `UR - App - SII 2.0`.
+---
+
+## Federated Credential Issue
+
+**Observado:**
+```json
+{
+  "subject": "repo:FREDYASARMIENTOT/",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "audiences": ["api://AzureADTokenExchange"]
+}
+```
+
+**Requerido:**
+```
+subject: repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production
+```
+
+El subject actual es incompleto. GitHub Actions envía un subject claim con el formato completo `repo:owner/repo:environment:env`. Azure AD requiere coincidencia exacta. Sin corrección, cualquier intento de OIDC fallará.
+
+### Acción Requerida
+
+Actualizar la federated credential existente:
 
 ```powershell
-# Create NEW App Registration (name must match config/Hermes.Azure.json)
-az ad app create `
-    --display-name "Hermes-Enterprise-OIDC" `
-    --sign-in-audience AzureADMyOrg
+# Obtener Object ID de la App Registration
+$appObjectId = az ad app show --id "feb971aa-7655-4c6f-8aef-b9f3bb828f6b" --query id -o tsv
 
-# Note the appId from output
-```
-
-Azure Portal equivalent:
-1. Go to Azure AD > App registrations > New registration
-2. Name: `Hermes-Enterprise-OIDC`
-3. Supported account types: "Accounts in this organizational directory only"
-4. Register
-
-### Step 2 — Create Federated Credential (HUMAN_REQUIRED)
-
-Use `environment:production` subject type for enhanced security (not branch-based).
-
-```powershell
-# Get the App Registration object ID (not appId)
-$appId = "<from-step-1>"
-$appObjId = az ad app show --id $appId --query id -o tsv
-
-# Create federated identity credential
-az ad app federated-credential create `
-    --id $appObjId `
-    --parameters @{
-        name="HERMES-ENTERPRISE-OIDC-FACTORY-PRODUCTION"
-        issuer="https://token.actions.githubusercontent.com"
-        subject="repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production"
-        description="OIDC for Factory CI/CD from production environment"
-        audiences=@("api://AzureADTokenExchange")
-    }
-```
-
-The `subject` format uses `environment:production` to require GitHub Environments protection. This is more secure than branch-based (`ref:refs/heads/main`) because:
-- Environments support required reviewers
-- Environments support deployment branch policies
-- The deploy.yml already uses `environment: production`
-
-### Step 3 — Grant RBAC Role (HUMAN_REQUIRED)
-
-**IMPORTANT:** Scope to `RG-Hermes-Proyectos` ONLY. Do NOT grant subscription-wide Contributor.
-
-```powershell
-# Assign Contributor role scoped to RG-Hermes-Proyectos only
-$spId = az ad sp show --id $appId --query id -o tsv
-az role assignment create `
-    --assignee $spId `
-    --role Contributor `
-    --scope "/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/RG-Hermes-Proyectos"
-```
-
-This ensures the CI/CD identity can ONLY manage resources within `RG-Hermes-Proyectos` and cannot affect:
-- `RG-Datamining-SII2.0-Dev`
-- `RG-Datamining-IA-UR`
-- Any other Resource Groups in the subscription
-
-### Step 4 — Configure GitHub Secrets (HUMAN_REQUIRED)
-
-```bash
-gh secret set AZURE_CLIENT_ID --body "$appId"
-gh secret set AZURE_TENANT_ID --body "ae525757-89ba-4d30-a2f7-49796ef8c604"
-gh secret set AZURE_SUBSCRIPTION_ID --body "01bfad48-c092-4712-bc72-f141eb01a8d4"
-```
-
-### Step 5 — Create GitHub Environment (HUMAN_REQUIRED)
-
-The deploy workflow references `environment: production`. This must exist in GitHub.
-
-```bash
-# Create production environment
-gh api --method PUT repos/FREDYASARMIENTOT/HERMES-ENTERPRISE/environments/production
-
-# Optionally add protection rules (recommended)
-# gh api --method POST repos/FREDYASARMIENTOT/HERMES-ENTERPRISE/environments/proformation/deployment-branch-policies \
-#   --input '{"name":"main"}'
-```
-
-After these steps, the deploy workflow will automatically use OIDC authentication when triggered by a push to `main`.
-### Step 5 — Automated Validation (AUTOMATIC — Already implemented)
-
-Azure.ps1 now includes:
-- `Get-AzureIdentityMode`: Returns identity mode from config and checks GitHub secrets
-- `Assert-AzureIdentityReady`: Validates readiness with descriptive HUMAN_REQUIRED messages
-- `AzureIdentityMode = "TemporaryExistingApp"`: Correctly set in config (NOT "OIDC" as before)
-
----
-
-## 4. Verification
-
-After completing Steps 1-4:
-
-### Manual Workflow Trigger
-
-Either:
-1. Push to `main` (triggers deploy.yml automatically)
-2. Or use: `gh workflow run deploy.yml`
-
-### Check Output
-
-```bash
-# View workflow run
-gh run list --workflow deploy.yml --limit 1
-
-# Check specific run
-gh run view <run-id> --log
-```
-
-Expected success path:
-```
-Azure Login (OIDC) -> PASS
-Build and Package -> PASS
-Deploy to Azure -> PASS
-Smoke Test -> PASS
-```
-
-### Local Verification
-
-```bash
-# Test OIDC token exchange (requires App Registration + federated credential)
-# This is informational only — OIDC only works in GitHub Actions context
-echo "OIDC will be verified by GitHub Actions workflow run"
+# Actualizar subject
+az ad app federated-credential update `
+  --id $appObjectId `
+  --federated-credential-id "a2f3f6f7-45a3-45c9-a822-a6501b2df9e5" `
+  --subject "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production"
 ```
 
 ---
 
-## 5. Rollback Plan
+## Workflow Audit
 
-| Step | Rollback |
-|---|---|
-| App Registration | Delete `Hermes-Enterprise-CI` from Azure AD |
-| Federated credential | Delete the credential from the App Registration |
-| RBAC role | Remove the role assignment |
-| GitHub secrets | `gh secret delete AZURE_CLIENT_ID` (and others) |
-| Azure.ps1 changes | Revert to previous version |
+| File | OIDC Config | Hardcoded Secrets | projectName Validation | Notes |
+|---|---|---|---|---|
+| `.github/workflows/ci.yml` | ✅ id-token: write | ✅ None | N/A (CI only) | Sin Azure login |
+| `.github/workflows/deploy.yml` | ✅ azure/login@v2 | ✅ None | ⚠️ Sin validar | OIDC correcto |
+| `.github/workflows/provision-appservice.yml` | ✅ azure/login@v2 | ✅ None | ✅ Validado | Endurecido RC77 |
 
 ---
 
-## 6. Testing Strategy
+## Verified Provisioned Resources
 
-### Pre-Migration Tests (Current)
-- [PASS] Local `az` CLI works
-- [PASS] Local `az webapp create` works
-- [PASS] Local `az webapp deploy` works
-- [PASS] Local smoke tests work
-
-### Post-Migration Tests
-- [ ] GitHub Actions OIDC login succeeds
-- [ ] GitHub Actions deploy succeeds
-- [ ] GitHub Actions smoke tests pass
-- [ ] No manual intervention in pipeline
-
-### Regression Tests
-- [ ] Local operations still work (backward compatible)
-- [ ] Project creation still works
-- [ ] Guardian still protects infrastructure
+| Recurso | Nombre | Estado | RG |
+|---|---|---|---|
+| App Service Plan | `asp-test-prueba` | Linux B1 | RG-Hermes-Proyectos |
+| Web App | `as-test-prueba` | Running | RG-Hermes-Proyectos |
 
 ---
 
-## 7. Future Enhancements (RC75-D)
+## Guardian Status
 
-After OIDC is working for the Factory:
+- ✅ Config found: `Hermes.InfrastructureProtection.json` version 1.1.0
+- ✅ Blocked operations include `az group delete`, `az webapp delete`, `az appservice plan delete`
+- ✅ `RG-Hermes-Proyectos` is protected
+- ✅ No bypass detected
+- ✅ No `-Force` in workflows
 
-- **Per-project App Registrations**: Each generated project gets its own federated credential
-- **Automatic secret injection**: `Crear-HermesProyecto.ps1` sets project secrets via `gh secret set`
-- **Multi-branch support**: Federated credentials for `main` and `develop` branches
-- **Environment-specific**: Separate App Registrations for dev/staging/production
+## Resource Locks
 
----
-
-## 8. Dependency Graph
-
-```
-This Migration
-    |
-    +-- Requires: Azure AD Application Administrator (HUMAN)
-    |       |
-    |       +-- Create App Registration
-    |       +-- Create federated credential
-    |       +-- Grant RBAC role
-    |
-    +-- Requires: GitHub repo admin (HUMAN)
-    |       |
-    |       +-- Set repository secrets
-    |
-    +-- Enables: RC75-C2 (Project template enhancement)
-    |       |
-    |       +-- Auto-secret management in Crear-HermesProyecto
-    |       +-- Per-project federated credentials
-    |
-    +-- Enables: RC75-D (Production CI/CD autonomy)
-            |
-            +-- Fully automated pipeline
-            +-- No manual Azure authentication
-```
+- ℹ️ No locks on `RG-Hermes-Proyectos`
 
 ---
 
-*Document generated: 2026-08-08*
-*Phase: RC75-C1 — Azure Authentication Audit*
-*Status: BLOCKED — Waiting for Azure AD admin action*
+## Migration History
+
+| Phase | Status | Date |
+|---|---|---|
+| RC75-C: Initial Identity Audit | ✅ COMPLETED | 2026-08-07 |
+| RC75-C1: App Registration Analysis | ✅ COMPLETED | 2026-08-08 |
+| RC77: Provision App Service Workflow | ✅ PREPARED | 2026-08-26 |
+| **RC77-C2: Identity Finalization** | **⚠️ READY_FOR_E2E (con BLOCKER)** | **2026-08-27** |
+
+---
+
+*Document updated: 2026-08-27*
+*Phase: RC77-C2 — Identity Finalization*
+
+
+
+
+
+
+
+

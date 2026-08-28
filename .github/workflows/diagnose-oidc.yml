@@ -30,11 +30,13 @@ jobs:
         with:
           script: |
             const token = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
-            const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
+            let url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
             if (!token || !url) {
               core.setFailed('No OIDC token - missing id-token:write');
               return;
             }
+            // Request with audience=api://AzureADTokenExchange (same as azure/login@v2)
+            url = url + '&audience=api://AzureADTokenExchange';
             const resp = await fetch(url, {
               headers: { Authorization: `Bearer ${token}` }
             });

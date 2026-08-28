@@ -46,13 +46,13 @@ jobs:
             // Output as step annotations (safe, no full token)
             core.notice(`iss: ${claims.iss}`);
             core.notice(`sub: ${claims.sub}`);
-            core.notice(`azp: ${claims.azp}`);
+            core.notice(`aud: ${JSON.stringify(claims.aud)}`);
             core.notice(`env: ${claims.environment}`);
 
             // Set outputs for next step
             core.setOutput('iss', claims.iss);
             core.setOutput('sub', claims.sub);
-            core.setOutput('azp', claims.azp);
+            core.setOutput('aud', JSON.stringify(claims.aud));
             core.setOutput('env', claims.environment);
 
             // Quick assertion
@@ -62,14 +62,18 @@ jobs:
             if (claims.sub !== 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production') {
               core.setFailed(`SUBJECT MISMATCH: got ${claims.sub}`);
             }
-            core.info('iss and sub match expected values ✅');
+            const aud = Array.isArray(claims.aud) ? claims.aud[0] : claims.aud;
+            if (aud !== 'api://AzureADTokenExchange') {
+              core.setFailed(`AUDIENCE MISMATCH: got ${aud}`);
+            }
+            core.info('iss, sub, aud all match expected values ✅');
 
       - name: Analyze AZP (client-id)
         shell: bash
         run: |
           ISS="${{ steps.claims.outputs.iss }}"
           SUB="${{ steps.claims.outputs.sub }}"
-          AZP="${{ steps.claims.outputs.azp }}"
+          AUD="${{ steps.claims.outputs.aud }}"
           ENV="${{ steps.claims.outputs.env }}"
 
           echo "========================================"
@@ -77,7 +81,7 @@ jobs:
           echo "========================================"
           echo "iss (issuer)       : ${ISS}"
           echo "sub (subject)      : ${SUB}"
-          echo "azp (client-id)    : ${AZP}"
+          echo "aud (audience)     : ${AUD}"
           echo "environment        : ${ENV}"
           echo "----------------------------------------"
 
@@ -85,29 +89,20 @@ jobs:
           if [ "${ISS}" = "https://token.actions.githubusercontent.com" ]; then
             echo "✅ Issuer matches expected"
           else
-            echo "❌ Issuer MISMATCH"
+            echo "❌ Issuer MISMATCH (got: ${ISS})"
           fi
 
           # Verify subject
           if [ "${SUB}" = "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production" ]; then
             echo "✅ Subject matches expected"
           else
-            echo "❌ Subject MISMATCH"
+            echo "❌ Subject MISMATCH (got: ${SUB})"
           fi
 
-          # Verify azp (client-id used by Azure AD to find app reg)
-          echo ""
-          echo "--- AZURE_CLIENT_ID Verification ---"
-          echo "azp claim value : ${AZP}"
-          echo "Expected        : feb971aa-7655-4c6f-8aef-b9f3bb828f6b (Client ID)"
-          echo "NOT expected    : 5616db94-97be-44d4-8216-f38b704522c2 (SP Object ID)"
-          echo ""
-          if [ "${AZP}" = "feb971aa-7655-4c6f-8aef-b9f3bb828f6b" ]; then
-            echo "✅ AZURE_CLIENT_ID = Application Client ID (CORRECT)"
-          elif [ "${AZP}" = "5616db94-97be-44d4-8216-f38b704522c2" ]; then
-            echo "❌ AZURE_CLIENT_ID = SP Object ID (WRONG!)"
-            echo "   Fix: update GitHub Secret AZURE_CLIENT_ID to feb971aa-7655-4c6f-8aef-b9f3bb828f6b"
+          # Verify audience
+          if [ "${AUD}" = '"api://AzureADTokenExchange"' ] || [ "${AUD}" = "api://AzureADTokenExchange" ]; then
+            echo "✅ Audience matches expected"
           else
-            echo "⚠️  UNEXPECTED azp value: ${AZP}"
+            echo "❌ Audience MISMATCH (got: ${AUD})"
           fi
           echo "========================================"

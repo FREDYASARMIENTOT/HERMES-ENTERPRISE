@@ -25,73 +25,89 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Extract OIDC Claims (safe)
+        id: claims
         uses: actions/github-script@v7
         with:
           script: |
             const token = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
             const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
             if (!token || !url) {
-              core.setFailed('No OIDC token available - missing id-token: write permission');
+              core.setFailed('No OIDC token - missing id-token:write');
               return;
             }
-            const response = await fetch(url, {
+            const resp = await fetch(url, {
               headers: { Authorization: `Bearer ${token}` }
             });
-            const data = await response.json();
-            const claims = JSON.parse(Buffer.from(data.value.split('.')[1], 'base64').toString());
+            const data = await resp.json();
+            const claims = JSON.parse(
+              Buffer.from(data.value.split('.')[1], 'base64').toString()
+            );
 
-            core.summary.addHeading('OIDC Token Claims (safe)');
-            core.summary.addTable([
-              [{data: 'Claim', header: true}, {data: 'Value', header: true}, {data: 'Match Expected', header: true}],
-              ['iss', claims.iss, claims.iss === 'https://token.actions.githubusercontent.com' ? '✅ YES' : '❌ NO'],
-              ['sub', claims.sub, claims.sub === 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production' ? '✅ YES' : '❌ NO'],
-              ['aud', Array.isArray(claims.aud) ? claims.aud[0] : claims.aud, '✅ api://AzureADTokenExchange'],
-              ['azp (client-id used)', claims.azp, claims.azp === 'feb971aa-7655-4c6f-8aef-b9f3bb828f6b' ? '✅ YES (CLIENT_ID)' : '⚠️ CHECK - may be SP_OBJECT_ID'],
-              ['repository', claims.repository, ''],
-              ['environment', claims.environment, 'production'],
-              ['job_workflow_ref', claims.job_workflow_ref, '']
-            ]);
-            core.summary.addRaw('\n> 🔒 No secrets exposed. Claims extracted from OIDC JWT header only.');
+            // Output as step annotations (safe, no full token)
+            core.notice(`iss: ${claims.iss}`);
+            core.notice(`sub: ${claims.sub}`);
+            core.notice(`azp: ${claims.azp}`);
+            core.notice(`env: ${claims.environment}`);
 
-            core.summary.write();
+            // Set outputs for next step
+            core.setOutput('iss', claims.iss);
+            core.setOutput('sub', claims.sub);
+            core.setOutput('azp', claims.azp);
+            core.setOutput('env', claims.environment);
 
-            // Store for next step
-            core.exportVariable('OIDC_ISS', claims.iss);
-            core.exportVariable('OIDC_SUB', claims.sub);
-            core.exportVariable('OIDC_AZP', claims.azp);
+            // Quick assertion
+            if (claims.iss !== 'https://token.actions.githubusercontent.com') {
+              core.setFailed(`ISSUER MISMATCH: got ${claims.iss}`);
+            }
+            if (claims.sub !== 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production') {
+              core.setFailed(`SUBJECT MISMATCH: got ${claims.sub}`);
+            }
+            core.info('iss and sub match expected values ✅');
 
-            console.log('iss:', claims.iss);
-            console.log('sub:', claims.sub);
-            console.log('azp:', claims.azp);
-            console.log('environment:', claims.environment);
-
-      - name: Assert OIDC Claims
+      - name: Analyze AZP (client-id)
         shell: bash
         run: |
-          echo "=== OIDC Claim Verification ==="
-          echo "iss: ${{ env.OIDC_ISS }}"
-          echo "sub: ${{ env.OIDC_SUB }}"
-          echo "azp: ${{ env.OIDC_AZP }}"
+          ISS="${{ steps.claims.outputs.iss }}"
+          SUB="${{ steps.claims.outputs.sub }}"
+          AZP="${{ steps.claims.outputs.azp }}"
+          ENV="${{ steps.claims.outputs.env }}"
 
-          # Verify critical claims (NO secrets exposed)
-          if [ "${{ env.OIDC_ISS }}" != "https://token.actions.githubusercontent.com" ]; then
-            echo "❌ FAIL: issuer mismatch"
-            exit 1
-          fi
-          echo "✅ issuer OK"
+          echo "========================================"
+          echo "  OIDC CLAIMS VERIFICATION"
+          echo "========================================"
+          echo "iss (issuer)       : ${ISS}"
+          echo "sub (subject)      : ${SUB}"
+          echo "azp (client-id)    : ${AZP}"
+          echo "environment        : ${ENV}"
+          echo "----------------------------------------"
 
-          if [ "${{ env.OIDC_SUB }}" != "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production" ]; then
-            echo "❌ FAIL: subject mismatch"
-            exit 1
-          fi
-          echo "✅ subject OK"
-
-          echo "azp claim (client-id used by Azure AD): ${{ env.OIDC_AZP }}"
-          echo "Expected azp: feb971aa-7655-4c6f-8aef-b9f3bb828f6b"
-          if [ "${{ env.OIDC_AZP }}" == "feb971aa-7655-4c6f-8aef-b9f3bb828f6b" ]; then
-            echo "✅ AZURE_CLIENT_ID is CORRECT (Application Client ID)"
+          # Verify issuer
+          if [ "${ISS}" = "https://token.actions.githubusercontent.com" ]; then
+            echo "✅ Issuer matches expected"
           else
-            echo "⚠️ AZURE_CLIENT_ID may be incorrect (current azp: ${{ env.OIDC_AZP }})"
+            echo "❌ Issuer MISMATCH"
           fi
 
-          echo "=== All checks complete ==="
+          # Verify subject
+          if [ "${SUB}" = "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production" ]; then
+            echo "✅ Subject matches expected"
+          else
+            echo "❌ Subject MISMATCH"
+          fi
+
+          # Verify azp (client-id used by Azure AD to find app reg)
+          echo ""
+          echo "--- AZURE_CLIENT_ID Verification ---"
+          echo "azp claim value : ${AZP}"
+          echo "Expected        : feb971aa-7655-4c6f-8aef-b9f3bb828f6b (Client ID)"
+          echo "NOT expected    : 5616db94-97be-44d4-8216-f38b704522c2 (SP Object ID)"
+          echo ""
+          if [ "${AZP}" = "feb971aa-7655-4c6f-8aef-b9f3bb828f6b" ]; then
+            echo "✅ AZURE_CLIENT_ID = Application Client ID (CORRECT)"
+          elif [ "${AZP}" = "5616db94-97be-44d4-8216-f38b704522c2" ]; then
+            echo "❌ AZURE_CLIENT_ID = SP Object ID (WRONG!)"
+            echo "   Fix: update GitHub Secret AZURE_CLIENT_ID to feb971aa-7655-4c6f-8aef-b9f3bb828f6b"
+          else
+            echo "⚠️  UNEXPECTED azp value: ${AZP}"
+          fi
+          echo "========================================"

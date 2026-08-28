@@ -1,0 +1,97 @@
+# ====================================================================
+# Diagnose OIDC — Verificar claims y client-id (NO expone secrets)
+# ====================================================================
+# Temporal: Solo para diagnosticar AADSTS700211 en RC77-C3.
+# Eliminar después de diagnosticar.
+# ====================================================================
+
+name: Diagnose OIDC
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: OIDC Diagnosis
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Extract OIDC Claims (safe)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+            const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
+            if (!token || !url) {
+              core.setFailed('No OIDC token available - missing id-token: write permission');
+              return;
+            }
+            const response = await fetch(url, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await response.json();
+            const claims = JSON.parse(Buffer.from(data.value.split('.')[1], 'base64').toString());
+
+            core.summary.addHeading('OIDC Token Claims (safe)');
+            core.summary.addTable([
+              [{data: 'Claim', header: true}, {data: 'Value', header: true}, {data: 'Match Expected', header: true}],
+              ['iss', claims.iss, claims.iss === 'https://token.actions.githubusercontent.com' ? '✅ YES' : '❌ NO'],
+              ['sub', claims.sub, claims.sub === 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production' ? '✅ YES' : '❌ NO'],
+              ['aud', Array.isArray(claims.aud) ? claims.aud[0] : claims.aud, '✅ api://AzureADTokenExchange'],
+              ['azp (client-id used)', claims.azp, claims.azp === 'feb971aa-7655-4c6f-8aef-b9f3bb828f6b' ? '✅ YES (CLIENT_ID)' : '⚠️ CHECK - may be SP_OBJECT_ID'],
+              ['repository', claims.repository, ''],
+              ['environment', claims.environment, 'production'],
+              ['job_workflow_ref', claims.job_workflow_ref, '']
+            ]);
+            core.summary.addRaw('\n> 🔒 No secrets exposed. Claims extracted from OIDC JWT header only.');
+
+            core.summary.write();
+
+            // Store for next step
+            core.exportVariable('OIDC_ISS', claims.iss);
+            core.exportVariable('OIDC_SUB', claims.sub);
+            core.exportVariable('OIDC_AZP', claims.azp);
+
+            console.log('iss:', claims.iss);
+            console.log('sub:', claims.sub);
+            console.log('azp:', claims.azp);
+            console.log('environment:', claims.environment);
+
+      - name: Assert OIDC Claims
+        shell: bash
+        run: |
+          echo "=== OIDC Claim Verification ==="
+          echo "iss: ${{ env.OIDC_ISS }}"
+          echo "sub: ${{ env.OIDC_SUB }}"
+          echo "azp: ${{ env.OIDC_AZP }}"
+
+          # Verify critical claims (NO secrets exposed)
+          if [ "${{ env.OIDC_ISS }}" != "https://token.actions.githubusercontent.com" ]; then
+            echo "❌ FAIL: issuer mismatch"
+            exit 1
+          fi
+          echo "✅ issuer OK"
+
+          if [ "${{ env.OIDC_SUB }}" != "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production" ]; then
+            echo "❌ FAIL: subject mismatch"
+            exit 1
+          fi
+          echo "✅ subject OK"
+
+          echo "azp claim (client-id used by Azure AD): ${{ env.OIDC_AZP }}"
+          echo "Expected azp: feb971aa-7655-4c6f-8aef-b9f3bb828f6b"
+          if [ "${{ env.OIDC_AZP }}" == "feb971aa-7655-4c6f-8aef-b9f3bb828f6b" ]; then
+            echo "✅ AZURE_CLIENT_ID is CORRECT (Application Client ID)"
+          else
+            echo "⚠️ AZURE_CLIENT_ID may be incorrect (current azp: ${{ env.OIDC_AZP }})"
+          fi
+
+          echo "=== All checks complete ==="

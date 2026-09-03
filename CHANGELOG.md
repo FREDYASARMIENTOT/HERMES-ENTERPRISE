@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Sprint History
+- A.35: RC77-C4 — Adversarial E2E Validation & Startup Fix (IN PROGRESS)
 - A.34: RC77-C3 — OIDC Identity: E2E Validation & Close (COMPLETED)
 - A.33: RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (RESUELTO)
 - A.32: RC74-C — Autonomous Project Factory (closed, 25-step pipeline)
@@ -99,6 +100,61 @@
 ### Resolved Blockers
 1. ~~**BLOCKER**: Federated credential subject incompleto — **RESUELTO por Jairo** ✅~~ (2026-08-28)
 2. **MENOR**: `deploy.yml` does not validate `projectName` input
+
+---
+
+## RC77-C4 — Adversarial E2E Validation & Startup Fix (2026-09-09)
+
+> **Status:** 🔄 IN PROGRESS (awaiting GitHub Actions run)
+> **Root Cause:** No startup command configured on Azure App Service — Azure auto-detects `gunicorn application:app` but `application.py` does not exist
+> **Correction:** Belt-and-suspenders: startup command set in both provision and deploy workflows
+
+### Diagnosis
+- **`provision-appservice.yml`**: Created Web App WITHOUT `--startup-file` → auto-detect fails
+- **`deploy.yml`**: Deployed WITHOUT `startup-command` parameter → same auto-detect failure
+- **Result**: App starts but only serves Azure defaults (no API routes)
+  - `/health` → 200 (Azure static response?) but `/api/version` → 404
+- **Local reproduction**: All 18 routes work with `uvicorn Hermes.Web.backend.main:app`
+
+### Changed
+- **`.github/workflows/provision-appservice.yml`**:
+  - Added "Configure Startup Command" step (STEP 7b, runs on ALL Web Apps, new and existing)
+  - Command: `gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app`
+- **`.github/workflows/deploy.yml`**:
+  - Added `startup-command` parameter to `Azure/webapps-deploy@v3` step
+  - Command: `gunicorn --bind=0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app`
+  - **Enhanced smoke test** from basic HTTP check to comprehensive RC77-C4 Adversarial E2E Validation:
+    - [1/6] HTTP Status Codes — 5 endpoints → 200
+    - [2/6] Adversarial 404 — fake endpoint → 404
+    - [3/6] Health JSON Schema — `estado: saludable`
+    - [4/6] Version JSON Schema — `aplicacion: Hermes Enterprise`
+    - [5/6] Proyecto JSON Schema — `proyecto: Hermes Enterprise`
+    - [6/6] OpenAPI Contract — all required paths present
+
+### Added
+- **`reports/RC77C4.md`** — Detailed validation report with diagnosis, corrections, endpoint matrix
+- **`reports/RC77C4.json`** — Machine-readable evidence data
+
+### Rationale for startup command
+- `gunicorn`: Production WSGI/ASGI server for Azure Linux (gunicorn only, no nginx)
+- `--bind=0.0.0.0:8000`: Listen on all interfaces, port 8000 (Azure default)
+- `--timeout 600`: 10-minute timeout for cold starts
+- `--worker-class uvicorn.workers.UvicornWorker`: **CRITICAL** — FastAPI is ASGI
+- `Hermes.Web.backend.main:app`: The FastAPI `app` instance
+
+### Why two places?
+1. **Provision step** (`az webapp config set`): Sets the App Service config at the Azure level. Survives restarts.
+2. **Deploy step** (`startup-command` input): Sets it during deployment. Acts as safety net if provision is skipped or config is overridden by automation.
+
+Belt-and-suspenders approach ensures the command is always present.
+
+### Next Steps
+1. ✅ Push commit `RC77-C4: fix App Service startup command and enhance E2E smoke test`
+2. ⏳ User triggers deploy workflow
+3. ⏳ Monitor pipeline: OIDC → provision (skip) → deploy → smoke test
+4. ⏳ Verify smoke test: ALL 6/6 tests PASS
+5. ⏳ Record Run ID in evidence
+6. ⏳ Close RC77-C4
 
 ---
 

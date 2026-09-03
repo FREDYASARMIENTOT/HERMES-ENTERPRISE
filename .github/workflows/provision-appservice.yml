@@ -213,6 +213,28 @@ jobs:
           echo "Configuracion aplicada (PROJECT_NAME)"
 
       # ---------------------------------------------------------------
+      # STEP 7b: Startup Command — RC77-C4
+      # Establece el comando de inicio correcto para FastAPI via
+      # gunicorn + uvicorn worker. Aplica a Web App nueva y existente.
+      # Sin este comando, Azure auto-detecta 'gunicorn application:app'
+      # que falla porque application.py no existe en el proyecto.
+      # ---------------------------------------------------------------
+      - name: Configure Startup Command
+        shell: bash
+        run: |
+          APP_NAME="as-${{ inputs.projectName }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+
+          echo "Configurando startup command para FastAPI (gunicorn+uvicorn)..."
+          az webapp config set \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --startup-file 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app' \
+            --output none
+
+          echo "Startup command configurado correctamente"
+
+      # ---------------------------------------------------------------
       # STEP 8: Logging
       # ---------------------------------------------------------------
       - name: Enable Deployment Logging

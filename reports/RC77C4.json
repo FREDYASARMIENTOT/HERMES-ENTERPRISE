@@ -1,0 +1,64 @@
+{
+  "rc": "RC77-C4",
+  "title": "Adversarial E2E Validation — App Service Startup Fix",
+  "status": "PENDING",
+  "commit": "",
+  "run_id": "",
+  "date": "",
+  "author": "Cline",
+  "diagnosis": {
+    "root_cause": "No startup command configured on Azure App Service",
+    "evidence": [
+      "az webapp create without --startup-file (provision-appservice.yml:178)",
+      "Azure/webapps-deploy@v3 without startup-command (deploy.yml:98-104)",
+      "application.py does not exist in repo root",
+      "Previous runs show: /health→200, /api/version→404, /api/proyecto→404"
+    ],
+    "local_verification": {
+      "import_path": "Hermes.Web.backend.main:app",
+      "routes_count": 18,
+      "health_status": "saludable",
+      "version": "2.0.0"
+    }
+  },
+  "corrections": [
+    {
+      "file": ".github/workflows/provision-appservice.yml",
+      "change": "Added Configure Startup Command step (STEP 7b)",
+      "command": "gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app"
+    },
+    {
+      "file": ".github/workflows/deploy.yml",
+      "change": "Added startup-command parameter to deploy step",
+      "command": "gunicorn --bind=0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app"
+    },
+    {
+      "file": ".github/workflows/deploy.yml",
+      "change": "Enhanced smoke test with RC77-C4 adversarial E2E validation (6 tests)"
+    }
+  ],
+  "smoke_test": {
+    "tests": [
+      "HTTP Status Codes (5 endpoints → 200)",
+      "Adversarial 404 (fake endpoint → 404)",
+      "Health JSON Schema (estado=saludable)",
+      "Version JSON Schema (aplicacion=Hermes Enterprise)",
+      "Proyecto JSON Schema (proyecto=Hermes Enterprise)",
+      "OpenAPI Contract (contains all required paths)"
+    ],
+    "endpoints": [
+      "/health", "/api/version", "/api/proyecto", "/", "/openapi.json",
+      "/api/workspace", "/api/git", "/api/github", "/api/entorno",
+      "/api/bootstrap", "/api/telemetria", "/api/azure",
+      "/api/sqlite", "/api/despliegue"
+    ]
+  },
+  "azure": {
+    "resource_group": "RG-Hermes-Proyectos",
+    "app_service_plan": "asp-hermesenterprise",
+    "app_service": "as-hermesenterprise",
+    "runtime": "PYTHON:3.11",
+    "oidc_app": "UR-Fabrica-Proyectos-AR",
+    "app_registration_id": "4d08dcbb-3a57-449a-aac6-a28d6f7501cd"
+  }
+}

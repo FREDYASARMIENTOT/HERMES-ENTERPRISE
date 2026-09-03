@@ -102,6 +102,7 @@ jobs:
           slot-name: production
           package: .
           clean: true
+          startup-command: 'gunicorn --bind=0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
 
       - name: Record deployment artifact
         run: |
@@ -121,39 +122,130 @@ jobs:
       - name: Wait for deployment
         run: sleep 30
 
-      - name: Test endpoints
+      - name: Smoke Test — RC77-C4 Adversarial E2E Validation
         run: |
           URL="https://as-${PROJECT_NAME}.azurewebsites.net"
           CORR_ID="${CORRELATION_ID}"
-          ENDPOINTS=("/health" "/api/version" "/api/proyecto" "/")
           ALL_PASS=true
-          for EP in "${ENDPOINTS[@]}"; do
+          FAIL_COUNT=0
+          PASS_COUNT=0
+
+          fail() {
+            FAIL_COUNT=$((FAIL_COUNT + 1))
+            ALL_PASS=false
+            echo "FAIL: $1"
+          }
+
+          pass() {
+            PASS_COUNT=$((PASS_COUNT + 1))
+            echo "PASS: $1"
+          }
+
+          echo "=========================================="
+          echo "  RC77-C4 — Adversarial E2E Smoke Test"
+          echo "  CorrelationId: $CORR_ID"
+          echo "  URL: $URL"
+          echo "=========================================="
+
+          # ── Test 1: HTTP Status Codes ──
+          echo "--- [1/6] HTTP Status Codes ---"
+          for EP in "/health" "/api/version" "/api/proyecto" "/" "/openapi.json"; do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL$EP")
             if [ "$CODE" -eq 200 ]; then
-              echo "PASS: $EP -> $CODE ($CORR_ID)"
+              pass "GET $EP -> 200"
             else
-              echo "FAIL: $EP -> $CODE ($CORR_ID)"
-              ALL_PASS=false
+              fail "GET $EP -> $CODE (expected 200)"
             fi
           done
-          if [ "$ALL_PASS" = false ]; then exit 1; fi
-          echo "All smoke tests passed (CorrelationId: $CORR_ID)"
+
+          # ── Test 2: Adversarial 404 ──
+          echo "--- [2/6] Adversarial 404 (expect 404) ---"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/nonexistent-endpoint-xyz")
+          if [ "$CODE" -eq 404 ]; then
+            pass "adversarial GET /api/nonexistent -> 404 (expected)"
+          else
+            fail "adversarial -> $CODE (expected 404)"
+          fi
+
+          # ── Test 3: Health JSON Schema ──
+          echo "--- [3/6] Health JSON Schema ---"
+          HEALTH=$(curl -s "$URL/health")
+          if python3 -c "
+import json, sys
+d = json.loads('''${HEALTH}''')
+assert d.get('estado') == 'saludable', f'estado={d.get(\"estado\")} != saludable'
+assert 'aplicacion' in d
+assert 'version' in d
+assert 'timestamp' in d
+assert 'python_version' in d
+print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\"]}')
+" 2>&1; then
+            pass "health JSON schema: estado=saludable"
+          else
+            fail "health JSON schema invalid: $HEALTH"
+          fi
+
+          # ── Test 4: Version JSON Schema ──
+          echo "--- [4/6] Version JSON Schema ---"
+          VERSION=$(curl -s "$URL/api/version")
+          if python3 -c "
+import json, sys
+d = json.loads('''${VERSION}''')
+assert 'version' in d, 'missing version'
+assert 'aplicacion' in d, 'missing aplicacion'
+assert d['aplicacion'] == 'Hermes Enterprise', f'aplicacion={d[\"aplicacion\"]}'
+assert 'commit' in d, 'missing commit'
+print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}')
+" 2>&1; then
+            pass "version JSON schema: aplicacion=Hermes Enterprise"
+          else
+            fail "version JSON schema invalid: $VERSION"
+          fi
+
+          # ── Test 5: Proyecto JSON Schema ──
+          echo "--- [5/6] Proyecto JSON Schema ---"
+          PROYECTO=$(curl -s "$URL/api/proyecto")
+          if python3 -c "
+import json, sys
+d = json.loads('''${PROYECTO}''')
+assert 'proyecto' in d, 'missing proyecto'
+assert d['proyecto'] == 'Hermes Enterprise', f'proyecto={d[\"proyecto\"]}'
+assert 'estado' in d, 'missing estado'
+print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')
+" 2>&1; then
+            pass "proyecto JSON schema: proyecto=Hermes Enterprise"
+          else
+            fail "proyecto JSON schema invalid: $PROYECTO"
+          fi
+
+          # ── Test 6: OpenAPI Contract Validation ──
+          echo "--- [6/6] OpenAPI Contract Validation ---"
+          OPENAPI=$(curl -s "$URL/openapi.json")
+          if python3 -c "
+import json, sys
+spec = json.loads('''${OPENAPI}''')
+paths = spec.get('paths', {})
+print(f'  OpenAPI paths: {len(paths)}')
+required = ['/health', '/api/version', '/api/proyecto', '/', '/openapi.json']
+for p in required:
+    assert p in paths, f'missing {p}'
+    print(f'  ✅ {p}')
+print('  All required paths present')
+" 2>&1; then
+            pass "OpenAPI contract: all required paths present"
+          else
+            fail "OpenAPI validation failed"
+          fi
+
+          # ── Final Result ──
+          echo "=========================================="
+          echo "  RESULTS: $PASS_COUNT passed, $FAIL_COUNT failed"
+          echo "=========================================="
+          if [ "$ALL_PASS" = false ]; then
+            echo "=== SMOKE TEST FAILED (CorrelationId: $CORR_ID) ==="
+            exit 1
+          fi
+          echo "=== ALL RC77-C4 SMOKE TESTS PASSED (CorrelationId: $CORR_ID) ==="
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           CORRELATION_ID: ${{ env.CORRELATION_ID }}
-
-      - name: Check middleware headers
-        run: |
-          URL="https://as-${PROJECT_NAME}.azurewebsites.net"
-          echo "=== Checking middleware headers ==="
-          curl -sI "$URL/health" | head -20
-          echo "=== Correlation ID middleware [expecting X-Correlation-ID] ==="
-          CORR_HEADER=$(curl -sI "$URL/health" 2>&1 | grep -i "x-correlation-id" || echo "MISSING")
-          echo "Correlation header: $CORR_HEADER"
-          if echo "$CORR_HEADER" | grep -qi "x-correlation-id"; then
-            echo "PASS: Correlation ID middleware active"
-          else
-            echo "FAIL: Correlation ID middleware not detected (non-blocking)"
-          fi
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}

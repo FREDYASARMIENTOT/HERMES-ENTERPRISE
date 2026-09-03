@@ -2,6 +2,7 @@
 
 ## Sprint History
 - A.35: RC77-C4 — Adversarial E2E Validation & Startup Fix (COMPLETED)
+- A.36: RC77-C5 — Harden Hermes App Service E2E Deployment (COMPLETED)
 - A.34: RC77-C3 — OIDC Identity: E2E Validation & Close (COMPLETED)
 - A.33: RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (RESUELTO)
 - A.32: RC74-C — Autonomous Project Factory (closed, 25-step pipeline)
@@ -13,6 +14,33 @@
 - A.26: Memoria persistente y normalización documental
 ## RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (2026-08-27)
 ### RC77-C4 — Adversarial E2E Validation & Startup Fix (2026-09-03)
+### RC77-C5 — Harden Hermes App Service E2E Deployment (2026-09-03)
+
+> **Status:** ✅ COMPLETED
+> **App Service:** `as-hermesenterprise` (https://as-hermesenterprise.azurewebsites.net)
+> **Runtime:** Python 3.12 | gunicorn + uvicorn.workers.UvicornWorker (--timeout 600)
+> **Commit:** TBD (post-push)
+
+#### Root Cause
+1. **CI Failure:** `python -m pytest pruebas/` collected 0 tests — `pruebas/` has 68 PS1/Pester files, zero `.py` files. pytest exit code 5.
+2. **Startup command drift:** `deploy.yml` had `--timeout 600` missing (vs `provision-appservice.yml`)
+3. **Missing validations:** No entrypoint import check, no Pester execution, fragile `shell: pwsh`
+
+#### Fixed
+- **`.github/workflows/ci.yml`**:
+  - Replaced `python -m pytest pruebas/` with conditional test detector (checks for `test_*.py`; if none, logs "No Python tests present" — exit 0)
+  - Added `Validate entrypoint Hermes.Web.backend.main:app` step
+  - Added `Ejecutar Pester tests` step for 68 PowerShell test files
+- **`.github/workflows/deploy.yml`**:
+  - Startup command: added `--timeout 600` for consistency
+  - Build job: changed `shell: pwsh` to default bash
+  - Added `Validate Hermes.Web entrypoint` step
+  - Added `Validate Azure startup command` step (checks Azure config, auto-corrects)
+  - Smoke test: Added Application Identity cross-validation (health + version + OpenAPI)
+  - Artifacts: renamed `rc77c4` → `rc77c5`, enhanced evidence JSON schema
+- **Azure App Service**:
+  - Startup command updated to include `--timeout 600`
+- **Reports**: `reports/RC77C5.md`, `reports/RC77C5.json`
 
 > **Status:** ✅ COMPLETED
 > **App Service:** `as-hermesenterprise` (https://as-hermesenterprise.azurewebsites.net)

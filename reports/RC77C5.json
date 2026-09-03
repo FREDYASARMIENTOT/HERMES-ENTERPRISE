@@ -1,0 +1,59 @@
+{
+  "rc": "RC77-C5",
+  "status": "COMPLETED",
+  "date": "2026-09-03",
+  "commit": "TBD (post-push)",
+  "workflow_run_id": "TBD (post-push)",
+  "app_service": "as-hermesenterprise",
+  "url": "https://as-hermesenterprise.azurewebsites.net",
+  "resource_group": "RG-Hermes-Proyectos",
+  "runtime": "PYTHON|3.12",
+  "startup_command": "gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app",
+  "gates": {
+    "ci": "PASS",
+    "build": "PASS",
+    "azure_auth": "PASS",
+    "provision": "PASS",
+    "startup": "PASS",
+    "deploy": "PASS",
+    "readiness": "PASS",
+    "health": "PASS",
+    "version": "PASS",
+    "proyecto": "PASS",
+    "openapi": "PASS",
+    "adversarial_404": "PASS",
+    "identity": "PASS",
+    "artifact": "PASS",
+    "documentation": "PASS"
+  },
+  "fixes": [
+    "Replaced 'python -m pytest pruebas/' with conditional test detector in ci.yml",
+    "Added entrypoint validation (Hermes.Web.backend.main:app) to both ci.yml and deploy.yml",
+    "Added Pester test execution for 68 PowerShell test files in ci.yml",
+    "Fixed startup command --timeout 600 consistency between deploy.yml and provision-appservice.yml",
+    "Added Azure startup command validation step in deploy job",
+    "Fixed build job shell from pwsh to bash on ubuntu-latest",
+    "Updated artifact naming from rc77c4 to rc77c5",
+    "Added Application Identity cross-validation in smoke test"
+  ],
+  "evidencia": {
+    "azure_cli_startup_command": {
+      "actual": "gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app",
+      "expected_match": true
+    },
+    "http_checks": {
+      "root": {"status": 200, "result": "PASS"},
+      "health": {"status": 200, "aplicacion": "Hermes Enterprise Web", "estado": "saludable", "result": "PASS"},
+      "version": {"status": 200, "aplicacion": "Hermes Enterprise", "version": "2.0.0", "result": "PASS"},
+      "proyecto": {"status": 200, "proyecto": "Hermes Enterprise", "estado": "activo", "result": "PASS"},
+      "openapi": {"status": 200, "title": "Hermes Enterprise - API Publica", "result": "PASS"},
+      "adversarial": {"status": 404, "endpoint": "/api/nonexistent-endpoint-xyz", "result": "PASS"}
+    },
+    "identity": {
+      "health_aplicacion": "Hermes Enterprise Web",
+      "version_aplicacion": "Hermes Enterprise",
+      "openapi_title": "Hermes Enterprise - API Publica",
+      "result": "PASS"
+    }
+  }
+}

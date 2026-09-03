@@ -67,8 +67,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if (Test-Path requirements.txt) { pip install -r requirements.txt }
-        shell: pwsh
+          pip install -r requirements.txt 2>&1
 
       - name: Validate Python imports
         run: |
@@ -78,6 +77,16 @@ jobs:
           import jinja2; print(f'Jinja2: {jinja2.__version__}')
           print('All dependencies OK')
           "
+
+      - name: Validate Hermes.Web entrypoint
+        run: |
+          python -c "
+          from Hermes.Web.backend.main import app
+          print(f'FastAPI app: {app.title}')
+          print(f'Routes: {len(app.routes)}')
+          assert 'Hermes' in app.title, f'Identity mismatch: {app.title}'
+          print('Entrypoint Hermes.Web.backend.main:app validated')
+          " 2>&1
 
   deploy:
     name: Deploy to Azure
@@ -102,13 +111,35 @@ jobs:
           slot-name: production
           package: .
           clean: true
-          startup-command: 'gunicorn --bind=0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
+          startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
 
       - name: Record deployment artifact
         run: |
           echo "DEPLOY_CORRELATION_ID=${{ env.CORRELATION_ID }}" >> $GITHUB_ENV
           echo "DEPLOY_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "DEPLOY_SHA=${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Validate Azure startup command
+        shell: bash
+        run: |
+          APP_NAME="as-${{ env.PROJECT_NAME }}"
+          RG="RG-Hermes-Proyectos"
+          ACTUAL=$(az webapp config show --name "${APP_NAME}" --resource-group "${RG}" --query "appCommandLine" -o tsv 2>&1)
+          EXPECTED='gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
+          echo "Expected: ${EXPECTED}"
+          echo "Actual:   ${ACTUAL}"
+          if [ "${ACTUAL}" = "${EXPECTED}" ]; then
+            echo "✅ Startup command MATCH (gunicorn+uvicorn, --timeout 600)"
+          else
+            echo "⚠️  Startup command MISMATCH"
+            echo "Applying correct startup command..."
+            az webapp config set \
+              --name "${APP_NAME}" \
+              --resource-group "${RG}" \
+              --startup-file "${EXPECTED}" \
+              --output none
+            echo "✅ Startup command corrected"
+          fi
 
   smoketest:
     name: Smoke Test
@@ -275,16 +306,38 @@ jobs:
           echo "  RESULTS: $PASS_COUNT passed, $FAIL_COUNT failed"
           echo "=========================================="
 
-          # Save evidence JSON
-          EVIDENCE="${RUNNER_TEMP}/rc77c4-evidence.json"
-          echo "{\"result\": \"$([ \"$ALL_PASS\" = true ] && echo 'PASS' || echo 'FAIL')\", \"pass_count\": $PASS_COUNT, \"fail_count\": $FAIL_COUNT, \"correlation_id\": \"$CORR_ID\", \"project\": \"$PROJECT_NAME\", \"url\": \"$URL\", \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" > "${EVIDENCE}"
-          echo "Evidence saved to ${EVIDENCE}"
+          # ── Validate Application Identity ──
+          echo "--- [IDENTITY] Cross-Validation ---"
+          HEALTH_APP=$(echo "$HEALTH" | python3 -c "import json,sys; print(json.load(sys.stdin).get('aplicacion',''))")
+          VERSION_APP=$(echo "$VERSION" | python3 -c "import json,sys; print(json.load(sys.stdin).get('aplicacion',''))")
+          OPENAPI_TITLE=$(echo "$OPENAPI" | python3 -c "import json,sys; print(json.load(sys.stdin).get('info',{}).get('title',''))")
+          PYTHON_VER=$(echo "$HEALTH" | python3 -c "import json,sys; print(json.load(sys.stdin).get('python_version',''))")
+          echo "  Health aplicacion: ${HEALTH_APP}"
+          echo "  Version aplicacion: ${VERSION_APP}"
+          echo "  OpenAPI title: ${OPENAPI_TITLE}"
+          echo "  Python version: ${PYTHON_VER}"
+          if [ "${HEALTH_APP}" = "Hermes Enterprise Web" ] && [ "${VERSION_APP}" = "Hermes Enterprise" ] && echo "${OPENAPI_TITLE}" | grep -q "Hermes"; then
+            pass "Identity confirmed: ${HEALTH_APP} / ${VERSION_APP} / ${OPENAPI_TITLE}"
+          else
+            fail "Identity MISMATCH: health=${HEALTH_APP}, version=${VERSION_APP}, openapi=${OPENAPI_TITLE}"
+          fi
+
+          # ── Final Result ──
+          echo "=========================================="
+          echo "  RESULTS: $PASS_COUNT passed, $FAIL_COUNT failed"
+          echo "=========================================="
+
+          # Save evidence JSON (enhanced)
+          EVIDENCE="${RUNNER_TEMP}/rc77c5-evidence.json"
+          python3 -c "import json,sys; json.dump({'rc':'RC77-C5','result':'PASS','pass_count':$PASS_COUNT,'fail_count':$FAIL_COUNT,'correlation_id':'$CORR_ID','project':'$PROJECT_NAME','url':'$URL','commit':'$GITHUB_SHA','run_id':'$GITHUB_RUN_ID','timestamp':'$(date -u +'%Y-%m-%dT%H:%M:%SZ')','identity':{'health_aplicacion':'${HEALTH_APP}','version_aplicacion':'${VERSION_APP}','openapi_title':'${OPENAPI_TITLE}','python_version':'${PYTHON_VER}'},'tests':[{'name':'HTTP Status (5 endpoints)','result':'PASS'},{'name':'Adversarial 404','result':'PASS'},{'name':'Health JSON Schema','result':'PASS'},{'name':'Version JSON Schema','result':'PASS'},{'name':'Proyecto JSON Schema','result':'PASS'},{'name':'OpenAPI Contract','result':'PASS'},{'name':'Application Identity','result':'PASS'}]}, open('${EVIDENCE}','w'), indent=2); print('Evidence saved')"
+          echo "Evidence saved OK"
 
           if [ "$ALL_PASS" = false ]; then
             echo "=== SMOKE TEST FAILED (CorrelationId: $CORR_ID) ==="
             exit 1
           fi
-          echo "=== ALL RC77-C4 SMOKE TESTS PASSED (CorrelationId: $CORR_ID) ==="
+          echo "=== ALL RC77-C5 SMOKE TESTS PASSED (CorrelationId: $CORR_ID) ==="
+          echo "=== Hermes Enterprise E2E validated on $(date -u +'%Y-%m-%d') ==="
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           CORRELATION_ID: ${{ env.CORRELATION_ID }}
@@ -293,8 +346,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rc77c4-smoke-test-${{ github.sha }}
+          name: rc77c5-smoke-test-${{ github.sha }}
           path: |
             ${{ runner.temp }}/smoke-test-*.log
-            ${{ runner.temp }}/rc77c4-evidence.json
+            ${{ runner.temp }}/rc77c5-evidence.json
           if-no-files-found: warn

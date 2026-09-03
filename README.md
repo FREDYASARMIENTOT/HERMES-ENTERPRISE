@@ -4,10 +4,12 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 
 ## Status
 
-**RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (con BLOCKER_HUMAN)**
+**RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (COMPLETED ✅)**
 
 - **Identity Architecture**: GitHub Actions → OIDC → `UR-Fabrica-Proyectos-AR` → RBAC → `RG-Hermes-Proyectos`
-- **OIDC Federated Subject**: `repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production` — ⚠️ requires Application Administrator to correct
+- **OIDC Federated Subject**: `repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production` ✅ Corregido y validado por E2E
+- **Federated Credential Status**: `issuer` ✅, `subject` ✅, `audiences` ✅ — sin trailing slash
+- **E2E Result**: ✅ **PASS** (Run #33783617410) — AADSTS700211 resuelto, OIDC authentication exitosa
 - **Azure Config**: `config/Hermes.Azure.json` — `DedicatedApp` mode, real Client ID, OIDC fields
 - **App Registration**: `UR-Fabrica-Proyectos-AR` (Client ID: `feb971aa-...`, RBAC Contributor on RG)
 - **GitHub Environment**: `production` created (ID: 20686661565)

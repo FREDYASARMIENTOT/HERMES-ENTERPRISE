@@ -1,7 +1,8 @@
 # CHANGELOG
 
 ## Sprint History
-- A.33: RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (con BLOCKER)
+- A.34: RC77-C3 — OIDC Identity: E2E Validation & Close (COMPLETED)
+- A.33: RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (RESUELTO)
 - A.32: RC74-C — Autonomous Project Factory (closed, 25-step pipeline)
 - A.31: RC73-B — Guardian Hardened (10 resource types, 46 tests)
 - A.30: RC73-A — Azure Infrastructure Guardian
@@ -58,7 +59,11 @@
 - No `AZURE_CREDENTIALS` JSON file
 - All 3 workflows audited: ci.yml, deploy.yml, provision-appservice.yml — OIDC correct
 
-### RC77-C3 — OIDC Final Audit & Controlled Correction (2026-08-27)
+### RC77-C3 — OIDC Final Audit & Controlled Correction (2026-08-27 → 2026-09-03)
+
+> **Status:** ✅ COMPLETED (E2E VALIDATED)
+> **Blocker:** Federated credential subject incompleto — **RESUELTO por Jairo** (Application Administrator)
+> **E2E:** ✅ **PASS** (Run #33783617410)
 
 #### Added
 - **Read-only inspection** of federated credential `github-production`:
@@ -68,13 +73,31 @@
 - **No changes made** — credential untouched, verification confirmed
 - **Human instructions** provided for Azure AD Application Administrator (both CLI and Portal methods)
 
+#### Resolved (2026-08-28)
+- **Federated credential corregida por Jairo** (Application Administrator)
+- **Verificación post-corrección**: Subject ahora es `repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production` ✅
+- **Prueba E2E lanzada**: `provision-appservice.yml` con `e2e-oidc-test` (Run #33188013764)
+
+#### E2E Validation (2026-09-03) — ✅ COMPLETED
+- **Federated Credential re-verificada** (`az ad app federated-credential show`):
+  - **issuer**: `https://token.actions.githubusercontent.com` ✅ (sin trailing slash)
+  - **subject**: `repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production` ✅
+  - **audiences**: `["api://AzureADTokenExchange"]` ✅
+- **OIDC Authentication**: ✅ **PASS** — `azure/login@v2` exitoso, **AADSTS700211 resuelto**
+- **Workflow `provision-appservice.yml`**: ✅ **PASS** (Run #33783617410)
+  - `status: completed`, `conclusion: success`
+  - `projectName=hermesenterprise` (default), `SKU=B1`, `PYTHON:3.11`, `eastus`
+  - Recursos: `asp-hermesenterprise` (B1, existente) + `as-hermesenterprise` (PYTHON:3.11, existente) — idempotente
+  - **Identity Mode**: OIDC (UR-Fabrica-Proyectos-AR)
+- **Documentación actualizada**: CURRENT_STATE.md, CHANGELOG.md, reports/RC77C3.md, reports/RC77C3.json
+
 #### Security
-- Controlled correction protocol: inspect → attempt → verify no change
+- Controlled correction protocol: inspect → request → verify correction → E2E test
 - Temporary file `credential.json` deleted after failed attempt
 - All identity data confirmed: Client ID, SP Object ID, App Object ID, Tenant, Subscription
 
-### Known Blockers
-1. **BLOCKER**: Federated credential subject incompleto — Azure AD Application Administrator must correct
+### Resolved Blockers
+1. ~~**BLOCKER**: Federated credential subject incompleto — **RESUELTO por Jairo** ✅~~ (2026-08-28)
 2. **MENOR**: `deploy.yml` does not validate `projectName` input
 
 ---

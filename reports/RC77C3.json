@@ -1,21 +1,24 @@
 {
   "report": "RC77-C3",
   "title": "Identidad OIDC: Auditoría Definitiva y Corrección Controlada",
-  "date": "2026-08-27",
-  "status": "BLOCKED_HUMAN",
+  "date": "2026-08-27 → 2026-09-03",
+  "status": "COMPLETED",
   "blocker": {
-    "type": "INSUFFICIENT_PRIVILEGES_AZURE_AD",
-    "detail": "El usuario 'analiticaur@urosario.edu.co' autenticado en Azure CLI no tiene permisos para modificar federated credentials. Se requiere rol Application Administrator o Cloud Application Administrator en Azure AD.",
-    "command_attempted": "az ad app federated-credential update --id 4d08dcbb-... --federated-credential-id a2f3f6f7-...",
-    "error": "Insufficient privileges to complete the operation.",
-    "recommendation": "Ejecutar comando manual por un usuario con Azure AD Application Administrator"
+    "type": "ORIGINAL_INSUFFICIENT_PRIVILEGES_AZURE_AD",
+    "detail": "El usuario 'analiticaur@urosario.edu.co' no tenía permisos para modificar federated credentials. Jairo (Application Administrator) ejecutó la corrección manual.",
+    "resolution_date": "2026-08-28",
+    "resolved_by": "Application Administrator (Jairo)",
+    "original_command": "az ad app federated-credential update --id 4d08dcbb-... --federated-credential-id a2f3f6f7-...",
+    "resolution": "Corregido por Azure AD Application Administrator"
   },
   "identity_before_correction": {
     "credential_name": "github-production",
     "credential_id": "a2f3f6f7-45a3-45c9-a822-a6501b2df9e5",
     "old_subject": "repo:FREDYASARMIENTOT/",
     "new_subject_required": "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production",
-    "correction_applied": false
+    "correction_applied": true,
+    "correction_date": "2026-08-28",
+    "verification_status": "VERIFIED"
   },
   "identity": {
     "applicationClientId": "feb971aa-7655-4c6f-8aef-b9f3bb828f6b",
@@ -27,17 +30,56 @@
     "repository": "FREDYASARMIENTOT/HERMES-ENTERPRISE",
     "githubEnvironment": "production"
   },
+  "federated_credential_verified": {
+    "name": "github-production",
+    "id": "a2f3f6f7-45a3-45c9-a822-a6501b2df9e5",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "issuer_trailing_slash": false,
+    "subject": "repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production",
+    "audiences": ["api://AzureADTokenExchange"],
+    "verification_date": "2026-09-03",
+    "issuer_check": "PASS",
+    "subject_check": "PASS",
+    "audiences_check": "PASS"
+  },
   "config": "VALID",
   "github": {
     "secrets_present": ["AZURE_CLIENT_ID","AZURE_TENANT_ID","AZURE_SUBSCRIPTION_ID"],
     "environment_production": {"id":20686661565,"name":"production"}
   },
   "workflow": "VALID (azure/login@v2, secrets.*, sin hardcode)",
-  "e2e": "NOT_RUN - Bloqueado por federated credential no corregida",
-  "human_required": [
-    "1. [ALTA] Corregir federated credential: az ad app federated-credential update --id 4d08dcbb-3a57-449a-aac6-a28d6f7501cd --federated-credential-id a2f3f6f7-45a3-45c9-a822-a6501b2df9e5 --subject 'repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production'",
-    "   Alternativa Portal: Azure AD > App Registrations > UR-Fabrica-Proyectos-AR > Certificates & secrets > Federated credentials > github-production > Editar subject",
-    "2. [MEDIA] Verificar AZURE_CLIENT_ID = feb971aa-... (CLIENT_ID), NO = 5616db94-... (SP_OBJECT_ID)",
-    "3. [MEDIA] gh workflow run deploy.yml --repo FREDYASARMIENTOT/HERMES-ENTERPRISE --ref main"
+  "e2e": {
+    "status": "COMPLETED",
+    "workflow": "provision-appservice.yml",
+    "project": "hermesenterprise (default)",
+    "run_id": "33783617410",
+    "run_url": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/33783617410",
+    "trigger_date": "2026-09-03",
+    "completion_date": "2026-09-03",
+    "conclusion": "success",
+    "aadsts700211": "RESOLVED",
+    "previous_run": {
+      "run_id": "33188013764",
+      "conclusion": "failure",
+      "error": "AADSTS700211"
+    },
+    "parameters": {
+      "projectName": "hermesenterprise",
+      "location": "eastus",
+      "sku": "B1",
+      "runtime": "PYTHON:3.11"
+    }
+  },
+  "human_resolved": [
+    "1. [RESUELTO] Federated credential corregida por Jairo (Application Administrator) el 2026-08-28",
+    "2. [VERIFICADO] Subject ahora es: repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production",
+    "3. [COMPLETADO] E2E PASS (Run #33783617410) — AADSTS700211 resuelto",
+    "4. [COMPLETADO] RC77-C3 cerrado exitosamente"
+  ],
+  "next_steps": [
+    "1. RC76: Azure Storage integration",
+    "2. Azure Foundry: Future capability",
+    "3. Parquet: Future capability",
+    "4. Blueprints: Future capability"
   ]
 }

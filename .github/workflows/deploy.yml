@@ -119,11 +119,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Wait for deployment
-        run: sleep 30
+      - name: Wait for App Service readiness (polling)
+        run: |
+          URL="https://as-${PROJECT_NAME}.azurewebsites.net"
+          echo "Polling ${URL} for readiness..."
+          MAX_ATTEMPTS=30
+          ATTEMPT=1
+          while [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ]; do
+            echo "[${ATTEMPT}/${MAX_ATTEMPTS}] Checking ${URL}/health ..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${URL}/health" 2>/dev/null || echo "000")
+            if [ "${HTTP_CODE}" = "200" ]; then
+              echo "App Service is READY (HTTP 200)"
+              curl -s "${URL}/health" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'  app={d.get(\"aplicacion\",\"?\")}, estado={d.get(\"estado\",\"?\")}')" 2>/dev/null || true
+              break
+            fi
+            echo "  HTTP ${HTTP_CODE} — waiting 10s..."
+            sleep 10
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          if [ ${ATTEMPT} -gt ${MAX_ATTEMPTS} ]; then
+            echo "FAIL: App Service not ready after 5 minutes"
+            echo "Last HTTP code: ${HTTP_CODE}"
+            exit 1
+          fi
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          CORRELATION_ID: ${{ env.CORRELATION_ID }}
 
       - name: Smoke Test — RC77-C4 Adversarial E2E Validation
         run: |
+          # Redirect all output to log file for artifact capture
+          SMOKE_LOG="${RUNNER_TEMP}/smoke-test-${CORRELATION_ID}.log"
+          exec 5>&1
+          exec > >(tee -a "${SMOKE_LOG}") 2>&1
+
           URL="https://as-${PROJECT_NAME}.azurewebsites.net"
           CORR_ID="${CORRELATION_ID}"
           ALL_PASS=true
@@ -171,15 +200,15 @@ jobs:
           echo "--- [3/6] Health JSON Schema ---"
           HEALTH=$(curl -s "$URL/health")
           if python3 -c "
-import json, sys
-d = json.loads('''${HEALTH}''')
-assert d.get('estado') == 'saludable', f'estado={d.get(\"estado\")} != saludable'
-assert 'aplicacion' in d
-assert 'version' in d
-assert 'timestamp' in d
-assert 'python_version' in d
-print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\"]}')
-" 2>&1; then
+            import json, sys
+            d = json.loads('''${HEALTH}''')
+            assert d.get('estado') == 'saludable', f'estado={d.get(\"estado\")} != saludable'
+            assert 'aplicacion' in d
+            assert 'version' in d
+            assert 'timestamp' in d
+            assert 'python_version' in d
+            print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\"]}')
+            " 2>&1; then
             pass "health JSON schema: estado=saludable"
           else
             fail "health JSON schema invalid: $HEALTH"
@@ -189,14 +218,14 @@ print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\
           echo "--- [4/6] Version JSON Schema ---"
           VERSION=$(curl -s "$URL/api/version")
           if python3 -c "
-import json, sys
-d = json.loads('''${VERSION}''')
-assert 'version' in d, 'missing version'
-assert 'aplicacion' in d, 'missing aplicacion'
-assert d['aplicacion'] == 'Hermes Enterprise', f'aplicacion={d[\"aplicacion\"]}'
-assert 'commit' in d, 'missing commit'
-print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}')
-" 2>&1; then
+            import json, sys
+            d = json.loads('''${VERSION}''')
+            assert 'version' in d, 'missing version'
+            assert 'aplicacion' in d, 'missing aplicacion'
+            assert d['aplicacion'] == 'Hermes Enterprise', f'aplicacion={d[\"aplicacion\"]}'
+            assert 'commit' in d, 'missing commit'
+            print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}')
+            " 2>&1; then
             pass "version JSON schema: aplicacion=Hermes Enterprise"
           else
             fail "version JSON schema invalid: $VERSION"
@@ -206,13 +235,13 @@ print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}'
           echo "--- [5/6] Proyecto JSON Schema ---"
           PROYECTO=$(curl -s "$URL/api/proyecto")
           if python3 -c "
-import json, sys
-d = json.loads('''${PROYECTO}''')
-assert 'proyecto' in d, 'missing proyecto'
-assert d['proyecto'] == 'Hermes Enterprise', f'proyecto={d[\"proyecto\"]}'
-assert 'estado' in d, 'missing estado'
-print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')
-" 2>&1; then
+            import json, sys
+            d = json.loads('''${PROYECTO}''')
+            assert 'proyecto' in d, 'missing proyecto'
+            assert d['proyecto'] == 'Hermes Enterprise', f'proyecto={d[\"proyecto\"]}'
+            assert 'estado' in d, 'missing estado'
+            print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')
+            " 2>&1; then
             pass "proyecto JSON schema: proyecto=Hermes Enterprise"
           else
             fail "proyecto JSON schema invalid: $PROYECTO"
@@ -222,16 +251,20 @@ print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')
           echo "--- [6/6] OpenAPI Contract Validation ---"
           OPENAPI=$(curl -s "$URL/openapi.json")
           if python3 -c "
-import json, sys
-spec = json.loads('''${OPENAPI}''')
-paths = spec.get('paths', {})
-print(f'  OpenAPI paths: {len(paths)}')
-required = ['/health', '/api/version', '/api/proyecto', '/', '/openapi.json']
-for p in required:
-    assert p in paths, f'missing {p}'
-    print(f'  ✅ {p}')
-print('  All required paths present')
-" 2>&1; then
+            import json, sys
+            spec = json.loads('''${OPENAPI}''')
+            paths = spec.get('paths', {})
+            title = spec.get('info', {}).get('title', '')
+            print(f'  OpenAPI title: {title}')
+            print(f'  OpenAPI paths: {len(paths)}')
+            required = ['/health', '/api/version', '/api/proyecto', '/']
+            for p in required:
+                assert p in paths, f'missing {p}'
+                print(f'  ✅ {p}')
+            assert 'Hermes' in title, f'unexpected title: {title}'
+            print(f'  Application identity: {title}')
+            print('  All required paths present')
+            " 2>&1; then
             pass "OpenAPI contract: all required paths present"
           else
             fail "OpenAPI validation failed"
@@ -241,6 +274,12 @@ print('  All required paths present')
           echo "=========================================="
           echo "  RESULTS: $PASS_COUNT passed, $FAIL_COUNT failed"
           echo "=========================================="
+
+          # Save evidence JSON
+          EVIDENCE="${RUNNER_TEMP}/rc77c4-evidence.json"
+          echo "{\"result\": \"$([ \"$ALL_PASS\" = true ] && echo 'PASS' || echo 'FAIL')\", \"pass_count\": $PASS_COUNT, \"fail_count\": $FAIL_COUNT, \"correlation_id\": \"$CORR_ID\", \"project\": \"$PROJECT_NAME\", \"url\": \"$URL\", \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" > "${EVIDENCE}"
+          echo "Evidence saved to ${EVIDENCE}"
+
           if [ "$ALL_PASS" = false ]; then
             echo "=== SMOKE TEST FAILED (CorrelationId: $CORR_ID) ==="
             exit 1
@@ -249,3 +288,13 @@ print('  All required paths present')
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           CORRELATION_ID: ${{ env.CORRELATION_ID }}
+
+      - name: Upload Smoke Test Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc77c4-smoke-test-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/smoke-test-*.log
+            ${{ runner.temp }}/rc77c4-evidence.json
+          if-no-files-found: warn

@@ -192,12 +192,14 @@ jobs:
           fi
 
       # ---------------------------------------------------------------
-      # STEP 7: App Settings (solo Web App nueva)
+      # STEP 7: App Settings (always applies)
       # NO se almacenan secretos de Azure en App Settings
+      # PYTHONPATH incluye raiz del proyecto + Hermes.Web para que
+      # tanto Hermes.Web.backend.main:app como backend.main:app
+      # sean accesibles al cargar la aplicacion.
       # ---------------------------------------------------------------
-      - name: Configure App Settings (new Web App only)
+      - name: Configure App Settings
         shell: bash
-        if: env.APP_CREATED == 'true'
         run: |
           APP_NAME="as-${{ inputs.projectName }}"
           RG="${{ env.RESOURCE_GROUP }}"
@@ -208,9 +210,10 @@ jobs:
             --resource-group "${RG}" \
             --settings \
               PROJECT_NAME="${{ inputs.projectName }}" \
+              PYTHONPATH="/home/site/wwwroot:/home/site/wwwroot/Hermes.Web" \
             --output none
 
-          echo "Configuracion aplicada (PROJECT_NAME)"
+          echo "Configuracion aplicada (PROJECT_NAME, PYTHONPATH)"
 
       # ---------------------------------------------------------------
       # STEP 7b: Startup Command — RC77-C4

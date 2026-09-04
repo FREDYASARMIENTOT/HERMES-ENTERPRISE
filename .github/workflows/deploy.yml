@@ -230,16 +230,7 @@ jobs:
           # ── Test 3: Health JSON Schema ──
           echo "--- [3/6] Health JSON Schema ---"
           HEALTH=$(curl -s "$URL/health")
-          if python3 -c "
-            import json, sys
-            d = json.loads('''${HEALTH}''')
-            assert d.get('estado') == 'saludable', f'estado={d.get(\"estado\")} != saludable'
-            assert 'aplicacion' in d
-            assert 'version' in d
-            assert 'timestamp' in d
-            assert 'python_version' in d
-            print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\"]}')
-            " 2>&1; then
+          if echo "$HEALTH" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('estado')=='saludable'; assert 'aplicacion' in d; assert 'version' in d; assert 'timestamp' in d; assert 'python_version' in d; print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\"]}')" 2>&1; then
             pass "health JSON schema: estado=saludable"
           else
             fail "health JSON schema invalid: $HEALTH"
@@ -248,15 +239,7 @@ jobs:
           # ── Test 4: Version JSON Schema ──
           echo "--- [4/6] Version JSON Schema ---"
           VERSION=$(curl -s "$URL/api/version")
-          if python3 -c "
-            import json, sys
-            d = json.loads('''${VERSION}''')
-            assert 'version' in d, 'missing version'
-            assert 'aplicacion' in d, 'missing aplicacion'
-            assert d['aplicacion'] == 'Hermes Enterprise', f'aplicacion={d[\"aplicacion\"]}'
-            assert 'commit' in d, 'missing commit'
-            print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}')
-            " 2>&1; then
+          if echo "$VERSION" | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'version' in d; assert 'aplicacion' in d; assert d['aplicacion']=='Hermes Enterprise'; assert 'commit' in d; print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}')" 2>&1; then
             pass "version JSON schema: aplicacion=Hermes Enterprise"
           else
             fail "version JSON schema invalid: $VERSION"
@@ -265,14 +248,7 @@ jobs:
           # ── Test 5: Proyecto JSON Schema ──
           echo "--- [5/6] Proyecto JSON Schema ---"
           PROYECTO=$(curl -s "$URL/api/proyecto")
-          if python3 -c "
-            import json, sys
-            d = json.loads('''${PROYECTO}''')
-            assert 'proyecto' in d, 'missing proyecto'
-            assert d['proyecto'] == 'Hermes Enterprise', f'proyecto={d[\"proyecto\"]}'
-            assert 'estado' in d, 'missing estado'
-            print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')
-            " 2>&1; then
+          if echo "$PROYECTO" | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'proyecto' in d; assert d['proyecto']=='Hermes Enterprise'; assert 'estado' in d; print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')" 2>&1; then
             pass "proyecto JSON schema: proyecto=Hermes Enterprise"
           else
             fail "proyecto JSON schema invalid: $PROYECTO"
@@ -281,21 +257,7 @@ jobs:
           # ── Test 6: OpenAPI Contract Validation ──
           echo "--- [6/6] OpenAPI Contract Validation ---"
           OPENAPI=$(curl -s "$URL/openapi.json")
-          if python3 -c "
-            import json, sys
-            spec = json.loads('''${OPENAPI}''')
-            paths = spec.get('paths', {})
-            title = spec.get('info', {}).get('title', '')
-            print(f'  OpenAPI title: {title}')
-            print(f'  OpenAPI paths: {len(paths)}')
-            required = ['/health', '/api/version', '/api/proyecto', '/']
-            for p in required:
-                assert p in paths, f'missing {p}'
-                print(f'  ✅ {p}')
-            assert 'Hermes' in title, f'unexpected title: {title}'
-            print(f'  Application identity: {title}')
-            print('  All required paths present')
-            " 2>&1; then
+          if echo "$OPENAPI" | python3 -c "import json,sys;spec=json.load(sys.stdin);paths=spec.get('paths',{});title=spec.get('info',{}).get('title','');print(f'  OpenAPI title: {title}');print(f'  OpenAPI paths: {len(paths)}');required=['/health','/api/version','/api/proyecto','/'];missing=[p for p in required if p not in paths];print(f'  All required paths present: {len(missing)==0}');exit(0) if (len(missing)==0 and 'Hermes' in title) else exit(1)" 2>&1; then
             pass "OpenAPI contract: all required paths present"
           else
             fail "OpenAPI validation failed"

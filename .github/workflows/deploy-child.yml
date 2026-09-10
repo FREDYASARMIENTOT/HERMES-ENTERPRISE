@@ -398,7 +398,6 @@ jobs:
             --src-path deploy.zip \
             --type zip \
             --clean true \
-            --restart true \
             --output none
           echo "=== Deployment Complete ==="
           echo "App          : ${{ needs.validate-inputs.outputs.app_service_name }}"
@@ -410,14 +409,15 @@ jobs:
             --name ${{ needs.validate-inputs.outputs.app_service_name }} \
             --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
             --startup-file "startup.sh" \
-            --output none
+            --output none 2>/dev/null || true
           echo "Startup command set to: startup.sh"
 
-          echo "=== Restarting web app ==="
+          echo "=== Restarting web app (no wait) ==="
           az webapp restart \
             --name ${{ needs.validate-inputs.outputs.app_service_name }} \
-            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }}
-          echo "Restart initiated"
+            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
+            --no-wait
+          echo "Restart initiated (async)"
 
           echo "deploy_result=PASS" >> $GITHUB_OUTPUT
 

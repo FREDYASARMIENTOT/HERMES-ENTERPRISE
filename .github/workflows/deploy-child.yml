@@ -361,7 +361,6 @@ jobs:
         with:
           repository: ${{ needs.validate-inputs.outputs.repository }}
           ref: ${{ needs.validate-inputs.outputs.commit_sha }}
-          path: child-project
           fetch-depth: 1
           token: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
 
@@ -377,7 +376,6 @@ jobs:
         uses: Azure/webapps-deploy@v3
         with:
           app-name: ${{ needs.validate-inputs.outputs.app_service_name }}
-          package: child-project
           clean: true
 
       - name: Verify Deploy

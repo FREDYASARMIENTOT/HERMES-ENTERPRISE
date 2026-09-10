@@ -256,6 +256,13 @@ jobs:
       webapp_created: ${{ steps.provision.outputs.webapp_created }}
       webapp_result: ${{ steps.provision.outputs.webapp_result }}
     steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Provision Web App (Create or Reuse)
         id: provision
         shell: bash
@@ -345,6 +352,13 @@ jobs:
           ref: ${{ needs.validate-inputs.outputs.commit_sha }}
           path: child-project
           fetch-depth: 1
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
         id: deploy

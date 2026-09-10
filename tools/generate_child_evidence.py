@@ -34,6 +34,7 @@ def main():
     wf_rg = os.environ.get('WEBAPP_RG', '')
     plan_rg = os.environ.get('PLAN_RG', '')
     plan_name = os.environ.get('PLAN_NAME', '')
+    plan_resource_id = os.environ.get('PLAN_RESOURCE_ID', '')
     loc = os.environ.get('LOCATION', '')
     runtime = os.environ.get('RUNTIME', '')
     github_run = os.environ.get('GITHUB_RUN_ID', '')
@@ -67,6 +68,7 @@ def main():
         'github_workflow': github_wf,
         'webapp_resource_group': wf_rg,
         'app_service_plan_resource_group': plan_rg,
+        'app_service_plan_resource_id': plan_resource_id,
         'app_service_plan': plan_name,
         'plan_created': False,
         'plan_reused': True,
@@ -106,6 +108,7 @@ def main():
             'plan_created': False,
             'existing_plan_after': True,
             'reused_plan': True,
+            'plan_resource_id': plan_resource_id,
             'plan_rg': plan_rg,
             'webapp_rg': wf_rg
         },

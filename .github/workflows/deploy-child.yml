@@ -40,6 +40,7 @@ permissions:
 env:
   APP_SERVICE_PLAN: ASP-IAUR
   APP_SERVICE_PLAN_RG: RG-Datamining-SII2.0-Dev
+  APP_SERVICE_PLAN_RESOURCE_ID: /subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/RG-Datamining-SII2.0-Dev/providers/Microsoft.Web/serverfarms/ASP-IAUR
   WEBAPP_RESOURCE_GROUP: RG-Hermes-Proyectos
   LOCATION: eastus
   RUNTIME: 'PYTHON:3.12'
@@ -216,31 +217,25 @@ jobs:
         shell: bash
         run: |
           echo "=== Verifying Shared ASP-IAUR ==="
-          PLAN_CHECK=$(az appservice plan show \
-            --name "${{ env.APP_SERVICE_PLAN }}" \
-            --resource-group "${{ env.APP_SERVICE_PLAN_RG }}" \
-            --query "{name:name, resourceGroup:resourceGroup, location:location, kind:kind, sku:sku.name, provisioningState:provisioningState}" \
-            -o json 2>/dev/null || echo "")
-          if [ -z "${PLAN_CHECK}" ]; then
-            echo "FAIL: Plan not found in RG ${{ env.APP_SERVICE_PLAN_RG }}"
+          echo "Plan : ${{ env.APP_SERVICE_PLAN }}"
+          echo "RG   : ${{ env.APP_SERVICE_PLAN_RG }}"
+          echo ""
+          echo "NOTE: SP scope is RG-Hermes-Proyectos only."
+          echo "Plan is validated via ARM resource ID at provision time."
+          echo ""
+          echo "Validating plan name format..."
+          PLAN="${{ env.APP_SERVICE_PLAN }}"
+          PLAN_RG="${{ env.APP_SERVICE_PLAN_RG }}"
+          LOC="${{ env.LOCATION }}"
+          if ! echo "${PLAN}" | grep -qP '^[a-zA-Z0-9_-]{1,60}$'; then
+            echo "FAIL: Invalid plan name format"
             exit 1
           fi
-          echo "${PLAN_CHECK}" | python3 -m json.tool
-          PLAN_NAME=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['name'])")
-          PLAN_RG=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['resourceGroup'])")
-          PLAN_LOC=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['location'])")
-          PLAN_KIND=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['kind'])")
-          PLAN_SKU=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['sku'])")
-          PLAN_STATE=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['provisioningState'])")
-
-          FAIL=false
-          [ "${PLAN_NAME}" != "${{ env.APP_SERVICE_PLAN }}" ] && { echo "FAIL: Name mismatch"; FAIL=true; }
-          [ "${PLAN_RG}" != "${{ env.APP_SERVICE_PLAN_RG }}" ] && { echo "FAIL: RG mismatch"; FAIL=true; }
-          [ "${PLAN_LOC}" != "${{ env.LOCATION }}" ] && { echo "FAIL: Location mismatch"; FAIL=true; }
-          ! echo "${PLAN_KIND}" | grep -qi "linux" && { echo "FAIL: Not Linux"; FAIL=true; }
-          [ "${PLAN_STATE}" != "Succeeded" ] && { echo "FAIL: State=${PLAN_STATE}"; FAIL=true; }
-          [ "${FAIL}" = true ] && exit 1
-          echo "OK: ASP-IAUR valid (SKU=${PLAN_SKU}) — ready for reuse"
+          if ! echo "${PLAN_RG}" | grep -qP '^[a-zA-Z0-9_.-]{1,90}$'; then
+            echo "FAIL: Invalid plan RG format"
+            exit 1
+          fi
+          echo "OK: ASP-IAUR static validation passed — plan will be referenced by resource ID"
 
       - name: Verify WebApp Resource Group
         shell: bash
@@ -274,7 +269,11 @@ jobs:
           echo "=== Web App Provision ==="
           echo "App  : ${APP_NAME}"
           echo "RG   : ${RG}"
-          echo "Plan : ${PLAN} (shared, not created here)"
+          echo "Plan : ${PLAN} (shared from ${APP_SERVICE_PLAN_RG})"
+
+          # Use full plan resource ID since plan is in different RG
+          PLAN_ID="${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
+          echo "Plan ID: ${PLAN_ID}"
 
           EXISTING=$(az webapp show \
             --name "${APP_NAME}" \
@@ -287,7 +286,7 @@ jobs:
             az webapp create \
               --name "${APP_NAME}" \
               --resource-group "${RG}" \
-              --plan "${PLAN}" \
+              --plan "${PLAN_ID}" \
               --runtime "${RUNTIME}" \
               --output none
             az webapp config set \
@@ -316,10 +315,12 @@ jobs:
           WA_FARM=$(echo "${RESULT}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['serverFarmId'])")
           WA_STATE=$(echo "${RESULT}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['state'])")
 
-          if ! echo "${WA_FARM}" | grep -qi "ASP-IAUR"; then
+          EXPECTED_FARM_ID="${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
+          if [ "${WA_FARM}" != "${EXPECTED_FARM_ID}" ]; then
             echo "WARN: Web App not using ASP-IAUR (farm=${WA_FARM})"
+            echo "Expected: ${EXPECTED_FARM_ID}"
           else
-            echo "OK: Web App is using ASP-IAUR"
+            echo "OK: Web App is using ASP-IAUR (exact match)"
           fi
           [ "${WA_STATE}" != "Running" ] && { echo "FAIL: State=${WA_STATE}"; exit 1; }
 
@@ -516,6 +517,7 @@ jobs:
           export WEBAPP_RG="${{ env.WEBAPP_RESOURCE_GROUP }}"
           export PLAN_RG="${{ env.APP_SERVICE_PLAN_RG }}"
           export PLAN_NAME="${{ env.APP_SERVICE_PLAN }}"
+          export PLAN_RESOURCE_ID="${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
           export LOCATION="${{ env.LOCATION }}"
           export RUNTIME="${{ env.RUNTIME }}"
           export GITHUB_RUN_ID="${{ github.run_id }}"
@@ -555,6 +557,7 @@ jobs:
             echo "  SHA        : ${{ needs.validate-inputs.outputs.commit_sha }}"
             echo "  Web App    : ${{ needs.provision-webapp.outputs.app_service_url }}"
             echo "  Plan       : ${{ env.APP_SERVICE_PLAN }} (reused, not created)"
+            echo "  Plan ResID : ${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
             echo "  Plan RG    : ${{ env.APP_SERVICE_PLAN_RG }}"
             echo "  WebApp RG  : ${{ env.WEBAPP_RESOURCE_GROUP }}"
             echo "  OIDC       : PASS (FIC reutilizada)"

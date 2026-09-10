@@ -44,7 +44,7 @@ env:
   WEBAPP_RESOURCE_GROUP: RG-Hermes-Proyectos
   LOCATION: eastus
   RUNTIME: 'PYTHON:3.12'
-  STARTUP_COMMAND: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
+  STARTUP_COMMAND: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app'
 
 jobs:
   # ==================================================================
@@ -297,11 +297,6 @@ jobs:
               --plan "${PLAN_ID}" \
               --runtime "${RUNTIME}" \
               --output none
-            az webapp config set \
-              --name "${APP_NAME}" \
-              --resource-group "${RG}" \
-              --startup-file "${STARTUP}" \
-              --output none
             echo "webapp_created=true" >> $GITHUB_ENV
             echo "Web App created successfully"
           else
@@ -309,6 +304,15 @@ jobs:
             echo "${EXISTING}"
             echo "webapp_created=false" >> $GITHUB_ENV
           fi
+
+          # ALWAYS set startup command (create or reuse)
+          echo "Setting startup command: ${STARTUP}"
+          az webapp config set \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --startup-file "${STARTUP}" \
+            --output none
+          echo "Startup command applied"
 
           RESULT=$(az webapp show \
             --name "${APP_NAME}" \

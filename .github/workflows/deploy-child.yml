@@ -312,12 +312,13 @@ jobs:
           #   - pip install -r requirements.txt
           #   - Database initialization
           #   - uvicorn backend.main:app (correct module path)
-          echo "Clearing any previously set startup command..."
-          az rest --method PATCH \
-            --uri "https://management.azure.com/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/${RG}/providers/Microsoft.Web/sites/${APP_NAME}/config/web?api-version=2022-09-01" \
-            --body '{"properties":{"appCommandLine":""}}' \
+          echo "Setting startup command to startup.sh..."
+          az webapp config set \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --startup-file "startup.sh" \
             --output none 2>/dev/null || true
-          echo "Startup command: cleared — auto-detect enabled"
+          echo "Startup command set to: startup.sh"
 
           RESULT=$(az webapp show \
             --name "${APP_NAME}" \
@@ -397,12 +398,27 @@ jobs:
             --src-path deploy.zip \
             --type zip \
             --clean true \
+            --restart true \
             --output none
           echo "=== Deployment Complete ==="
           echo "App          : ${{ needs.validate-inputs.outputs.app_service_name }}"
           echo "SHA          : ${{ needs.validate-inputs.outputs.commit_sha }}"
-          echo "Method       : az webapp deploy"
-          echo "Package      : deploy.zip (contents at wwwroot root)"
+
+          # Set explicit startup command so container runs uvicorn with correct app path
+          echo "=== Setting startup command ==="
+          az webapp config set \
+            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
+            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
+            --startup-file "startup.sh" \
+            --output none
+          echo "Startup command set to: startup.sh"
+
+          echo "=== Restarting web app ==="
+          az webapp restart \
+            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
+            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }}
+          echo "Restart initiated"
+
           echo "deploy_result=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================

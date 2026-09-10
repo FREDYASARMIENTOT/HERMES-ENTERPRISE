@@ -70,7 +70,10 @@ try {
     # ===== 3. Register Project =====
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Workspace" -Estado "OK" -Detalle $ProjRoot
 
-    # ===== 4. Render Templates =====
+    # ===== 4. Read Azure Config (early, needed for template placeholders) =====
+    $azureConfig = Read-AzureConfiguration -ConfigPath $AzureConfigPath
+
+    # ===== 5. Render Templates =====
     Write-Step "Backend" "START" "Creating project files"
     $tmplSrc = Join-Path $HermesRoot "tools/Templates/backend"
     Copy-Item "$tmplSrc/requirements.txt" $ProjRoot -Force -ErrorAction SilentlyContinue
@@ -86,12 +89,10 @@ try {
     # Create CI workflow
     $ciYml = Get-Content (Join-Path $HermesRoot "tools/Templates/github/ci.yml") -Raw
     $ciYml = $ciYml -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto
-    # Create CD workflow (with OIDC authentication)
-    $deployYml = Get-Content (Join-Path $HermesRoot "tools/Templates/github/deploy.yml") -Raw
-    $deployYml = $deployYml -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto -replace '\{\{WEBAPP_NAME\}\}',$WebAppName
+    # Create CI workflow only (CD is orchestrated by HERMES-ENTERPRISE deploy-child.yml)
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot ".github/workflows") -Force | Out-Null
     $ciYml | Out-File (Join-Path $ProjRoot ".github/workflows/ci.yml") -Encoding utf8
-    $deployYml | Out-File (Join-Path $ProjRoot ".github/workflows/deploy.yml") -Encoding utf8
+    # Note: No deploy.yml for child repos. Deployment orchestrated by Control Plane.
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot "templates") -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot "static") -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot "data") -Force | Out-Null
@@ -103,24 +104,24 @@ try {
     Write-Step "Backend" "OK" "Project files created"
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Build" -Estado "OK"
 
-    # ===== 5. Create Landing =====
+    # ===== 6. Create Landing =====
     Write-Step "Landing" "START" "Creating landing page"
     New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto -WebAppName $WebAppName | Out-Null
     Write-Step "Landing" "OK" "Landing page created"
 
-    # ===== 6. Create Workspace File =====
+    # ===== 7. Create Workspace File =====
     Write-Step "WorkspaceFile" "START" "Creating workspace file"
     New-ProyectoWorkspaceFile -ProjectName $NombreProyecto -OutputDir $ProjRoot | Out-Null
     Write-Step "WorkspaceFile" "OK" "Workspace file created"
 
-    # ===== 7. Initialize Git =====
+    # ===== 8. Initialize Git =====
     Write-Step "Git" "START" "Initializing Git"
     $gitResult = Initialize-ProyectoGit -ProjectDir $ProjRoot -BranchName "main"
     $gitDuration = if ($gitResult.GetType().Name -eq "Hashtable" -and $gitResult.ContainsKey("Duration")) { $gitResult.Duration } else { 0 }
     Write-Step "Git" "OK" "Repository initialized"
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Git" -Estado "OK" -Duracion $gitDuration
 
-    # ===== 8. First Commit =====
+    # ===== 9. First Commit =====
     Write-Step "Commit" "START" "Creating initial commit"
     New-ProyectoGitCommit -ProjectDir $ProjRoot -Message "RC74-C - Initial commit: $NombreProyecto" | Out-Null
     $TotalCommits++
@@ -128,7 +129,7 @@ try {
     Write-Step "Commit" "OK" "Commit #$TotalCommits created"
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Commit" -Estado "OK"
 
-    # ===== 9. Create GitHub Repository =====
+    # ===== 10. Create GitHub Repository =====
     Write-Step "GitHub" "START" "Creating GitHub repository"
     $ghResult = Initialize-ProyectoGitHubRepo -ProjectName $NombreProyecto -ProjectDir $ProjRoot -Description "Sistema Analitico de Encuestas de Percepcion de Servicios - Universidad del Rosario" -Visibility "private"
     Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Repositorio=$ghResult.RepoName;EstadoGitHub="CREADO"}
@@ -183,11 +184,7 @@ try {
         Write-Warning "[OIDC] OIDC setup incomplete: $_"
     }
 
-    # ===== 12. Read Azure Config =====
-    Write-Step "AzureConfig" "START" "Reading Azure configuration"
-    $azureConfig = Read-AzureConfiguration -ConfigPath $AzureConfigPath
-
-    # ===== 13. Validate Infrastructure =====
+    # ===== 12. Validate Infrastructure =====
     Write-Step "Guardian" "START" "Validating infrastructure protection"
     $guardianState = Test-GuardianRestrictions -ConfigPath $GuardianConfigPath
     Assert-ProyectoSafeToProceed -Operation "CreateWebApp" -GuardianState $guardianState | Out-Null
@@ -196,7 +193,7 @@ try {
     $azureValidation = Validate-AzureInfrastructure -AzureConfig $azureConfig
     Write-Step "Azure" "OK" "All infrastructure resources validated"
 
-    # ===== 14. Create WebApp Only =====
+    # ===== 13. Create WebApp Only =====
     Write-Step "WebApp" "START" "Creating Web App: $WebAppName"
     $webApp = New-ProyectoWebApp -WebAppName $WebAppName -AzureConfig $azureConfig
     Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{UrlPublica=$webApp.Url;EstadoAzure="CREADO"}

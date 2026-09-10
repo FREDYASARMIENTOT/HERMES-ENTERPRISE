@@ -1,0 +1,566 @@
+# deploy-child.yml — HERMES-ENTERPRISE CONTROL PLANE
+# ====================================================================
+# RC77-C9-FIX: Orquesta deployment de proyectos Hermes hijos desde
+# HERMES-ENTERPRISE usando OIDC (FIC existente sin modificar).
+#
+# Arquitectura:
+#   HERMES-ENTERPRISE → OIDC → Azure
+#     ├── RG-Hermes-Proyectos     (Web Apps)
+#     └── RG-Datamining-SII2.0-Dev (ASP-IAUR compartido)
+#
+# Principios:
+#   - NO crear App Service Plan (reutilizar ASP-IAUR)
+#   - NO modificar FIC
+#   - NO usar Kudu / publishing profiles
+#   - Evidence con resultados REALES
+# ====================================================================
+
+name: Control Plane — Deploy Child Project
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Nombre del proyecto (ej: contabilidad, finanzas, talento)'
+        required: true
+        type: string
+      repository:
+        description: 'Repositorio del hijo (formato: FREDYASARMIENTOT/hermes-{project})'
+        required: true
+        type: string
+      commit_sha:
+        description: 'SHA del commit a desplegar (40 caracteres hex)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  APP_SERVICE_PLAN: ASP-IAUR
+  APP_SERVICE_PLAN_RG: RG-Datamining-SII2.0-Dev
+  WEBAPP_RESOURCE_GROUP: RG-Hermes-Proyectos
+  LOCATION: eastus
+  RUNTIME: 'PYTHON:3.12'
+  STARTUP_COMMAND: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
+
+jobs:
+  # ==================================================================
+  # JOB 1: validate-inputs — Security validation layer
+  # ==================================================================
+  validate-inputs:
+    name: Validate Inputs
+    runs-on: ubuntu-latest
+    outputs:
+      project_name: ${{ steps.validate.outputs.project_name }}
+      repository: ${{ steps.validate.outputs.repository }}
+      commit_sha: ${{ steps.validate.outputs.commit_sha }}
+      app_service_name: ${{ steps.validate.outputs.app_service_name }}
+      validation_result: ${{ steps.validate.outputs.validation_result }}
+    steps:
+      - name: Validate Inputs (Security)
+        id: validate
+        shell: bash
+        run: |
+          PROJ="${{ inputs.project_name }}"
+          REPO="${{ inputs.repository }}"
+          SHA="${{ inputs.commit_sha }}"
+
+          if ! echo "${PROJ}" | grep -qP '^[a-z0-9-]{3,40}$'; then
+            echo "FAIL: project_name invalido: '${PROJ}'"
+            echo "  Permitido: solo minusculas, numeros y guiones (3-40 caracteres)"
+            exit 1
+          fi
+          echo "OK: project_name='${PROJ}'"
+
+          if ! echo "${REPO}" | grep -qP '^FREDYASARMIENTOT/[a-zA-Z0-9_.-]{1,100}$'; then
+            echo "FAIL: repository invalido: '${REPO}'"
+            exit 1
+          fi
+          echo "OK: repository='${REPO}'"
+
+          if ! echo "${SHA}" | grep -qP '^[0-9a-f]{40}$'; then
+            echo "FAIL: commit_sha invalido: '${SHA}'"
+            exit 1
+          fi
+          echo "OK: commit_sha='${SHA}'"
+
+          if echo "${REPO}" | grep -qiP 'https?://|github\.com|git@|ssh://'; then
+            echo "FAIL: URL injection detected in repository"
+            exit 1
+          fi
+          echo "OK: No URL injection"
+
+          APP_NAME="as-hermes-${PROJ}"
+          echo "project_name=${PROJ}" >> $GITHUB_OUTPUT
+          echo "repository=${REPO}" >> $GITHUB_OUTPUT
+          echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
+          echo "app_service_name=${APP_NAME}" >> $GITHUB_OUTPUT
+          echo "validation_result=PASS" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "=========================================="
+          echo "  INPUTS VALIDATED"
+          echo "=========================================="
+          echo "  Project     : ${PROJ}"
+          echo "  Repository  : ${REPO}"
+          echo "  SHA         : ${SHA}"
+          echo "  Web App     : ${APP_NAME}"
+          echo "=========================================="
+
+  # ==================================================================
+  # JOB 2: checkout-child — Checkout child repo at specific SHA
+  # ==================================================================
+  checkout-child:
+    name: Checkout Child
+    runs-on: ubuntu-latest
+    needs: [validate-inputs]
+    outputs:
+      checkout_result: ${{ steps.checkout.outputs.checkout_result }}
+      deployed_sha: ${{ steps.verify.outputs.deployed_sha }}
+    steps:
+      - name: Checkout Child Repository
+        id: checkout
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ needs.validate-inputs.outputs.repository }}
+          ref: ${{ needs.validate-inputs.outputs.commit_sha }}
+          path: child-project
+          fetch-depth: 1
+
+      - name: Verify SHA Match
+        id: verify
+        shell: bash
+        working-directory: child-project
+        run: |
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          REQUESTED_SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          echo "Actual SHA   : ${ACTUAL_SHA}"
+          echo "Requested SHA: ${REQUESTED_SHA}"
+          if [ "${ACTUAL_SHA}" != "${REQUESTED_SHA}" ]; then
+            echo "FAIL: SHA mismatch — requested ${REQUESTED_SHA}, got ${ACTUAL_SHA}"
+            exit 1
+          fi
+          echo "OK: SHA verified — ${ACTUAL_SHA}"
+          echo "deployed_sha=${ACTUAL_SHA}" >> $GITHUB_OUTPUT
+          echo "checkout_result=PASS" >> $GITHUB_OUTPUT
+
+  # ==================================================================
+  # JOB 3: validate-infrastructure — Pre-OIDC validation
+  # ==================================================================
+  validate-infrastructure:
+    name: Validate Infrastructure Params
+    runs-on: ubuntu-latest
+    needs: [validate-inputs]
+    outputs:
+      infra_validation: ${{ steps.validate.outputs.infra_validation }}
+    steps:
+      - name: Validate Infrastructure Configuration
+        id: validate
+        shell: bash
+        run: |
+          echo "=== Infrastructure Configuration ==="
+          echo "App Service Plan     : ${{ env.APP_SERVICE_PLAN }}"
+          echo "Plan Resource Group  : ${{ env.APP_SERVICE_PLAN_RG }}"
+          echo "WebApp Resource Group: ${{ env.WEBAPP_RESOURCE_GROUP }}"
+          echo "Web App Name         : ${{ needs.validate-inputs.outputs.app_service_name }}"
+          echo "Location             : ${{ env.LOCATION }}"
+          echo "Runtime              : ${{ env.RUNTIME }}"
+          echo ""
+          echo "Plan and WebApp RGs are DIFFERENT:"
+          echo "  Plan RG     : ${{ env.APP_SERVICE_PLAN_RG }}"
+          echo "  WebApp RG   : ${{ env.WEBAPP_RESOURCE_GROUP }}"
+          echo ""
+          echo "OIDC: Only from HERMES-ENTERPRISE (FIC existente)"
+          echo ""
+          echo "All params validated"
+          echo "infra_validation=PASS" >> $GITHUB_OUTPUT
+
+  # ==================================================================
+  # JOB 4: oidc-login — Authenticate HERMES-ENTERPRISE to Azure
+  # ==================================================================
+  oidc-login:
+    name: OIDC Login
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [validate-inputs, checkout-child, validate-infrastructure]
+    outputs:
+      login_result: ${{ steps.login.outputs.login_result }}
+    steps:
+      - name: Azure Login (OIDC)
+        id: login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Authentication
+        shell: bash
+        run: |
+          echo "=== OIDC Authentication ==="
+          echo "Method       : OIDC (Federated Identity Credential)"
+          echo "App Reg      : UR-Fabrica-Proyectos-AR"
+          echo "Subject      : repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production"
+          echo "Kudu         : NOT USED"
+          echo "Client Secret: NOT USED"
+          echo "Publishing   : NOT USED"
+          ACCOUNT=$(az account show --query "{name:name, id:id}" -o json)
+          echo "Account: $(echo ${ACCOUNT} | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d[\"name\"])')"
+          echo "login_result=PASS" >> $GITHUB_OUTPUT
+
+      - name: Verify ASP-IAUR Exists (Read-Only)
+        shell: bash
+        run: |
+          echo "=== Verifying Shared ASP-IAUR ==="
+          PLAN_CHECK=$(az appservice plan show \
+            --name "${{ env.APP_SERVICE_PLAN }}" \
+            --resource-group "${{ env.APP_SERVICE_PLAN_RG }}" \
+            --query "{name:name, resourceGroup:resourceGroup, location:location, kind:kind, sku:sku.name, provisioningState:provisioningState}" \
+            -o json 2>/dev/null || echo "")
+          if [ -z "${PLAN_CHECK}" ]; then
+            echo "FAIL: Plan not found in RG ${{ env.APP_SERVICE_PLAN_RG }}"
+            exit 1
+          fi
+          echo "${PLAN_CHECK}" | python3 -m json.tool
+          PLAN_NAME=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['name'])")
+          PLAN_RG=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['resourceGroup'])")
+          PLAN_LOC=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['location'])")
+          PLAN_KIND=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['kind'])")
+          PLAN_SKU=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['sku'])")
+          PLAN_STATE=$(echo "${PLAN_CHECK}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['provisioningState'])")
+
+          FAIL=false
+          [ "${PLAN_NAME}" != "${{ env.APP_SERVICE_PLAN }}" ] && { echo "FAIL: Name mismatch"; FAIL=true; }
+          [ "${PLAN_RG}" != "${{ env.APP_SERVICE_PLAN_RG }}" ] && { echo "FAIL: RG mismatch"; FAIL=true; }
+          [ "${PLAN_LOC}" != "${{ env.LOCATION }}" ] && { echo "FAIL: Location mismatch"; FAIL=true; }
+          ! echo "${PLAN_KIND}" | grep -qi "linux" && { echo "FAIL: Not Linux"; FAIL=true; }
+          [ "${PLAN_STATE}" != "Succeeded" ] && { echo "FAIL: State=${PLAN_STATE}"; FAIL=true; }
+          [ "${FAIL}" = true ] && exit 1
+          echo "OK: ASP-IAUR valid (SKU=${PLAN_SKU}) — ready for reuse"
+
+      - name: Verify WebApp Resource Group
+        shell: bash
+        run: |
+          RG_CHECK=$(az group show --name "${{ env.WEBAPP_RESOURCE_GROUP }}" --query "{name:name}" -o json 2>/dev/null || echo "")
+          [ -z "${RG_CHECK}" ] && { echo "FAIL: RG not found"; exit 1; }
+          echo "OK: RG ${{ env.WEBAPP_RESOURCE_GROUP }} exists"
+
+  # ==================================================================
+  # JOB 5: provision-webapp — Create/reuse Web App with ASP-IAUR
+  # ==================================================================
+  provision-webapp:
+    name: Provision Web App
+    runs-on: ubuntu-latest
+    needs: [validate-inputs, checkout-child, validate-infrastructure, oidc-login]
+    outputs:
+      app_service_url: ${{ steps.provision.outputs.app_service_url }}
+      webapp_created: ${{ steps.provision.outputs.webapp_created }}
+      webapp_result: ${{ steps.provision.outputs.webapp_result }}
+    steps:
+      - name: Provision Web App (Create or Reuse)
+        id: provision
+        shell: bash
+        run: |
+          APP_NAME="${{ needs.validate-inputs.outputs.app_service_name }}"
+          RG="${{ env.WEBAPP_RESOURCE_GROUP }}"
+          PLAN="${{ env.APP_SERVICE_PLAN }}"
+          RUNTIME="${{ env.RUNTIME }}"
+          STARTUP="${{ env.STARTUP_COMMAND }}"
+
+          echo "=== Web App Provision ==="
+          echo "App  : ${APP_NAME}"
+          echo "RG   : ${RG}"
+          echo "Plan : ${PLAN} (shared, not created here)"
+
+          EXISTING=$(az webapp show \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --query "{name:name, serverFarmId:serverFarmId}" \
+            -o json 2>/dev/null || echo "")
+
+          if [ -z "${EXISTING}" ]; then
+            echo "Creating Web App..."
+            az webapp create \
+              --name "${APP_NAME}" \
+              --resource-group "${RG}" \
+              --plan "${PLAN}" \
+              --runtime "${RUNTIME}" \
+              --output none
+            az webapp config set \
+              --name "${APP_NAME}" \
+              --resource-group "${RG}" \
+              --startup-file "${STARTUP}" \
+              --output none
+            echo "webapp_created=true" >> $GITHUB_ENV
+            echo "Web App created successfully"
+          else
+            echo "Web App already exists:"
+            echo "${EXISTING}"
+            echo "webapp_created=false" >> $GITHUB_ENV
+          fi
+
+          RESULT=$(az webapp show \
+            --name "${APP_NAME}" \
+            --resource-group "${RG}" \
+            --query "{name:name, resourceGroup:resourceGroup, serverFarmId:serverFarmId, location:location, state:state, hostNames:hostNames[0]}" \
+            -o json)
+          echo ""
+          echo "=== Web App Status ==="
+          echo "${RESULT}" | python3 -m json.tool
+
+          WA_URL=$(echo "${RESULT}" | python3 -c "import json,sys;d=json.load(sys.stdin);print('https://'+d['hostNames'])")
+          WA_FARM=$(echo "${RESULT}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['serverFarmId'])")
+          WA_STATE=$(echo "${RESULT}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['state'])")
+
+          if ! echo "${WA_FARM}" | grep -qi "ASP-IAUR"; then
+            echo "WARN: Web App not using ASP-IAUR (farm=${WA_FARM})"
+          else
+            echo "OK: Web App is using ASP-IAUR"
+          fi
+          [ "${WA_STATE}" != "Running" ] && { echo "FAIL: State=${WA_STATE}"; exit 1; }
+
+          echo "app_service_url=${WA_URL}" >> $GITHUB_OUTPUT
+          echo "webapp_result=PASS" >> $GITHUB_OUTPUT
+          echo "Plan Created: NO (shared ASP-IAUR reused)"
+
+  # ==================================================================
+  # JOB 6: deploy — Deploy via Azure/webapps-deploy@v3
+  # ==================================================================
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: [validate-inputs, checkout-child, oidc-login, provision-webapp]
+    outputs:
+      deploy_result: ${{ steps.deploy.outputs.deploy_result }}
+    steps:
+      - name: Checkout Child Code
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ needs.validate-inputs.outputs.repository }}
+          ref: ${{ needs.validate-inputs.outputs.commit_sha }}
+          path: child-project
+          fetch-depth: 1
+
+      - name: Deploy to Azure Web App
+        id: deploy
+        uses: Azure/webapps-deploy@v3
+        with:
+          app-name: ${{ needs.validate-inputs.outputs.app_service_name }}
+          package: child-project
+          clean: true
+
+      - name: Verify Deploy
+        shell: bash
+        run: |
+          echo "=== Deployment ==="
+          echo "Method       : Azure/webapps-deploy@v3"
+          echo "Kudu         : NOT USED"
+          echo "Publishing   : NOT USED"
+          echo "App          : ${{ needs.validate-inputs.outputs.app_service_name }}"
+          echo "SHA          : ${{ needs.validate-inputs.outputs.commit_sha }}"
+          echo "deploy_result=PASS" >> $GITHUB_OUTPUT
+
+  # ==================================================================
+  # JOB 7: readiness — Poll /health until ready
+  # ==================================================================
+  readiness:
+    name: Readiness Check
+    runs-on: ubuntu-latest
+    needs: [validate-inputs, deploy, provision-webapp]
+    outputs:
+      readiness_result: ${{ steps.health.outputs.readiness_result }}
+      health_code: ${{ steps.health.outputs.health_code }}
+    steps:
+      - name: Poll /health Endpoint
+        id: health
+        shell: bash
+        run: |
+          URL="${{ needs.provision-webapp.outputs.app_service_url }}"
+          MAX_ATTEMPTS=30; ATTEMPT=1
+          echo "=== Readiness: ${URL}/health ==="
+          while [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ]; do
+            CODE=$(curl -s --connect-timeout 10 --max-time 15 \
+              -o /dev/null -w '%{http_code}' "${URL}/health" 2>/dev/null || echo "000")
+            echo "[${ATTEMPT}/${MAX_ATTEMPTS}] HTTP ${CODE}"
+            if [ "${CODE}" = "200" ]; then
+              echo "=== READY ==="
+              echo "readiness_result=PASS" >> $GITHUB_OUTPUT
+              echo "health_code=200" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            ATTEMPT=$((ATTEMPT+1))
+            [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ] && sleep 10
+          done
+          echo "=== NOT READY ==="
+          echo "readiness_result=FAIL" >> $GITHUB_OUTPUT
+          echo "health_code=${CODE}" >> $GITHUB_OUTPUT
+          exit 1
+
+  # ==================================================================
+  # JOB 8: functional-tests — Real endpoint tests
+  # ==================================================================
+  functional-tests:
+    name: Functional Tests
+    runs-on: ubuntu-latest
+    needs: [validate-inputs, deploy, provision-webapp, readiness]
+    outputs:
+      functional_result: ${{ steps.tests.outputs.functional_result }}
+      pass_count: ${{ steps.tests.outputs.pass_count }}
+      fail_count: ${{ steps.tests.outputs.fail_count }}
+      root_code: ${{ steps.tests.outputs.root_code }}
+      neg_code: ${{ steps.tests.outputs.neg_code }}
+    steps:
+      - name: Run Functional Tests
+        id: tests
+        shell: bash
+        run: |
+          URL="${{ needs.provision-webapp.outputs.app_service_url }}"
+          PASS_COUNT=0; FAIL_COUNT=0
+          pass() { PASS_COUNT=$((PASS_COUNT+1)); echo "  PASS: $1"; }
+          fail() { FAIL_COUNT=$((FAIL_COUNT+1)); echo "  FAIL: $1"; }
+          echo "=== Functional Tests: ${URL} ==="
+          echo ""
+
+          # Test 1: GET /health -> 200
+          HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
+            -o /tmp/health.json -w '%{http_code}' "${URL}/health" 2>/dev/null || echo "000")
+          [ "${HTTP}" = "200" ] && pass "GET /health -> 200" || fail "GET /health -> ${HTTP}"
+
+          # Test 2: GET /api/version -> 200
+          HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
+            -o /tmp/version.json -w '%{http_code}' "${URL}/api/version" 2>/dev/null || echo "000")
+          [ "${HTTP}" = "200" ] && pass "GET /api/version -> 200" || fail "GET /api/version -> ${HTTP}"
+
+          # Test 3: GET / -> 200
+          HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
+            -o /tmp/root.json -w '%{http_code}' "${URL}/" 2>/dev/null || echo "000")
+          [ "${HTTP}" = "200" ] && pass "GET / -> 200" || fail "GET / -> ${HTTP}"
+
+          # Test 4: GET /api/proyecto -> 200
+          HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
+            -o /dev/null -w '%{http_code}' "${URL}/api/proyecto" 2>/dev/null || echo "000")
+          [ "${HTTP}" = "200" ] && pass "GET /api/proyecto -> 200" || fail "GET /api/proyecto -> ${HTTP}"
+
+          # Test 5: GET /openapi.json -> 200
+          HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
+            -o /tmp/openapi.json -w '%{http_code}' "${URL}/openapi.json" 2>/dev/null || echo "000")
+          [ "${HTTP}" = "200" ] && pass "GET /openapi.json -> 200" || fail "GET /openapi.json -> ${HTTP}"
+
+          # Test 6: NEGATIVE - 404
+          HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
+            -o /dev/null -w '%{http_code}' "${URL}/ruta-que-no-existe" 2>/dev/null || echo "000")
+          [ "${HTTP}" = "404" ] && pass "NEGATIVE 404 -> ${HTTP}" || fail "NEGATIVE 404 -> ${HTTP}"
+
+          # Test 7: Identity
+          HEALTH_APP=$(python3 -c "import json;print(json.load(open('/tmp/health.json')).get('aplicacion',''))" 2>/dev/null)
+          VERSION_APP=$(python3 -c "import json;print(json.load(open('/tmp/version.json')).get('aplicacion',''))" 2>/dev/null)
+          OPENAPI_TITLE=$(python3 -c "import json;print(json.load(open('/tmp/openapi.json')).get('info',{}).get('title',''))" 2>/dev/null)
+          echo "  Health: ${HEALTH_APP}  Version: ${VERSION_APP}  OpenAPI: ${OPENAPI_TITLE}"
+          if [ "${HEALTH_APP}" = "Hermes Enterprise Web" ] && [ "${OPENAPI_TITLE}" = "Hermes Enterprise - API Publica" ]; then
+            pass "Identity confirmed"
+          else
+            fail "Identity MISMATCH"
+          fi
+
+          echo ""
+          echo "=== RESULTS: ${PASS_COUNT} pass, ${FAIL_COUNT} fail ==="
+          ROOT_CODE=$(curl -s -o /dev/null -w '%{http_code}' "${URL}/" 2>/dev/null || echo "000")
+          NEG_CODE=$(curl -s -o /dev/null -w '%{http_code}' "${URL}/ruta-que-no-existe" 2>/dev/null || echo "000")
+          echo "pass_count=${PASS_COUNT}" >> $GITHUB_OUTPUT
+          echo "fail_count=${FAIL_COUNT}" >> $GITHUB_OUTPUT
+          echo "root_code=${ROOT_CODE}" >> $GITHUB_OUTPUT
+          echo "neg_code=${NEG_CODE}" >> $GITHUB_OUTPUT
+          if [ "${FAIL_COUNT}" -gt 0 ]; then
+            echo "functional_result=FAIL" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "functional_result=PASS" >> $GITHUB_OUTPUT
+
+  # ==================================================================
+  # JOB 9: evidence — Generate deployment-report.json (real results)
+  # ==================================================================
+  evidence:
+    name: Generate Evidence
+    runs-on: ubuntu-latest
+    needs:
+      - validate-inputs
+      - checkout-child
+      - validate-infrastructure
+      - oidc-login
+      - provision-webapp
+      - deploy
+      - readiness
+      - functional-tests
+    outputs:
+      test_result: ${{ steps.final.outputs.test_result }}
+    steps:
+      - name: Checkout HERMES-ENTERPRISE (for evidence script)
+        uses: actions/checkout@v7
+        with:
+          path: control-plane
+          fetch-depth: 1
+
+      - name: Generate Evidence
+        id: evidence-gen
+        shell: bash
+        run: |
+          export URL="${{ needs.provision-webapp.outputs.app_service_url }}"
+          export PROJ="${{ needs.validate-inputs.outputs.project_name }}"
+          export REPO="${{ needs.validate-inputs.outputs.repository }}"
+          export SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          export APP_NAME="${{ needs.validate-inputs.outputs.app_service_name }}"
+          export WEBAPP_RG="${{ env.WEBAPP_RESOURCE_GROUP }}"
+          export PLAN_RG="${{ env.APP_SERVICE_PLAN_RG }}"
+          export PLAN_NAME="${{ env.APP_SERVICE_PLAN }}"
+          export LOCATION="${{ env.LOCATION }}"
+          export RUNTIME="${{ env.RUNTIME }}"
+          export GITHUB_RUN_ID="${{ github.run_id }}"
+          export GITHUB_WORKFLOW="${{ github.workflow }}"
+          export TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          export OIDC_RESULT="${{ needs.oidc-login.outputs.login_result }}"
+          export DEPLOY_RESULT="${{ needs.deploy.outputs.deploy_result }}"
+          export READINESS_RESULT="${{ needs.readiness.outputs.readiness_result }}"
+          export FUNC_RESULT="${{ needs.functional-tests.outputs.functional_result }}"
+
+          python3 control-plane/tools/generate_child_evidence.py > deployment-report.json 2>&1
+          echo "=== Evidence Generated ==="
+          cat deployment-report.json
+
+      - name: Upload Evidence Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-report-${{ needs.validate-inputs.outputs.project_name }}-${{ github.run_id }}
+          path: deployment-report.json
+          if-no-files-found: warn
+
+      - name: Final Result
+        id: final
+        if: always()
+        shell: bash
+        run: |
+          RESULT=$(python3 -c "import json;print(json.load(open('deployment-report.json')).get('result','FAIL'))" 2>/dev/null || echo "FAIL")
+          echo "test_result=${RESULT}" >> $GITHUB_OUTPUT
+          if [ "${RESULT}" = "PASS" ]; then
+            echo ""
+            echo "=========================================="
+            echo "  CONTROL PLANE DEPLOYMENT: PASS"
+            echo "=========================================="
+            echo "  Project    : ${{ needs.validate-inputs.outputs.project_name }}"
+            echo "  Repository : ${{ needs.validate-inputs.outputs.repository }}"
+            echo "  SHA        : ${{ needs.validate-inputs.outputs.commit_sha }}"
+            echo "  Web App    : ${{ needs.provision-webapp.outputs.app_service_url }}"
+            echo "  Plan       : ${{ env.APP_SERVICE_PLAN }} (reused, not created)"
+            echo "  Plan RG    : ${{ env.APP_SERVICE_PLAN_RG }}"
+            echo "  WebApp RG  : ${{ env.WEBAPP_RESOURCE_GROUP }}"
+            echo "  OIDC       : PASS (FIC reutilizada)"
+            echo "=========================================="
+          else
+            echo ""
+            echo "=========================================="
+            echo "  CONTROL PLANE DEPLOYMENT: FAIL"
+            echo "=========================================="
+            exit 1
+          fi

@@ -128,6 +128,7 @@ jobs:
           ref: ${{ needs.validate-inputs.outputs.commit_sha }}
           path: child-project
           fetch-depth: 1
+          token: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
 
       - name: Verify SHA Match
         id: verify

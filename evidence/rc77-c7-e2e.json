@@ -1,0 +1,57 @@
+{
+  "generation_command": "Crear-HermesProyecto.ps1 (via RC77-C7-Factory.ps1)",
+  "commit": "1be18d1fba4ee5d9a18a66c71f761695992c1ecd",
+  "overall_status": "PASS",
+  "tests": [
+    {
+      "status": "PASS",
+      "expected": 200,
+      "endpoint": "/",
+      "name": "Root",
+      "actual": 200
+    },
+    {
+      "status": "PASS",
+      "expected": 200,
+      "endpoint": "/health",
+      "name": "Health",
+      "actual": 200
+    },
+    {
+      "status": "PASS",
+      "expected": 200,
+      "endpoint": "/api/version",
+      "name": "Version",
+      "actual": 200
+    },
+    {
+      "status": "PASS",
+      "expected": 200,
+      "endpoint": "/api/proyecto",
+      "name": "Proyecto",
+      "actual": 200
+    },
+    {
+      "status": "PASS",
+      "expected": 200,
+      "endpoint": "/openapi.json",
+      "name": "OpenAPI",
+      "actual": 200
+    },
+    {
+      "status": "PASS",
+      "expected": 404,
+      "endpoint": "/api/this-endpoint-must-not-exist",
+      "name": "Adversarial404",
+      "actual": 404
+    }
+  ],
+  "timestamp": "2026-09-09T22:31:34Z",
+  "url": "https://as-rc77c7e2e0909.azurewebsites.net",
+  "pass_count": 6,
+  "workflow_run": "N/A (deployed via Azure CLI + Kudu REST)",
+  "correlation_id": "501B63EEA9F44E0D",
+  "fail_count": 0,
+  "app_service": "as-rc77c7e2e0909",
+  "project": "rc77-c7-e2e-0909"
+}

@@ -19,6 +19,7 @@ import time
 import logging
 import subprocess
 import platform
+import importlib.abc
 import importlib.util
 from datetime import datetime, timezone
 from pathlib import Path

@@ -38,12 +38,13 @@ on:
       runtime:
         description: 'Runtime stack'
         required: false
-        default: 'PYTHON:3.11'
+        default: 'PYTHON:3.12'
         type: choice
         options:
           - 'PYTHON:3.11'
           - 'PYTHON:3.12'
-          - 'NODE:20-lts'
+          - 'PYTHON:3.13'
+          - 'NODE:22-lts'
 
 env:
   RESOURCE_GROUP: RG-Hermes-Proyectos
@@ -232,7 +233,7 @@ jobs:
           az webapp config set \
             --name "${APP_NAME}" \
             --resource-group "${RG}" \
-            --startup-file 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app' \
+            --startup-file 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app' \
             --output none
 
           echo "Startup command configurado correctamente"

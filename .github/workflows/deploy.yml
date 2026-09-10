@@ -111,7 +111,7 @@ jobs:
           slot-name: production
           package: .
           clean: true
-          startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
+          startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app'
 
       - name: Record deployment artifact
         run: |
@@ -125,7 +125,7 @@ jobs:
           APP_NAME="as-${{ env.PROJECT_NAME }}"
           RG="RG-Hermes-Proyectos"
           ACTUAL=$(az webapp config show --name "${APP_NAME}" --resource-group "${RG}" --query "appCommandLine" -o tsv 2>&1)
-          EXPECTED='gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker Hermes.Web.backend.main:app'
+          EXPECTED='gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app'
           echo "Expected: ${EXPECTED}"
           echo "Actual:   ${ACTUAL}"
           if [ "${ACTUAL}" = "${EXPECTED}" ]; then
@@ -158,10 +158,10 @@ jobs:
           ATTEMPT=1
           while [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ]; do
             echo "[${ATTEMPT}/${MAX_ATTEMPTS}] Checking ${URL}/health ..."
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${URL}/health" 2>/dev/null || echo "000")
+            HTTP_CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "${URL}/health" 2>/dev/null || echo "000")
             if [ "${HTTP_CODE}" = "200" ]; then
               echo "App Service is READY (HTTP 200)"
-              curl -s "${URL}/health" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'  app={d.get(\"aplicacion\",\"?\")}, estado={d.get(\"estado\",\"?\")}')" 2>/dev/null || true
+              curl -s --connect-timeout 10 --max-time 15 "${URL}/health" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'  app={d.get(\"aplicacion\",\"?\")}, estado={d.get(\"estado\",\"?\")}')" 2>/dev/null || true
               break
             fi
             echo "  HTTP ${HTTP_CODE} — waiting 10s..."
@@ -209,8 +209,8 @@ jobs:
 
           # ── Test 1: HTTP Status Codes ──
           echo "--- [1/6] HTTP Status Codes ---"
-          for EP in "/health" "/api/version" "/api/proyecto" "/" "/openapi.json"; do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL$EP")
+          for EP in "/health" "/api/version" "/api/proyecto" "/openapi.json"; do
+            CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL$EP")
             if [ "$CODE" -eq 200 ]; then
               pass "GET $EP -> 200"
             else
@@ -218,9 +218,27 @@ jobs:
             fi
           done
 
+          # Test GET / with content validation (detect Azure default page)
+          ROOT_CONTENT=$(curl -s --connect-timeout 10 --max-time 15 "$URL/")
+          ROOT_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/")
+          if [ "$ROOT_CODE" -eq 200 ]; then
+            if echo "$ROOT_CONTENT" | grep -q "Hermes"; then
+              pass "GET / -> 200 with Hermes content"
+            else
+              # Check for Azure default page markers
+              if echo "$ROOT_CONTENT" | grep -q "Azure App Service\|Microsoft Azure\|Default Web Site"; then
+                fail "GET / -> 200 but content is Azure default page (application not deployed)"
+              else
+                fail "GET / -> 200 but content is NOT Hermes (unknown page)"
+              fi
+            fi
+          else
+            fail "GET / -> $ROOT_CODE (expected 200)"
+          fi
+
           # ── Test 2: Adversarial 404 ──
           echo "--- [2/6] Adversarial 404 (expect 404) ---"
-          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/nonexistent-endpoint-xyz")
+          CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL/api/nonexistent-endpoint-xyz")
           if [ "$CODE" -eq 404 ]; then
             pass "adversarial GET /api/nonexistent -> 404 (expected)"
           else
@@ -229,7 +247,7 @@ jobs:
 
           # ── Test 3: Health JSON Schema ──
           echo "--- [3/6] Health JSON Schema ---"
-          HEALTH=$(curl -s "$URL/health")
+          HEALTH=$(curl -s --connect-timeout 10 --max-time 15 "$URL/health")
           if echo "$HEALTH" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('estado')=='saludable'; assert 'aplicacion' in d; assert 'version' in d; assert 'timestamp' in d; assert 'python_version' in d; print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\"]}')" 2>&1; then
             pass "health JSON schema: estado=saludable"
           else
@@ -238,7 +256,7 @@ jobs:
 
           # ── Test 4: Version JSON Schema ──
           echo "--- [4/6] Version JSON Schema ---"
-          VERSION=$(curl -s "$URL/api/version")
+          VERSION=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/version")
           if echo "$VERSION" | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'version' in d; assert 'aplicacion' in d; assert d['aplicacion']=='Hermes Enterprise'; assert 'commit' in d; print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}')" 2>&1; then
             pass "version JSON schema: aplicacion=Hermes Enterprise"
           else
@@ -247,7 +265,7 @@ jobs:
 
           # ── Test 5: Proyecto JSON Schema ──
           echo "--- [5/6] Proyecto JSON Schema ---"
-          PROYECTO=$(curl -s "$URL/api/proyecto")
+          PROYECTO=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/proyecto")
           if echo "$PROYECTO" | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'proyecto' in d; assert d['proyecto']=='Hermes Enterprise'; assert 'estado' in d; print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')" 2>&1; then
             pass "proyecto JSON schema: proyecto=Hermes Enterprise"
           else
@@ -256,9 +274,9 @@ jobs:
 
           # ── Test 6: OpenAPI Contract Validation ──
           echo "--- [6/6] OpenAPI Contract Validation ---"
-          OPENAPI=$(curl -s "$URL/openapi.json")
-          if echo "$OPENAPI" | python3 -c "import json,sys;spec=json.load(sys.stdin);paths=spec.get('paths',{});title=spec.get('info',{}).get('title','');print(f'  OpenAPI title: {title}');print(f'  OpenAPI paths: {len(paths)}');required=['/health','/api/version','/api/proyecto','/'];missing=[p for p in required if p not in paths];print(f'  All required paths present: {len(missing)==0}');exit(0) if (len(missing)==0 and 'Hermes' in title) else exit(1)" 2>&1; then
-            pass "OpenAPI contract: all required paths present"
+          OPENAPI=$(curl -s --connect-timeout 10 --max-time 15 "$URL/openapi.json")
+          if echo "$OPENAPI" | python3 -c "import json,sys;spec=json.load(sys.stdin);paths=spec.get('paths',{});title=spec.get('info',{}).get('title','');print(f'  OpenAPI title: {title}');print(f'  OpenAPI paths: {len(paths)}');required=['/health','/api/version','/api/proyecto','/'];missing=[p for p in required if p not in paths];print(f'  All required paths present: {len(missing)==0}');exit(0) if (len(missing)==0 and title=='Hermes Enterprise - API Publica') else exit(1)" 2>&1; then
+            pass "OpenAPI contract: title='Hermes Enterprise - API Publica', all required paths present"
           else
             fail "OpenAPI validation failed"
           fi
@@ -278,8 +296,8 @@ jobs:
           echo "  Version aplicacion: ${VERSION_APP}"
           echo "  OpenAPI title: ${OPENAPI_TITLE}"
           echo "  Python version: ${PYTHON_VER}"
-          if [ "${HEALTH_APP}" = "Hermes Enterprise Web" ] && [ "${VERSION_APP}" = "Hermes Enterprise" ] && echo "${OPENAPI_TITLE}" | grep -q "Hermes"; then
-            pass "Identity confirmed: ${HEALTH_APP} / ${VERSION_APP} / ${OPENAPI_TITLE}"
+          if [ "${HEALTH_APP}" = "Hermes Enterprise Web" ] && [ "${VERSION_APP}" = "Hermes Enterprise" ] && [ "${OPENAPI_TITLE}" = "Hermes Enterprise - API Publica" ]; then
+            pass "Identity confirmed: health='${HEALTH_APP}' version='${VERSION_APP}' openapi='${OPENAPI_TITLE}'"
           else
             fail "Identity MISMATCH: health=${HEALTH_APP}, version=${VERSION_APP}, openapi=${OPENAPI_TITLE}"
           fi
@@ -289,11 +307,21 @@ jobs:
           echo "  RESULTS: $PASS_COUNT passed, $FAIL_COUNT failed"
           echo "=========================================="
 
-          # Save evidence JSON (enhanced)
-          EVIDENCE="${RUNNER_TEMP}/rc77c5-evidence.json"
-          python3 -c "import json,sys; json.dump({'rc':'RC77-C5','result':'PASS','pass_count':$PASS_COUNT,'fail_count':$FAIL_COUNT,'correlation_id':'$CORR_ID','project':'$PROJECT_NAME','url':'$URL','commit':'$GITHUB_SHA','run_id':'$GITHUB_RUN_ID','timestamp':'$(date -u +'%Y-%m-%dT%H:%M:%SZ')','identity':{'health_aplicacion':'${HEALTH_APP}','version_aplicacion':'${VERSION_APP}','openapi_title':'${OPENAPI_TITLE}','python_version':'${PYTHON_VER}'},'tests':[{'name':'HTTP Status (5 endpoints)','result':'PASS'},{'name':'Adversarial 404','result':'PASS'},{'name':'Health JSON Schema','result':'PASS'},{'name':'Version JSON Schema','result':'PASS'},{'name':'Proyecto JSON Schema','result':'PASS'},{'name':'OpenAPI Contract','result':'PASS'},{'name':'Application Identity','result':'PASS'}]}, open('${EVIDENCE}','w'), indent=2); print('Evidence saved')"
-          echo "Evidence saved OK"
+          # ── Save evidence JSON with REAL results (no hardcoded PASS) ──
+          EVIDENCE="${{ runner.temp }}/rc77c5-evidence.json"
+          EVIDENCE_RESULT="PASS"
+          if [ "$ALL_PASS" = false ]; then
+            EVIDENCE_RESULT="FAIL"
+          fi
+          python3 tools/evidence.py \
+            "${PASS_COUNT}" "${FAIL_COUNT}" "${EVIDENCE_RESULT}" \
+            "${CORR_ID}" "${PROJECT_NAME}" "${URL}" \
+            "${GITHUB_SHA}" "${GITHUB_RUN_ID}" \
+            "${HEALTH_APP}" "${VERSION_APP}" "${OPENAPI_TITLE}" "${PYTHON_VER}" \
+            "${EVIDENCE}"
+          echo "Evidence saved to ${EVIDENCE}"
 
+          # ── Failure check AFTER evidence capture (not before!) ──
           if [ "$ALL_PASS" = false ]; then
             echo "=== SMOKE TEST FAILED (CorrelationId: $CORR_ID) ==="
             exit 1
@@ -312,4 +340,4 @@ jobs:
           path: |
             ${{ runner.temp }}/smoke-test-*.log
             ${{ runner.temp }}/rc77c5-evidence.json
-          if-no-files-found: warn
+          if-no-files-found: error

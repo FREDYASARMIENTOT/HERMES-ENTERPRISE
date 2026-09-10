@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     RC74-C — Autonomous Project Factory (fixed pipeline)
 .DESCRIPTION
@@ -74,7 +74,10 @@ try {
     Write-Step "Backend" "START" "Creating project files"
     $tmplSrc = Join-Path $HermesRoot "tools/Templates/backend"
     Copy-Item "$tmplSrc/requirements.txt" $ProjRoot -Force -ErrorAction SilentlyContinue
-    Copy-Item "$tmplSrc/startup.sh" $ProjRoot -Force -ErrorAction SilentlyContinue
+    # Render startup.sh (replace {{PROJECT_NAME}} placeholder)
+    $startupSh = Get-Content (Join-Path $tmplSrc "startup.sh") -Raw
+    $startupSh = $startupSh -replace "{{PROJECT_NAME}}",$NombreProyecto
+    $startupSh | Out-File (Join-Path $ProjRoot "startup.sh") -Encoding utf8
     Copy-Item (Join-Path $HermesRoot "tools/Templates/project/.gitignore") $ProjRoot -Force -ErrorAction SilentlyContinue
     $readmeTemplate = Join-Path $HermesRoot "tools/Templates/project/README.md"
     $readmeContent = Get-Content $readmeTemplate -Raw -Encoding UTF8

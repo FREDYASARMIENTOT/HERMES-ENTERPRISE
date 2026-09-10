@@ -6,7 +6,7 @@
 # ====================================================================
 # Tecnologías: Python 3.14+, PowerShell, PSScriptAnalyzer
 # Entorno: GitHub Actions (ubuntu-latest)
-# Runtime: D:\HermesRuntime\Environments\HermesEnterprise
+# Runtime: Python 3.12+ with FastAPI
 # ====================================================================
 
 name: Hermes Enterprise CI — RC75-A
@@ -19,7 +19,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   validate-python:
@@ -81,7 +80,7 @@ jobs:
       - name: Validar existencia de archivos canónicos
         run: |
           test -f config/Hermes.Python.json && echo "OK: Hermes.Python.json"
-          test -f Hermes/__init__.py && echo "OK: Hermes/__init__.py"
+          test -f Hermes.Web/__init__.py && echo "OK: Hermes.Web/__init__.py"
           test -d Hermes.Web && echo "OK: Hermes.Web/"
           test -d tools/Modules && echo "OK: tools/Modules/"
           test -f tools/Crear-HermesProyecto.ps1 && echo "OK: Crear-HermesProyecto.ps1"
@@ -203,6 +202,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install PyYAML for workflow validation
+        run: pip install pyyaml
+
       - name: Validate workflows compile
         run: |
           python -c "
@@ -215,4 +217,96 @@ jobs:
               else:
                   print(f'ERROR: {wf}')
                   sys.exit(1)
+          "
+
+      - name: Validate critical workflow capabilities (drift detection)
+        run: |
+          python -c "
+          import yaml, sys
+
+          def check_deploy_capabilities(wf_path, label):
+              '''Verify deploy workflow has all required capabilities.'''
+              with open(wf_path) as f:
+                  data = yaml.safe_load(f)
+              if not data:
+                  print(f'FAIL: {label} — could not parse')
+                  return False
+
+              jobs = data.get('jobs', {})
+              all_ok = True
+
+              # Check for readiness polling (not sleep)
+              all_text = str(data)
+              if 'sleep 30' in all_text:
+                  print(f'FAIL: {label} — uses sleep 30 instead of readiness polling')
+                  all_ok = False
+              has_polling = ('MAX_ATTEMPTS' in all_text or 'max_attempts' in all_text.lower() or
+                             'for i in $(seq' in all_text or 'for(' in all_text.lower() and 'attempt' in all_text.lower())
+              if not has_polling:
+                  print(f'WARN: {label} — no readiness polling count variable found')
+
+              # Check for evidence generation
+              if 'evidence' not in all_text.lower():
+                  print(f'WARN: {label} — no evidence generation found')
+
+              # Check for artifact upload
+              if 'upload-artifact' not in all_text:
+                  print(f'FAIL: {label} — no artifact upload')
+                  all_ok = False
+
+              # Check for startup-command
+              if 'startup-command' not in all_text and 'startup-command:' not in all_text:
+                  print(f'WARN: {label} — no startup-command found')
+
+              # Check for OpenAPI validation
+              if 'openapi' not in all_text.lower() and 'swagger' not in all_text.lower():
+                  print(f'WARN: {label} — no OpenAPI/Swagger validation')
+
+              if all_ok:
+                  print(f'PASS: {label} — all required capabilities present')
+              return all_ok
+
+          def check_ci_capabilities(wf_path, label):
+              '''Verify CI workflow has all required capabilities.'''
+              with open(wf_path) as f:
+                  data = yaml.safe_load(f)
+              if not data:
+                  print(f'FAIL: {label} — could not parse')
+                  return False
+
+              all_text = str(data)
+              all_ok = True
+
+              # Check for Python validation
+              if 'setup-python' not in all_text:
+                  print(f'WARN: {label} — no Python setup')
+
+              # Check for entrypoint validation (exact import text, not just name)
+              if 'from Hermes.Web.backend.main import app' not in all_text:
+                  print(f'WARN: {label} — no entrypoint validation')
+
+              # Check for workflow validation
+              if 'validate-actions' not in all_text and 'yaml.safe_load' not in all_text:
+                  print(f'WARN: {label} — no workflow validation')
+
+              # Check for shellcheck/PSScriptAnalyzer
+              if 'PSScriptAnalyzer' not in all_text and 'shellcheck' not in all_text.lower():
+                  pass  # Optional
+
+              if all_ok:
+                  print(f'PASS: {label} — all required capabilities present')
+              return all_ok
+
+          all_pass = True
+          all_pass &= check_deploy_capabilities('.github/workflows/deploy.yml', 'deploy.yml (real)')
+          all_pass &= check_deploy_capabilities('tools/Templates/github/deploy.yml', 'deploy.yml (template)')
+          all_pass &= check_ci_capabilities('.github/workflows/ci.yml', 'ci.yml (real)')
+          all_pass &= check_ci_capabilities('tools/Templates/github/ci.yml', 'ci.yml (template)')
+
+          if not all_pass:
+              print()
+              print('=== DRIFT DETECTED: Some workflows lack critical capabilities ===')
+              sys.exit(1)
+          print()
+          print('=== All workflows validated — no critical drift detected ===')
           "

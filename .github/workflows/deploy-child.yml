@@ -365,16 +365,19 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
 
-      - name: Package deployment (zip from inside child-project)
+      - name: Package deployment (zip from GITHUB_WORKSPACE root)
         shell: bash
-        working-directory: child-project
         run: |
           echo "=== Packaging child project ==="
-          ls -la
+          ls -la child-project/
+          ls -la child-project/backend/ 2>/dev/null
+          cd child-project
           zip -r ../deploy.zip . -x ".git/*" -x ".gitignore"
-          echo "Package size: $(du -sh ../deploy.zip | cut -f1)"
-          echo "Package contents (first 30 lines):"
-          unzip -l ../deploy.zip | head -30
+          cd ..
+          echo "Package size: $(du -sh deploy.zip | cut -f1)"
+          echo "Package contents (first 40 lines):"
+          unzip -l deploy.zip | head -40
+          echo "File count: $(unzip -l deploy.zip | tail -1 | awk '{print $2}')"
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
@@ -383,24 +386,23 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Web App
+      - name: Deploy to Azure Web App via AZ CLI
         id: deploy
-        uses: Azure/webapps-deploy@v3
-        with:
-          app-name: ${{ needs.validate-inputs.outputs.app_service_name }}
-          package: deploy.zip
-          clean: true
-
-      - name: Verify Deploy
         shell: bash
         run: |
-          echo "=== Deployment ==="
-          echo "Method       : Azure/webapps-deploy@v3 (explicit zip)"
-          echo "Package      : deploy.zip (contents at root)"
-          echo "Kudu         : NOT USED"
-          echo "Publishing   : NOT USED"
+          echo "=== Deploying via az webapp deploy ==="
+          az webapp deploy \
+            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
+            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
+            --src-path deploy.zip \
+            --type zip \
+            --clean true \
+            --output none
+          echo "=== Deployment Complete ==="
           echo "App          : ${{ needs.validate-inputs.outputs.app_service_name }}"
           echo "SHA          : ${{ needs.validate-inputs.outputs.commit_sha }}"
+          echo "Method       : az webapp deploy"
+          echo "Package      : deploy.zip (contents at wwwroot root)"
           echo "deploy_result=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================

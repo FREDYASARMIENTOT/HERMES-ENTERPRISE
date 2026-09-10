@@ -208,7 +208,8 @@ jobs:
           echo "Client Secret: NOT USED"
           echo "Publishing   : NOT USED"
           ACCOUNT=$(az account show --query "{name:name, id:id}" -o json)
-          echo "Account: $(echo ${ACCOUNT} | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d[\"name\"])')"
+          ACCOUNT_NAME=$(echo "${ACCOUNT}" | python3 -c "import json,sys; print(json.load(sys.stdin)['name'])")
+          echo "Account: ${ACCOUNT_NAME}"
           echo "login_result=PASS" >> $GITHUB_OUTPUT
 
       - name: Verify ASP-IAUR Exists (Read-Only)

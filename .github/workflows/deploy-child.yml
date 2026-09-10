@@ -44,7 +44,9 @@ env:
   WEBAPP_RESOURCE_GROUP: RG-Hermes-Proyectos
   LOCATION: eastus
   RUNTIME: 'PYTHON:3.12'
-  STARTUP_COMMAND: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app'
+  # STARTUP_COMMAND: NOT USED — startup.sh from child repo is auto-detected
+  # When appCommandLine is empty, Azure Python runtime auto-detects startup.sh
+  # which handles: pip install, DB init, uvicorn backend.main:app
 
 jobs:
   # ==================================================================
@@ -305,14 +307,17 @@ jobs:
             echo "webapp_created=false" >> $GITHUB_ENV
           fi
 
-          # ALWAYS set startup command (create or reuse)
-          echo "Setting startup command: ${STARTUP}"
-          az webapp config set \
-            --name "${APP_NAME}" \
-            --resource-group "${RG}" \
-            --startup-file "${STARTUP}" \
-            --output none
-          echo "Startup command applied"
+          # DO NOT set --startup-file: let Azure auto-detect the child's startup.sh
+          # The startup.sh from the child repo handles:
+          #   - pip install -r requirements.txt
+          #   - Database initialization
+          #   - uvicorn backend.main:app (correct module path)
+          echo "Clearing any previously set startup command..."
+          az rest --method PATCH \
+            --uri "https://management.azure.com/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/${RG}/providers/Microsoft.Web/sites/${APP_NAME}/config/web?api-version=2022-09-01" \
+            --body '{"properties":{"appCommandLine":""}}' \
+            --output none 2>/dev/null || true
+          echo "Startup command: cleared — auto-detect enabled"
 
           RESULT=$(az webapp show \
             --name "${APP_NAME}" \

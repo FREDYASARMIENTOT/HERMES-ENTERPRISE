@@ -250,6 +250,7 @@ jobs:
   provision-webapp:
     name: Provision Web App
     runs-on: ubuntu-latest
+    environment: production
     needs: [validate-inputs, checkout-child, validate-infrastructure, oidc-login]
     outputs:
       app_service_url: ${{ steps.provision.outputs.app_service_url }}
@@ -341,6 +342,7 @@ jobs:
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
+    environment: production
     needs: [validate-inputs, checkout-child, oidc-login, provision-webapp]
     outputs:
       deploy_result: ${{ steps.deploy.outputs.deploy_result }}

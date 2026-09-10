@@ -361,8 +361,20 @@ jobs:
         with:
           repository: ${{ needs.validate-inputs.outputs.repository }}
           ref: ${{ needs.validate-inputs.outputs.commit_sha }}
+          path: child-project
           fetch-depth: 1
           token: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
+
+      - name: Package deployment (zip from inside child-project)
+        shell: bash
+        working-directory: child-project
+        run: |
+          echo "=== Packaging child project ==="
+          ls -la
+          zip -r ../deploy.zip . -x ".git/*" -x ".gitignore"
+          echo "Package size: $(du -sh ../deploy.zip | cut -f1)"
+          echo "Package contents (first 30 lines):"
+          unzip -l ../deploy.zip | head -30
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
@@ -376,13 +388,15 @@ jobs:
         uses: Azure/webapps-deploy@v3
         with:
           app-name: ${{ needs.validate-inputs.outputs.app_service_name }}
+          package: deploy.zip
           clean: true
 
       - name: Verify Deploy
         shell: bash
         run: |
           echo "=== Deployment ==="
-          echo "Method       : Azure/webapps-deploy@v3"
+          echo "Method       : Azure/webapps-deploy@v3 (explicit zip)"
+          echo "Package      : deploy.zip (contents at root)"
           echo "Kudu         : NOT USED"
           echo "Publishing   : NOT USED"
           echo "App          : ${{ needs.validate-inputs.outputs.app_service_name }}"

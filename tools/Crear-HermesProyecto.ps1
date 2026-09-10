@@ -98,14 +98,14 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot "backend") -Force | Out-Null
     # Render main.py
     $mainPy = Get-Content (Join-Path $tmplSrc "main.py") -Raw
-    $mainPy = $mainPy -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto -replace '\{\{CORRELATION_ID\}\}',$CorrelationId -replace '\{\{WEBAPP_NAME\}\}',$WebAppName
+    $mainPy = $mainPy -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto -replace '\{\{CORRELATION_ID\}\}',$CorrelationId -replace '\{\{WEBAPP_NAME\}\}',$WebAppName -replace '\{\{REGION\}\}',$azureConfig.location -replace '\{\{DEPLOYMENT_ID\}\}',$CorrelationId
     $mainPy | Out-File (Join-Path $ProjRoot "backend/main.py") -Encoding utf8
     Write-Step "Backend" "OK" "Project files created"
     Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Build" -Estado "OK"
 
     # ===== 5. Create Landing =====
     Write-Step "Landing" "START" "Creating landing page"
-    New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto | Out-Null
+    New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto -WebAppName $WebAppName | Out-Null
     Write-Step "Landing" "OK" "Landing page created"
 
     # ===== 6. Create Workspace File =====
@@ -273,7 +273,7 @@ try {
 
     # ===== 20. Update Landing (second pass with live data) =====
     Write-Step "LandingUpdate" "START" "Updating landing page with live data"
-    New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto | Out-Null
+    New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto -WebAppName $WebAppName | Out-Null
     Write-Step "LandingUpdate" "OK" "Landing updated"
 
     # ===== 21. Update Timeline =====
@@ -293,11 +293,37 @@ try {
     New-ProyectoReportHTML -Metadata $Metadata -OutputPath (Join-Path $HermesRoot "reports/RC74_E2E.html")
     Write-Step "Reports" "OK" "Reports saved to reports/"
 
-    # ===== 23. Open URL =====
+    # ===== 23. Generate Deployment Report JSON =====
+    Write-Step "DeployReport" "START" "Generating deployment report"
+    $deployReport = @{
+        project = $NombreProyecto
+        app_service = $WebAppName
+        resource_group = $azureConfig.resourceGroup
+        region = $azureConfig.location
+        runtime = "Python 3.12"
+        deployment = $TotalDeploys.ToString()
+        commit = (Get-ProyectoGitStatus -ProjectDir $ProjRoot).CommitHash
+        url = $webApp.Url
+        timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+        status = $(if($smokeResult.OverallStatus -eq "PASS"){"PASS"}else{"FAIL"})
+        tests = $smokeResult.Endpoints | ForEach-Object {
+            @{
+                endpoint = $_.Endpoint
+                http_code = $_.HTTPCode
+                status = $_.Estado
+                time_s = $_.TiempoRespuesta
+            }
+        }
+    } | ConvertTo-Json -Depth 4
+    $deployReportPath = Join-Path $ProjRoot "deployment-report.json"
+    $deployReport | Out-File -FilePath $deployReportPath -Encoding UTF8 -Force
+    Write-Step "DeployReport" "OK" "Saved to $deployReportPath"
+
+    # ===== 24. Open URL =====
     Write-Step "Browser" "OK" "Opening $($webApp.Url)"
     Start-Process $webApp.Url
 
-    # ===== 24. Git Status Clean =====
+    # ===== 26. Git Status Clean =====
     Write-Step "GitStatus" "START" "Verifying Git status"
     $gitStatus = Get-ProyectoGitStatus -ProjectDir $ProjRoot
     if($gitStatus.IsClean) {
@@ -325,18 +351,28 @@ try {
     }
 
     # -- Success banner --
-    Write-Host "`n$(('#'*60))" -ForegroundColor Green
-    Write-Host " RC74-C PIPELINE COMPLETED SUCCESSFULLY" -ForegroundColor Green
-    Write-Host " Project : $NombreProyecto" -ForegroundColor Cyan
-    Write-Host " Web App : $($webApp.Url)" -ForegroundColor Cyan
-    Write-Host " CID     : $CorrelationId" -ForegroundColor Cyan
-    Write-Host " Time    : ${totalTime}s" -ForegroundColor Cyan
-    Write-Host " Smoke   : $($smokeResult.Passed)/$($smokeResult.Total) passed" -ForegroundColor Cyan
-    Write-Host " Corrections: $TotalCorrections" -ForegroundColor Cyan
-    Write-Host " Commits : $TotalCommits" -ForegroundColor Cyan
-    Write-Host " Deploys : $TotalDeploys" -ForegroundColor Cyan
-    Write-Host " Git     : Working tree clean" -ForegroundColor Cyan
-    Write-Host "$(('#'*60))`n" -ForegroundColor Green
+    Write-Host "`n$(('='*60))" -ForegroundColor Cyan
+    Write-Host "    HERMES ENTERPRISE — DEPLOYMENT COMPLETE" -ForegroundColor Cyan
+    Write-Host "$(('='*60))" -ForegroundColor Cyan
+    Write-Host " Proyecto     : $NombreProyecto" -ForegroundColor White
+    Write-Host " App Service  : $WebAppName" -ForegroundColor White
+    Write-Host " Frontend     : $($webApp.Url)/" -ForegroundColor Green
+    Write-Host " FastAPI      : $($webApp.Url)/health" -ForegroundColor Green
+    Write-Host " Swagger      : $($webApp.Url)/swagger" -ForegroundColor Green
+    Write-Host " OpenAPI      : $($webApp.Url)/openapi.json" -ForegroundColor Green
+    Write-Host " Version      : $($webApp.Url)/api/version" -ForegroundColor Green
+    Write-Host " Proyecto     : $($webApp.Url)/api/proyecto" -ForegroundColor Green
+    Write-Host "$(('='*60))" -ForegroundColor Cyan
+    Write-Host " CID          : $CorrelationId" -ForegroundColor Yellow
+    Write-Host " Time         : ${totalTime}s" -ForegroundColor Yellow
+    Write-Host " Tests        : $($smokeResult.Passed)/$($smokeResult.Total) passed" -ForegroundColor $(if($smokeResult.OverallStatus -eq "PASS"){"Green"}else{"Red"})
+    Write-Host " Corrections  : $TotalCorrections" -ForegroundColor Yellow
+    Write-Host " Commits      : $TotalCommits" -ForegroundColor Yellow
+    Write-Host " Deploys      : $TotalDeploys" -ForegroundColor Yellow
+    Write-Host " Git          : Working tree clean" -ForegroundColor Yellow
+    Write-Host "$(('='*60))" -ForegroundColor Cyan
+    Write-Host " Navegador abierto: $($webApp.Url)/" -ForegroundColor Green
+    Write-Host "$(('='*60))`n" -ForegroundColor Cyan
 
 } catch {
     Write-Host "`n[RC74-C] PIPELINE FAILED" -ForegroundColor Red

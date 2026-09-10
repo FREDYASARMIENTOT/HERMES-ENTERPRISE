@@ -101,119 +101,176 @@ async def api_despliegue():
 
 @app.get("/", response_class=HTMLResponse)
 async def landing(request: Request):
-    info = obtener_info_proyecto("{{CORRELATION_ID}}")
-    timeline = obtener_timeline("{{CORRELATION_ID}}")
-    smoke = obtener_smoke_results("{{CORRELATION_ID}}")
-    bitacora = obtener_bitacora("{{CORRELATION_ID}}")
+    # ── Read real data from SQLite ──
+    corr_id = "{{CORRELATION_ID}}"
+    project_name = "{{PROJECT_NAME}}"
+    webapp_name = "{{WEBAPP_NAME}}"
+    region = "{{REGION}}"
+    runtime = "Python 3.12"
+    deployment_id = "{{DEPLOYMENT_ID}}"
 
-    nombre = info.get("Nombre","{{PROJECT_NAME}}")
-    estado = info.get("Estado","CREADO")
-    repositorio = info.get("Repositorio","")
-    commit = info.get("CommitHash","")
-    branch = info.get("Branch","main")
-    url_publica = info.get("UrlPublica","https://{{WEBAPP_NAME}}.azurewebsites.net")
-    version = info.get("Version","1.0.0")
-    correlation = info.get("CorrelationId","{{CORRELATION_ID}}")
-    t_build = info.get("TiempoBuild",0)
-    t_deploy = info.get("TiempoDeploy",0)
-    t_smoke = info.get("TiempoSmokeTest",0)
-    estado_azure = info.get("EstadoAzure","PENDIENTE")
-    estado_github = info.get("EstadoGitHub","PENDIENTE")
-    estado_ci = info.get("EstadoCI","PENDIENTE")
+    info = obtener_info_proyecto(corr_id)
+    timeline = obtener_timeline(corr_id)
+    smoke = obtener_smoke_results(corr_id)
+    bitacora = obtener_bitacora(corr_id)
 
+    nombre = info.get("Nombre", project_name)
+    estado = info.get("Estado", "CREADO")
+    url_publica = info.get("UrlPublica", f"https://{webapp_name}.azurewebsites.net")
+    repositorio = info.get("Repositorio", "")
+    commit_hash = info.get("CommitHash", deployment_id[:8] if len(deployment_id) > 8 else deployment_id)
+    estado_azure = info.get("EstadoAzure", "OK")
+    estado_github = info.get("EstadoGitHub", "")
+    estado_ci = info.get("EstadoCI", "")
+    t_build = info.get("TiempoBuild", 0) or 0
+    t_deploy = info.get("TiempoDeploy", 0) or 0
+    t_smoke = info.get("TiempoSmokeTest", 0) or 0
+
+    # ── Calculate overall status ──
+    passed_tests = sum(1 for s in smoke if s.get("Estado") == "PASS") if smoke else 0
+    total_tests = len(smoke) if smoke else 0
+    overall_status = "PASS" if (smoke and passed_tests == total_tests) else ("PASS" if estado == "OK" else "UNKNOWN")
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    # ── Render deployment report HTML ──
     html = f"""<!DOCTYPE html>
-<html lang="es" data-bs-theme="dark">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>{nombre}</title>
+<title>HERMES ENTERPRISE — INFORME DE DESPLIEGUE</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
-:root {{--proj-primary:#0d6efd;--proj-accent:#6f42c1;--proj-success:#198754;--proj-warning:#ffc107;--proj-danger:#dc3545}}
-body {{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',sans-serif}}
-.hero-section {{background:linear-gradient(135deg,#0d6efd 0%,#6f42c1 100%);padding:3rem 0;border-radius:0 0 2rem 2rem}}
-.hero-title {{font-size:2.5rem;font-weight:800;letter-spacing:-1px}}
-.stat-card {{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:1rem;padding:1.5rem;backdrop-filter:blur(10px)}}
-.timeline-item {{border-left:3px solid #0d6efd;padding-left:1.5rem;margin-bottom:1.5rem;position:relative}}
-.timeline-item::before {{content:'';width:12px;height:12px;background:#0d6efd;border-radius:50%;position:absolute;left:-7px;top:4px}}
-.footer {{text-align:center;padding:2rem;color:rgba(255,255,255,0.4);font-size:0.85rem}}
-.badge-custom {{font-size:0.75rem;padding:0.35rem 0.7rem}}
+body {{ background:#0b0f1a; color:#e0e0e0; font-family:'Segoe UI',system-ui,sans-serif; }}
+.deploy-container {{ max-width:1100px; margin:0 auto; padding:20px; }}
+.hero {{ background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%); border-radius:16px; padding:32px; margin-bottom:24px; text-align:center; }}
+.hero h1 {{ color:#fff; font-size:2rem; font-weight:700; }}
+.hero .subtitle {{ color:rgba(255,255,255,0.85); font-size:1rem; }}
+.card {{ background:#151b2b; border:1px solid #2a3250; border-radius:12px; padding:20px; margin-bottom:20px; }}
+.card h5 {{ color:#8b9dc3; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; }}
+.card .value {{ font-size:1.1rem; color:#fff; }}
+.card .label {{ color:#6c7a9a; font-size:0.85rem; }}
+.status-ok {{ color:#198754; }}
+.status-fail {{ color:#dc3545; }}
+.status-warn {{ color:#ffc107; }}
+.link-grid a {{ display:inline-block; margin:4px; padding:8px 16px; background:#1e2740; border-radius:8px; color:#8ab4f8; text-decoration:none; font-size:0.9rem; }}
+.link-grid a:hover {{ background:#2a3555; color:#fff; }}
+.test-pass {{ color:#198754; }}
+.test-fail {{ color:#dc3545; }}
+.footer {{ text-align:center; padding:20px; color:#4a5570; font-size:0.85rem; }}
+.timeline-item {{ padding:6px 0; border-left:2px solid #2a3250; padding-left:16px; margin-left:8px; }}
+.table-dark-custom {{ background:#151b2b; }}
+.table-dark-custom th {{ background:#1a2235; color:#8b9dc3; }}
+.table-dark-custom td {{ background:#151b2b; color:#e0e0e0; }}
 </style>
 </head>
 <body>
-
-<div class="hero-section text-white text-center">
-    <div class="container">
-        <h1 class="hero-title"><i class="bi bi-rocket-takeoff me-2"></i>{nombre}</h1>
-        <p class="lead opacity-75">Proyecto generado automaticamente</p>
+<div class="deploy-container">
+    <!-- HERO -->
+    <div class="hero">
+        <h1><i class="bi bi-rocket-takeoff me-2"></i>HERMES ENTERPRISE</h1>
+        <div class="subtitle">INFORME DE DESPLIEGUE</div>
         <div class="mt-3">
-            <span class="badge bg-light text-dark me-2">v{version}</span>
-            <span class="badge bg-{'success' if estado=='PUBLICADO' else 'warning'} me-2">{estado}</span>
-            <span class="badge bg-info text-dark me-2">CID:{correlation[:8]}</span>
+            <span class="badge bg-success me-2">{"🟢 OPERATIVO" if overall_status == "PASS" else "🔴 FALLIDO"}</span>
+            <span class="badge bg-info text-dark">CID:{corr_id[:8]}</span>
         </div>
     </div>
-</div>
 
-<div class="container mt-4">
+    <!-- PROJECT INFO -->
     <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="stat-card text-center"><i class="bi bi-cloud-arrow-up fs-3 text-primary"></i><h5 class="mt-2 mb-0">{estado_azure}</h5><small class="text-secondary">Azure</small></div></div>
-        <div class="col-md-3"><div class="stat-card text-center"><i class="bi bi-github fs-3 text-secondary"></i><h5 class="mt-2 mb-0">{estado_github}</h5><small class="text-secondary">GitHub</small></div></div>
-        <div class="col-md-3"><div class="stat-card text-center"><i class="bi bi-arrow-repeat fs-3 text-success"></i><h5 class="mt-2 mb-0">{estado_ci}</h5><small class="text-secondary">CI/CD</small></div></div>
-        <div class="col-md-3"><div class="stat-card text-center"><i class="bi bi-clock fs-3 text-warning"></i><h5 class="mt-2 mb-0">{t_build}s</h5><small class="text-secondary">Build</small></div></div>
+        <div class="col-md-4">
+            <div class="card"><h5><i class="bi bi-folder me-2"></i>Proyecto</h5><div class="value">{nombre}</div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card"><h5><i class="bi bi-globe me-2"></i>App Service</h5><div class="value">{webapp_name}</div><div class="label">{region}</div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card"><h5><i class="bi bi-cpu me-2"></i>Runtime</h5><div class="value">{runtime}</div><div class="label">Deploy: {commit_hash[:7]}</div></div>
+        </div>
     </div>
 
+    <!-- STATUS CARDS -->
     <div class="row g-3 mb-4">
-        <div class="col-md-6"><div class="stat-card"><h5><i class="bi bi-link-45deg me-2"></i>URL Publica</h5><a href="{url_publica}" target="_blank" class="text-decoration-none">{url_publica}</a></div></div>
-        <div class="col-md-6"><div class="stat-card"><h5><i class="bi bi-diagram-3 me-2"></i>Repositorio</h5><span>{repositorio if repositorio else 'No configurado'}</span></div></div>
+        <div class="col-md-3"><div class="card text-center"><i class="bi bi-cloud-arrow-up fs-3 {"status-ok" if estado_azure == "OK" else "status-fail"}"></i><h5 class="mt-2 mb-0">{estado_azure if estado_azure else "OK"}</h5><small class="label">Azure</small></div></div>
+        <div class="col-md-3"><div class="card text-center"><i class="bi bi-github fs-3 {"status-ok" if estado_github else "status-warn"}"></i><h5 class="mt-2 mb-0">{estado_github if estado_github else "N/A"}</h5><small class="label">GitHub</small></div></div>
+        <div class="col-md-3"><div class="card text-center"><i class="bi bi-arrow-repeat fs-3 {"status-ok" if estado_ci else "status-warn"}"></i><h5 class="mt-2 mb-0">{estado_ci if estado_ci else "N/A"}</h5><small class="label">CI/CD</small></div></div>
+        <div class="col-md-3"><div class="card text-center"><i class="bi bi-clock fs-3 text-warning"></i><h5 class="mt-2 mb-0">{t_build:.1f}s</h5><small class="label">Build</small></div></div>
     </div>
 
-    <div class="stat-card mb-4">
-        <h5><i class="bi bi-list-check me-2"></i>Linea de Tiempo</h5>
-        <div class="mt-3">
-"""
-    for t in timeline:
-        ev = t.get("Evento","")
-        est = t.get("Estado","")
-        fe = t.get("Fecha","")
-        det = t.get("Detalle","")
-        icon = {"Workspace":"bi-folder","Git":"bi-git","GitHub":"bi-github","SQLite":"bi-database","Build":"bi-box","ZIP":"bi-file-zip","Deploy":"bi-cloud-upload","SmokeTest":"bi-check-circle","Publicado":"bi-globe"}.get(ev,"bi-record")
-        color = "success" if est=="OK" else "danger" if est=="FAIL" else "warning"
-        html += f'<div class="timeline-item"><i class="bi {icon} me-2 text-{color}"></i><strong>{ev}</strong><span class="badge bg-{color} ms-2 badge-custom">{est}</span><br><small class="text-secondary">{fe}</small>'
-        if det: html += f'<br><small class="text-secondary">{det}</small>'
-        html += '</div>'
-
-    html += """
-        </div>
+    <!-- URL & REPO -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6"><div class="card"><h5><i class="bi bi-link-45deg me-2"></i>URL Publica</h5><a href="{url_publica}" target="_blank" class="text-decoration-none value" style="word-break:break-all;">{url_publica}</a></div></div>
+        <div class="col-md-6"><div class="card"><h5><i class="bi bi-diagram-3 me-2"></i>Repositorio</h5><span class="value">{repositorio if repositorio else "No configurado"}</span></div></div>
     </div>
 
-    <div class="stat-card mb-4">
-        <h5><i class="bi bi-bar-chart me-2"></i>Metricas de Despliegue</h5>
-        <div class="row mt-3">
-            <div class="col-4 text-center"><h3 class="text-primary">{:.1f}s</h3><small class="text-secondary">Build</small></div>
-            <div class="col-4 text-center"><h3 class="text-success">{:.1f}s</h3><small class="text-secondary">Deploy</small></div>
-            <div class="col-4 text-center"><h3 class="text-info">{:.1f}s</h3><small class="text-secondary">Smoke Test</small></div>
-        </div>
-    </div>
+    <!-- TIMESTAMP -->
+    <div class="card mb-4"><h5><i class="bi bi-calendar-event me-2"></i>Fecha/Hora</h5><div class="value">{now}</div></div>
 
-""".format(t_build, t_deploy, t_smoke)
+    <!-- FUNCTIONAL TESTS -->
+    <div class="card mb-4">
+        <h5><i class="bi bi-shield-check me-2"></i>PRUEBAS FUNCIONALES</h5>
+        <div class="table-responsive">
+            <table class="table table-dark-custom table-sm">
+                <thead><tr><th>Endpoint</th><th>HTTP</th><th>Estado</th><th>Tiempo</th></tr></thead>
+                <tbody>"""
+    # end of f-string for tests section
 
-    if bitacora:
-        html += '<div class="stat-card mb-4"><h5><i class="bi bi-journal-text me-2"></i>Bitacora de Eventos</h5><div class="table-responsive mt-2"><table class="table table-dark table-striped table-sm"><thead><tr><th>Fecha</th><th>Paso</th><th>Estado</th><th>Mensaje</th></tr></thead><tbody>'
-        for b in bitacora[:10]:
-            html += f'<tr><td>{b.get("Fecha","")} {b.get("Hora","")}</td><td>{b.get("Paso","")}</td><td><span class="badge bg-{"success" if b.get("Estado")=="OK" else "danger"}">{b.get("Estado","")}</span></td><td>{b.get("Mensaje","")}</td></tr>'
-        html += '</tbody></table></div></div>'
-
+    # Smoke test rows
     if smoke:
-        html += '<div class="stat-card mb-4"><h5><i class="bi bi-shield-check me-2"></i>Smoke Test</h5><div class="table-responsive mt-2"><table class="table table-dark table-striped table-sm"><thead><tr><th>Endpoint</th><th>HTTP</th><th>Estado</th><th>Tiempo</th></tr></thead><tbody>'
         for s in smoke:
-            color = "success" if s.get("Estado")=="PASS" else "danger"
-            html += f'<tr><td>{s.get("Endpoint","")}</td><td>{s.get("HTTPCode","")}</td><td><span class="badge bg-{color}">{s.get("Estado","")}</span></td><td>{s.get("TiempoRespuesta",0):.2f}s</td></tr>'
-        html += '</tbody></table></div></div>'
+            ep = s.get("Endpoint", "")
+            code = s.get("HTTPCode", 0)
+            st = s.get("Estado", "FAIL")
+            tm = s.get("TiempoRespuesta", 0)
+            icon = '<i class="bi bi-check-circle-fill test-pass"></i>' if st == "PASS" else '<i class="bi bi-x-circle-fill test-fail"></i>'
+            html += f'<tr><td><code>{ep}</code></td><td>{code}</td><td>{icon} {st}</td><td>{tm:.2f}s</td></tr>'
+    else:
+        html += '<tr><td colspan="4" class="text-secondary text-center">No hay resultados de pruebas disponibles</td></tr>'
+    html += """</tbody></table></div></div>
+
+    <!-- ACCESS LINKS -->
+    <div class="card mb-4">
+        <h5><i class="bi bi-link me-2"></i>ACCESOS</h5>
+        <div class="link-grid">
+            <a href="{url_publica}/" target="_blank"><i class="bi bi-house-fill me-1"></i>Frontend</a>
+            <a href="{url_publica}/health" target="_blank"><i class="bi bi-heart-pulse me-1"></i>Health</a>
+            <a href="{url_publica}/swagger" target="_blank"><i class="bi bi-file-earmark-code me-1"></i>Swagger UI</a>
+            <a href="{url_publica}/openapi.json" target="_blank"><i class="bi bi-filetype-json me-1"></i>OpenAPI</a>
+            <a href="{url_publica}/api/version" target="_blank"><i class="bi bi-tag me-1"></i>Version</a>
+            <a href="{url_publica}/api/proyecto" target="_blank"><i class="bi bi-info-circle me-1"></i>Proyecto</a>
+            <a href="{url_publica}/redoc" target="_blank"><i class="bi bi-book me-1"></i>ReDoc</a>
+        </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="card mb-4">
+        <h5><i class="bi bi-list-check me-2"></i>Linea de Tiempo</h5>
+        <div class="mt-3">""".format(url_publica=url_publica)
+
+    if timeline:
+        for t in timeline:
+            ev = t.get("Evento", "")
+            est = t.get("Estado", "")
+            fe = t.get("Fecha", "")
+            det = t.get("Detalle", "")
+            icon_name = {"Workspace": "bi-folder", "Git": "bi-git", "GitHub": "bi-github", "SQLite": "bi-database", "Build": "bi-box", "ZIP": "bi-file-zip", "Deploy": "bi-cloud-upload", "SmokeTest": "bi-check-circle", "Publicado": "bi-globe"}.get(ev, "bi-record")
+            color = "success" if est == "OK" else "danger" if est == "FAIL" else "warning"
+            html += f'<div class="timeline-item"><i class="bi {icon_name} me-2 text-{color}"></i><strong>{ev}</strong> <span class="badge bg-{color} ms-2">{est}</span><br><small class="text-secondary">{fe}</small>'
+            if det:
+                html += f'<br><small class="text-secondary">{det}</small>'
+            html += '</div>'
+    else:
+        html += '<div class="text-secondary">No hay eventos en la linea de tiempo</div>'
 
     html += """
+    </div></div>
+
+    <!-- FOOTER -->
     <div class="footer">
-        <p>Powered by Hermes Enterprise &copy; {{YEAR}}</p>
+        <p>Powered by Hermes Enterprise &copy; 2026</p>
+        <p class="mb-0"><a href="https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE" target="_blank">Hermes Enterprise</a></p>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

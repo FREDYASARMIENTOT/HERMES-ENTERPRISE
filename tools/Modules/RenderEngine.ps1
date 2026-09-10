@@ -138,7 +138,8 @@ function New-ProyectoLanding {
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectRoot,
-        [Parameter(Mandatory)] [string] $ProjectName
+        [Parameter(Mandatory)] [string] $ProjectName,
+        [Parameter(Mandatory)] [string] $WebAppName
     )
 
     $templatesDir = Join-Path $ProjectRoot "templates"
@@ -152,127 +153,130 @@ function New-ProyectoLanding {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>$ProjectName</title>
+<title>HERMES ENTERPRISE — INFORME DE DESPLIEGUE</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
-:root{--accent:#00d4aa;--bg-card:#1a1d23}
-body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif}
-.hero-section{padding:4rem 0 2rem 0;text-align:center}
-.hero-section h1{font-size:2.5rem;font-weight:700;color:#fff}
-.hero-section .badge{font-size:0.9rem;padding:0.5rem 1rem}
-.card{background:var(--bg-card);border:1px solid #30363d;border-radius:12px;margin-bottom:1rem}
-.card-header{background:rgba(255,255,255,0.03);border-bottom:1px solid #30363d;font-weight:600}
-.metric-value{font-size:1.8rem;font-weight:700;color:var(--accent)}
-.metric-label{font-size:0.85rem;color:#8b949e}
-.timeline-node{display:flex;align-items:center;padding:0.75rem 1rem;border-left:3px solid #30363d;margin-left:1rem}
-.timeline-node.ok{border-left-color:var(--accent)}
-.timeline-node.pending{border-left-color:#484f58}
-.footer{text-align:center;padding:2rem 0;color:#8b949e;font-size:0.85rem}
-.status-ok{color:var(--accent)}
-.status-fail{color:#f85149}
-.status-pending{color:#8b949e}
+body{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif}
+.deploy-container{max-width:1100px;margin:0 auto;padding:20px}
+.hero{background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%);border-radius:16px;padding:32px;margin-bottom:24px;text-align:center}
+.hero h1{color:#fff;font-size:2rem;font-weight:700}
+.hero .subtitle{color:rgba(255,255,255,0.85);font-size:1rem}
+.card{background:#151b2b;border:1px solid #2a3250;border-radius:12px;padding:20px;margin-bottom:20px}
+.card h5{color:#8b9dc3;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+.card .value{font-size:1.1rem;color:#fff}
+.card .label{color:#6c7a9a;font-size:0.85rem}
+.status-ok{color:#198754}
+.status-fail{color:#dc3545}
+.status-warn{color:#ffc107}
+.link-grid a{display:inline-block;margin:4px;padding:8px 16px;background:#1e2740;border-radius:8px;color:#8ab4f8;text-decoration:none;font-size:0.9rem}
+.link-grid a:hover{background:#2a3555;color:#fff}
+.footer{text-align:center;padding:20px;color:#4a5570;font-size:0.85rem}
+.timeline-item{padding:6px 0;border-left:2px solid #2a3250;padding-left:16px;margin-left:8px}
 </style>
 </head>
 <body>
-<div class="container">
-    <div class="hero-section">
-        <div class="mb-3">
-            <span class="badge bg-success" id="statusBadge">Loading...</span>
-        </div>
-        <h1 id="projectTitle">$ProjectName</h1>
-        <p class="text-secondary fs-5" id="projectDesc">Loading project information...</p>
-        <div class="d-flex justify-content-center gap-3 mt-3">
-            <small class="text-secondary" id="projectVersion">Version: --</small>
-            <small class="text-secondary" id="projectCommit">Commit: --</small>
-            <small class="text-secondary" id="projectBranch">Branch: --</small>
+<div class="deploy-container">
+    <div class="hero">
+        <h1><i class="bi bi-rocket-takeoff me-2"></i>HERMES ENTERPRISE</h1>
+        <div class="subtitle">INFORME DE DESPLIEGUE</div>
+        <div class="mt-3">
+            <span class="badge bg-success me-2" id="statusBadge">🟢 OPERATIVO</span>
+            <span class="badge bg-info text-dark" id="cidBadge">CID:--</span>
         </div>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card p-3 text-center"><div class="metric-value" id="metricBuildTime">--</div><div class="metric-label">Build Time</div></div></div>
-        <div class="col-md-3"><div class="card p-3 text-center"><div class="metric-value" id="metricDeployTime">--</div><div class="metric-label">Deploy Time</div></div></div>
-        <div class="col-md-3"><div class="card p-3 text-center"><div class="metric-value" id="metricSmokeTime">--</div><div class="metric-label">Smoke Test</div></div></div>
-        <div class="col-md-3"><div class="card p-3 text-center"><div class="metric-value" id="metricCorrelation">--</div><div class="metric-label">CorrelationId</div></div></div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">Timeline</div>
-        <div class="card-body" id="timelineContainer">
-            <div class="timeline-node pending"><span class="status-pending">Loading timeline...</span></div>
+        <div class="col-md-4">
+            <div class="card"><h5><i class="bi bi-folder me-2"></i>Proyecto</h5><div class="value" id="projectName">$ProjectName</div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card"><h5><i class="bi bi-globe me-2"></i>App Service</h5><div class="value" id="webappName">$WebAppName</div><div class="label" id="regionLabel">--</div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card"><h5><i class="bi bi-cpu me-2"></i>Runtime</h5><div class="value">Python 3.12</div><div class="label" id="deployLabel">Deploy: --</div></div>
         </div>
     </div>
 
-    <div class="row g-3 mt-2">
-        <div class="col-md-6">
-            <div class="card"><div class="card-header">Azure Status</div><div class="card-body"><span id="azureStatus" class="status-pending">Checking...</span></div></div>
-        </div>
-        <div class="col-md-6">
-            <div class="card"><div class="card-header">GitHub Status</div><div class="card-body"><span id="githubStatus" class="status-pending">Checking...</span></div></div>
+    <div class="card mb-4">
+        <h5><i class="bi bi-link me-2"></i>ACCESOS</h5>
+        <div class="link-grid">
+            <a href="#" target="_blank" id="linkFrontend"><i class="bi bi-house-fill me-1"></i>Frontend</a>
+            <a href="#" target="_blank" id="linkHealth"><i class="bi bi-heart-pulse me-1"></i>Health</a>
+            <a href="#" target="_blank" id="linkSwagger"><i class="bi bi-file-earmark-code me-1"></i>Swagger UI</a>
+            <a href="#" target="_blank" id="linkOpenAPI"><i class="bi bi-filetype-json me-1"></i>OpenAPI</a>
+            <a href="#" target="_blank" id="linkVersion"><i class="bi bi-tag me-1"></i>Version</a>
+            <a href="#" target="_blank" id="linkProyecto"><i class="bi bi-info-circle me-1"></i>Proyecto</a>
         </div>
     </div>
 
-    <div class="card mt-2">
-        <div class="card-header">Deploy Information</div>
-        <div class="card-body">
-            <table class="table table-dark table-borderless table-sm">
-                <tr><td>Repository</td><td id="deployRepo">--</td></tr>
-                <tr><td>Pipeline</td><td id="deployPipeline">--</td></tr>
-                <tr><td>URL</td><td id="deployUrl">--</td></tr>
-                <tr><td>CI Status</td><td id="deployCI">--</td></tr>
+    <div class="card mb-4">
+        <h5><i class="bi bi-calendar-event me-2"></i>Fecha/Hora</h5>
+        <div class="value" id="timestampField">Cargando...</div>
+    </div>
+
+    <div class="card mb-4" id="smokeTestsCard">
+        <h5><i class="bi bi-shield-check me-2"></i>PRUEBAS FUNCIONALES</h5>
+        <div class="table-responsive">
+            <table class="table table-dark table-sm">
+                <thead><tr><th>Endpoint</th><th>HTTP</th><th>Estado</th></tr></thead>
+                <tbody id="smokeTestsBody">
+                    <tr><td colspan="3" class="text-secondary text-center">Cargando...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
 
     <div class="footer">
-        <p><strong id="footerProyecto">$ProjectName</strong></p>
         <p>Powered by Hermes Enterprise</p>
     </div>
 </div>
 
 <script>
-fetch('/api/proyecto').then(r=>r.json()).then(d=>{
-    document.getElementById('projectTitle').textContent = d.Nombre || d.nombre || '$ProjectName';
-    document.getElementById('projectDesc').textContent = d.Descripcion || d.descripcion || 'Proyecto activo';
-    document.getElementById('projectVersion').textContent = 'Version: ' + (d.Version || d.version || '--');
-});
-fetch('/api/version').then(r=>r.json()).then(d=>{
-    document.getElementById('metricCorrelation').textContent = (d.CorrelationId || d.correlationId || '--').substring(0,8);
-});
-fetch('/api/workspace').then(r=>r.json()).then(d=>{
-    document.getElementById('metricBuildTime').textContent = (d.TiempoBuild || d.tiempoBuild || '--') + 's';
-});
-fetch('/api/git').then(r=>r.json()).then(d=>{
-    document.getElementById('projectCommit').textContent = 'Commit: ' + (d.CommitHash || d.commitHash || '--').substring(0,7);
-    document.getElementById('projectBranch').textContent = 'Branch: ' + (d.Branch || d.branch || 'main');
-});
-fetch('/api/github').then(r=>r.json()).then(d=>{
-    document.getElementById('githubStatus').textContent = d.Estado || d.estado || 'OK';
-    document.getElementById('githubStatus').className = 'status-ok';
-    document.getElementById('deployRepo').textContent = d.Repositorio || d.repositorio || '--';
-});
-fetch('/api/azure').then(r=>r.json()).then(d=>{
-    document.getElementById('azureStatus').textContent = d.Estado || d.estado || 'OK';
-    document.getElementById('azureStatus').className = 'status-ok';
-    document.getElementById('deployUrl').textContent = d.UrlPublica || d.urlPublica || '--';
-});
-fetch('/api/despliegue').then(r=>r.json()).then(d=>{
-    document.getElementById('metricDeployTime').textContent = (d.TiempoDeploy || d.tiempoDeploy || '--') + 's';
-    document.getElementById('metricSmokeTime').textContent = (d.TiempoSmokeTest || d.tiempoSmokeTest || '--') + 's';
-    document.getElementById('deployCI').textContent = d.Estado || d.estado || 'OK';
-});
-fetch('/api/sqlite').then(r=>r.json()).then(d=>{
-    if(d.status === 'ok') document.getElementById('statusBadge').textContent = 'Online';
-});
+const baseUrl = window.location.origin;
+document.getElementById('linkFrontend').href = baseUrl + '/';
+document.getElementById('linkHealth').href = baseUrl + '/health';
+document.getElementById('linkSwagger').href = baseUrl + '/swagger';
+document.getElementById('linkOpenAPI').href = baseUrl + '/openapi.json';
+document.getElementById('linkVersion').href = baseUrl + '/api/version';
+document.getElementById('linkProyecto').href = baseUrl + '/api/proyecto';
 
-// Timeline
-fetch('/api/timeline').then(r=>r.json()).then(events=>{
-    const c = document.getElementById('timelineContainer');
-    c.innerHTML = '';
-    (events || []).forEach(e=>{
-        const cls = (e.Estado || e.estado) === 'OK' ? 'ok' : 'pending';
-        c.innerHTML += '<div class="timeline-node '+cls+'"><span class="status-'+((e.Estado||e.estado)==='OK'?'ok':'pending')+' me-2">'+((e.Estado||e.estado)||'PENDIENTE')+'</span><strong>'+ (e.Evento||e.evento) +'</strong><small class="ms-2 text-secondary">'+ (e.Fecha||e.fecha||'') +' '+ (e.Duracion||e.duracion||'') +'</small></div>';
-    });
+fetch('/api/proyecto').then(r=>r.json()).then(d=>{
+    document.getElementById('projectName').textContent = d.Nombre || d.nombre || '$ProjectName';
+    document.getElementById('cidBadge').textContent = 'CID:' + ((d.CorrelationId || d.correlationId || '--').substring(0,8));
+}).catch(()=>{});
+fetch('/api/version').then(r=>r.json()).then(d=>{
+    document.getElementById('deployLabel').textContent = 'Version: ' + (d.version || '1.0.0');
+}).catch(()=>{});
+fetch('/api/azure').then(r=>r.json()).then(d=>{
+    const webapp = d.webapp || d.WebAppName || '$WebAppName';
+    document.getElementById('webappName').textContent = webapp;
+}).catch(()=>{});
+fetch('/api/git').then(r=>r.json()).then(d=>{
+    if(d.CommitHash || d.commitHash) {
+        document.getElementById('deployLabel').textContent = 'Commit: ' + (d.CommitHash || d.commitHash || '').substring(0,7);
+    }
+}).catch(()=>{});
+
+// Timestamp
+document.getElementById('timestampField').textContent = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
+
+// Load smoke tests
+fetch('/api/despliegue').then(r=>r.json()).then(d=>{
+    const tests = d.smokeTests || d.SmokeTests || null;
+    if(tests && tests.length > 0) {
+        let html = '';
+        tests.forEach(t => {
+            const ep = t.Endpoint || t.endpoint || '--';
+            const code = t.HTTPCode || t.httpCode || '--';
+            const status = t.Estado || t.estado || 'FAIL';
+            const icon = status === 'PASS' ? '<i class=\"bi bi-check-circle-fill text-success\"></i>' : '<i class=\"bi bi-x-circle-fill text-danger\"></i>';
+            html += '<tr><td><code>' + ep + '</code></td><td>' + code + '</td><td>' + icon + ' ' + status + '</td></tr>';
+        });
+        document.getElementById('smokeTestsBody').innerHTML = html;
+    } else {
+        document.getElementById('smokeTestsBody').innerHTML = '<tr><td colspan=\"3\" class=\"text-secondary text-center\">No hay resultados de pruebas disponibles</td></tr>';
+    }
 }).catch(()=>{});
 </script>
 </body>

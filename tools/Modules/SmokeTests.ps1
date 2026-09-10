@@ -20,6 +20,7 @@ function Invoke-ProyectoSmokeTests {
     $startTime = Get-Date
 
     $endpoints = @(
+        "/",
         "/health",
         "/api/version",
         "/api/proyecto",
@@ -28,7 +29,9 @@ function Invoke-ProyectoSmokeTests {
         "/api/github",
         "/api/sqlite",
         "/api/azure",
-        "/api/despliegue"
+        "/api/despliegue",
+        "/openapi.json",
+        "/api/rc77-c8-this-endpoint-must-not-exist"
     )
 
     $results = @()
@@ -105,7 +108,7 @@ VALUES ('$CorrelationId', '$($r.Endpoint)', $($r.HTTPCode), '$($r.Estado)', $($r
 function Test-ProyectoLanding {
     <#
     .SYNOPSIS
-        Tests that the landing page returns HTTP 200.
+        Tests that the landing page returns HTTP 200 and contains valid deployment report content.
     .PARAMETER BaseUrl
         Base URL of the deployed application.
     .OUTPUTS
@@ -122,16 +125,36 @@ function Test-ProyectoLanding {
         $elapsed = [math]::Round(((Get-Date) - $startTime).TotalSeconds, 2)
 
         $body = $response.Content
-        $hasTitle = $body -match "<title>"
-        $hasHero = $body -match "hero-section"
+
+        # Deployment report validation
+        $hasHermesTitle = $body -match "HERMES ENTERPRISE"
+        $hasDeployReport = $body -match "INFORME DE DESPLIEGUE"
+        $hasOperativo = $body -match "OPERATIVO"
+        $hasProjectInfo = $body -match "Proyecto"
+        $hasAppServiceInfo = $body -match "App Service"
+        $hasFunctionalTests = $body -match "PRUEBAS FUNCIONALES"
+        $hasAccessLinks = $body -match "ACCESOS"
+
+        # Negative checks
+        $isHelloWorld = $body -match "<h1>Hello World</h1>"
+        $isAzureDefault = $body -match "Azure App Service" -or $body -match "Your app is deployed"
+
+        $landingOk = ($response.StatusCode -eq 200) -and $hasHermesTitle -and $hasDeployReport -and -not $isHelloWorld -and -not $isAzureDefault
 
         return @{
             Url = $BaseUrl
             HTTPCode = $response.StatusCode
             Time = $elapsed
-            LandingOk = ($response.StatusCode -eq 200)
-            HasTitle = $hasTitle
-            HasHero = $hasHero
+            LandingOk = $landingOk
+            HasHermesTitle = $hasHermesTitle
+            HasDeployReport = $hasDeployReport
+            HasOperativo = $hasOperativo
+            HasProjectInfo = $hasProjectInfo
+            HasAppServiceInfo = $hasAppServiceInfo
+            HasFunctionalTests = $hasFunctionalTests
+            HasAccessLinks = $hasAccessLinks
+            IsHelloWorld = $isHelloWorld
+            IsAzureDefault = $isAzureDefault
         }
     }
     catch {

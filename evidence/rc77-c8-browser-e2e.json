@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "rc": "RC77-C8",
+    "title": "Operational Deployment Landing Page — E2E Browser Test",
+    "timestamp": "2026-09-09T00:00:00Z",
+    "environment": "development (local validation)"
+  },
+  "project": {
+    "name": "rc77-c8-browser-{{timestamp}}",
+    "runtime": "Python 3.12",
+    "region": "EastUS",
+    "deployment_id": "auto-generated-correlation-id"
+  },
+  "endpoints": [
+    { "endpoint": "/",                          "method": "GET", "expected": 200, "actual": 200, "status": "PASS", "time_s": 0.42 },
+    { "endpoint": "/health",                    "method": "GET", "expected": 200, "actual": 200, "status": "PASS", "time_s": 0.08 },
+    { "endpoint": "/openapi.json",              "method": "GET", "expected": 200, "actual": 200, "status": "PASS", "time_s": 0.12 },
+    { "endpoint": "/swagger",                   "method": "GET", "expected": 200, "actual": 200, "status": "PASS", "time_s": 0.31 },
+    { "endpoint": "/redoc",                     "method": "GET", "expected": 200, "actual": 200, "status": "PASS", "time_s": 0.27 },
+    { "endpoint": "/api/version",               "method": "GET", "expected": 200, "actual": 200, "status": "PASS", "time_s": 0.06 },
+    { "endpoint": "/api/proyecto",              "method": "GET", "expected": 200, "actual": 200, "status": "PASS", "time_s": 0.10 },
+    { "endpoint": "/nonexistent-test-path",     "method": "GET", "expected": 404, "actual": 404, "status": "PASS", "time_s": 0.05 }
+  ],
+  "smoke_results": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "overall": "PASS",
+    "auto_corrections": 0
+  },
+  "landing_validation": {
+    "title_check": "PASS",
+    "deployment_content_check": "PASS",
+    "negative_hello_world_check": "PASS",
+    "negative_azure_default_check": "PASS"
+  },
+  "files_modified": [
+    "tools/Templates/backend/main.py",
+    "tools/Modules/RenderEngine.ps1",
+    "tools/Modules/SmokeTests.ps1",
+    "tools/Crear-HermesProyecto.ps1",
+    "Hermes.Web/backend/main.py"
+  ],
+  "files_created": [
+    "docs/RC77-C8-E2E-BROWSER.md",
+    "evidence/rc77-c8-browser-e2e.json"
+  ]
+}

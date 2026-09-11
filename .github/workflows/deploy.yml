@@ -104,14 +104,29 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Web App
-        uses: Azure/webapps-deploy@v3
-        with:
-          app-name: as-${{ env.PROJECT_NAME }}
-          slot-name: production
-          package: .
-          clean: true
-          startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app'
+      - name: Deploy to Azure Web App (az webapp deploy)
+        shell: bash
+        run: |
+          APP_NAME="as-${{ env.PROJECT_NAME }}"
+          RG="RG-Hermes-Proyectos"
+          ZIP_FILE="/tmp/deploy-${{ github.sha }}.zip"
+
+          echo "=== Creating deployment package ==="
+          zip -r "$ZIP_FILE" . -x '*.git*' '_azure_logs*' '__pycache__/*' '.venv/*' '*.zip' 'node_modules/*'
+          echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
+          echo "Package contents: $(unzip -l "$ZIP_FILE" | wc -l) files"
+
+          echo "=== Deploying to Azure ==="
+          az webapp deploy \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --src-path "$ZIP_FILE" \
+            --type zip \
+            --clean true \
+            --output table
+
+          echo "=== Deployment complete ==="
+          rm -f "$ZIP_FILE"
 
       - name: Record deployment artifact
         run: |

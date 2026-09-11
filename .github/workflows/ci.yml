@@ -1,5 +1,5 @@
 # ====================================================================
-# CI/CD Pipeline — Hermes Enterprise RC71
+# CI/CD Pipeline — Hermes Enterprise
 # ====================================================================
 # RC71: CI mínimo para validar el Runtime Python, dependencias,
 # estilo de código y pruebas unitarias.
@@ -9,7 +9,7 @@
 # Runtime: Python 3.12+ with FastAPI
 # ====================================================================
 
-name: Hermes Enterprise CI — RC75-A
+name: Hermes Enterprise CI
 
 on:
   push:
@@ -209,7 +209,7 @@ jobs:
         run: |
           python -c "
           import yaml, sys
-          for wf in ['.github/workflows/ci.yml', '.github/workflows/deploy.yml', 'tools/Templates/github/ci.yml', 'tools/Templates/github/deploy.yml']:
+          for wf in ['.github/workflows/ci.yml', '.github/workflows/deploy.yml', '.github/workflows/deploy-child.yml', 'tools/Templates/github/ci.yml']:
               with open(wf) as f:
                   data = yaml.safe_load(f)
               if data and 'jobs' in data:
@@ -298,8 +298,8 @@ jobs:
               return all_ok
 
           all_pass = True
-          all_pass &= check_deploy_capabilities('.github/workflows/deploy.yml', 'deploy.yml (real)')
-          all_pass &= check_deploy_capabilities('tools/Templates/github/deploy.yml', 'deploy.yml (template)')
+          all_pass &= check_deploy_capabilities('.github/workflows/deploy-child.yml', 'deploy-child.yml (Control Plane)')
+          all_pass &= check_deploy_capabilities('.github/workflows/deploy.yml', 'deploy.yml (main app)')
           all_pass &= check_ci_capabilities('.github/workflows/ci.yml', 'ci.yml (real)')
           all_pass &= check_ci_capabilities('tools/Templates/github/ci.yml', 'ci.yml (template)')
 

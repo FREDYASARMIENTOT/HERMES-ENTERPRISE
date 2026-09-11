@@ -206,22 +206,21 @@ jobs:
         run: pip install pyyaml
 
       - name: Validate workflows compile
+        shell: python
         run: |
-          python -c "
           import yaml, sys
           for wf in ['.github/workflows/ci.yml', '.github/workflows/deploy.yml', '.github/workflows/deploy-child.yml', 'tools/Templates/github/ci.yml']:
               with open(wf) as f:
                   data = yaml.safe_load(f)
               if data and 'jobs' in data:
-                  print(f'OK: {wf} ({len(data[\"jobs\"])} jobs)')
+                  print(f'OK: {wf} ({len(data["jobs"])} jobs)')
               else:
                   print(f'ERROR: {wf}')
                   sys.exit(1)
-          "
 
       - name: Validate critical workflow capabilities (drift detection)
+        shell: python
         run: |
-          python -c "
           import yaml, sys
 
           def check_deploy_capabilities(wf_path, label):
@@ -309,4 +308,3 @@ jobs:
               sys.exit(1)
           print()
           print('=== All workflows validated — no critical drift detected ===')
-          "

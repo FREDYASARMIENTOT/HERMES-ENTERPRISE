@@ -58,7 +58,7 @@ def obtener_bitacora(corr_id: str) -> list:
 
 @app.get("/health")
 async def health():
-    return {"status":"saludable","timestamp":datetime.now(timezone.utc).isoformat()}
+    return {"status":"saludable","proyecto":"{{PROJECT_NAME}}","timestamp":datetime.now(timezone.utc).isoformat()}
 
 @app.get("/api/version")
 async def api_version():

@@ -54,7 +54,7 @@ def main():
     api_version_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/api/version 2>/dev/null || echo "000"')
     api_proyecto_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/api/proyecto 2>/dev/null || echo "000"')
     openapi_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/openapi.json 2>/dev/null || echo "000"')
-    docs_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/docs 2>/dev/null || echo "000"')
+    docs_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/swagger 2>/dev/null || echo "000"')
 
     # ── Resultado general derivado de resultados reales ──
     overall = 'PASS'
@@ -113,7 +113,7 @@ def main():
                 'GET /': root_code,
                 'GET /api/proyecto': api_proyecto_code,
                 'GET /openapi.json': openapi_code,
-                'GET /docs': docs_code,
+                'GET /swagger': docs_code,
                 'GET /ruta-que-no-existe (404 test)': neg_code
             },
             'pass_count': sum(1 for c in [health_code, api_version_code, root_code, api_proyecto_code, openapi_code, docs_code, neg_code] if c == '200' or (c == '404' and neg_code == '404')),
@@ -134,7 +134,7 @@ def main():
             'version': f'{url}/api/version',
             'project': f'{url}/api/proyecto',
             'openapi': f'{url}/openapi.json',
-            'docs': f'{url}/docs'
+            'swagger': f'{url}/swagger'
         },
         'timestamp': timestamp
     }

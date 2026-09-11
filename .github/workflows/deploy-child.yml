@@ -520,26 +520,27 @@ jobs:
           echo "${HTTP}" > /tmp/openapi_code
           [ "${HTTP}" = "200" ] && pass "GET /openapi.json -> 200" || fail "GET /openapi.json -> ${HTTP}"
 
-          # Prueba 6: GET /docs -> 200
+          # Prueba 6: GET /swagger -> 200 (FastAPI docs_url configurado a /swagger por Factory)
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
-            -o /dev/null -w '%{http_code}' "${URL}/docs" 2>/dev/null || echo "000")
+            -o /dev/null -w '%{http_code}' "${URL}/swagger" 2>/dev/null || echo "000")
           echo "${HTTP}" > /tmp/docs_code
-          [ "${HTTP}" = "200" ] && pass "GET /docs -> 200" || fail "GET /docs -> ${HTTP}"
+          [ "${HTTP}" = "200" ] && pass "GET /swagger -> 200" || fail "GET /swagger -> ${HTTP}"
 
           # Prueba 7: NEGATIVA - 404
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /dev/null -w '%{http_code}' "${URL}/ruta-que-no-existe" 2>/dev/null || echo "000")
           [ "${HTTP}" = "404" ] && pass "NEGATIVE 404 -> ${HTTP}" || fail "NEGATIVE 404 -> ${HTTP}"
 
-          # Prueba 8: Identidad
-          HEALTH_APP=$(python3 -c "import json;print(json.load(open('/tmp/health.json')).get('aplicacion',''))" 2>/dev/null)
-          VERSION_APP=$(python3 -c "import json;print(json.load(open('/tmp/version.json')).get('aplicacion',''))" 2>/dev/null)
+          # Prueba 8: Identidad — validar coherencia con el project_name del Factory
+          PROJECT_NAME="${{ needs.validate-inputs.outputs.project_name }}"
+          HEALTH_PROY=$(python3 -c "import json;print(json.load(open('/tmp/health.json')).get('proyecto',''))" 2>/dev/null)
+          VERSION_PROY=$(python3 -c "import json;print(json.load(open('/tmp/version.json')).get('proyecto',''))" 2>/dev/null)
           OPENAPI_TITLE=$(python3 -c "import json;print(json.load(open('/tmp/openapi.json')).get('info',{}).get('title',''))" 2>/dev/null)
-          echo "  Health: ${HEALTH_APP}  Version: ${VERSION_APP}  OpenAPI: ${OPENAPI_TITLE}"
-          if [ "${HEALTH_APP}" = "Hermes Enterprise Web" ] && [ "${OPENAPI_TITLE}" = "Hermes Enterprise - API Publica" ]; then
-            pass "Identity confirmed"
+          echo "  Project: ${PROJECT_NAME}  Version.proyecto: ${VERSION_PROY}  OpenAPI.title: ${OPENAPI_TITLE}  Health.proyecto: ${HEALTH_PROY}"
+          if [ "${VERSION_PROY}" = "${PROJECT_NAME}" ] && [ "${OPENAPI_TITLE}" = "${PROJECT_NAME}" ]; then
+            pass "Identity confirmed (${PROJECT_NAME})"
           else
-            fail "Identity MISMATCH"
+            fail "Identity MISMATCH: esperado=${PROJECT_NAME}, version.proyecto=${VERSION_PROY}, openapi.title=${OPENAPI_TITLE}"
           fi
 
           echo ""

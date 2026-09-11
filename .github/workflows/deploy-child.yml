@@ -391,6 +391,15 @@ jobs:
         id: deploy
         shell: bash
         run: |
+          # Set explicit startup command BEFORE deploy so container starts with uvicorn
+          echo "=== Setting startup command (pre-deploy) ==="
+          az webapp config set \
+            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
+            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
+            --startup-file "startup.sh" \
+            --output none 2>/dev/null || true
+          echo "Startup command set to: startup.sh"
+
           echo "=== Deploying via az webapp deploy ==="
           az webapp deploy \
             --name ${{ needs.validate-inputs.outputs.app_service_name }} \
@@ -403,21 +412,7 @@ jobs:
           echo "App          : ${{ needs.validate-inputs.outputs.app_service_name }}"
           echo "SHA          : ${{ needs.validate-inputs.outputs.commit_sha }}"
 
-          # Set explicit startup command so container runs uvicorn with correct app path
-          echo "=== Setting startup command ==="
-          az webapp config set \
-            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
-            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
-            --startup-file "startup.sh" \
-            --output none 2>/dev/null || true
-          echo "Startup command set to: startup.sh"
-
-          echo "=== Restarting web app ==="
-          az webapp restart \
-            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
-            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} || true
-          echo "Restart completed"
-
+          # No restart needed — az webapp deploy triggers a site restart automatically
           echo "deploy_result=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================

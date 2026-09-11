@@ -443,7 +443,7 @@ jobs:
               # Validar que es una respuesta de salud real de Hermes (no un 200 genérico)
               HERMES_STATUS=$(python3 -c "import json;d=json.load(open('/tmp/health_response.json'));print(d.get('status','unknown'))" 2>/dev/null || echo "parse_error")
               echo "Health status field: ${HERMES_STATUS}"
-              if [ "${HERMES_STATUS}" = "healthy" ] || [ "${HERMES_STATUS}" = "ok" ]; then
+              if [ "${HERMES_STATUS}" = "healthy" ] || [ "${HERMES_STATUS}" = "ok" ] || [ "${HERMES_STATUS}" = "saludable" ]; then
                 echo "=== READY (Hermes validated) ==="
                 echo "readiness_result=PASS" >> $GITHUB_OUTPUT
                 echo "health_code=200" >> $GITHUB_OUTPUT

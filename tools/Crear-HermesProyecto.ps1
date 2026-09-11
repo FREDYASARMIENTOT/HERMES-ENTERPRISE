@@ -26,7 +26,8 @@ param(
     [string]$WorkspaceRoot = "d:\",
     [string]$GitHubUser = "FREDYASARMIENTOT",
     [int]$MaxAutocorrectionCycles = 5,
-    [int]$MaxDeployRetries = 3
+    [int]$MaxDeployRetries = 3,
+    [switch]$TriggerControlPlane = $false
 )
 
 Set-StrictMode -Version Latest
@@ -347,6 +348,33 @@ try {
         Write-Step "GitFinal" "OK" "Working tree clean - nothing to commit"
     }
 
+    # ===== SHA Capture + Control Plane Trigger =====
+    Write-Step "SHA" "START" "Capturing HEAD commit SHA"
+    $commitSha = (git rev-parse HEAD 2>&1).Trim()
+    $repoName = "$GitHubUser/$NombreProyecto"
+    Write-Step "SHA" "OK" "SHA=$commitSha Repo=$repoName"
+
+    if ($TriggerControlPlane) {
+        Write-Step "ControlPlane" "START" "Triggering deploy-child.yml workflow"
+        $triggerResult = gh workflow run deploy-child.yml `
+            --repo "$GitHubUser/HERMES-ENTERPRISE" `
+            --ref main `
+            --field project_name=$NombreProyecto `
+            --field repository=$repoName `
+            --field commit_sha=$commitSha `
+            2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Step "ControlPlane" "OK" "Triggered! Check Actions: https://github.com/$GitHubUser/HERMES-ENTERPRISE/actions"
+        } else {
+            Write-Step "ControlPlane" "WARN" "Trigger failed: $triggerResult"
+            Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha"
+        }
+    } else {
+        Write-Step "ControlPlane" "SKIP" "Use -TriggerControlPlane to auto-deploy via Control Plane"
+        Write-Step "ControlPlane" "INFO" "Manual trigger command:"
+        Write-Host "    gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha" -ForegroundColor Yellow
+    }
+
     # -- Success banner --
     Write-Host "`n$(('='*60))" -ForegroundColor Cyan
     Write-Host "    HERMES ENTERPRISE — DEPLOYMENT COMPLETE" -ForegroundColor Cyan
@@ -367,6 +395,8 @@ try {
     Write-Host " Commits      : $TotalCommits" -ForegroundColor Yellow
     Write-Host " Deploys      : $TotalDeploys" -ForegroundColor Yellow
     Write-Host " Git          : Working tree clean" -ForegroundColor Yellow
+    Write-Host " SHA          : $commitSha" -ForegroundColor Yellow
+    Write-Host " Repo         : $repoName" -ForegroundColor Yellow
     Write-Host "$(('='*60))" -ForegroundColor Cyan
     Write-Host " Navegador abierto: $($webApp.Url)/" -ForegroundColor Green
     Write-Host "$(('='*60))`n" -ForegroundColor Cyan

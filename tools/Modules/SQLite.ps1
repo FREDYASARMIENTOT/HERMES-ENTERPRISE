@@ -1,13 +1,13 @@
-function Initialize-ProyectoDatabase {
+function Inicializar-BaseDatosProyecto {
     <#
     .SYNOPSIS
-        Initializes the SQLite database for a project.
+        Inicializa la base de datos SQLite del proyecto.
     .PARAMETER DbPath
-        Full path to the SQLite database file.
+        Ruta completa al archivo de base de datos SQLite.
     .PARAMETER CorrelationId
-        Unique correlation identifier.
+        Identificador único de correlación.
     .PARAMETER SchemaPath
-        Path to the SQL schema template file (optional).
+        Ruta al archivo de esquema SQL (opcional).
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath,
@@ -15,24 +15,25 @@ function Initialize-ProyectoDatabase {
         [string] $SchemaPath = ""
     )
 
-    $dbDir = Split-Path $DbPath -Parent
-    if (-not (Test-Path $dbDir)) {
-        New-Item -Path $dbDir -ItemType Directory -Force | Out-Null
+    # Crea el directorio de la base de datos si no existe
+    $directorioDb = Split-Path $DbPath -Parent
+    if (-not (Test-Path $directorioDb)) {
+        New-Item -Path $directorioDb -ItemType Directory -Force | Out-Null
     }
 
     if ($SchemaPath -and (Test-Path $SchemaPath)) {
-        Write-Host "[SQLite] Applying schema from: $SchemaPath"
-        $schema = Get-Content -Path $SchemaPath -Raw -Encoding UTF8
-        $schema | sqlite3 $DbPath 2>&1 | Out-Null
+        Write-Host "[SQLite] Aplicando esquema desde: $SchemaPath"
+        $esquema = Get-Content -Path $SchemaPath -Raw -Encoding UTF8
+        $esquema | sqlite3 $DbPath 2>&1 | Out-Null
     }
 
-    Write-Host "[SQLite] Database initialized: $DbPath"
+    Write-Host "[SQLite] Base de datos inicializada: $DbPath"
 }
 
-function Register-ProyectoEvent {
+function Registrar-EventoProyecto {
     <#
     .SYNOPSIS
-        Registers an event in the BitacoraEventos table.
+        Registra un evento en la tabla BitacoraEventos.
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath,
@@ -45,18 +46,18 @@ function Register-ProyectoEvent {
         [string] $Resultado = ""
     )
 
-    $sql = @"
+    $consulta = @"
 INSERT INTO BitacoraEventos (CorrelationId, Usuario, Paso, Estado, Duracion, Mensaje, Resultado)
-VALUES ('$CorrelationId', '$Usuario', '$Paso', '$Estado', $Duracion, '$(Escape-SqlString $Mensaje)', '$(Escape-SqlString $Resultado)');
+VALUES ('$CorrelationId', '$Usuario', '$Paso', '$Estado', $Duracion, '$(Escapar-CadenaSQL $Mensaje)', '$(Escapar-CadenaSQL $Resultado)');
 "@
 
-    sqlite3 $DbPath $sql 2>&1 | Out-Null
+    sqlite3 $DbPath $consulta 2>&1 | Out-Null
 }
 
-function Register-TimelineEvent {
+function Registrar-EventoLineaTiempo {
     <#
     .SYNOPSIS
-        Registers an event in the Timeline table.
+        Registra un evento en la tabla Timeline (línea de tiempo del proyecto).
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath,
@@ -67,18 +68,18 @@ function Register-TimelineEvent {
         [double] $Duracion = 0
     )
 
-    $sql = @"
+    $consulta = @"
 INSERT INTO Timeline (CorrelationId, Evento, Estado, Detalle, Duracion)
-VALUES ('$CorrelationId', '$(Escape-SqlString $Evento)', '$Estado', '$(Escape-SqlString $Detalle)', $Duracion);
+VALUES ('$CorrelationId', '$(Escapar-CadenaSQL $Evento)', '$Estado', '$(Escapar-CadenaSQL $Detalle)', $Duracion);
 "@
 
-    sqlite3 $DbPath $sql 2>&1 | Out-Null
+    sqlite3 $DbPath $consulta 2>&1 | Out-Null
 }
 
-function Set-ProyectoInfo {
+function Establecer-InformacionProyecto {
     <#
     .SYNOPSIS
-        Updates or inserts project information.
+        Inserta o actualiza la información del proyecto en la base de datos.
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath,
@@ -86,50 +87,50 @@ function Set-ProyectoInfo {
         [Parameter(Mandatory)] [hashtable] $Properties
     )
 
-    $existing = (sqlite3 $DbPath "SELECT COUNT(*) FROM Proyecto WHERE CorrelationId='$CorrelationId'" 2>&1)
-    if ([string]::IsNullOrEmpty($existing)) { $existing = "0" }
+    $existente = (sqlite3 $DbPath "SELECT COUNT(*) FROM Proyecto WHERE CorrelationId='$CorrelationId'" 2>&1)
+    if ([string]::IsNullOrEmpty($existente)) { $existente = "0" }
 
-    if ($existing -eq "0") {
-        $nom = Escape-SqlString $Properties["Nombre"]
-        $desc = Escape-SqlString $Properties["Descripcion"]
+    if ($existente -eq "0") {
+        $nom = Escapar-CadenaSQL $Properties["Nombre"]
+        $desc = Escapar-CadenaSQL $Properties["Descripcion"]
         $version = $Properties["Version"]
-        $sql = @"
+        $consulta = @"
 INSERT INTO Proyecto (Nombre, Descripcion, Version, CorrelationId, Estado)
 VALUES ('$nom', '$desc', '$version', '$CorrelationId', 'CREADO');
 "@
     }
     else {
-        $sets = @()
+        $asignaciones = @()
         foreach ($k in $Properties.Keys) {
             $v = $Properties[$k]
-            $ev = Escape-SqlString $v
-            $sets += "$k='$ev'"
+            $ev = Escapar-CadenaSQL $v
+            $asignaciones += "$k='$ev'"
         }
-        $setClause = $sets -join ", "
-        $sql = "UPDATE Proyecto SET $setClause, FechaActualizacion=datetime('now','localtime') WHERE CorrelationId='$CorrelationId';"
+        $clausulaAsignacion = $asignaciones -join ", "
+        $consulta = "UPDATE Proyecto SET $clausulaAsignacion, FechaActualizacion=datetime('now','localtime') WHERE CorrelationId='$CorrelationId';"
     }
 
-    sqlite3 $DbPath $sql 2>&1 | Out-Null
+    sqlite3 $DbPath $consulta 2>&1 | Out-Null
 }
 
-function Get-ProyectoInfo {
+function Obtener-InformacionProyecto {
     <#
     .SYNOPSIS
-        Retrieves project information from SQLite.
+        Obtiene la información del proyecto desde SQLite.
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath,
         [Parameter(Mandatory)] [string] $CorrelationId
     )
 
-    $result = sqlite3 $DbPath -header -column "SELECT * FROM Proyecto WHERE CorrelationId='$CorrelationId'" 2>&1
-    return $result
+    $resultado = sqlite3 $DbPath -header -column "SELECT * FROM Proyecto WHERE CorrelationId='$CorrelationId'" 2>&1
+    return $resultado
 }
 
-function Register-SmokeTestResult {
+function Registrar-ResultadoPruebaHumo {
     <#
     .SYNOPSIS
-        Registers a smoke test result.
+        Registra el resultado de una prueba de humo (smoke test).
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath,
@@ -141,18 +142,18 @@ function Register-SmokeTestResult {
         [string] $Detalle = ""
     )
 
-    $sql = @"
+    $consulta = @"
 INSERT INTO SmokeTestResults (CorrelationId, Endpoint, HTTPCode, Estado, TiempoRespuesta, Detalle)
-VALUES ('$CorrelationId', '$(Escape-SqlString $Endpoint)', $HTTPCode, '$Estado', $TiempoRespuesta, '$(Escape-SqlString $Detalle)');
+VALUES ('$CorrelationId', '$(Escapar-CadenaSQL $Endpoint)', $HTTPCode, '$Estado', $TiempoRespuesta, '$(Escapar-CadenaSQL $Detalle)');
 "@
 
-    sqlite3 $DbPath $sql 2>&1 | Out-Null
+    sqlite3 $DbPath $consulta 2>&1 | Out-Null
 }
 
-function Test-SQLiteConnection {
+function Probar-ConexionSQLite {
     <#
     .SYNOPSIS
-        Tests if SQLite is accessible.
+        Verifica si SQLite es accesible.
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath
@@ -167,9 +168,13 @@ function Test-SQLiteConnection {
     }
 }
 
-function Escape-SqlString {
+function Escapar-CadenaSQL {
+    <#
+    .SYNOPSIS
+        Escapa caracteres especiales (comillas simples) para SQL.
+    #>
     param([string] $Value)
     return $Value -replace "'", "''"
 }
 
-Export-ModuleMember -Function Initialize-ProyectoDatabase, Register-ProyectoEvent, Register-TimelineEvent, Set-ProyectoInfo, Get-ProyectoInfo, Register-SmokeTestResult, Test-SQLiteConnection
+Export-ModuleMember -Function Inicializar-BaseDatosProyecto, Registrar-EventoProyecto, Registrar-EventoLineaTiempo, Establecer-InformacionProyecto, Obtener-InformacionProyecto, Registrar-ResultadoPruebaHumo, Probar-ConexionSQLite

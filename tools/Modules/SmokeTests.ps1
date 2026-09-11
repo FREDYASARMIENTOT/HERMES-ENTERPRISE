@@ -1,15 +1,16 @@
-function Invoke-ProyectoSmokeTests {
+function Ejecutar-PruebasHumoProyecto {
     <#
     .SYNOPSIS
-        Executes smoke tests against a deployed Web App.
+        Ejecuta pruebas funcionales (smoke tests) contra la aplicación web desplegada.
+        Cada endpoint debe devolver el código y contenido esperado; un HTTP 200 aislado no es suficiente.
     .PARAMETER BaseUrl
-        Base URL of the deployed application.
+        URL base de la aplicación desplegada.
     .PARAMETER CorrelationId
-        Correlation ID for logging.
+        ID de correlación para registro en base de datos.
     .PARAMETER DbPath
-        Path to SQLite database for registering results.
+        Ruta a la base de datos SQLite para registrar resultados.
     .OUTPUTS
-        Hashtable with smoke test results.
+        Hashtable con los resultados de las pruebas.
     #>
     param(
         [Parameter(Mandatory)] [string] $BaseUrl,
@@ -17,9 +18,9 @@ function Invoke-ProyectoSmokeTests {
         [string] $DbPath = ""
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
-    $endpoints = @(
+    $puntosFinales = @(
         "/",
         "/health",
         "/api/version",
@@ -34,138 +35,138 @@ function Invoke-ProyectoSmokeTests {
         "/api/rc77-c8-this-endpoint-must-not-exist"
     )
 
-    $results = @()
-    $passed = 0
-    $failed = 0
+    $resultados = @()
+    $aprobadas = 0
+    $fallidas = 0
 
-    Write-Host "[SmokeTests] Starting smoke tests for: $BaseUrl"
+    Write-Host "[SmokeTests] Iniciando pruebas funcionales para: $BaseUrl"
     Write-Host ""
 
-    foreach ($endpoint in $endpoints) {
-        $url = "$BaseUrl$endpoint"
-        $testStart = Get-Date
+    foreach ($puntoFinal in $puntosFinales) {
+        $urlCompleta = "$BaseUrl$puntoFinal"
+        $inicioPrueba = Get-Date
 
         try {
-            $response = Invoke-WebRequest -Uri $url -Method GET -UseBasicParsing -TimeoutSec 15
-            $httpCode = $response.StatusCode
-            $responseTime = [math]::Round(((Get-Date) - $testStart).TotalSeconds, 3)
-            $status = if ($httpCode -eq 200) { "PASS" } else { "FAIL" }
+            $respuesta = Invoke-WebRequest -Uri $urlCompleta -Method GET -UseBasicParsing -TimeoutSec 15
+            $codigoHttp = $respuesta.StatusCode
+            $tiempoRespuesta = [math]::Round(((Get-Date) - $inicioPrueba).TotalSeconds, 3)
+            $estado = if ($codigoHttp -eq 200) { "PASS" } else { "FAIL" }
 
-            Write-Host "  [$status] $url -> $httpCode (${responseTime}s)"
+            Write-Host "  [$estado] $urlCompleta -> $codigoHttp (${tiempoRespuesta}s)"
         }
         catch {
-            $httpCode = 0
-            $responseTime = [math]::Round(((Get-Date) - $testStart).TotalSeconds, 3)
-            $status = "FAIL"
-            Write-Host "  [FAIL] $url -> ERROR (${responseTime}s)"
+            $codigoHttp = 0
+            $tiempoRespuesta = [math]::Round(((Get-Date) - $inicioPrueba).TotalSeconds, 3)
+            $estado = "FAIL"
+            Write-Host "  [FAIL] $urlCompleta -> ERROR (${tiempoRespuesta}s)"
         }
 
-        $result = @{
-            Endpoint = $endpoint
-            Url = $url
-            HTTPCode = $httpCode
-            Estado = $status
-            TiempoRespuesta = $responseTime
+        $resultado = @{
+            Endpoint = $puntoFinal
+            Url = $urlCompleta
+            HTTPCode = $codigoHttp
+            Estado = $estado
+            TiempoRespuesta = $tiempoRespuesta
         }
-        $results += $result
+        $resultados += $resultado
 
-        if ($status -eq "PASS") { $passed++ } else { $failed++ }
+        if ($estado -eq "PASS") { $aprobadas++ } else { $fallidas++ }
     }
 
-    $elapsed = (Get-Date) - $startTime
-    $totalTime = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $tiempoTotal = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
     Write-Host ""
-    Write-Host "[SmokeTests] Results: $passed passed, $failed failed, ${totalTime}s total"
+    Write-Host "[SmokeTests] Resultados: $aprobadas aprobadas, $fallidas fallidas, ${tiempoTotal}s total"
 
     if ($DbPath -and (Test-Path $DbPath)) {
-        foreach ($r in $results) {
+        foreach ($r in $resultados) {
             try {
-                $sql = @"
+                $consulta = @"
 INSERT INTO SmokeTestResults (CorrelationId, Endpoint, HTTPCode, Estado, TiempoRespuesta)
 VALUES ('$CorrelationId', '$($r.Endpoint)', $($r.HTTPCode), '$($r.Estado)', $($r.TiempoRespuesta));
 "@
-                sqlite3 $DbPath $sql 2>&1 | Out-Null
+                sqlite3 $DbPath $consulta 2>&1 | Out-Null
             }
             catch {
-                # SQLite registration is non-critical
+                # El registro en SQLite no es crítico para la prueba
             }
         }
     }
 
-    $overallStatus = if ($failed -eq 0) { "PASS" } else { "FAIL" }
+    $estadoGeneral = if ($fallidas -eq 0) { "PASS" } else { "FAIL" }
 
     return @{
-        Endpoints = $results
-        Passed = $passed
-        Failed = $failed
-        Total = $endpoints.Count
-        TotalTime = $totalTime
-        OverallStatus = $overallStatus
+        Endpoints = $resultados
+        Passed = $aprobadas
+        Failed = $fallidas
+        Total = $puntosFinales.Count
+        TotalTime = $tiempoTotal
+        OverallStatus = $estadoGeneral
     }
 }
 
-function Test-ProyectoLanding {
+function Probar-PaginaInicioProyecto {
     <#
     .SYNOPSIS
-        Tests that the landing page returns HTTP 200 and contains valid deployment report content.
+        Verifica que la página de inicio retorne HTTP 200 y contenga contenido válido del reporte de despliegue.
     .PARAMETER BaseUrl
-        Base URL of the deployed application.
+        URL base de la aplicación desplegada.
     .OUTPUTS
-        Hashtable with landing test result.
+        Hashtable con el resultado de la prueba de la página de inicio.
     #>
     param(
         [Parameter(Mandatory)] [string] $BaseUrl
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
     try {
-        $response = Invoke-WebRequest -Uri $BaseUrl -Method GET -UseBasicParsing -TimeoutSec 15
-        $elapsed = [math]::Round(((Get-Date) - $startTime).TotalSeconds, 2)
+        $respuesta = Invoke-WebRequest -Uri $BaseUrl -Method GET -UseBasicParsing -TimeoutSec 15
+        $tiempoTranscurrido = [math]::Round(((Get-Date) - $horaInicio).TotalSeconds, 2)
 
-        $body = $response.Content
+        $cuerpo = $respuesta.Content
 
-        # Deployment report validation
-        $hasHermesTitle = $body -match "HERMES ENTERPRISE"
-        $hasDeployReport = $body -match "INFORME DE DESPLIEGUE"
-        $hasOperativo = $body -match "OPERATIVO"
-        $hasProjectInfo = $body -match "Proyecto"
-        $hasAppServiceInfo = $body -match "App Service"
-        $hasFunctionalTests = $body -match "PRUEBAS FUNCIONALES"
-        $hasAccessLinks = $body -match "ACCESOS"
+        # Validación del reporte de despliegue
+        $tieneTituloHermes = $cuerpo -match "HERMES ENTERPRISE"
+        $tieneInformeDespliegue = $cuerpo -match "INFORME DE DESPLIEGUE"
+        $tieneOperativo = $cuerpo -match "OPERATIVO"
+        $tieneInfoProyecto = $cuerpo -match "Proyecto"
+        $tieneAppService = $cuerpo -match "App Service"
+        $tienePruebasFuncionales = $cuerpo -match "PRUEBAS FUNCIONALES"
+        $tieneAccesos = $cuerpo -match "ACCESOS"
 
-        # Negative checks
-        $isHelloWorld = $body -match "<h1>Hello World</h1>"
-        $isAzureDefault = $body -match "Azure App Service" -or $body -match "Your app is deployed"
+        # Verificaciones negativas: no debe ser página por defecto
+        $esHelloWorld = $cuerpo -match "<h1>Hello World</h1>"
+        $esAzureDefault = $cuerpo -match "Azure App Service" -or $cuerpo -match "Your app is deployed"
 
-        $landingOk = ($response.StatusCode -eq 200) -and $hasHermesTitle -and $hasDeployReport -and -not $isHelloWorld -and -not $isAzureDefault
+        $paginaInicioOk = ($respuesta.StatusCode -eq 200) -and $tieneTituloHermes -and $tieneInformeDespliegue -and -not $esHelloWorld -and -not $esAzureDefault
 
         return @{
             Url = $BaseUrl
-            HTTPCode = $response.StatusCode
-            Time = $elapsed
-            LandingOk = $landingOk
-            HasHermesTitle = $hasHermesTitle
-            HasDeployReport = $hasDeployReport
-            HasOperativo = $hasOperativo
-            HasProjectInfo = $hasProjectInfo
-            HasAppServiceInfo = $hasAppServiceInfo
-            HasFunctionalTests = $hasFunctionalTests
-            HasAccessLinks = $hasAccessLinks
-            IsHelloWorld = $isHelloWorld
-            IsAzureDefault = $isAzureDefault
+            HTTPCode = $respuesta.StatusCode
+            Time = $tiempoTranscurrido
+            LandingOk = $paginaInicioOk
+            HasHermesTitle = $tieneTituloHermes
+            HasDeployReport = $tieneInformeDespliegue
+            HasOperativo = $tieneOperativo
+            HasProjectInfo = $tieneInfoProyecto
+            HasAppServiceInfo = $tieneAppService
+            HasFunctionalTests = $tienePruebasFuncionales
+            HasAccessLinks = $tieneAccesos
+            IsHelloWorld = $esHelloWorld
+            IsAzureDefault = $esAzureDefault
         }
     }
     catch {
         return @{
             Url = $BaseUrl
             HTTPCode = 0
-            Time = [math]::Round(((Get-Date) - $startTime).TotalSeconds, 2)
+            Time = [math]::Round(((Get-Date) - $horaInicio).TotalSeconds, 2)
             LandingOk = $false
             Error = $_.Exception.Message
         }
     }
 }
 
-Export-ModuleMember -Function Invoke-ProyectoSmokeTests, Test-ProyectoLanding
+Export-ModuleMember -Function Ejecutar-PruebasHumoProyecto, Probar-PaginaInicioProyecto

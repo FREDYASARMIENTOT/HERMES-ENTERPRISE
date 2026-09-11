@@ -1,13 +1,13 @@
-function Invoke-RenderTemplate {
+function Ejecutar-RenderizarPlantilla {
     <#
     .SYNOPSIS
-        Renders a template file replacing {{PLACEHOLDERS}} with provided values.
+        Renderiza una plantilla reemplazando {{PLACEHOLDERS}} con valores proporcionados.
     .PARAMETER TemplatePath
-        Path to the template file.
+        Ruta al archivo de plantilla.
     .PARAMETER OutputPath
-        Path where the rendered file will be saved.
+        Ruta donde se guardará el archivo renderizado.
     .PARAMETER Parameters
-        Hashtable of key-value pairs for substitution.
+        Hashtable de pares clave-valor para sustitución.
     #>
     param(
         [Parameter(Mandatory)] [string] $TemplatePath,
@@ -16,84 +16,84 @@ function Invoke-RenderTemplate {
     )
 
     if (-not (Test-Path $TemplatePath)) {
-        throw "Template not found: $TemplatePath"
+        throw "Plantilla no encontrada: $TemplatePath"
     }
 
-    $content = Get-Content -Path $TemplatePath -Raw -Encoding UTF8
+    $contenido = Get-Content -Path $TemplatePath -Raw -Encoding UTF8
 
-    foreach ($key in $Parameters.Keys) {
-        $placeholder = "{{${key}}}"
-        $value = $Parameters[$key]
-        $content = $content -replace [regex]::Escape($placeholder), $value
+    foreach ($clave in $Parameters.Keys) {
+        $placeholder = "{{${clave}}}"
+        $valor = $Parameters[$clave]
+        $contenido = $contenido -replace [regex]::Escape($placeholder), $valor
     }
 
-    $dir = Split-Path $OutputPath -Parent
-    if (-not (Test-Path $dir)) {
-        New-Item -Path $dir -ItemType Directory -Force | Out-Null
+    $directorio = Split-Path $OutputPath -Parent
+    if (-not (Test-Path $directorio)) {
+        New-Item -Path $directorio -ItemType Directory -Force | Out-Null
     }
 
-    $content | Out-File -FilePath $OutputPath -Encoding UTF8 -Force
-    Write-Host "[RenderEngine] Rendered: $TemplatePath -> $OutputPath"
+    $contenido | Out-File -FilePath $OutputPath -Encoding UTF8 -Force
+    Write-Host "[RenderEngine] Renderizado: $TemplatePath -> $OutputPath"
 }
 
-function Invoke-RenderTemplateFromString {
+function Ejecutar-RenderizarPlantillaDesdeCadena {
     <#
     .SYNOPSIS
-        Renders a template string replacing {{PLACEHOLDERS}} with provided values.
+        Renderiza una cadena de plantilla reemplazando {{PLACEHOLDERS}} con valores proporcionados.
     .PARAMETER Content
-        The template content as a string.
+        El contenido de la plantilla como cadena.
     .PARAMETER Parameters
-        Hashtable of key-value pairs for substitution.
+        Hashtable de pares clave-valor para sustitución.
     .RETURNS
-        Rendered string.
+        Cadena renderizada.
     #>
     param(
         [Parameter(Mandatory)] [string] $Content,
         [Parameter(Mandatory)] [hashtable] $Parameters
     )
 
-    foreach ($key in $Parameters.Keys) {
-        $placeholder = "{{${key}}}"
-        $value = $Parameters[$key]
-        $Content = $Content -replace [regex]::Escape($placeholder), $value
+    foreach ($clave in $Parameters.Keys) {
+        $placeholder = "{{${clave}}}"
+        $valor = $Parameters[$clave]
+        $Content = $Content -replace [regex]::Escape($placeholder), $valor
     }
 
     return $Content
 }
 
-function Get-TemplatePath {
+function Obtener-RutaPlantilla {
     <#
     .SYNOPSIS
-        Returns the full path to a template file within the Templates directory.
+        Retorna la ruta completa a un archivo de plantilla dentro del directorio Templates.
     .PARAMETER RelativePath
-        Relative path from the Templates directory (e.g., "backend/main.py").
+        Ruta relativa desde el directorio Templates (ej., "backend/main.py").
     .PARAMETER HermesRoot
-        Root directory of Hermes Enterprise. Defaults to d:\HERMES-ENTERPRISE.
+        Directorio raíz de Hermes Enterprise. Por defecto d:\HERMES-ENTERPRISE.
     #>
     param(
         [Parameter(Mandatory)] [string] $RelativePath,
         [string] $HermesRoot = "d:\HERMES-ENTERPRISE"
     )
 
-    $templatesDir = Join-Path (Join-Path $HermesRoot "tools") "Templates"
-    $fullPath = Join-Path $templatesDir $RelativePath
-    return $fullPath
+    $directorioPlantillas = Join-Path (Join-Path $HermesRoot "tools") "Templates"
+    $rutaCompleta = Join-Path $directorioPlantillas $RelativePath
+    return $rutaCompleta
 }
 
-function Copy-TemplateDirectory {
+function Copiar-DirectorioPlantillas {
     <#
     .SYNOPSIS
-        Copies all templates from a subdirectory, rendering each one.
+        Copia todas las plantillas de un subdirectorio, renderizando cada una.
     .PARAMETER TemplateSubdir
-        Subdirectory under Templates (e.g., "backend").
+        Subdirectorio bajo Templates (ej., "backend").
     .PARAMETER OutputDir
-        Destination directory.
+        Directorio de destino.
     .PARAMETER Parameters
-        Hashtable of key-value pairs for substitution.
+        Hashtable de pares clave-valor para sustitución.
     .PARAMETER Exclude
-        Array of filenames to exclude.
+        Lista de nombres de archivo a excluir.
     .PARAMETER HermesRoot
-        Root directory of Hermes Enterprise. Defaults to d:\HERMES-ENTERPRISE.
+        Directorio raíz de Hermes Enterprise. Por defecto d:\HERMES-ENTERPRISE.
     #>
     param(
         [Parameter(Mandatory)] [string] $TemplateSubdir,
@@ -103,38 +103,38 @@ function Copy-TemplateDirectory {
         [string] $HermesRoot = "d:\HERMES-ENTERPRISE"
     )
 
-    $templatesDir = Join-Path (Join-Path $HermesRoot "tools") "Templates"
-    $srcDir = Join-Path $templatesDir $TemplateSubdir
+    $directorioPlantillas = Join-Path (Join-Path $HermesRoot "tools") "Templates"
+    $origenDirectorio = Join-Path $directorioPlantillas $TemplateSubdir
 
-    if (-not (Test-Path $srcDir)) {
-        throw "Template subdirectory not found: $srcDir"
+    if (-not (Test-Path $origenDirectorio)) {
+        throw "Subdirectorio de plantillas no encontrado: $origenDirectorio"
     }
 
     if (-not (Test-Path $OutputDir)) {
         New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
     }
 
-    Get-ChildItem -Path $srcDir -File | ForEach-Object {
+    Get-ChildItem -Path $origenDirectorio -File | ForEach-Object {
         if ($_.Name -notin $Exclude) {
-            $outputPath = Join-Path $OutputDir $_.Name
-            Invoke-RenderTemplate -TemplatePath $_.FullName -OutputPath $outputPath -Parameters $Parameters
+            $rutaSalida = Join-Path $OutputDir $_.Name
+            Ejecutar-RenderizarPlantilla -TemplatePath $_.FullName -OutputPath $rutaSalida -Parameters $Parameters
         }
     }
 
-    Write-Host "[RenderEngine] Copied templates from '$TemplateSubdir' to '$OutputDir'"
+    Write-Host "[RenderEngine] Plantillas copiadas de '$TemplateSubdir' a '$OutputDir'"
 }
 
-function New-ProyectoLanding {
+function Crear-PaginaInicioProyecto {
     <#
     .SYNOPSIS
-        Creates the landing page HTML that speaks only about the project.
-        The only reference to Hermes is "Powered by Hermes Enterprise" in the footer.
+        Crea la página de inicio HTML que habla solo del proyecto.
+        La única referencia a Hermes es "Powered by Hermes Enterprise" en el footer.
     .PARAMETER ProjectRoot
-        Root directory of the project.
+        Directorio raíz del proyecto.
     .PARAMETER ProjectName
-        Name of the project.
+        Nombre del proyecto.
     .OUTPUTS
-        Path to the generated template file.
+        Ruta al archivo de plantilla generado.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectRoot,
@@ -290,4 +290,4 @@ fetch('/api/despliegue').then(r=>r.json()).then(d=>{
     return $outputPath
 }
 
-Export-ModuleMember -Function Invoke-RenderTemplate, Invoke-RenderTemplateFromString, Get-TemplatePath, Copy-TemplateDirectory, New-ProyectoLanding
+Export-ModuleMember -Function Ejecutar-RenderizarPlantilla, Ejecutar-RenderizarPlantillaDesdeCadena, Obtener-RutaPlantilla, Copiar-DirectorioPlantillas, Crear-PaginaInicioProyecto

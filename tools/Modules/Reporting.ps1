@@ -1,37 +1,37 @@
 function New-ProyectoReportMD {
     <#
     .SYNOPSIS
-        Generates a Markdown report for the project.
+        Genera un informe Markdown para el proyecto.
     .PARAMETER Metadata
-        Hashtable with all project metadata.
+        Hashtable con todos los metadatos del proyecto.
     .PARAMETER OutputPath
-        Path for the .md report file.
+        Ruta para el archivo .md del informe.
     .OUTPUTS
-        Path to the generated report.
+        Ruta al informe generado.
     #>
     param(
         [Parameter(Mandatory)] [hashtable] $Metadata,
         [Parameter(Mandatory)] [string] $OutputPath
     )
 
-    $reportDir = Split-Path $OutputPath -Parent
-    if (-not (Test-Path $reportDir)) {
-        New-Item -Path $reportDir -ItemType Directory -Force | Out-Null
+    $dirInforme = Split-Path $OutputPath -Parent
+    if (-not (Test-Path $dirInforme)) {
+        New-Item -Path $dirInforme -ItemType Directory -Force | Out-Null
     }
 
-    $smokePassed = if ($Metadata.SmokePassed) { $Metadata.SmokePassed } else { 0 }
-    $smokeFailed = if ($Metadata.SmokeFailed) { $Metadata.SmokeFailed } else { 0 }
-    $smokeTotal = $smokePassed + $smokeFailed
+    $smokeExitosos = if ($Metadata.SmokePassed) { $Metadata.SmokePassed } else { 0 }
+    $smokeFallidos = if ($Metadata.SmokeFailed) { $Metadata.SmokeFailed } else { 0 }
+    $smokeTotal = $smokeExitosos + $smokeFallidos
 
-    $lines = @()
-    $lines += "# RC74 Report - $($Metadata.ProjectName)"
-    $lines += ""
-    $lines += "> **CorrelationId:** $($Metadata.CorrelationId)"
-    $lines += ""
-    $lines += "## Resumen Ejecutivo"
-    $lines += ""
-    $lines += "| Metrica | Valor |"
-    $lines += "|---------|-------|"
+    $lineas = @()
+    $lineas += "# RC74 Report - $($Metadata.ProjectName)"
+    $lineas += ""
+    $lineas += "> **CorrelationId:** $($Metadata.CorrelationId)"
+    $lineas += ""
+    $lineas += "## Resumen Ejecutivo"
+    $lineas += ""
+    $lineas += "| Metrica | Valor |"
+    $lineas += "|---------|-------|"
 
     $fields = @(
         @("Proyecto", $Metadata.ProjectName),
@@ -46,69 +46,69 @@ function New-ProyectoReportMD {
         @("GitHub Status", $Metadata.GitHubStatus),
         @("CI Status", $Metadata.CIStatus),
         @("SQLite Status", $Metadata.SQLiteStatus),
-        @("Smoke Test", "$smokePassed/$smokeTotal passed")
+        @("Smoke Test", "$smokeExitosos/$smokeTotal exitosos")
     )
 
     foreach ($f in $fields) {
-        $lines += "| $($f[0]) | $($f[1]) |"
+        $lineas += "| $($f[0]) | $($f[1]) |"
     }
 
-    $lines += ""
-    $lines += "## Smoke Test Results"
-    $lines += ""
-    $lines += "| Endpoint | HTTP | Estado | Tiempo |"
-    $lines += "|----------|------|--------|--------|"
+    $lineas += ""
+    $lineas += "## Smoke Test Results"
+    $lineas += ""
+    $lineas += "| Endpoint | HTTP | Estado | Tiempo |"
+    $lineas += "|----------|------|--------|--------|"
 
     if ($Metadata.SmokeResults) {
         foreach ($s in $Metadata.SmokeResults) {
-            $lines += "| $($s.Endpoint) | $($s.HTTPCode) | $($s.Estado) | $($s.TiempoRespuesta)s |"
+            $lineas += "| $($s.Endpoint) | $($s.HTTPCode) | $($s.Estado) | $($s.TiempoRespuesta)s |"
         }
     }
 
-    $lines += ""
-    $lines += "## Timeline"
-    $lines += ""
+    $lineas += ""
+    $lineas += "## Timeline"
+    $lineas += ""
 
     $events = @("Workspace", "Git", "GitHub", "SQLite", "Build", "ZIP", "Deploy", "SmokeTest", "Publicado")
     foreach ($ev in $events) {
         $status = if ($Metadata.Timeline -and $Metadata.Timeline[$ev]) { $Metadata.Timeline[$ev] } else { "PENDIENTE" }
-        $lines += "- **$ev**: $status"
+        $lineas += "- **$ev**: $status"
     }
 
-    $lines += ""
-    $lines += "---"
-    $lines += ""
-    $lines += "*Powered by Hermes Enterprise*"
+    $lineas += ""
+    $lineas += "---"
+    $lineas += ""
+    $lineas += "*Powered by Hermes Enterprise*"
 
-    $content = $lines -join "`n"
-    $content | Out-File -FilePath $OutputPath -Encoding UTF8 -Force
+    $contenido = $lineas -join "`n"
+    $contenido | Out-File -FilePath $OutputPath -Encoding UTF8 -Force
 
-    Write-Host "[Reporting] Markdown report generated: $OutputPath"
+    Write-Host "[Reporting] Informe Markdown generado: $OutputPath"
     return $OutputPath
 }
 
 function New-ProyectoReportJSON {
     <#
     .SYNOPSIS
-        Generates a JSON report for the project.
+        Genera un informe JSON para el proyecto.
     .PARAMETER Metadata
-        Hashtable with all project metadata.
+        Hashtable con todos los metadatos del proyecto.
     .PARAMETER OutputPath
-        Path for the .json report file.
+        Ruta para el archivo .json del informe.
     .OUTPUTS
-        Path to the generated report.
+        Ruta al informe generado.
     #>
     param(
         [Parameter(Mandatory)] [hashtable] $Metadata,
         [Parameter(Mandatory)] [string] $OutputPath
     )
 
-    $reportDir = Split-Path $OutputPath -Parent
-    if (-not (Test-Path $reportDir)) {
-        New-Item -Path $reportDir -ItemType Directory -Force | Out-Null
+    $dirInforme = Split-Path $OutputPath -Parent
+    if (-not (Test-Path $dirInforme)) {
+        New-Item -Path $dirInforme -ItemType Directory -Force | Out-Null
     }
 
-    $report = @{
+    $informe = @{
         report = "RC74_E2E"
         timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
         correlationId = $Metadata.CorrelationId
@@ -133,38 +133,38 @@ function New-ProyectoReportJSON {
         timeline = $Metadata.Timeline
     }
 
-    $report | ConvertTo-Json -Depth 5 | Out-File -FilePath $OutputPath -Encoding UTF8 -Force
+    $informe | ConvertTo-Json -Depth 5 | Out-File -FilePath $OutputPath -Encoding UTF8 -Force
 
-    Write-Host "[Reporting] JSON report generated: $OutputPath"
+    Write-Host "[Reporting] Informe JSON generado: $OutputPath"
     return $OutputPath
 }
 
 function New-ProyectoReportHTML {
     <#
     .SYNOPSIS
-        Generates an HTML report for the project.
+        Genera un informe HTML para el proyecto.
     .PARAMETER Metadata
-        Hashtable with all project metadata.
+        Hashtable con todos los metadatos del proyecto.
     .PARAMETER OutputPath
-        Path for the .html report file.
+        Ruta para el archivo .html del informe.
     .OUTPUTS
-        Path to the generated report.
+        Ruta al informe generado.
     #>
     param(
         [Parameter(Mandatory)] [hashtable] $Metadata,
         [Parameter(Mandatory)] [string] $OutputPath
     )
 
-    $reportDir = Split-Path $OutputPath -Parent
-    if (-not (Test-Path $reportDir)) {
-        New-Item -Path $reportDir -ItemType Directory -Force | Out-Null
+    $dirInforme = Split-Path $OutputPath -Parent
+    if (-not (Test-Path $dirInforme)) {
+        New-Item -Path $dirInforme -ItemType Directory -Force | Out-Null
     }
 
-    $smokePassed = if ($Metadata.SmokePassed) { $Metadata.SmokePassed } else { 0 }
-    $smokeFailed = if ($Metadata.SmokeFailed) { $Metadata.SmokeFailed } else { 0 }
-    $smokeTotal = $smokePassed + $smokeFailed
-    $overallStatus = $Metadata.OverallStatus
-    $statusColor = if ($overallStatus -eq "OK") { "success" } else { "danger" }
+    $smokeExitosos = if ($Metadata.SmokePassed) { $Metadata.SmokePassed } else { 0 }
+    $smokeFallidos = if ($Metadata.SmokeFailed) { $Metadata.SmokeFailed } else { 0 }
+    $smokeTotal = $smokeExitosos + $smokeFallidos
+    $estadoGeneral = $Metadata.OverallStatus
+    $colorEstado = if ($estadoGeneral -eq "OK") { "success" } else { "danger" }
 
     $html = @"
 <!DOCTYPE html>
@@ -179,7 +179,7 @@ function New-ProyectoReportHTML {
 <div class="container">
     <h1 class="mb-2">RC74 — $($Metadata.ProjectName)</h1>
     <p class="text-secondary">CorrelationId: $($Metadata.CorrelationId)</p>
-    <span class="badge bg-$statusColor mb-4 p-2 fs-6">$overallStatus</span>
+    <span class="badge bg-$colorEstado mb-4 p-2 fs-6">$estadoGeneral</span>
 
     <div class="row g-3 mt-2">
         <div class="col-md-6"><div class="card bg-dark border-secondary"><div class="card-body"><h5 class="card-title">URL</h5><a href="$($Metadata.Url)" target="_blank" class="text-info">$($Metadata.Url)</a></div></div></div>
@@ -196,7 +196,7 @@ function New-ProyectoReportHTML {
         <tr><td>Correcciones</td><td>$($Metadata.AutoCorrections)</td></tr>
         <tr><td>Commits</td><td>$($Metadata.TotalCommits)</td></tr>
         <tr><td>Despliegues</td><td>$($Metadata.TotalDeploys)</td></tr>
-        <tr><td>Smoke Test</td><td>$smokePassed/$smokeTotal passed</td></tr>
+        <tr><td>Smoke Test</td><td>$smokeExitosos/$smokeTotal exitosos</td></tr>
     </table>
 
     <h3 class="mt-4">Smoke Test</h3>
@@ -239,16 +239,16 @@ function New-ProyectoReportHTML {
 
     $html | Out-File -FilePath $OutputPath -Encoding UTF8 -Force
 
-    Write-Host "[Reporting] HTML report generated: $OutputPath"
+    Write-Host "[Reporting] Informe HTML generado: $OutputPath"
     return $OutputPath
 }
 
-function New-BlankMetadata {
+function Nuevo-MetadatosVacios {
     <#
     .SYNOPSIS
-        Creates a blank metadata hashtable with all keys initialized.
+        Crea un hashtable de metadatos vacío con todas las claves inicializadas.
     .OUTPUTS
-        Hashtable with default values.
+        Hashtable con valores predeterminados.
     #>
     return @{
         ProjectName = ""
@@ -271,4 +271,4 @@ function New-BlankMetadata {
     }
 }
 
-Export-ModuleMember -Function New-ProyectoReportMD, New-ProyectoReportJSON, New-ProyectoReportHTML, New-BlankMetadata
+Export-ModuleMember -Function New-ProyectoReportMD, New-ProyectoReportJSON, New-ProyectoReportHTML, Nuevo-MetadatosVacios

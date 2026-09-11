@@ -47,7 +47,7 @@ $TotalCommits = 0; $TotalDeploys = 0; $TotalCorrections = 0
 $SchemaPath = Join-Path $HermesRoot "tools/Templates/database/schema.sql"
 $AzureConfigPath = Join-Path $HermesRoot "config/Hermes.Azure.json"
 $GuardianConfigPath = Join-Path $HermesRoot "config/Hermes.InfrastructureProtection.json"
-$Metadata = New-BlankMetadata; $Metadata.ProjectName = $NombreProyecto; $Metadata.CorrelationId = $CorrelationId; $Metadata.WebAppName = $WebAppName
+$Metadata = Nuevo-MetadatosVacios; $Metadata.ProjectName = $NombreProyecto; $Metadata.CorrelationId = $CorrelationId; $Metadata.WebAppName = $WebAppName
 
 function Write-Step { param([string]$S,[string]$E,[string]$M) $icon = if($E -eq "OK"){"[OK]"}elseif($E -eq "FAIL"){"[FAIL]"}else{"[..]"};Write-Host ("[$(Get-Date -Format HH:mm:ss)] $icon [$S] $E :: $M") }
 function Update-Metadata { param([hashtable]$Props);foreach($k in $Props.Keys){ $Metadata[$k] = $Props[$k] } }
@@ -57,22 +57,22 @@ try {
 
     # ===== 1. Workspace =====
     Write-Step "Workspace" "START" "Creating workspace"
-    $ws = Initialize-ProyectoWorkspace -ProjectName $NombreProyecto -OutputDir $ProjRoot -CorrelationId $CorrelationId
+    $ws = Inicializar-EspacioProyecto -ProjectName $NombreProyecto -OutputDir $ProjRoot -CorrelationId $CorrelationId
     Write-Step "Workspace" "OK" "Created at $ProjRoot"
 
     # ===== 2. SQLite =====
     Write-Step "SQLite" "START" "Initializing SQLite"
-    Initialize-ProyectoDatabase -DbPath $DbPath -CorrelationId $CorrelationId -SchemaPath $SchemaPath
-    Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Nombre=$NombreProyecto;Descripcion="Sistema Analitico de Encuestas de Percepcion de Servicios - Universidad del Rosario";Version="1.0.0"}
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "SQLite" -Estado "OK" -Detalle $DbPath
+    Inicializar-BaseDatosProyecto -DbPath $DbPath -CorrelationId $CorrelationId -SchemaPath $SchemaPath
+    Establecer-InformacionProyecto -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Nombre=$NombreProyecto;Descripcion="Sistema Analitico de Encuestas de Percepcion de Servicios - Universidad del Rosario";Version="1.0.0"}
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "SQLite" -Estado "OK" -Detalle $DbPath
     Write-Step "SQLite" "OK" "Database at $DbPath"
     $Metadata.SQLiteStatus = "OK"
 
     # ===== 3. Register Project =====
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Workspace" -Estado "OK" -Detalle $ProjRoot
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Workspace" -Estado "OK" -Detalle $ProjRoot
 
     # ===== 4. Read Azure Config (early, needed for template placeholders) =====
-    $azureConfig = Read-AzureConfiguration -ConfigPath $AzureConfigPath
+    $azureConfig = Leer-ConfiguracionAzure -ConfigPath $AzureConfigPath
 
     # ===== 5. Render Templates =====
     Write-Step "Backend" "START" "Creating project files"
@@ -103,44 +103,44 @@ try {
     $mainPy = $mainPy -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto -replace '\{\{CORRELATION_ID\}\}',$CorrelationId -replace '\{\{WEBAPP_NAME\}\}',$WebAppName -replace '\{\{REGION\}\}',$azureConfig.location -replace '\{\{DEPLOYMENT_ID\}\}',$CorrelationId
     $mainPy | Out-File (Join-Path $ProjRoot "backend/main.py") -Encoding utf8
     Write-Step "Backend" "OK" "Project files created"
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Build" -Estado "OK"
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Build" -Estado "OK"
 
     # ===== 6. Create Landing =====
     Write-Step "Landing" "START" "Creating landing page"
-    New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto -WebAppName $WebAppName | Out-Null
+    Crear-PaginaInicioProyecto -ProjectRoot $ProjRoot -ProjectName $NombreProyecto -WebAppName $WebAppName | Out-Null
     Write-Step "Landing" "OK" "Landing page created"
 
     # ===== 7. Create Workspace File =====
     Write-Step "WorkspaceFile" "START" "Creating workspace file"
-    New-ProyectoWorkspaceFile -ProjectName $NombreProyecto -OutputDir $ProjRoot | Out-Null
+    Crear-ArchivoEspacioTrabajo -ProjectName $NombreProyecto -OutputDir $ProjRoot | Out-Null
     Write-Step "WorkspaceFile" "OK" "Workspace file created"
 
     # ===== 8. Initialize Git =====
     Write-Step "Git" "START" "Initializing Git"
-    $gitResult = Initialize-ProyectoGit -ProjectDir $ProjRoot -BranchName "main"
+    $gitResult = Inicializar-GitProyecto -ProjectDir $ProjRoot -BranchName "main"
     $gitDuration = if ($gitResult.GetType().Name -eq "Hashtable" -and $gitResult.ContainsKey("Duration")) { $gitResult.Duration } else { 0 }
     Write-Step "Git" "OK" "Repository initialized"
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Git" -Estado "OK" -Duracion $gitDuration
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Git" -Estado "OK" -Duracion $gitDuration
 
     # ===== 9. First Commit =====
     Write-Step "Commit" "START" "Creating initial commit"
-    New-ProyectoGitCommit -ProjectDir $ProjRoot -Message "RC74-C - Initial commit: $NombreProyecto" | Out-Null
+    Crear-CommitProyecto -ProjectDir $ProjRoot -Message "RC74-C - Initial commit: $NombreProyecto" | Out-Null
     $TotalCommits++
     $Metadata.TotalCommits = $TotalCommits
     Write-Step "Commit" "OK" "Commit #$TotalCommits created"
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Commit" -Estado "OK"
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Commit" -Estado "OK"
 
     # ===== 10. Create GitHub Repository =====
     Write-Step "GitHub" "START" "Creating GitHub repository"
-    $ghResult = Initialize-ProyectoGitHubRepo -ProjectName $NombreProyecto -ProjectDir $ProjRoot -Description "Sistema Analitico de Encuestas de Percepcion de Servicios - Universidad del Rosario" -Visibility "private"
-    Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Repositorio=$ghResult.RepoName;EstadoGitHub="CREADO"}
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "GitHub" -Estado "OK" -Detalle $ghResult.RemoteUrl
+    $ghResult = Crear-RepositorioGitHubProyecto -ProjectName $NombreProyecto -ProjectDir $ProjRoot -Description "Sistema Analitico de Encuestas de Percepcion de Servicios - Universidad del Rosario" -Visibility "private"
+    Establecer-InformacionProyecto -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Repositorio=$ghResult.RepoName;EstadoGitHub="CREADO"}
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "GitHub" -Estado "OK" -Detalle $ghResult.RemoteUrl
     Write-Step "GitHub" "OK" "Repository: $($ghResult.RepoName)"
     $Metadata.GitHubStatus = "OK"
 
     # ===== 10. Push =====
     Write-Step "Push" "START" "Pushing to GitHub"
-    $pushResult = Push-ProyectoToGitHub -ProjectDir $ProjRoot -Branch "main"
+    $pushResult = Publicar-ProyectoEnGitHub -ProjectDir $ProjRoot -Branch "main"
     Write-Step "Push" "OK" "Push completed"
 
     # ===== 11. Configure GitHub Actions Secrets (OIDC) =====
@@ -161,13 +161,13 @@ try {
         }
 
         if ($clientId -and $tenantId -and $subscriptionId) {
-            $secretsResult = Set-GitHubActionsSecrets `
+            $secretsResult = Establecer-SecretosGitHubAcciones `
                 -RepoName $ghResult.RepoName `
                 -AzureClientId $clientId `
                 -AzureTenantId $tenantId `
                 -AzureSubscriptionId $subscriptionId
-            Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{OIDCConfigurado=$true}
-            Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "OK" -Detalle "Secrets configured: $($secretsResult.Status)"
+            Establecer-InformacionProyecto -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{OIDCConfigurado=$true}
+            Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "OK" -Detalle "Secrets configured: $($secretsResult.Status)"
             Write-Step "OIDC" "OK" "GitHub Actions OIDC secrets configured: $($secretsResult.Status)"
         } else {
             $missing = @()
@@ -175,13 +175,13 @@ try {
             if (-not $tenantId) { $missing += "AZURE_TENANT_ID" }
             if (-not $subscriptionId) { $missing += "AZURE_SUBSCRIPTION_ID" }
             Write-Step "OIDC" "WARN" "OIDC secrets not configured. Missing: $($missing -join ', ')"
-            Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "WARN" -Detalle "Missing: $($missing -join ', ')"
+            Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "WARN" -Detalle "Missing: $($missing -join ', ')"
             Write-Warning "[OIDC] Missing Azure OIDC configuration: $($missing -join ', ')"
             Write-Warning "[OIDC] Configure Azure AD App and Federated Credentials per docs/Azure-OIDC-Setup.md"
         }
     } catch {
         Write-Step "OIDC" "WARN" "Could not configure OIDC secrets: $_"
-        Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "WARN" -Detalle $_
+        Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "OIDC" -Estado "WARN" -Detalle $_
         Write-Warning "[OIDC] OIDC setup incomplete: $_"
     }
 
@@ -197,8 +197,8 @@ try {
     # ===== 13. Create WebApp Only =====
     Write-Step "WebApp" "START" "Creating Web App: $WebAppName"
     $webApp = New-ProyectoWebApp -WebAppName $WebAppName -AzureConfig $azureConfig
-    Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{UrlPublica=$webApp.Url;EstadoAzure="CREADO"}
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "WebApp" -Estado "OK" -Detalle $webApp.Url
+    Establecer-InformacionProyecto -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{UrlPublica=$webApp.Url;EstadoAzure="CREADO"}
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "WebApp" -Estado "OK" -Detalle $webApp.Url
     Write-Step "WebApp" "OK" "Created at $($webApp.Url)"
     $Metadata.AzureStatus = "OK"
     $Metadata.Url = $webApp.Url
@@ -206,9 +206,9 @@ try {
     # ===== 15. Generate ZIP =====
     Write-Step "ZIP" "START" "Creating deploy.zip"
     $exclude = @(".git", ".github", ".vscode", "logs", "__pycache__", "*.pyc", "temp")
-    $zipResult = New-ProyectoDeployZip -SourceDir $ProjRoot -OutputPath (Join-Path $ProjRoot "deploy.zip") -ExcludePatterns $exclude
-    $zipValidation = Test-DeployZipIntegrity -ZipPath $zipResult.ZipPath
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "ZIP" -Estado "OK" -Detalle "SHA256=$($zipResult.SHA256)"
+    $zipResult = Crear-ZipDespliegue -SourceDir $ProjRoot -OutputPath (Join-Path $ProjRoot "deploy.zip") -ExcludePatterns $exclude
+    $zipValidation = Validar-IntegridadZipDespliegue -ZipPath $zipResult.ZipPath
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "ZIP" -Estado "OK" -Detalle "SHA256=$($zipResult.SHA256)"
     Write-Step "ZIP" "OK" "ZIP created: $($zipResult.SizeKB) KB, SHA256: $($zipResult.SHA256)"
 
     # ===== 16. Zip Deploy =====
@@ -219,10 +219,10 @@ try {
     } finally { Pop-Location }
     $TotalDeploys++
     $Metadata.TotalDeploys = $TotalDeploys
-    Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Estado="DESPLEGADO";TiempoDeploy=$deployResult.Duration}
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Deploy" -Estado "OK" -Duracion $deployResult.Duration
+    Establecer-InformacionProyecto -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Estado="DESPLEGADO";TiempoDeploy=$deployResult.Duration}
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Deploy" -Estado "OK" -Duracion $deployResult.Duration
     Write-Step "Deploy" "OK" "Deploy completed in $($deployResult.Duration)s"
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Deploy" -Estado "OK"
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Deploy" -Estado "OK"
 
     # ===== 17. Wait for Web App =====
     Write-Step "Ready" "START" "Waiting for Web App to respond"
@@ -231,12 +231,12 @@ try {
 
     # ===== 18. Smoke Tests =====
     Write-Step "SmokeTest" "START" "Smoke testing all endpoints"
-    $smokeResult = Invoke-ProyectoSmokeTests -BaseUrl $webApp.Url -CorrelationId $CorrelationId -DbPath $DbPath
+    $smokeResult = Ejecutar-PruebasHumoProyecto -BaseUrl $webApp.Url -CorrelationId $CorrelationId -DbPath $DbPath
     $Metadata.SmokePassed = $smokeResult.Passed
     $Metadata.SmokeFailed = $smokeResult.Failed
     $Metadata.SmokeResults = $smokeResult.Endpoints
-    Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Estado="TESTED";TiempoSmokeTest=$smokeResult.TotalTime}
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "SmokeTest" -Estado $(if($smokeResult.OverallStatus -eq "PASS"){"OK"}else{"FAIL"}) -Duracion $smokeResult.TotalTime -Detalle "$($smokeResult.Passed)/$($smokeResult.Total) passed"
+    Establecer-InformacionProyecto -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{Estado="TESTED";TiempoSmokeTest=$smokeResult.TotalTime}
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "SmokeTest" -Estado $(if($smokeResult.OverallStatus -eq "PASS"){"OK"}else{"FAIL"}) -Duracion $smokeResult.TotalTime -Detalle "$($smokeResult.Passed)/$($smokeResult.Total) passed"
     Write-Step "SmokeTest" "$($smokeResult.OverallStatus)" "$($smokeResult.Passed)/$($smokeResult.Total) endpoints passed"
 
     # Auto-correction loop
@@ -255,7 +255,7 @@ try {
         } finally { Pop-Location }
         Start-Sleep -Seconds 15
 
-        $smokeResult = Invoke-ProyectoSmokeTests -BaseUrl $webApp.Url -CorrelationId $CorrelationId -DbPath $DbPath
+        $smokeResult = Ejecutar-PruebasHumoProyecto -BaseUrl $webApp.Url -CorrelationId $CorrelationId -DbPath $DbPath
         $Metadata.SmokePassed = $smokeResult.Passed
         $Metadata.SmokeFailed = $smokeResult.Failed
         $Metadata.SmokeResults = $smokeResult.Endpoints
@@ -265,17 +265,17 @@ try {
 
     # ===== 19. Update SQLite =====
     Write-Step "SQLiteUpdate" "START" "Updating SQLite with final state"
-    Set-ProyectoInfo -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{CommitHash=(Get-ProyectoGitStatus -ProjectDir $ProjRoot).CommitHash;Estado="COMPLETADO"}
+    Establecer-InformacionProyecto -DbPath $DbPath -CorrelationId $CorrelationId -Properties @{CommitHash=(Obtener-EstadoGitProyecto -ProjectDir $ProjRoot).CommitHash;Estado="COMPLETADO"}
     Write-Step "SQLiteUpdate" "OK" "SQLite updated"
     $Metadata.SQLiteStatus = "OK"
 
     # ===== 20. Update Landing (second pass with live data) =====
     Write-Step "LandingUpdate" "START" "Updating landing page with live data"
-    New-ProyectoLanding -ProjectRoot $ProjRoot -ProjectName $NombreProyecto -WebAppName $WebAppName | Out-Null
+    Crear-PaginaInicioProyecto -ProjectRoot $ProjRoot -ProjectName $NombreProyecto -WebAppName $WebAppName | Out-Null
     Write-Step "LandingUpdate" "OK" "Landing updated"
 
     # ===== 21. Update Timeline =====
-    Register-TimelineEvent -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Publicado" -Estado "OK"
+    Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Publicado" -Estado "OK"
 
     # ===== 22. Generate Reports =====
     Write-Step "Reports" "START" "Generating reports"
@@ -300,7 +300,7 @@ try {
         region = $azureConfig.location
         runtime = "Python 3.12"
         deployment = $TotalDeploys.ToString()
-        commit = (Get-ProyectoGitStatus -ProjectDir $ProjRoot).CommitHash
+        commit = (Obtener-EstadoGitProyecto -ProjectDir $ProjRoot).CommitHash
         url = $webApp.Url
         timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
         status = $(if($smokeResult.OverallStatus -eq "PASS"){"PASS"}else{"FAIL"})
@@ -323,7 +323,7 @@ try {
 
     # ===== 26. Git Status Clean =====
     Write-Step "GitStatus" "START" "Verifying Git status"
-    $gitStatus = Get-ProyectoGitStatus -ProjectDir $ProjRoot
+    $gitStatus = Obtener-EstadoGitProyecto -ProjectDir $ProjRoot
     if($gitStatus.IsClean) {
         Write-Step "GitStatus" "OK" "Working tree clean"
     } else {
@@ -332,18 +332,18 @@ try {
 
     # ===== 25. Commit Final =====
     Write-Step "CommitFinal" "START" "Creating final commit"
-    New-ProyectoGitCommit -ProjectDir $ProjRoot -Message "RC74-C - Pipeline completed: $NombreProyecto" | Out-Null
+    Crear-CommitProyecto -ProjectDir $ProjRoot -Message "RC74-C - Pipeline completed: $NombreProyecto" | Out-Null
     $TotalCommits++
     $Metadata.TotalCommits = $TotalCommits
     Write-Step "CommitFinal" "OK" "Final commit #$TotalCommits created"
 
     # ===== 26. Push Final =====
     Write-Step "PushFinal" "START" "Final push to GitHub"
-    $pushFinal = Push-ProyectoToGitHub -ProjectDir $ProjRoot -Branch "main"
+    $pushFinal = Publicar-ProyectoEnGitHub -ProjectDir $ProjRoot -Branch "main"
     Write-Step "PushFinal" "OK" "Final push completed"
 
     # Verify clean status again after final commit+push
-    $gitStatusFinal = Get-ProyectoGitStatus -ProjectDir $ProjRoot
+    $gitStatusFinal = Obtener-EstadoGitProyecto -ProjectDir $ProjRoot
     if($gitStatusFinal.IsClean) {
         Write-Step "GitFinal" "OK" "Working tree clean - nothing to commit"
     }

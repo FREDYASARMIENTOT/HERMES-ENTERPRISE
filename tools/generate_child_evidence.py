@@ -2,11 +2,11 @@
 """
 generate_child_evidence.py — Hermes Enterprise Control Plane
 =============================================================
-Generates deployment-report.json for child project deployments.
+Genera deployment-report.json para despliegues de proyectos hijos.
 
-Called from deploy-child.yml with environment variables set.
+Llamado desde deploy-child.yml con variables de entorno configuradas.
 
-Usage:
+Uso:
     python3 tools/generate_child_evidence.py > deployment-report.json
 """
 
@@ -17,7 +17,7 @@ import sys
 
 
 def sh(cmd):
-    """Run shell command and return stdout, or 'ERROR' on failure."""
+    """Ejecuta comando shell y retorna stdout, o 'ERROR' en caso de fallo."""
     try:
         return subprocess.getoutput(cmd)
     except Exception:
@@ -25,7 +25,7 @@ def sh(cmd):
 
 
 def main():
-    # ── Read environment variables ──
+    # ── Leer variables de entorno ──
     url = os.environ.get('URL', 'https://unknown.azurewebsites.net')
     proj = os.environ.get('PROJ', '')
     repo = os.environ.get('REPO', '')
@@ -41,13 +41,13 @@ def main():
     github_wf = os.environ.get('GITHUB_WORKFLOW', '')
     timestamp = os.environ.get('TIMESTAMP', '')
 
-    # ── Real results from each stage ──
+    # ── Resultados reales de cada etapa ──
     oidc_res = os.environ.get('OIDC_RESULT', 'FAIL')
     deploy_res = os.environ.get('DEPLOY_RESULT', 'FAIL')
     readiness_res = os.environ.get('READINESS_RESULT', 'FAIL')
     func_res = os.environ.get('FUNC_RESULT', 'FAIL')
 
-    # ── Live HTTP checks (real data, not hardcoded) ──
+    # ── Verificaciones HTTP en vivo (datos reales, no codificados) ──
     health_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/health 2>/dev/null || echo "000"')
     root_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/ 2>/dev/null || echo "000"')
     neg_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/ruta-que-no-existe 2>/dev/null || echo "000"')
@@ -56,12 +56,12 @@ def main():
     openapi_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/openapi.json 2>/dev/null || echo "000"')
     docs_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/docs 2>/dev/null || echo "000"')
 
-    # ── Overall derived from real results ──
+    # ── Resultado general derivado de resultados reales ──
     overall = 'PASS'
     if oidc_res != 'PASS' or deploy_res != 'PASS' or readiness_res != 'PASS' or func_res != 'PASS':
         overall = 'FAIL'
 
-    # ── Build evidence document ──
+    # ── Construir documento de evidencia ──
     evidence = {
         'result': overall,
         'project_name': proj,
@@ -139,7 +139,7 @@ def main():
         'timestamp': timestamp
     }
 
-    # ── Output JSON ──
+    # ── Salida JSON ──
     json.dump(evidence, sys.stdout, indent=2, ensure_ascii=False)
     print()
 

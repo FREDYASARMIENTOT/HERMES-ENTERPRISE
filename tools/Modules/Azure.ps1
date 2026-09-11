@@ -1,41 +1,41 @@
-function Read-AzureConfiguration {
+function Leer-ConfiguracionAzure {
     <#
     .SYNOPSIS
-        Reads Azure infrastructure configuration from Hermes.Azure.json.
+        Lee la configuración de infraestructura Azure desde Hermes.Azure.json.
     .PARAMETER ConfigPath
-        Path to Hermes.Azure.json.
+        Ruta a Hermes.Azure.json.
     .OUTPUTS
-        Hashtable with Azure infrastructure details.
+        Hashtable con detalles de infraestructura Azure.
     #>
     param(
         [Parameter(Mandatory)] [string] $ConfigPath
     )
 
     if (-not (Test-Path $ConfigPath)) {
-        throw "Azure configuration not found: $ConfigPath"
+        throw "Configuración de Azure no encontrada: $ConfigPath"
     }
 
-    $config = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $configuracion = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
-    $required = @("ResourceGroupAplicaciones")
-    $missing = @()
+    $requeridos = @("ResourceGroupAplicaciones")
+    $faltantes = @()
     $azure = @{}
 
-    # Support both flat and nested config formats
-    $cfg = $config
-    if ($config.PSObject.Properties.Name -contains "Azure") {
-        $cfg = $config.Azure
+    # Soporte para ambos formatos: plano y anidado
+    $cfg = $configuracion
+    if ($configuracion.PSObject.Properties.Name -contains "Azure") {
+        $cfg = $configuracion.Azure
     }
 
     $azure["resourceGroup"] = $cfg.ResourceGroupAplicaciones
     $azure["resourceGroupPlan"] = if ($cfg.PSObject.Properties.Name -contains "ResourceGroupPlan") { $cfg.ResourceGroupPlan } else { $cfg.ResourceGroupAplicaciones }
 
-    # AppServicePlan is now per-project (asp-{projectName}); use config if present, else empty
+    # AppServicePlan es ahora por proyecto (asp-{projectName}); usar config si existe, sino vacío
     if ($cfg.PSObject.Properties.Name -contains "AppServicePlan" -and $cfg.AppServicePlan -and $cfg.AppServicePlan -ne "") {
         $azure["appServicePlan"] = $cfg.AppServicePlan
     } else {
-        $azure["appServicePlan"] = ""  # Per-project dynamic (asp-{projectName})
-        Write-Host "[Azure] No static AppServicePlan configured. Using per-project naming (asp-{projectName})."
+        $azure["appServicePlan"] = ""  # Dinámico por proyecto (asp-{projectName})
+        Write-Host "[Azure] No hay AppServicePlan estático configurado. Usando nomenclatura por proyecto (asp-{projectName})."
     }
 
     $azure["storageAccount"] = if ($cfg.PSObject.Properties.Name -contains "StorageAccount") { $cfg.StorageAccount } else { "" }
@@ -45,15 +45,15 @@ function Read-AzureConfiguration {
         $azure["keyVault"] = $cfg.KeyVault
     }
 
-    foreach ($prop in @("ResourceGroupAplicaciones")) {
-        if ([string]::IsNullOrEmpty($cfg.$prop) -or $cfg.$prop -eq "") {
-            $missing += $prop
+    foreach ($propiedad in @("ResourceGroupAplicaciones")) {
+        if ([string]::IsNullOrEmpty($cfg.$propiedad) -or $cfg.$propiedad -eq "") {
+            $faltantes += $propiedad
         }
     }
 
 
-    if ($missing.Count -gt 0) {
-        throw "Missing required Azure resources in config: $($missing -join ', '). Cannot proceed."
+    if ($faltantes.Count -gt 0) {
+        throw "Faltan recursos requeridos de Azure en config: $($faltantes -join ', '). No se puede continuar."
     }
 
     if ($cfg.PSObject.Properties.Name -contains "Location") {
@@ -63,110 +63,110 @@ function Read-AzureConfiguration {
         $azure.SubscriptionId = $cfg.subscriptionId
     }
 
-    Write-Host "[Azure] Configuration loaded from: $ConfigPath"
+    Write-Host "[Azure] Configuración cargada desde: $ConfigPath"
     Write-Host "[Azure] ResourceGroup: $($azure.resourceGroup)"
     Write-Host "[Azure] AppServicePlan: $($azure.appServicePlan)"
 
     return $azure
 }
 
-function Validate-AzureInfrastructure {
+function Validar-InfraestructuraAzure {
     <#
     .SYNOPSIS
-        Validates that required Azure infrastructure exists (NO creation allowed).
+        Valida que la infraestructura Azure requerida exista (NO se permite creación).
     .PARAMETER AzureConfig
-        Hashtable with Azure configuration.
+        Hashtable con configuración de Azure.
     .OUTPUTS
-        Hashtable with validation results.
+        Hashtable con resultados de validación.
     #>
     param(
         [Parameter(Mandatory)] [hashtable] $AzureConfig
     )
 
-    Write-Host "[Azure] Validating existing infrastructure..."
+    Write-Host "[Azure] Validando infraestructura existente..."
 
-    $errors = @()
-    $results = @{
+    $errores = @()
+    $resultados = @{
         ResourceGroup = $false
         AppServicePlan = $false
         StorageAccount = $false
         KeyVault = $false
     }
 
-    $rgOut = az group exists --name $AzureConfig.resourceGroup 2>&1
-    $results.ResourceGroup = ([string]$rgOut).Trim() -eq "true"
-    Write-Host "[Azure] Resource Group '$($AzureConfig.resourceGroup)' exists: $($results.ResourceGroup)"
-    if (-not $results.ResourceGroup) { $errors += "ResourceGroup" }
+    $salidaRg = az group exists --name $AzureConfig.resourceGroup 2>&1
+    $resultados.ResourceGroup = ([string]$salidaRg).Trim() -eq "true"
+    Write-Host "[Azure] Resource Group '$($AzureConfig.resourceGroup)' existe: $($resultados.ResourceGroup)"
+    if (-not $resultados.ResourceGroup) { $errores += "ResourceGroup" }
 
-    $aspRg = if ($AzureConfig.ContainsKey("resourceGroupPlan") -and $AzureConfig.resourceGroupPlan) { $AzureConfig.resourceGroupPlan } else { $AzureConfig.resourceGroup }
-    $asp = az appservice plan show --name $AzureConfig.appServicePlan --resource-group $aspRg --query name -o tsv 2>&1
-    $results.AppServicePlan = ($LASTEXITCODE -eq 0)
-    Write-Host "[Azure] App Service Plan '$($AzureConfig.appServicePlan)' in '$aspRg' exists: $($results.AppServicePlan)"
-    if (-not $results.AppServicePlan) { $errors += "AppServicePlan" }
+    $rgPlan = if ($AzureConfig.ContainsKey("resourceGroupPlan") -and $AzureConfig.resourceGroupPlan) { $AzureConfig.resourceGroupPlan } else { $AzureConfig.resourceGroup }
+    $asp = az appservice plan show --name $AzureConfig.appServicePlan --resource-group $rgPlan --query name -o tsv 2>&1
+    $resultados.AppServicePlan = ($LASTEXITCODE -eq 0)
+    Write-Host "[Azure] App Service Plan '$($AzureConfig.appServicePlan)' en '$rgPlan' existe: $($resultados.AppServicePlan)"
+    if (-not $resultados.AppServicePlan) { $errores += "AppServicePlan" }
 
-    # Optional: log warnings for non-critical resources
+    # Opcional: advertencias para recursos no críticos
     $sa = az storage account show --name $AzureConfig.storageAccount --resource-group $AzureConfig.resourceGroup --query name -o tsv 2>&1
-    $results.StorageAccount = ($LASTEXITCODE -eq 0)
-    if (-not $results.StorageAccount) { Write-Host "[Azure] [WARN] StorageAccount '$($AzureConfig.storageAccount)' not found (non-critical)" }
+    $resultados.StorageAccount = ($LASTEXITCODE -eq 0)
+    if (-not $resultados.StorageAccount) { Write-Host "[Azure] [ADVERTENCIA] StorageAccount '$($AzureConfig.storageAccount)' no encontrado (no crítico)" }
 
     if ($AzureConfig.keyVault) {
         $kv = az keyvault show --name $AzureConfig.keyVault --resource-group $AzureConfig.resourceGroup --query name -o tsv 2>&1
-        $results.KeyVault = ($LASTEXITCODE -eq 0)
-        if (-not $results.KeyVault) { Write-Host "[Azure] [WARN] KeyVault '$($AzureConfig.keyVault)' not found (non-critical)" }
+        $resultados.KeyVault = ($LASTEXITCODE -eq 0)
+        if (-not $resultados.KeyVault) { Write-Host "[Azure] [ADVERTENCIA] KeyVault '$($AzureConfig.keyVault)' no encontrado (no crítico)" }
     }
 
-    if ($errors.Count -gt 0) {
-        throw "Azure infrastructure validation failed. Missing critical: $($errors -join ', '). Cannot proceed."
+    if ($errores.Count -gt 0) {
+        throw "Validación de infraestructura Azure falló. Faltan críticos: $($errores -join ', '). No se puede continuar."
     }
 
-    Write-Host "[Azure] All critical infrastructure validated successfully"
-    return $results
+    Write-Host "[Azure] Toda la infraestructura crítica validada exitosamente"
+    return $resultados
 }
 
 function New-ProyectoWebApp {
     <#
     .SYNOPSIS
-        Creates a new Azure Web App using EXISTING infrastructure only.
+        Crea una nueva Azure Web App usando infraestructura EXISTENTE solamente.
     .PARAMETER WebAppName
-        Name for the Web App (auto-derived from project).
+        Nombre de la Web App (derivado automáticamente del proyecto).
     .PARAMETER AzureConfig
-        Hashtable with Azure configuration.
+        Hashtable con configuración de Azure.
     .OUTPUTS
-        Hashtable with Web App information.
+        Hashtable con información de la Web App.
     #>
     param(
         [Parameter(Mandatory)] [string] $WebAppName,
         [Parameter(Mandatory)] [hashtable] $AzureConfig
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
-    Write-Host "[Azure] Creating Web App: $WebAppName"
+    Write-Host "[Azure] Creando Web App: $WebAppName"
 
-    # Determine ASP resource group for full resource ID
-    $aspRg = if ($AzureConfig.ContainsKey("resourceGroupPlan") -and $AzureConfig.resourceGroupPlan) { $AzureConfig.resourceGroupPlan } else { $AzureConfig.resourceGroup }
-    $aspId = "/subscriptions/$($AzureConfig.SubscriptionId)/resourceGroups/$aspRg/providers/Microsoft.Web/serverfarms/$($AzureConfig.appServicePlan)"
+    # Determinar grupo de recursos del ASP para el ID completo del recurso
+    $rgPlan = if ($AzureConfig.ContainsKey("resourceGroupPlan") -and $AzureConfig.resourceGroupPlan) { $AzureConfig.resourceGroupPlan } else { $AzureConfig.resourceGroup }
+    $aspId = "/subscriptions/$($AzureConfig.SubscriptionId)/resourceGroups/$rgPlan/providers/Microsoft.Web/serverfarms/$($AzureConfig.appServicePlan)"
 
-    $existing = az webapp show --name $WebAppName --resource-group $AzureConfig.resourceGroup --query name -o tsv 2>&1
+    $existente = az webapp show --name $WebAppName --resource-group $AzureConfig.resourceGroup --query name -o tsv 2>&1
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "[Azure] Web App already exists: $WebAppName"
-        $created = $false
+        Write-Host "[Azure] Web App ya existe: $WebAppName"
+        $creado = $false
     }
     else {
-        $output = az webapp create `
+        $salida = az webapp create `
             --name $WebAppName `
             --resource-group $AzureConfig.resourceGroup `
             --plan $aspId `
             --runtime "PYTHON:3.12" 2>&1
 
         if ($LASTEXITCODE -ne 0) {
-            throw "Failed to create Web App: $WebAppName`n$output"
+            throw "Error al crear Web App: $WebAppName`n$salida"
         }
-        Write-Host "[Azure] Web App created: $WebAppName"
-        $created = $true
+        Write-Host "[Azure] Web App creada: $WebAppName"
+        $creado = $true
     }
 
-    $defaultHost = "https://$WebAppName.azurewebsites.net"
+    $hostPredeterminado = "https://$WebAppName.azurewebsites.net"
 
     az webapp config set `
         --name $WebAppName `
@@ -178,14 +178,14 @@ function New-ProyectoWebApp {
         --resource-group $AzureConfig.resourceGroup `
         --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITE_RUN_FROM_PACKAGE=0 2>&1 | Out-Null
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
     return @{
         WebAppName = $WebAppName
-        Url = $defaultHost
-        Created = $created
-        Duration = $duration
+        Url = $hostPredeterminado
+        Created = $creado
+        Duration = $duracion
         Status = "OK"
     }
 }
@@ -193,17 +193,17 @@ function New-ProyectoWebApp {
 function Deploy-ProyectoZipToAzure {
     <#
     .SYNOPSIS
-        Deploys a ZIP package to Azure Web App using Zip Deploy.
+        Despliega un paquete ZIP a Azure Web App usando Zip Deploy.
     .PARAMETER WebAppName
-        Name of the Web App.
+        Nombre de la Web App.
     .PARAMETER ResourceGroup
-        Resource group name.
+        Nombre del grupo de recursos.
     .PARAMETER ZipPath
-        Path to the ZIP package.
+        Ruta al paquete ZIP.
     .PARAMETER MaxRetries
-        Maximum number of deploy retries.
+        Número máximo de reintentos de despliegue.
     .OUTPUTS
-        Hashtable with deployment status.
+        Hashtable con estado del despliegue.
     #>
     param(
         [Parameter(Mandatory)] [string] $WebAppName,
@@ -212,44 +212,44 @@ function Deploy-ProyectoZipToAzure {
         [int] $MaxRetries = 3
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
-    Write-Host "[Deploy] Starting Zip Deploy: $ZipPath -> $WebAppName"
+    Write-Host "[Deploy] Iniciando Zip Deploy: $ZipPath -> $WebAppName"
 
-    $attempt = 0
-    $deployed = $false
+    $intento = 0
+    $desplegado = $false
 
     do {
-        $attempt++
-        Write-Host "[Deploy] Attempt $attempt of $MaxRetries"
+        $intento++
+        Write-Host "[Deploy] Intento $intento de $MaxRetries"
 
-        $output = az webapp deploy `
+        $salida = az webapp deploy `
             --name $WebAppName `
             --resource-group $ResourceGroup `
             --src-path $ZipPath `
             --type zip 2>&1
 
         if ($LASTEXITCODE -eq 0) {
-            $deployed = $true
-            Write-Host "[Deploy] Zip Deploy successful on attempt $attempt"
+            $desplegado = $true
+            Write-Host "[Deploy] Zip Deploy exitoso en intento $intento"
             break
         }
         else {
-            Write-Host "[Deploy] Attempt $attempt failed. Waiting before retry..."
+            Write-Host "[Deploy] Intento $intento falló. Esperando antes de reintentar..."
             Start-Sleep -Seconds 10
         }
-    } while ($attempt -lt $MaxRetries)
+    } while ($intento -lt $MaxRetries)
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
-    if (-not $deployed) {
-        throw "Zip Deploy failed after $MaxRetries attempts"
+    if (-not $desplegado) {
+        throw "Zip Deploy falló después de $MaxRetries intentos"
     }
 
     return @{
-        Attempts = $attempt
-        Duration = $duration
+        Attempts = $intento
+        Duration = $duracion
         Status = "OK"
     }
 }
@@ -257,76 +257,76 @@ function Deploy-ProyectoZipToAzure {
 function Wait-ProyectoWebAppReady {
     <#
     .SYNOPSIS
-        Waits for the Web App to respond with HTTP 200.
+        Espera hasta que la Web App responda con HTTP 200.
     .PARAMETER Url
-        Web App URL.
+        URL de la Web App.
     .PARAMETER TimeoutSeconds
-        Maximum wait time.
+        Tiempo máximo de espera.
     .OUTPUTS
-        Hashtable with readiness status.
+        Hashtable con estado de disponibilidad.
     #>
     param(
         [Parameter(Mandatory)] [string] $Url,
         [int] $TimeoutSeconds = 120
     )
 
-    $startTime = Get-Date
-    Write-Host "[Azure] Waiting for Web App to be ready: $Url"
+    $horaInicio = Get-Date
+    Write-Host "[Azure] Esperando a que la Web App esté lista: $Url"
 
-    $ready = $false
-    $elapsed = 0
+    $lista = $false
+    $tiempoTranscurrido = 0
 
-    while ($elapsed -lt $TimeoutSeconds) {
+    while ($tiempoTranscurrido -lt $TimeoutSeconds) {
         try {
-            $response = Invoke-WebRequest -Uri "$Url/health" -Method GET -UseBasicParsing -TimeoutSec 10
-            if ($response.StatusCode -eq 200) {
-                $ready = $true
-                Write-Host "[Azure] Web App ready after ${elapsed}s"
+            $respuesta = Invoke-WebRequest -Uri "$Url/health" -Method GET -UseBasicParsing -TimeoutSec 10
+            if ($respuesta.StatusCode -eq 200) {
+                $lista = $true
+                Write-Host "[Azure] Web App lista después de ${tiempoTranscurrido}s"
                 break
             }
         }
         catch {
-            # Not ready yet
+            # Aún no está lista
         }
 
         Start-Sleep -Seconds 5
-        $elapsed = [math]::Round(((Get-Date) - $startTime).TotalSeconds)
+        $tiempoTranscurrido = [math]::Round(((Get-Date) - $horaInicio).TotalSeconds)
     }
 
-    if (-not $ready) {
-        Write-Host "[Azure] Web App did not become ready within ${TimeoutSeconds}s"
+    if (-not $lista) {
+        Write-Host "[Azure] La Web App no se puso lista dentro de ${TimeoutSeconds}s"
     }
 
     return @{
-        Ready = $ready
-        WaitTime = $elapsed
+        Ready = $lista
+        WaitTime = $tiempoTranscurrido
         Url = $Url
     }
 }
 
-function Get-AzureIdentityMode {
+function Obtener-ModoIdentidadAzure {
     <#
     .SYNOPSIS
-        Returns the current Azure identity authentication mode from configuration.
+        Retorna el modo actual de autenticación de identidad Azure desde la configuración.
     .PARAMETER ConfigPath
-        Path to Hermes.Azure.json.
+        Ruta a Hermes.Azure.json.
     .OUTPUTS
-        Hashtable with identity mode details.
+        Hashtable con detalles del modo de identidad.
     .NOTES
-        Supported modes:
-          - TemporaryExistingApp: Uses an existing App Registration (e.g. 'Hermes-Enterprise-OIDC')
-            with OIDC federated identity. HUMAN_REQUIRED for initial App Registration creation
-            and federated credential configuration.
-          - DedicatedHermesApp: A future state where Hermes creates its own App Registration
-            automatically (requires Application Administrator permissions).
-          - LEGACY: Uses local az CLI session for authentication.
+        Modos soportados:
+          - TemporaryExistingApp: Usa un App Registration existente (ej. 'Hermes-Enterprise-OIDC')
+            con identidad federada OIDC. HUMANO_REQUERIDO para la creación inicial del App Registration
+            y configuración de credencial federada.
+          - DedicatedHermesApp: Estado futuro donde Hermes crea su propio App Registration
+            automáticamente (requiere permisos de Administrador de Aplicaciones).
+          - LEGACY: Usa sesión local de az CLI para autenticación.
     #>
     param(
         [Parameter(Mandatory)] [string] $ConfigPath
     )
 
     if (-not (Test-Path $ConfigPath)) {
-        Write-Host "[AzureIdentity] WARNING: Configuration not found at $ConfigPath"
+        Write-Host "[AzureIdentity] ADVERTENCIA: Configuración no encontrada en $ConfigPath"
         return @{
             Mode = "UNKNOWN"
             TenantId = ""
@@ -334,128 +334,128 @@ function Get-AzureIdentityMode {
             TargetApp = ""
             Scope = ""
             ScopeType = ""
-            Description = "Configuration file not found"
+            Description = "Archivo de configuración no encontrado"
             IsReady = $false
         }
     }
 
-    $config = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $configuracion = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
-    # Support both flat and nested config formats
-    $cfg = $config
-    if ($config.PSObject.Properties.Name -contains "Azure") {
-        $cfg = $config.Azure
+    # Soporte para ambos formatos: plano y anidado
+    $cfg = $configuracion
+    if ($configuracion.PSObject.Properties.Name -contains "Azure") {
+        $cfg = $configuracion.Azure
     }
 
-    $mode = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityMode") { $cfg.AzureIdentityMode } else { "LEGACY" }
+    $modo = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityMode") { $cfg.AzureIdentityMode } else { "LEGACY" }
     $tenantId = if ($cfg.PSObject.Properties.Name -contains "tenantId") { $cfg.tenantId } else { "" }
     $subscriptionId = if ($cfg.PSObject.Properties.Name -contains "subscriptionId") { $cfg.subscriptionId } else { "" }
-    $targetApp = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityTargetApp") { $cfg.AzureIdentityTargetApp } else { "" }
-    $scope = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityScope") { $cfg.AzureIdentityScope } else { "" }
-    $scopeType = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityScopeType") { $cfg.AzureIdentityScopeType } else { "" }
-    $description = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityModeDescription") { $cfg.AzureIdentityModeDescription } else { "Legacy az CLI local session authentication" }
+    $appDestino = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityTargetApp") { $cfg.AzureIdentityTargetApp } else { "" }
+    $alcance = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityScope") { $cfg.AzureIdentityScope } else { "" }
+    $tipoAlcance = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityScopeType") { $cfg.AzureIdentityScopeType } else { "" }
+    $descripcion = if ($cfg.PSObject.Properties.Name -contains "AzureIdentityModeDescription") { $cfg.AzureIdentityModeDescription } else { "Autenticación de sesión local az CLI heredada" }
 
-    $isReady = $false
-    $blocker = ""
+    $estaListo = $false
+    $bloqueador = ""
 
-    if ($mode -eq "TemporaryExistingApp" -or $mode -eq "DedicatedHermesApp" -or $mode -eq "DedicatedApp") {
-        # OIDC readiness depends on GitHub secrets being configured
+    if ($modo -eq "TemporaryExistingApp" -or $modo -eq "DedicatedHermesApp" -or $modo -eq "DedicatedApp") {
+        # La preparación OIDC depende de que los secretos de GitHub estén configurados
         try {
-            $owner = "FREDYASARMIENTOT"
-            $repoName = "HERMES-ENTERPRISE"
-            $fullRepo = "$owner/$repoName"
+            $propietario = "FREDYASARMIENTOT"
+            $nombreRepo = "HERMES-ENTERPRISE"
+            $repoCompleto = "$propietario/$nombreRepo"
 
-            $clientIdCheck = gh secret list --repo $fullRepo --json name 2>&1
+            $verificacionClientId = gh secret list --repo $repoCompleto --json name 2>&1
             if ($LASTEXITCODE -eq 0) {
-                $secretInfo = $clientIdCheck | ConvertFrom-Json
-                $secretNames = $secretInfo | ForEach-Object { $_.name }
-                $hasClientId = $secretNames -contains "AZURE_CLIENT_ID"
-                $hasTenantId = $secretNames -contains "AZURE_TENANT_ID"
-                $hasSubId = $secretNames -contains "AZURE_SUBSCRIPTION_ID"
-                if ($hasClientId -and $hasTenantId -and $hasSubId) {
-                    $isReady = $true
+                $infoSecreto = $verificacionClientId | ConvertFrom-Json
+                $nombresSecretos = $infoSecreto | ForEach-Object { $_.name }
+                $tieneClientId = $nombresSecretos -contains "AZURE_CLIENT_ID"
+                $tieneTenantId = $nombresSecretos -contains "AZURE_TENANT_ID"
+                $tieneSubId = $nombresSecretos -contains "AZURE_SUBSCRIPTION_ID"
+                if ($tieneClientId -and $tieneTenantId -and $tieneSubId) {
+                    $estaListo = $true
                 } else {
-                    $missing = @()
-                    if (-not $hasClientId) { $missing += "AZURE_CLIENT_ID" }
-                    if (-not $hasTenantId) { $missing += "AZURE_TENANT_ID" }
-                    if (-not $hasSubId) { $missing += "AZURE_SUBSCRIPTION_ID" }
-                    $blocker = "GitHub secrets not configured: $($missing -join ', ')"
+                    $faltantes = @()
+                    if (-not $tieneClientId) { $faltantes += "AZURE_CLIENT_ID" }
+                    if (-not $tieneTenantId) { $faltantes += "AZURE_TENANT_ID" }
+                    if (-not $tieneSubId) { $faltantes += "AZURE_SUBSCRIPTION_ID" }
+                    $bloqueador = "Secretos de GitHub no configurados: $($faltantes -join ', ')"
                 }
             } else {
-                $blocker = "Cannot access GitHub secrets for $fullRepo. Ensure 'gh' is authenticated."
+                $bloqueador = "No se puede acceder a secretos de GitHub para $repoCompleto. Asegúrese de que 'gh' esté autenticado."
             }
         } catch {
-            $blocker = "Error checking GitHub secrets: $_"
+            $bloqueador = "Error al verificar secretos de GitHub: $_"
         }
 
-        if (-not $isReady) {
-            $blocker += " (HUMAN_REQUIRED)"
+        if (-not $estaListo) {
+            $bloqueador += " (HUMANO_REQUERIDO)"
         }
-    } elseif ($mode -eq "LEGACY" -or $mode -eq "UNKNOWN") {
-        # Legacy mode - check if az cli has active session
+    } elseif ($modo -eq "LEGACY" -or $modo -eq "UNKNOWN") {
+        # Modo heredado - verificar si az cli tiene sesión activa
         try {
-            $azCheck = az account show 2>&1
+            $verificacionAz = az account show 2>&1
             if ($LASTEXITCODE -eq 0) {
-                $isReady = $true
+                $estaListo = $true
             } else {
-                $blocker = "No active az CLI session. Run 'az login'"
+                $bloqueador = "No hay sesión activa de az CLI. Ejecute 'az login'"
             }
         } catch {
-            $blocker = "az CLI not available: $_"
+            $bloqueador = "az CLI no disponible: $_"
         }
     }
 
-    Write-Host "[AzureIdentity] Mode: $mode | Ready: $isReady"
-    if ($blocker) { Write-Host "[AzureIdentity] Blocker: $blocker" }
+    Write-Host "[AzureIdentity] Mode: $modo | Ready: $estaListo"
+    if ($bloqueador) { Write-Host "[AzureIdentity] Bloqueador: $bloqueador" }
 
     return @{
-        Mode = $mode
+        Mode = $modo
         TenantId = $tenantId
         SubscriptionId = $subscriptionId
-        TargetApp = $targetApp
-        Scope = $scope
-        ScopeType = $scopeType
-        Description = $description
-        IsReady = $isReady
-        Blocker = $blocker
+        TargetApp = $appDestino
+        Scope = $alcance
+        ScopeType = $tipoAlcance
+        Description = $descripcion
+        IsReady = $estaListo
+        Blocker = $bloqueador
     }
 }
 
-function Assert-AzureIdentityReady {
+function Afirmar-IdentidadAzureLista {
     <#
     .SYNOPSIS
-        Validates that Azure identity authentication is ready for use.
-        Throws a descriptive error if not ready.
+        Valida que la autenticación de identidad Azure esté lista para usar.
+        Lanza un error descriptivo si no está lista.
     .PARAMETER ConfigPath
-        Path to Hermes.Azure.json.
+        Ruta a Hermes.Azure.json.
     .OUTPUTS
-        Hashtable with identity status.
+        Hashtable con estado de identidad.
     #>
     param(
         [Parameter(Mandatory)] [string] $ConfigPath
     )
 
-    $identityState = Get-AzureIdentityMode -ConfigPath $ConfigPath
+    $estadoIdentidad = Obtener-ModoIdentidadAzure -ConfigPath $ConfigPath
 
-    if (-not $identityState.IsReady) {
-        $msg = "Azure identity is NOT ready. Mode: $($identityState.Mode). Blocker: $($identityState.Blocker)"
-        if ($identityState.Mode -eq "TemporaryExistingApp" -or $identityState.Mode -eq "DedicatedApp" -or $identityState.Mode -eq "DedicatedHermesApp") {
-            $msg += "`n  HUMAN_REQUIRED: An Azure AD Administrator must:"
-            $msg += "`n    1. Create App Registration '$($identityState.TargetApp)' (NOT 'UR - App - SII 2.0')"
-            $msg += "`n    2. Create federated credential for this repository:"
+    if (-not $estadoIdentidad.IsReady) {
+        $msg = "La identidad Azure NO está lista. Modo: $($estadoIdentidad.Mode). Bloqueador: $($estadoIdentidad.Blocker)"
+        if ($estadoIdentidad.Mode -eq "TemporaryExistingApp" -or $estadoIdentidad.Mode -eq "DedicatedApp" -or $estadoIdentidad.Mode -eq "DedicatedHermesApp") {
+            $msg += "`n  HUMANO_REQUERIDO: Un Administrador de Azure AD debe:"
+            $msg += "`n    1. Crear App Registration '$($estadoIdentidad.TargetApp)' (NO 'UR - App - SII 2.0')"
+            $msg += "`n    2. Crear credencial federada para este repositorio:"
             $msg += "`n       Subject: repo:FREDYASARMIENTOT/HERMES-ENTERPRISE:environment:production"
             $msg += "`n       Issuer: https://token.actions.githubusercontent.com"
             $msg += "`n       Audience: api://AzureADTokenExchange"
-            $msg += "`n    3. Grant Contributor role on $($identityState.ScopeType) '$($identityState.Scope)' (NOT subscription-wide)"
-            $msg += "`n    4. Set AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID as GitHub secrets"
-        } elseif ($identityState.Mode -eq "LEGACY" -or $identityState.Mode -eq "UNKNOWN") {
-            $msg += "`n  Run 'az login' to authenticate locally for LEGACY mode."
+            $msg += "`n    3. Conceder rol Contributor en $($estadoIdentidad.ScopeType) '$($estadoIdentidad.Scope)' (NO subscription-wide)"
+            $msg += "`n    4. Configurar AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID como secretos de GitHub"
+        } elseif ($estadoIdentidad.Mode -eq "LEGACY" -or $estadoIdentidad.Mode -eq "UNKNOWN") {
+            $msg += "`n  Ejecute 'az login' para autenticarse localmente para modo LEGACY."
         }
         throw $msg
     }
 
-    Write-Host "[AzureIdentity] Authentication ready: $($identityState.Mode) -> $($identityState.TargetApp)"
-    return $identityState
+    Write-Host "[AzureIdentity] Autenticación lista: $($estadoIdentidad.Mode) -> $($estadoIdentidad.TargetApp)"
+    return $estadoIdentidad
 }
 
-Export-ModuleMember -Function Read-AzureConfiguration, Validate-AzureInfrastructure, New-ProyectoWebApp, Deploy-ProyectoZipToAzure, Wait-ProyectoWebAppReady, Get-AzureIdentityMode, Assert-AzureIdentityReady
+Export-ModuleMember -Function Leer-ConfiguracionAzure, Validar-InfraestructuraAzure, New-ProyectoWebApp, Deploy-ProyectoZipToAzure, Wait-ProyectoWebAppReady, Obtener-ModoIdentidadAzure, Afirmar-IdentidadAzureLista

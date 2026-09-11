@@ -1,15 +1,15 @@
-function Initialize-ProyectoWorkspace {
+function Inicializar-EspacioProyecto {
     <#
     .SYNOPSIS
-        Creates the project workspace directory and structure.
+        Crea el directorio del proyecto y su estructura de subdirectorios.
     .PARAMETER ProjectName
-        Name of the project.
+        Nombre del proyecto.
     .PARAMETER OutputDir
-        Directory where the project will be created.
+        Directorio raíz donde se creará el proyecto.
     .PARAMETER CorrelationId
-        Unique correlation identifier.
+        Identificador único de correlación.
     .OUTPUTS
-        Hashtable with workspace path information.
+        Hashtable con la ruta del espacio de trabajo.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectName,
@@ -17,55 +17,55 @@ function Initialize-ProyectoWorkspace {
         [Parameter(Mandatory)] [string] $CorrelationId
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
-    Write-Host "[Workspace] Creating workspace for: $ProjectName"
-    Write-Host "[Workspace] Output: $OutputDir"
+    Write-Host "[Workspace] Creando espacio de trabajo para: $ProjectName"
+    Write-Host "[Workspace] Directorio: $OutputDir"
 
     if (-not (Test-Path $OutputDir)) {
         New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
-        Write-Host "[Workspace] Created directory: $OutputDir"
+        Write-Host "[Workspace] Directorio creado: $OutputDir"
     }
 
-    $subdirs = @("backend", "templates", "static", "data", "docs", "scripts")
-    foreach ($dir in $subdirs) {
-        $fullPath = Join-Path $OutputDir $dir
-        if (-not (Test-Path $fullPath)) {
-            New-Item -Path $fullPath -ItemType Directory -Force | Out-Null
+    $subdirectorios = @("backend", "templates", "static", "data", "docs", "scripts")
+    foreach ($dir in $subdirectorios) {
+        $rutaCompleta = Join-Path $OutputDir $dir
+        if (-not (Test-Path $rutaCompleta)) {
+            New-Item -Path $rutaCompleta -ItemType Directory -Force | Out-Null
         }
     }
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
-    Write-Host "[Workspace] Workspace initialized in ${duration}s"
+    Write-Host "[Workspace] Espacio de trabajo inicializado en ${duracion}s"
 
     return @{
         WorkspacePath = $OutputDir
-        Subdirs = $subdirs
-        Duration = $duration
+        Subdirs = $subdirectorios
+        Duration = $duracion
         Status = "OK"
     }
 }
 
-function New-ProyectoWorkspaceFile {
+function Crear-ArchivoEspacioTrabajo {
     <#
     .SYNOPSIS
-        Creates a VSCode workspace file.
+        Crea el archivo .code-workspace de VSCode para el proyecto.
     .PARAMETER ProjectName
-        Name of the project.
+        Nombre del proyecto.
     .PARAMETER OutputDir
-        Directory where the workspace file will be saved.
+        Directorio raíz del proyecto.
     .OUTPUTS
-        Path to the workspace file.
+        Ruta del archivo de espacio de trabajo creado.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectName,
         [Parameter(Mandatory)] [string] $OutputDir
     )
 
-    $workspaceFile = Join-Path (Split-Path $OutputDir -Parent) "$ProjectName.code-workspace"
-    $workspaceContent = @{
+    $archivoEspacioTrabajo = Join-Path (Split-Path $OutputDir -Parent) "$ProjectName.code-workspace"
+    $contenidoEspacioTrabajo = @{
         folders = @(
             @{ path = $OutputDir }
         )
@@ -74,10 +74,10 @@ function New-ProyectoWorkspaceFile {
             "files.encoding" = "utf8"
         }
     }
-    $workspaceContent | ConvertTo-Json -Depth 3 | Out-File -FilePath $workspaceFile -Encoding UTF8 -Force
-    Write-Host "[Workspace] Created workspace file: $workspaceFile"
+    $contenidoEspacioTrabajo | ConvertTo-Json -Depth 3 | Out-File -FilePath $archivoEspacioTrabajo -Encoding UTF8 -Force
+    Write-Host "[Workspace] Archivo de espacio de trabajo creado: $archivoEspacioTrabajo"
 
-    return $workspaceFile
+    return $archivoEspacioTrabajo
 }
 
-Export-ModuleMember -Function Initialize-ProyectoWorkspace, New-ProyectoWorkspaceFile
+Export-ModuleMember -Function Inicializar-EspacioProyecto, Crear-ArchivoEspacioTrabajo

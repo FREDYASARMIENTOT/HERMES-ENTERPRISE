@@ -1,132 +1,132 @@
-function Initialize-ProyectoGit {
+function Inicializar-GitProyecto {
     <#
     .SYNOPSIS
-        Initializes a Git repository in the project directory.
+        Inicializa un repositorio Git en el directorio del proyecto.
     .PARAMETER ProjectDir
-        Path to the project directory.
+        Ruta al directorio del proyecto.
     .PARAMETER BranchName
-        Branch name (default: main).
+        Nombre de la rama (por defecto: main).
     .OUTPUTS
-        Hashtable with git initialization status.
+        Hashtable con el estado de inicialización de Git.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectDir,
         [string] $BranchName = "main"
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
     if (-not (Test-Path $ProjectDir)) {
-        throw "Project directory not found: $ProjectDir"
+        throw "Directorio del proyecto no encontrado: $ProjectDir"
     }
 
-    $originalDir = Get-Location
+    $directorioOriginal = Get-Location
     Set-Location $ProjectDir
 
     try {
         if (Test-Path ".git") {
-            Write-Host "[Git] Repository already initialized"
-            $status = "EXISTING"
+            Write-Host "[Git] Repositorio ya inicializado"
+            $estado = "EXISTENTE"
         }
         else {
-            $initOut = git init --initial-branch=$BranchName 2>&1
-            Write-Host "[Git] Repository initialized with branch: $BranchName"
+            $salidaInicio = git init --initial-branch=$BranchName 2>&1
+            Write-Host "[Git] Repositorio inicializado con rama: $BranchName"
             $null = git config user.name "Hermes Enterprise"
             $null = git config user.email "hermes@enterprise.local"
-            $status = "CREATED"
+            $estado = "CREADO"
         }
     }
     finally {
-        Set-Location $originalDir
+        Set-Location $directorioOriginal
     }
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
     return @{
-        Status = $status
+        Status = $estado
         Branch = $BranchName
-        Duration = $duration
+        Duration = $duracion
         GitDir = Join-Path $ProjectDir ".git"
     }
 }
 
-function New-ProyectoGitCommit {
+function Crear-CommitProyecto {
     <#
     .SYNOPSIS
-        Stages all files and creates a commit.
+        Agrega todos los archivos al staging y crea un commit.
     .PARAMETER ProjectDir
-        Path to the project directory.
-    .PARAMETER Message
-        Commit message.
+        Ruta al directorio del proyecto.
+    .PARAMETER Mensaje
+        Mensaje del commit.
     .OUTPUTS
-        Hashtable with commit information.
+        Hashtable con la información del commit.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectDir,
-        [Parameter(Mandatory)] [string] $Message
+        [Parameter(Mandatory)] [string] $Mensaje
     )
 
-    $originalDir = Get-Location
+    $directorioOriginal = Get-Location
     Set-Location $ProjectDir
 
     try {
         $null = git add -A 2>&1
-        $result = git commit -m $Message 2>&1
+        $resultado = git commit -m $Mensaje 2>&1
         if ($LASTEXITCODE -ne 0) {
             $null = git add -A 2>&1
-            $result = git commit -m $Message --no-verify 2>&1
+            $resultado = git commit -m $Mensaje --no-verify 2>&1
         }
 
-        $commitHash = git rev-parse HEAD 2>&1
-        $filesChanged = (git diff --cached --name-only 2>&1).Count
+        $hashCommit = git rev-parse HEAD 2>&1
+        $archivosCambiados = (git diff --cached --name-only 2>&1).Count
 
-        Write-Host "[Git] Commit created: $($commitHash.Trim())"
-        Write-Host "[Git] Files changed: $filesChanged"
+        Write-Host "[Git] Commit creado: $($hashCommit.Trim())"
+        Write-Host "[Git] Archivos cambiados: $archivosCambiados"
     }
     finally {
-        Set-Location $originalDir
+        Set-Location $directorioOriginal
     }
 
     return @{
-        CommitHash = $commitHash.Trim()
-        FilesChanged = $filesChanged
-        Message = $Message
+        CommitHash = $hashCommit.Trim()
+        FilesChanged = $archivosCambiados
+        Message = $Mensaje
     }
 }
 
-function Get-ProyectoGitStatus {
+function Obtener-EstadoGitProyecto {
     <#
     .SYNOPSIS
-        Checks the Git status of the project.
+        Obtiene el estado actual del repositorio Git del proyecto.
     .PARAMETER ProjectDir
-        Path to the project directory.
+        Ruta al directorio del proyecto.
     .OUTPUTS
-        Hashtable with Git status.
+        Hashtable con el estado de Git.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectDir
     )
 
-    $originalDir = Get-Location
+    $directorioOriginal = Get-Location
     Set-Location $ProjectDir
 
     try {
-        $status = git status --porcelain 2>&1
-        $branch = git rev-parse --abbrev-ref HEAD 2>&1
-        $commitHash = git rev-parse HEAD 2>&1
-        $isClean = [string]::IsNullOrEmpty($status)
+        $estado = git status --porcelain 2>&1
+        $rama = git rev-parse --abbrev-ref HEAD 2>&1
+        $hashCommit = git rev-parse HEAD 2>&1
+        $estaLimpio = [string]::IsNullOrEmpty($estado)
     }
     finally {
-        Set-Location $originalDir
+        Set-Location $directorioOriginal
     }
 
     return @{
-        Branch = $branch.Trim()
-        CommitHash = $commitHash.Trim()
-        IsClean = $isClean
-        StatusOutput = $status
+        Branch = $rama.Trim()
+        CommitHash = $hashCommit.Trim()
+        IsClean = $estaLimpio
+        StatusOutput = $estado
     }
 }
 
-Export-ModuleMember -Function Initialize-ProyectoGit, New-ProyectoGitCommit, Get-ProyectoGitStatus
+Export-ModuleMember -Function Inicializar-GitProyecto, Crear-CommitProyecto, Obtener-EstadoGitProyecto

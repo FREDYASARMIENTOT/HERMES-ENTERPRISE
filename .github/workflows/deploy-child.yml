@@ -1,6 +1,6 @@
-# deploy-child.yml — HERMES-ENTERPRISE CONTROL PLANE
+# deploy-child.yml — PLANO DE CONTROL DE HERMES-ENTERPRISE
 # ====================================================================
-# RC77-C9-FIX: Orquesta deployment de proyectos Hermes hijos desde
+# RC77-C9-FIX: Orquesta despliegue de proyectos Hermes hijos desde
 # HERMES-ENTERPRISE usando OIDC (FIC existente sin modificar).
 #
 # Arquitectura:
@@ -44,13 +44,13 @@ env:
   WEBAPP_RESOURCE_GROUP: RG-Hermes-Proyectos
   LOCATION: eastus
   RUNTIME: 'PYTHON:3.12'
-  # STARTUP_COMMAND: NOT USED — startup.sh from child repo is auto-detected
-  # When appCommandLine is empty, Azure Python runtime auto-detects startup.sh
-  # which handles: pip install, DB init, uvicorn backend.main:app
+  # STARTUP_COMMAND: NO USADO — startup.sh del repositorio hijo se auto-detecta
+  # Cuando appCommandLine está vacío, el runtime Python de Azure auto-detecta startup.sh
+  # que maneja: pip install, DB init, uvicorn backend.main:app
 
 jobs:
   # ==================================================================
-  # JOB 1: validate-inputs — Security validation layer
+  # TRABAJO 1: validate-inputs — Capa de validación de seguridad
   # ==================================================================
   validate-inputs:
     name: Validate Inputs
@@ -113,7 +113,7 @@ jobs:
           echo "=========================================="
 
   # ==================================================================
-  # JOB 2: checkout-child — Checkout child repo at specific SHA
+  # TRABAJO 2: checkout-child — Checkout del repositorio hijo en SHA específico
   # ==================================================================
   checkout-child:
     name: Checkout Child
@@ -151,7 +151,7 @@ jobs:
           echo "checkout_result=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================
-  # JOB 3: validate-infrastructure — Pre-OIDC validation
+  # TRABAJO 3: validate-infrastructure — Validación pre-OIDC
   # ==================================================================
   validate-infrastructure:
     name: Validate Infrastructure Params
@@ -182,7 +182,7 @@ jobs:
           echo "infra_validation=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================
-  # JOB 4: oidc-login — Authenticate HERMES-ENTERPRISE to Azure
+  # TRABAJO 4: oidc-login — Autenticar HERMES-ENTERPRISE en Azure
   # ==================================================================
   oidc-login:
     name: OIDC Login
@@ -247,7 +247,7 @@ jobs:
           echo "OK: RG ${{ env.WEBAPP_RESOURCE_GROUP }} exists"
 
   # ==================================================================
-  # JOB 5: provision-webapp — Create/reuse Web App with ASP-IAUR
+  # TRABAJO 5: provision-webapp — Crear/reutilizar Web App con ASP-IAUR
   # ==================================================================
   provision-webapp:
     name: Provision Web App
@@ -281,7 +281,7 @@ jobs:
           echo "RG   : ${RG}"
           echo "Plan : ${PLAN} (shared from ${APP_SERVICE_PLAN_RG})"
 
-          # Use full plan resource ID since plan is in different RG
+          # Usar ID completo del plan de recursos ya que está en otro RG
           PLAN_ID="${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
           echo "Plan ID: ${PLAN_ID}"
 
@@ -347,7 +347,7 @@ jobs:
           echo "Plan Created: NO (shared ASP-IAUR reused)"
 
   # ==================================================================
-  # JOB 6: deploy — Deploy via Azure/webapps-deploy@v3
+  # TRABAJO 6: deploy — Desplegar via az webapp deploy (reemplaza Azure/webapps-deploy@v3)
   # ==================================================================
   deploy:
     name: Deploy to Azure
@@ -422,7 +422,7 @@ jobs:
           echo "deploy_result=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================
-  # JOB 7: readiness — Poll /health until ready
+  # TRABAJO 7: readiness — Consultar /health hasta que esté listo
   # ==================================================================
   readiness:
     name: Readiness Check
@@ -446,7 +446,7 @@ jobs:
             if [ "${CODE}" = "200" ]; then
               echo "=== Response body ==="
               cat /tmp/health_response.json 2>/dev/null || echo "(empty)"
-              # Validate it's a real Hermes health response (not a generic 200)
+              # Validar que es una respuesta de salud real de Hermes (no un 200 genérico)
               HERMES_STATUS=$(python3 -c "import json;d=json.load(open('/tmp/health_response.json'));print(d.get('status','unknown'))" 2>/dev/null || echo "parse_error")
               echo "Health status field: ${HERMES_STATUS}"
               if [ "${HERMES_STATUS}" = "healthy" ] || [ "${HERMES_STATUS}" = "ok" ]; then
@@ -456,7 +456,7 @@ jobs:
                 exit 0
               else
                 echo "WARN: Health endpoint returned 200 but status='${HERMES_STATUS}' (not 'healthy')"
-                # Continue polling — might be a transient state
+                # Continuar consultando — podría ser un estado transitorio
               fi
             fi
             ATTEMPT=$((ATTEMPT+1))
@@ -468,7 +468,7 @@ jobs:
           exit 1
 
   # ==================================================================
-  # JOB 8: functional-tests — Real endpoint tests
+  # TRABAJO 8: functional-tests — Pruebas de endpoint reales
   # ==================================================================
   functional-tests:
     name: Functional Tests
@@ -497,47 +497,47 @@ jobs:
           echo "=== Functional Tests: ${URL} ==="
           echo ""
 
-          # Test 1: GET /health -> 200
+          # Prueba 1: GET /health -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/health.json -w '%{http_code}' "${URL}/health" 2>/dev/null || echo "000")
           echo "${HTTP}" > /tmp/health_code
           [ "${HTTP}" = "200" ] && pass "GET /health -> 200" || fail "GET /health -> ${HTTP}"
 
-          # Test 2: GET /api/version -> 200
+          # Prueba 2: GET /api/version -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/version.json -w '%{http_code}' "${URL}/api/version" 2>/dev/null || echo "000")
           echo "${HTTP}" > /tmp/version_code
           [ "${HTTP}" = "200" ] && pass "GET /api/version -> 200" || fail "GET /api/version -> ${HTTP}"
 
-          # Test 3: GET / -> 200
+          # Prueba 3: GET / -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/root.json -w '%{http_code}' "${URL}/" 2>/dev/null || echo "000")
           [ "${HTTP}" = "200" ] && pass "GET / -> 200" || fail "GET / -> ${HTTP}"
 
-          # Test 4: GET /api/proyecto -> 200
+          # Prueba 4: GET /api/proyecto -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /dev/null -w '%{http_code}' "${URL}/api/proyecto" 2>/dev/null || echo "000")
           echo "${HTTP}" > /tmp/proyecto_code
           [ "${HTTP}" = "200" ] && pass "GET /api/proyecto -> 200" || fail "GET /api/proyecto -> ${HTTP}"
 
-          # Test 5: GET /openapi.json -> 200
+          # Prueba 5: GET /openapi.json -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/openapi.json -w '%{http_code}' "${URL}/openapi.json" 2>/dev/null || echo "000")
           echo "${HTTP}" > /tmp/openapi_code
           [ "${HTTP}" = "200" ] && pass "GET /openapi.json -> 200" || fail "GET /openapi.json -> ${HTTP}"
 
-          # Test 6: GET /docs -> 200
+          # Prueba 6: GET /docs -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /dev/null -w '%{http_code}' "${URL}/docs" 2>/dev/null || echo "000")
           echo "${HTTP}" > /tmp/docs_code
           [ "${HTTP}" = "200" ] && pass "GET /docs -> 200" || fail "GET /docs -> ${HTTP}"
 
-          # Test 7: NEGATIVE - 404
+          # Prueba 7: NEGATIVA - 404
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /dev/null -w '%{http_code}' "${URL}/ruta-que-no-existe" 2>/dev/null || echo "000")
           [ "${HTTP}" = "404" ] && pass "NEGATIVE 404 -> ${HTTP}" || fail "NEGATIVE 404 -> ${HTTP}"
 
-          # Test 8: Identity
+          # Prueba 8: Identidad
           HEALTH_APP=$(python3 -c "import json;print(json.load(open('/tmp/health.json')).get('aplicacion',''))" 2>/dev/null)
           VERSION_APP=$(python3 -c "import json;print(json.load(open('/tmp/version.json')).get('aplicacion',''))" 2>/dev/null)
           OPENAPI_TITLE=$(python3 -c "import json;print(json.load(open('/tmp/openapi.json')).get('info',{}).get('title',''))" 2>/dev/null)
@@ -568,7 +568,7 @@ jobs:
           echo "functional_result=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================
-  # JOB 9: evidence — Generate deployment-report.json (real results)
+  # TRABAJO 9: evidence — Generar deployment-report.json (resultados reales)
   # ==================================================================
   evidence:
     name: Generate Evidence

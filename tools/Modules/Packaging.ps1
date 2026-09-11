@@ -1,15 +1,15 @@
-function New-ProyectoDeployZip {
+function Crear-ZipDespliegue {
     <#
     .SYNOPSIS
-        Creates a deploy ZIP excluding .git, .github, .vscode, logs, __pycache__, *.pyc, temp.
+        Crea un paquete ZIP para despliegue excluyendo .git, .github, .vscode, logs, __pycache__, *.pyc, temp.
     .PARAMETER SourceDir
-        Project directory to package.
+        Directorio del proyecto a empaquetar.
     .PARAMETER OutputPath
-        Path for the ZIP file.
+        Ruta para el archivo ZIP.
     .PARAMETER ExcludePatterns
-        Array of patterns to exclude (default: .git .github .vscode logs __pycache__ *.pyc temp).
+        Lista de patrones a excluir (por defecto: .git .github .vscode logs __pycache__ *.pyc temp).
     .OUTPUTS
-        Hashtable with ZIP info.
+        Hashtable con la información del ZIP.
     #>
     param(
         [Parameter(Mandatory)] [string] $SourceDir,
@@ -17,15 +17,15 @@ function New-ProyectoDeployZip {
         [string[]] $ExcludePatterns = @()
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
     if (-not (Test-Path $SourceDir)) {
-        throw "Source directory not found: $SourceDir"
+        throw "Directorio de origen no encontrado: $SourceDir"
     }
 
-    $outputDir = Split-Path $OutputPath -Parent
-    if (-not (Test-Path $outputDir)) {
-        $null = New-Item -Path $outputDir -ItemType Directory -Force
+    $directorioSalida = Split-Path $OutputPath -Parent
+    if (-not (Test-Path $directorioSalida)) {
+        $null = New-Item -Path $directorioSalida -ItemType Directory -Force
     }
 
     if (Test-Path $OutputPath) {
@@ -36,117 +36,118 @@ function New-ProyectoDeployZip {
         $ExcludePatterns = @(".git", ".github", ".vscode", "logs", "__pycache__", "*.pyc", "temp")
     }
 
-    Write-Host "[Packaging] Creating ZIP: $OutputPath"
+    Write-Host "[Packaging] Creando ZIP: $OutputPath"
 
-    $originalDir = Get-Location
+    $directorioOriginal = Get-Location
     Set-Location $SourceDir
 
     try {
         $null = Get-Command 7z -ErrorAction SilentlyContinue
         if ($?) {
-            $excludeArgs = $ExcludePatterns | ForEach-Object { "-x!$_" }
-            $null = & 7z a -tzip $OutputPath . -r @excludeArgs -bso0 -bsp0 2>&1
-            Write-Host "[Packaging] ZIP created with 7z"
+            $argumentosExclusion = $ExcludePatterns | ForEach-Object { "-x!$_" }
+            $null = & 7z a -tzip $OutputPath . -r @argumentosExclusion -bso0 -bsp0 2>&1
+            Write-Host "[Packaging] ZIP creado con 7z"
         } else {
-            throw "7z not available"
+            throw "7z no disponible"
         }
     }
     catch {
-        Write-Host "[Packaging] 7z not available, using Compress-Archive" -ForegroundColor Yellow
-        $items = Get-ChildItem -Path $SourceDir
-        $compressParams = @{
-            Path = $items.FullName
+        Write-Host "[Packaging] 7z no disponible, usando Compress-Archive" -ForegroundColor Yellow
+        $elementos = Get-ChildItem -Path $SourceDir
+        $parametrosCompresion = @{
+            Path = $elementos.FullName
             DestinationPath = $OutputPath
             Force = $true
         }
         if ($PSVersionTable.PSVersion.Major -ge 5) {
-            $compressParams.CompressionLevel = [System.IO.Compression.CompressionLevel]::Optimal
+            $parametrosCompresion.CompressionLevel = [System.IO.Compression.CompressionLevel]::Optimal
         }
-        Compress-Archive @compressParams
+        Compress-Archive @parametrosCompresion
     }
     finally {
-        Set-Location $originalDir
+        Set-Location $directorioOriginal
     }
 
-    $fileInfo = Get-Item $OutputPath
+    $infoArchivo = Get-Item $OutputPath
     $sha256 = (Get-FileHash -Path $OutputPath -Algorithm SHA256).Hash
 
-    Write-Host "[Packaging] ZIP created: $OutputPath"
-    Write-Host "[Packaging] Size: $([math]::Round($fileInfo.Length / 1KB, 2)) KB"
+    Write-Host "[Packaging] ZIP creado: $OutputPath"
+    Write-Host "[Packaging] Tamaño: $([math]::Round($infoArchivo.Length / 1KB, 2)) KB"
     Write-Host "[Packaging] SHA256: $sha256"
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
     return @{
         ZipPath = $OutputPath
-        SizeKB = [math]::Round($fileInfo.Length / 1KB, 2)
+        SizeKB = [math]::Round($infoArchivo.Length / 1KB, 2)
         SHA256 = $sha256
-        Duration = $duration
+        Duration = $duracion
         Status = "OK"
     }
 }
 
-function Test-DeployZipIntegrity {
+function Validar-IntegridadZipDespliegue {
     <#
     .SYNOPSIS
-        Validates the deploy ZIP structure and integrity.
+        Valida la estructura e integridad del ZIP de despliegue.
+        Verifica que contenga los archivos requeridos: main.py, requirements.txt, startup.sh, .gitignore.
     .PARAMETER ZipPath
-        Path to the ZIP file.
+        Ruta al archivo ZIP.
     .OUTPUTS
-        Hashtable with validation results.
+        Hashtable con los resultados de validación.
     #>
     param(
         [Parameter(Mandatory)] [string] $ZipPath
     )
 
     if (-not (Test-Path $ZipPath)) {
-        throw "ZIP file not found: $ZipPath"
+        throw "Archivo ZIP no encontrado: $ZipPath"
     }
 
-    $fileInfo = Get-Item $ZipPath
+    $infoArchivo = Get-Item $ZipPath
     $hash = Get-FileHash -Path $ZipPath -Algorithm SHA256
 
-    $requiredFiles = @("main.py", "requirements.txt", "startup.sh", ".gitignore")
-    $foundFiles = @()
+    $archivosRequeridos = @("main.py", "requirements.txt", "startup.sh", ".gitignore")
+    $archivosEncontrados = @()
 
     try {
         $null = Get-Command 7z -ErrorAction SilentlyContinue
         if ($?) {
-            $zipContent = & 7z l $ZipPath -ba 2>&1
-            foreach ($file in $requiredFiles) {
-                if ($zipContent -match [regex]::Escape($file)) {
-                    $foundFiles += $file
+            $contenidoZip = & 7z l $ZipPath -ba 2>&1
+            foreach ($archivo in $archivosRequeridos) {
+                if ($contenidoZip -match [regex]::Escape($archivo)) {
+                    $archivosEncontrados += $archivo
                 }
             }
         } else {
-            throw "7z not available"
+            throw "7z no disponible"
         }
     }
     catch {
         Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
         $zip = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
-        $entries = $zip.Entries.FullName
+        $entradas = $zip.Entries.FullName
         $zip.Dispose()
 
-        foreach ($file in $requiredFiles) {
-            if ($entries -contains $file) {
-                $foundFiles += $file
+        foreach ($archivo in $archivosRequeridos) {
+            if ($entradas -contains $archivo) {
+                $archivosEncontrados += $archivo
             }
         }
     }
 
-    $missing = $requiredFiles | Where-Object { $_ -notin $foundFiles }
+    $faltantes = $archivosRequeridos | Where-Object { $_ -notin $archivosEncontrados }
 
     return @{
         ZipPath = $ZipPath
-        SizeKB = [math]::Round($fileInfo.Length / 1KB, 2)
+        SizeKB = [math]::Round($infoArchivo.Length / 1KB, 2)
         SHA256 = $hash.Hash
-        RequiredFilesFound = $foundFiles.Count
-        RequiredFilesTotal = $requiredFiles.Count
-        MissingFiles = $missing
-        Valid = ($missing.Count -eq 0)
+        RequiredFilesFound = $archivosEncontrados.Count
+        RequiredFilesTotal = $archivosRequeridos.Count
+        MissingFiles = $faltantes
+        Valid = ($faltantes.Count -eq 0)
     }
 }
 
-Export-ModuleMember -Function New-ProyectoDeployZip, Test-DeployZipIntegrity
+Export-ModuleMember -Function Crear-ZipDespliegue, Validar-IntegridadZipDespliegue

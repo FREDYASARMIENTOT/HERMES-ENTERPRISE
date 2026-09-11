@@ -1,17 +1,17 @@
-function Initialize-ProyectoGitHubRepo {
+function Crear-RepositorioGitHubProyecto {
     <#
     .SYNOPSIS
-        Creates a GitHub repository for the project.
+        Crea un repositorio en GitHub para el proyecto.
     .PARAMETER ProjectName
-        Name of the project (used as repo name).
+        Nombre del proyecto (se usará como nombre del repositorio).
     .PARAMETER ProjectDir
-        Local project directory path.
+        Ruta local del directorio del proyecto.
     .PARAMETER Description
-        Repository description.
+        Descripción del repositorio.
     .PARAMETER Visibility
-        Repository visibility (public/private).
+        Visibilidad del repositorio (public/private).
     .OUTPUTS
-        Hashtable with repository information.
+        Hashtable con la información del repositorio creado.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectName,
@@ -20,127 +20,126 @@ function Initialize-ProyectoGitHubRepo {
         [ValidateSet("public", "private")] [string] $Visibility = "private"
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
-    $repoName = $ProjectName -replace '\s+', '-' -replace '_', '-' -replace '\.', '-'
-    $repoName = $repoName.ToLowerInvariant()
+    $nombreRepositorio = $ProjectName -replace '\s+', '-' -replace '_', '-' -replace '\.', '-'
+    $nombreRepositorio = $nombreRepositorio.ToLowerInvariant()
 
-    Write-Host "[GitHub] Creating repository: $repoName"
+    Write-Host "[GitHub] Creando repositorio: $nombreRepositorio"
 
-    # Check if repo already exists
-    $existing = $null
+    # Verifica si el repositorio ya existe
+    $existente = $null
     try {
-        $existing = gh repo view $repoName --json name 2>&1
-        if ($LASTEXITCODE -ne 0) { $existing = $null }
-    } catch { $existing = $null }
+        $existente = gh repo view $nombreRepositorio --json name 2>&1
+        if ($LASTEXITCODE -ne 0) { $existente = $null }
+    } catch { $existente = $null }
 
-    if ($existing) {
-        Write-Host "[GitHub] Repository already exists: $repoName"
-        $created = $false
+    if ($existente) {
+        Write-Host "[GitHub] El repositorio ya existe: $nombreRepositorio"
+        $creado = $false
     }
     else {
-        $createOutput = gh repo create $repoName --$Visibility --description $Description 2>&1
+        $salidaCreacion = gh repo create $nombreRepositorio --$Visibility --description $Description 2>&1
         if ($LASTEXITCODE -ne 0) {
-            throw "Failed to create GitHub repository: $repoName ($createOutput)"
+            throw "Error al crear repositorio en GitHub: $nombreRepositorio ($salidaCreacion)"
         }
-        Write-Host "[GitHub] Created repository: $repoName"
-        $created = $true
+        Write-Host "[GitHub] Repositorio creado: $nombreRepositorio"
+        $creado = $true
     }
 
-    $remoteUrl = "https://github.com/$repoName.git"
-    $gitRemote = $null
+    $urlRemoto = "https://github.com/$nombreRepositorio.git"
 
-    $originalDir = Get-Location
+    $directorioOriginal = Get-Location
     Set-Location $ProjectDir
 
     try {
-        $remotes = git remote 2>&1
-        if ($remotes -notcontains "origin") {
-            $null = git remote add origin $remoteUrl 2>&1
-            Write-Host "[GitHub] Added remote: origin -> $remoteUrl"
+        $remotos = git remote 2>&1
+        if ($remotos -notcontains "origin") {
+            $null = git remote add origin $urlRemoto 2>&1
+            Write-Host "[GitHub] Remoto agregado: origin -> $urlRemoto"
         }
         else {
-            $null = git remote set-url origin $remoteUrl 2>&1
-            Write-Host "[GitHub] Updated remote: origin -> $remoteUrl"
+            $null = git remote set-url origin $urlRemoto 2>&1
+            Write-Host "[GitHub] Remoto actualizado: origin -> $urlRemoto"
         }
     }
     finally {
-        Set-Location $originalDir
+        Set-Location $directorioOriginal
     }
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
     return @{
-        RepoName = $repoName
-        RemoteUrl = $remoteUrl
-        Created = $created
-        Duration = $duration
+        RepoName = $nombreRepositorio
+        RemoteUrl = $urlRemoto
+        Created = $creado
+        Duration = $duracion
         Status = "OK"
     }
 }
 
-function Push-ProyectoToGitHub {
+function Publicar-ProyectoEnGitHub {
     <#
     .SYNOPSIS
-        Pushes the local repository to GitHub.
+        Publica (push) el repositorio local en GitHub.
     .PARAMETER ProjectDir
-        Path to the project directory.
+        Ruta al directorio del proyecto.
     .PARAMETER Branch
-        Branch to push.
+        Rama a publicar.
     .OUTPUTS
-        Hashtable with push status.
+        Hashtable con el estado de la publicación.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectDir,
         [string] $Branch = "main"
     )
 
-    $startTime = Get-Date
+    $horaInicio = Get-Date
 
-    $originalDir = Get-Location
+    $directorioOriginal = Get-Location
     Set-Location $ProjectDir
 
     try {
-        $pushOut = git push -u origin $Branch 2>&1
+        $salidaPublicacion = git push -u origin $Branch 2>&1
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "[GitHub] Push failed, forcing..."
-            $pushOut = git push -u origin $Branch --force 2>&1
+            Write-Host "[GitHub] Publicación fallida, reintentando con --force..."
+            $salidaPublicacion = git push -u origin $Branch --force 2>&1
         }
-        Write-Host "[GitHub] Push completed to origin/$Branch"
+        Write-Host "[GitHub] Publicación completada en origin/$Branch"
     }
     finally {
-        Set-Location $originalDir
+        Set-Location $directorioOriginal
     }
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
     return @{
         Branch = $Branch
-        Duration = $duration
+        Duration = $duracion
         Status = "OK"
     }
 }
 
-function Set-GitHubActionsSecrets {
+function Establecer-SecretosGitHubAcciones {
     <#
     .SYNOPSIS
-        Configures GitHub Actions secrets required for Azure authentication (OIDC).
-        Uses gh secret set to securely store credentials without exposing them.
+        Configura los secretos de GitHub Actions necesarios para la autenticación OIDC en Azure.
+        Utiliza gh secret set para almacenar credenciales de forma segura sin exponerlas.
     .PARAMETER RepoName
-        Name of the GitHub repository (OWNER/REPO).
+        Nombre del repositorio en GitHub (OWNER/REPO).
     .PARAMETER AzureClientId
-        Azure client ID for OIDC federated identity.
+        Client ID de Azure App Registration para identidad federada OIDC.
     .PARAMETER AzureTenantId
-        Azure tenant ID.
+        Tenant ID de Azure.
     .PARAMETER AzureSubscriptionId
-        Azure subscription ID.
+        Subscription ID de Azure.
     .OUTPUTS
-        Hashtable with secrets configuration status.
+        Hashtable con el estado de configuración de secretos.
     .NOTES
-        This function uses GitHub CLI (gh) to set secrets.
-        Never writes secrets to files, logs, or output.
+        Esta función utiliza GitHub CLI (gh) para establecer secretos.
+        Nunca escribe secretos en archivos, registros o salida estándar.
     #>
     param(
         [Parameter(Mandatory)] [string] $RepoName,
@@ -149,49 +148,49 @@ function Set-GitHubActionsSecrets {
         [Parameter(Mandatory)] [string] $AzureSubscriptionId
     )
 
-    $startTime = Get-Date
-    $results = @{}
+    $horaInicio = Get-Date
+    $resultados = @{}
 
-    Write-Host "[GitHub] Configuring Actions secrets for: $RepoName"
+    Write-Host "[GitHub] Configurando secretos de Actions para: $RepoName"
 
-    # Secret AZURE_CLIENT_ID
+    # Secreto AZURE_CLIENT_ID
     $null = gh secret set AZURE_CLIENT_ID --repo $RepoName --body $AzureClientId 2>&1
     if ($LASTEXITCODE -eq 0) {
-        $results["AZURE_CLIENT_ID"] = "OK"
-        Write-Host "[GitHub] Secret AZURE_CLIENT_ID configured"
+        $resultados["AZURE_CLIENT_ID"] = "OK"
+        Write-Host "[GitHub] Secreto AZURE_CLIENT_ID configurado"
     } else {
-        $results["AZURE_CLIENT_ID"] = "FAIL"
-        Write-Warning "[GitHub] Failed to set AZURE_CLIENT_ID secret"
+        $resultados["AZURE_CLIENT_ID"] = "FAIL"
+        Write-Warning "[GitHub] Error al configurar AZURE_CLIENT_ID"
     }
 
-    # Secret AZURE_TENANT_ID
+    # Secreto AZURE_TENANT_ID
     $null = gh secret set AZURE_TENANT_ID --repo $RepoName --body $AzureTenantId 2>&1
     if ($LASTEXITCODE -eq 0) {
-        $results["AZURE_TENANT_ID"] = "OK"
-        Write-Host "[GitHub] Secret AZURE_TENANT_ID configured"
+        $resultados["AZURE_TENANT_ID"] = "OK"
+        Write-Host "[GitHub] Secreto AZURE_TENANT_ID configurado"
     } else {
-        $results["AZURE_TENANT_ID"] = "FAIL"
-        Write-Warning "[GitHub] Failed to set AZURE_TENANT_ID secret"
+        $resultados["AZURE_TENANT_ID"] = "FAIL"
+        Write-Warning "[GitHub] Error al configurar AZURE_TENANT_ID"
     }
 
-    # Secret AZURE_SUBSCRIPTION_ID
+    # Secreto AZURE_SUBSCRIPTION_ID
     $null = gh secret set AZURE_SUBSCRIPTION_ID --repo $RepoName --body $AzureSubscriptionId 2>&1
     if ($LASTEXITCODE -eq 0) {
-        $results["AZURE_SUBSCRIPTION_ID"] = "OK"
-        Write-Host "[GitHub] Secret AZURE_SUBSCRIPTION_ID configured"
+        $resultados["AZURE_SUBSCRIPTION_ID"] = "OK"
+        Write-Host "[GitHub] Secreto AZURE_SUBSCRIPTION_ID configurado"
     } else {
-        $results["AZURE_SUBSCRIPTION_ID"] = "FAIL"
-        Write-Warning "[GitHub] Failed to set AZURE_SUBSCRIPTION_ID secret"
+        $resultados["AZURE_SUBSCRIPTION_ID"] = "FAIL"
+        Write-Warning "[GitHub] Error al configurar AZURE_SUBSCRIPTION_ID"
     }
 
-    $elapsed = (Get-Date) - $startTime
-    $duration = [math]::Round($elapsed.TotalSeconds, 2)
+    $tiempoTranscurrido = (Get-Date) - $horaInicio
+    $duracion = [math]::Round($tiempoTranscurrido.TotalSeconds, 2)
 
     return @{
-        Status = if ($results.Values -notcontains "FAIL") { "OK" } else { "PARTIAL" }
-        Secrets = $results
-        Duration = $duration
+        Status = if ($resultados.Values -notcontains "FAIL") { "OK" } else { "PARCIAL" }
+        Secrets = $resultados
+        Duration = $duracion
     }
 }
 
-Export-ModuleMember -Function Initialize-ProyectoGitHubRepo, Push-ProyectoToGitHub, Set-GitHubActionsSecrets
+Export-ModuleMember -Function Crear-RepositorioGitHubProyecto, Publicar-ProyectoEnGitHub, Establecer-SecretosGitHubAcciones

@@ -1,21 +1,21 @@
-function Test-GuardianRestrictions {
+function Probar-RestriccionesGuardian {
     <#
     .SYNOPSIS
-        Validates that the Guardian restrictions are respected.
-        This module reads RC73 protection rules and enforces them.
+        Valida que las restricciones del Guardian (protección de infraestructura) se cumplan.
+        Este módulo lee las reglas de protección RC73 y las aplica.
     .PARAMETER ConfigPath
-        Path to Hermes.InfrastructureProtection.json.
+        Ruta a Hermes.InfrastructureProtection.json.
     .OUTPUTS
-        Hashtable with Guardian validation status.
+        Hashtable con el estado de validación del Guardian.
     #>
     param(
         [Parameter(Mandatory)] [string] $ConfigPath
     )
 
-    Write-Host "[Guardian] Validating infrastructure protection rules..."
+    Write-Host "[Guardian] Validando reglas de protección de infraestructura..."
 
     if (-not (Test-Path $ConfigPath)) {
-        Write-Host "[Guardian] WARNING: Infrastructure protection config not found at: $ConfigPath"
+        Write-Host "[Guardian] ADVERTENCIA: Archivo de protección no encontrado en: $ConfigPath"
         return @{
             ConfigFound = $false
             RulesValidated = 0
@@ -23,49 +23,49 @@ function Test-GuardianRestrictions {
         }
     }
 
-    $config = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $configuracion = Get-Content -Path $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
-    $blockedOperations = @()
-    $allowedOperations = @()
+    $operacionesBloqueadas = @()
+    $operacionesPermitidas = @()
 
-    if ($config.PSObject.Properties.Name -contains "BlockedOperations") {
-        $blockedOperations = $config.BlockedOperations
-    } elseif ($config.PSObject.Properties.Name -contains "blockedOperations") {
-        $blockedOperations = $config.blockedOperations
+    if ($configuracion.PSObject.Properties.Name -contains "BlockedOperations") {
+        $operacionesBloqueadas = $configuracion.BlockedOperations
+    } elseif ($configuracion.PSObject.Properties.Name -contains "blockedOperations") {
+        $operacionesBloqueadas = $configuracion.blockedOperations
     }
 
-    if ($config.PSObject.Properties.Name -contains "AllowedOperations") {
-        $allowedOperations = $config.AllowedOperations
-    } elseif ($config.PSObject.Properties.Name -contains "allowedOperations") {
-        $allowedOperations = $config.allowedOperations
+    if ($configuracion.PSObject.Properties.Name -contains "AllowedOperations") {
+        $operacionesPermitidas = $configuracion.AllowedOperations
+    } elseif ($configuracion.PSObject.Properties.Name -contains "allowedOperations") {
+        $operacionesPermitidas = $configuracion.allowedOperations
     }
 
-    $protectionRules = @{
-        BlockedOperations = $blockedOperations
-        AllowedOperations = $allowedOperations
-        ConfigVersion = if ($config.PSObject.Properties.Name -contains "Version") { $config.Version } else { $config.version }
+    $reglasProteccion = @{
+        BlockedOperations = $operacionesBloqueadas
+        AllowedOperations = $operacionesPermitidas
+        ConfigVersion = if ($configuracion.PSObject.Properties.Name -contains "Version") { $configuracion.Version } else { $configuracion.version }
     }
 
-    Write-Host "[Guardian] Protection rules loaded: $($blockedOperations.Count) blocked, $($allowedOperations.Count) allowed"
+    Write-Host "[Guardian] Reglas de protección cargadas: $($operacionesBloqueadas.Count) bloqueadas, $($operacionesPermitidas.Count) permitidas"
 
     return @{
         ConfigFound = $true
-        RulesValidated = $blockedOperations.Count + $allowedOperations.Count
-        ProtectionRules = $protectionRules
+        RulesValidated = $operacionesBloqueadas.Count + $operacionesPermitidas.Count
+        ProtectionRules = $reglasProteccion
         Allowed = $true
     }
 }
 
-function Assert-ProyectoSafeToProceed {
+function Afirmar-ProyectoSeguroParaContinuar {
     <#
     .SYNOPSIS
-        Asserts that a given operation is allowed by Guardian rules.
+        Verifica que una operación está permitida por las reglas del Guardian.
     .PARAMETER Operation
-        The operation to check (e.g., "CreateWebApp", "CreateResourceGroup").
+        La operación a verificar (ej: "CreateWebApp", "CreateResourceGroup").
     .PARAMETER GuardianState
-        The current Guardian state from Test-GuardianRestrictions.
+        El estado actual del Guardian desde Probar-RestriccionesGuardian.
     .OUTPUTS
-        Boolean indicating if the operation is allowed.
+        Booleano indicando si la operación está permitida.
     #>
     param(
         [Parameter(Mandatory)] [string] $Operation,
@@ -73,26 +73,26 @@ function Assert-ProyectoSafeToProceed {
     )
 
     if (-not $GuardianState.Allowed) {
-        throw "[Guardian] Guardian has blocked all operations. Cannot proceed."
+        throw "[Guardian] El Guardian ha bloqueado todas las operaciones. No se puede continuar."
     }
 
-    $blocked = $GuardianState.ProtectionRules.BlockedOperations
-    if ($Operation -in $blocked) {
-        throw "[Guardian] Operation BLOCKED by Guardian rules: $Operation"
+    $bloqueadas = $GuardianState.ProtectionRules.BlockedOperations
+    if ($Operation -in $bloqueadas) {
+        throw "[Guardian] Operación BLOQUEADA por las reglas del Guardian: $Operation"
     }
 
-    Write-Host "[Guardian] Operation allowed: $Operation"
+    Write-Host "[Guardian] Operación permitida: $Operation"
     return $true
 }
 
-function Get-GuardianSummary {
+function Obtener-ResumenGuardian {
     <#
     .SYNOPSIS
-        Returns a summary of the Guardian state.
+        Retorna un resumen del estado actual del Guardian.
     .PARAMETER GuardianState
-        The current Guardian state.
+        El estado actual del Guardian.
     .OUTPUTS
-        Hashtable with summary.
+        Hashtable con el resumen.
     #>
     param(
         [Parameter(Mandatory)] [hashtable] $GuardianState
@@ -106,4 +106,4 @@ function Get-GuardianSummary {
     }
 }
 
-Export-ModuleMember -Function Test-GuardianRestrictions, Assert-ProyectoSafeToProceed, Get-GuardianSummary
+Export-ModuleMember -Function Probar-RestriccionesGuardian, Afirmar-ProyectoSeguroParaContinuar, Obtener-ResumenGuardian

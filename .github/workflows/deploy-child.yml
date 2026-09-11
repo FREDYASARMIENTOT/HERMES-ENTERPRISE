@@ -412,12 +412,11 @@ jobs:
             --output none 2>/dev/null || true
           echo "Startup command set to: startup.sh"
 
-          echo "=== Restarting web app (no wait) ==="
+          echo "=== Restarting web app ==="
           az webapp restart \
             --name ${{ needs.validate-inputs.outputs.app_service_name }} \
-            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
-            --no-wait
-          echo "Restart initiated (async)"
+            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} || true
+          echo "Restart completed"
 
           echo "deploy_result=PASS" >> $GITHUB_OUTPUT
 

@@ -1,10 +1,14 @@
 # ====================================================================
-# Provision App Service — Hermes Enterprise CI/CD
+# Provision App Service Plan — Hermes Enterprise CI/CD
 # ====================================================================
-# RC77-PREPARED: Provisiona App Service Plan + Web App en Azure.
+# RC77-C9-FIX: Provisiona SOLO el App Service Plan en Azure.
+# La Web App se crea en la etapa de Deployment (CD).
 # Idempotente, seguro, sin secretos embebidos.
 # Arquitectura:
 #   GitHub Actions -> OIDC -> UR-Fabrica-Proyectos-AR -> RBAC -> RG-Hermes-Proyectos
+# Separación de responsabilidades:
+#   - provisioning: App Service Plan (el "edificio")
+#   - deploy: Web App + deployment (la "aplicacion" dentro del edificio)
 # ====================================================================
 
 name: Provision App Service
@@ -156,123 +160,22 @@ jobs:
           fi
 
       # ---------------------------------------------------------------
-      # STEP 6: Web App -- crear o mostrar estado
-      # ---------------------------------------------------------------
-      - name: Web App -- Provision or Show Status
-        shell: bash
-        run: |
-          APP_NAME="as-${{ inputs.projectName }}"
-          ASP_NAME="asp-${{ inputs.projectName }}"
-          RG="${{ env.RESOURCE_GROUP }}"
-          RUNTIME="${{ inputs.runtime }}"
-
-          echo "=== Web App: ${APP_NAME} ==="
-
-          EXISTING=$(az webapp show \
-            --name "${APP_NAME}" \
-            --resource-group "${RG}" \
-            --query "{name:name, state:state, url:defaultHostName, runtime:siteConfig.linuxFxVersion}" \
-            -o json 2>/dev/null || echo "")
-
-          if [ -z "${EXISTING}" ]; then
-            echo "Creando Web App (${RUNTIME})..."
-            az webapp create \
-              --name "${APP_NAME}" \
-              --resource-group "${RG}" \
-              --plan "${ASP_NAME}" \
-              --runtime "${RUNTIME}" \
-              --output table
-            echo "Web App creada: https://${APP_NAME}.azurewebsites.net"
-            echo "APP_CREATED=true" >> $GITHUB_ENV
-          else
-            echo "Web App ya existe: ${APP_NAME}"
-            echo "  State   : $(echo "${EXISTING}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('state',''))")"
-            echo "  URL     : https://$(echo "${EXISTING}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('defaultHostName',''))")"
-            echo "  Runtime : $(echo "${EXISTING}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('runtime',''))")"
-            echo "APP_CREATED=false" >> $GITHUB_ENV
-          fi
-
-      # ---------------------------------------------------------------
-      # STEP 7: App Settings (always applies)
-      # NO se almacenan secretos de Azure en App Settings
-      # PYTHONPATH incluye raiz del proyecto + Hermes.Web para que
-      # tanto Hermes.Web.backend.main:app como backend.main:app
-      # sean accesibles al cargar la aplicacion.
-      # ---------------------------------------------------------------
-      - name: Configure App Settings
-        shell: bash
-        run: |
-          APP_NAME="as-${{ inputs.projectName }}"
-          RG="${{ env.RESOURCE_GROUP }}"
-
-          echo "Configurando variables de entorno..."
-          az webapp config appsettings set \
-            --name "${APP_NAME}" \
-            --resource-group "${RG}" \
-            --settings \
-              PROJECT_NAME="${{ inputs.projectName }}" \
-              PYTHONPATH="/home/site/wwwroot:/home/site/wwwroot/Hermes.Web" \
-            --output none
-
-          echo "Configuracion aplicada (PROJECT_NAME, PYTHONPATH)"
-
-      # ---------------------------------------------------------------
-      # STEP 7b: Startup Command — RC77-C4
-      # Establece el comando de inicio correcto para FastAPI via
-      # gunicorn + uvicorn worker. Aplica a Web App nueva y existente.
-      # Sin este comando, Azure auto-detecta 'gunicorn application:app'
-      # que falla porque application.py no existe en el proyecto.
-      # ---------------------------------------------------------------
-      - name: Configure Startup Command
-        shell: bash
-        run: |
-          APP_NAME="as-${{ inputs.projectName }}"
-          RG="${{ env.RESOURCE_GROUP }}"
-
-          echo "Configurando startup command para FastAPI (gunicorn+uvicorn)..."
-          az webapp config set \
-            --name "${APP_NAME}" \
-            --resource-group "${RG}" \
-            --startup-file 'gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app' \
-            --output none
-
-          echo "Startup command configurado correctamente"
-
-      # ---------------------------------------------------------------
-      # STEP 8: Logging
-      # ---------------------------------------------------------------
-      - name: Enable Deployment Logging
-        shell: bash
-        run: |
-          APP_NAME="as-${{ inputs.projectName }}"
-          RG="${{ env.RESOURCE_GROUP }}"
-
-          az webapp log config \
-            --name "${APP_NAME}" \
-            --resource-group "${RG}" \
-            --application-logging filesystem \
-            --detailed-error-messages true \
-            --failed-request-tracing true \
-            --web-server-logging filesystem \
-            --output none
-
-          echo "Logging habilitado"
-
-      # ---------------------------------------------------------------
-      # STEP 9: Output Summary -- sin secretos ni GUIDs
+      # STEP 6: Output Summary — App Service Plan only
+      # RC77-C9-FIX: Web App creation moved to deploy stage
       # ---------------------------------------------------------------
       - name: Output Summary
         shell: bash
         run: |
           echo "=========================================="
-          echo "  PROVISIONING COMPLETE"
+          echo "  PROVISIONING COMPLETE (Plan only)"
           echo "=========================================="
           echo "  Project       : ${{ inputs.projectName }}"
           echo "  Resource Group: ${{ env.RESOURCE_GROUP }}"
           echo "  Plan          : asp-${{ inputs.projectName }} (${{ inputs.sku }})"
-          echo "  Web App       : https://as-${{ inputs.projectName }}.azurewebsites.net"
-          echo "  Runtime       : ${{ inputs.runtime }}"
           echo "  Location      : ${{ inputs.location }}"
           echo "  Identity Mode : OIDC (UR-Fabrica-Proyectos-AR)"
-          echo "  OIDC Status   : via secrets.AZURE_CLIENT_ID"
+          echo "=========================================="
+          echo ""
+          echo "  NOTA: Web App se crea en la etapa de Deployment (CD)."
+          echo "  Este workflow solo provisiona el App Service Plan."
           echo "=========================================="

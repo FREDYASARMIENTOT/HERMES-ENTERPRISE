@@ -51,6 +51,10 @@ def main():
     health_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/health 2>/dev/null || echo "000"')
     root_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/ 2>/dev/null || echo "000"')
     neg_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/ruta-que-no-existe 2>/dev/null || echo "000"')
+    api_version_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/api/version 2>/dev/null || echo "000"')
+    api_proyecto_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/api/proyecto 2>/dev/null || echo "000"')
+    openapi_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/openapi.json 2>/dev/null || echo "000"')
+    docs_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/docs 2>/dev/null || echo "000"')
 
     # ── Overall derived from real results ──
     overall = 'PASS'
@@ -88,10 +92,13 @@ def main():
         },
         'deployment': {
             'result': deploy_res,
-            'method': 'Azure/webapps-deploy@v3',
+            'method': 'az webapp deploy --type zip --clean true',
+            'tool': 'AZ CLI (not Azure/webapps-deploy@v3)',
             'kudu_used': False,
             'publishing_profile_used': False,
-            'client_secret_used': False
+            'client_secret_used': False,
+            'startup_file': 'startup.sh',
+            'notes': 'Fixed RC77-C9: az webapp deploy replaces Azure/webapps-deploy@v3 implicit packaging bug'
         },
         'readiness': {
             'result': readiness_res,
@@ -100,8 +107,17 @@ def main():
         },
         'functional_tests': {
             'result': func_res,
-            'root_http': root_code,
-            'negative_test_404': neg_code
+            'endpoints': {
+                'GET /health': health_code,
+                'GET /api/version': api_version_code,
+                'GET /': root_code,
+                'GET /api/proyecto': api_proyecto_code,
+                'GET /openapi.json': openapi_code,
+                'GET /docs': docs_code,
+                'GET /ruta-que-no-existe (404 test)': neg_code
+            },
+            'pass_count': sum(1 for c in [health_code, api_version_code, root_code, api_proyecto_code, openapi_code, docs_code, neg_code] if c == '200' or (c == '404' and neg_code == '404')),
+            'fail_count': sum(1 for c in [health_code, api_version_code, root_code, api_proyecto_code, openapi_code, docs_code, neg_code] if c != '200' and c != '404')
         },
         'infrastructure': {
             'existing_plan_before': True,

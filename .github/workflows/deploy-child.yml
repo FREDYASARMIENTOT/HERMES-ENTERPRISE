@@ -441,13 +441,23 @@ jobs:
           echo "=== Readiness: ${URL}/health ==="
           while [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ]; do
             CODE=$(curl -s --connect-timeout 10 --max-time 15 \
-              -o /dev/null -w '%{http_code}' "${URL}/health" 2>/dev/null || echo "000")
+              -o /tmp/health_response.json -w '%{http_code}' "${URL}/health" 2>/dev/null || echo "000")
             echo "[${ATTEMPT}/${MAX_ATTEMPTS}] HTTP ${CODE}"
             if [ "${CODE}" = "200" ]; then
-              echo "=== READY ==="
-              echo "readiness_result=PASS" >> $GITHUB_OUTPUT
-              echo "health_code=200" >> $GITHUB_OUTPUT
-              exit 0
+              echo "=== Response body ==="
+              cat /tmp/health_response.json 2>/dev/null || echo "(empty)"
+              # Validate it's a real Hermes health response (not a generic 200)
+              HERMES_STATUS=$(python3 -c "import json;d=json.load(open('/tmp/health_response.json'));print(d.get('status','unknown'))" 2>/dev/null || echo "parse_error")
+              echo "Health status field: ${HERMES_STATUS}"
+              if [ "${HERMES_STATUS}" = "healthy" ] || [ "${HERMES_STATUS}" = "ok" ]; then
+                echo "=== READY (Hermes validated) ==="
+                echo "readiness_result=PASS" >> $GITHUB_OUTPUT
+                echo "health_code=200" >> $GITHUB_OUTPUT
+                exit 0
+              else
+                echo "WARN: Health endpoint returned 200 but status='${HERMES_STATUS}' (not 'healthy')"
+                # Continue polling — might be a transient state
+              fi
             fi
             ATTEMPT=$((ATTEMPT+1))
             [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ] && sleep 10
@@ -470,6 +480,11 @@ jobs:
       fail_count: ${{ steps.tests.outputs.fail_count }}
       root_code: ${{ steps.tests.outputs.root_code }}
       neg_code: ${{ steps.tests.outputs.neg_code }}
+      health_code: ${{ steps.tests.outputs.health_code }}
+      version_code: ${{ steps.tests.outputs.version_code }}
+      proyecto_code: ${{ steps.tests.outputs.proyecto_code }}
+      openapi_code: ${{ steps.tests.outputs.openapi_code }}
+      docs_code: ${{ steps.tests.outputs.docs_code }}
     steps:
       - name: Run Functional Tests
         id: tests
@@ -485,11 +500,13 @@ jobs:
           # Test 1: GET /health -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/health.json -w '%{http_code}' "${URL}/health" 2>/dev/null || echo "000")
+          echo "${HTTP}" > /tmp/health_code
           [ "${HTTP}" = "200" ] && pass "GET /health -> 200" || fail "GET /health -> ${HTTP}"
 
           # Test 2: GET /api/version -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/version.json -w '%{http_code}' "${URL}/api/version" 2>/dev/null || echo "000")
+          echo "${HTTP}" > /tmp/version_code
           [ "${HTTP}" = "200" ] && pass "GET /api/version -> 200" || fail "GET /api/version -> ${HTTP}"
 
           # Test 3: GET / -> 200
@@ -500,19 +517,27 @@ jobs:
           # Test 4: GET /api/proyecto -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /dev/null -w '%{http_code}' "${URL}/api/proyecto" 2>/dev/null || echo "000")
+          echo "${HTTP}" > /tmp/proyecto_code
           [ "${HTTP}" = "200" ] && pass "GET /api/proyecto -> 200" || fail "GET /api/proyecto -> ${HTTP}"
 
           # Test 5: GET /openapi.json -> 200
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/openapi.json -w '%{http_code}' "${URL}/openapi.json" 2>/dev/null || echo "000")
+          echo "${HTTP}" > /tmp/openapi_code
           [ "${HTTP}" = "200" ] && pass "GET /openapi.json -> 200" || fail "GET /openapi.json -> ${HTTP}"
 
-          # Test 6: NEGATIVE - 404
+          # Test 6: GET /docs -> 200
+          HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
+            -o /dev/null -w '%{http_code}' "${URL}/docs" 2>/dev/null || echo "000")
+          echo "${HTTP}" > /tmp/docs_code
+          [ "${HTTP}" = "200" ] && pass "GET /docs -> 200" || fail "GET /docs -> ${HTTP}"
+
+          # Test 7: NEGATIVE - 404
           HTTP=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /dev/null -w '%{http_code}' "${URL}/ruta-que-no-existe" 2>/dev/null || echo "000")
           [ "${HTTP}" = "404" ] && pass "NEGATIVE 404 -> ${HTTP}" || fail "NEGATIVE 404 -> ${HTTP}"
 
-          # Test 7: Identity
+          # Test 8: Identity
           HEALTH_APP=$(python3 -c "import json;print(json.load(open('/tmp/health.json')).get('aplicacion',''))" 2>/dev/null)
           VERSION_APP=$(python3 -c "import json;print(json.load(open('/tmp/version.json')).get('aplicacion',''))" 2>/dev/null)
           OPENAPI_TITLE=$(python3 -c "import json;print(json.load(open('/tmp/openapi.json')).get('info',{}).get('title',''))" 2>/dev/null)
@@ -531,6 +556,11 @@ jobs:
           echo "fail_count=${FAIL_COUNT}" >> $GITHUB_OUTPUT
           echo "root_code=${ROOT_CODE}" >> $GITHUB_OUTPUT
           echo "neg_code=${NEG_CODE}" >> $GITHUB_OUTPUT
+          echo "health_code=$(cat /tmp/health_code 2>/dev/null || echo '000')" >> $GITHUB_OUTPUT
+          echo "version_code=$(cat /tmp/version_code 2>/dev/null || echo '000')" >> $GITHUB_OUTPUT
+          echo "proyecto_code=$(cat /tmp/proyecto_code 2>/dev/null || echo '000')" >> $GITHUB_OUTPUT
+          echo "openapi_code=$(cat /tmp/openapi_code 2>/dev/null || echo '000')" >> $GITHUB_OUTPUT
+          echo "docs_code=$(cat /tmp/docs_code 2>/dev/null || echo '000')" >> $GITHUB_OUTPUT
           if [ "${FAIL_COUNT}" -gt 0 ]; then
             echo "functional_result=FAIL" >> $GITHUB_OUTPUT
             exit 1

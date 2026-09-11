@@ -152,3 +152,15 @@ hello.ps1
 
 # ██████ .git-credentials ██████
 .git-credentials
+# ██████ DEPLOYMENT ARTIFACTS ██████
+deployment-report.json
+deployment-report-*.json
+deploy.zip
+evidence/
+smoke-result.json
+# ██████ TEMP / DEBUG FILES ██████
+_*.*
+_azure_logs/
+_azure_logs2/
+deploy_err.txt
+deploy_out.txt

@@ -95,7 +95,7 @@ jobs:
           fi
           echo "OK: No URL injection"
 
-          APP_NAME="as-hermes-${PROJ}"
+          APP_NAME="as-$(echo "${PROJ}" | sed 's/[^a-z0-9]//g')"
           echo "project_name=${PROJ}" >> $GITHUB_OUTPUT
           echo "repository=${REPO}" >> $GITHUB_OUTPUT
           echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT

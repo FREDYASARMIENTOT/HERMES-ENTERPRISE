@@ -124,7 +124,7 @@ try {
 
     # ===== 9. First Commit =====
     Write-Step "Commit" "START" "Creating initial commit"
-    Crear-CommitProyecto -ProjectDir $ProjRoot -Message "RC74-C - Initial commit: $NombreProyecto" | Out-Null
+    Crear-CommitProyecto -ProjectDir $ProjRoot -Mensaje "RC74-C - Initial commit: $NombreProyecto" | Out-Null
     $TotalCommits++
     $Metadata.TotalCommits = $TotalCommits
     Write-Step "Commit" "OK" "Commit #$TotalCommits created"
@@ -332,7 +332,7 @@ try {
 
     # ===== 25. Commit Final =====
     Write-Step "CommitFinal" "START" "Creating final commit"
-    Crear-CommitProyecto -ProjectDir $ProjRoot -Message "RC74-C - Pipeline completed: $NombreProyecto" | Out-Null
+    Crear-CommitProyecto -ProjectDir $ProjRoot -Mensaje "RC74-C - Pipeline completed: $NombreProyecto" | Out-Null
     $TotalCommits++
     $Metadata.TotalCommits = $TotalCommits
     Write-Step "CommitFinal" "OK" "Final commit #$TotalCommits created"

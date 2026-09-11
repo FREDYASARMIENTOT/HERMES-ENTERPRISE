@@ -47,7 +47,10 @@ function Crear-RepositorioGitHubProyecto {
         $creado = $true
     }
 
-    $urlRemoto = "https://github.com/$nombreRepositorio.git"
+    $ghUser = (gh api user -q .login 2>&1).Trim()
+    if (-not $ghUser) { $ghUser = "FREDYASARMIENTOT" }
+    $repoCompleto = "$ghUser/$nombreRepositorio"
+    $urlRemoto = "https://github.com/$repoCompleto.git"
 
     $directorioOriginal = Get-Location
     Set-Location $ProjectDir

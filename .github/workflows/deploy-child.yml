@@ -190,7 +190,7 @@ jobs:
     environment: production
     needs: [validate-inputs, checkout-child, validate-infrastructure]
     outputs:
-      login_result: ${{ steps.login.outputs.login_result }}
+      login_result: ${{ steps.verify-auth.outputs.login_result }}
     steps:
       - name: Azure Login (OIDC)
         id: login
@@ -201,6 +201,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Verify Authentication
+        id: verify-auth
         shell: bash
         run: |
           echo "=== OIDC Authentication ==="

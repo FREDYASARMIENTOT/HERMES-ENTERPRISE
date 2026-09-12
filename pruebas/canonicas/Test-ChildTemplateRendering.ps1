@@ -7,7 +7,7 @@
 
     PRINCIPIO DE PORTABILIDAD:
     No depende de rutas absolutas. Calcula la raiz del repositorio
-    a partir de $PSScriptRoot (dos niveles arriba de pruebas/unitarias/).
+    a partir de $PSScriptRoot (dos niveles arriba de pruebas/canonicas/).
     Funciona en Windows local y en GitHub Actions Windows Runner.
 
     CONTEXTO:

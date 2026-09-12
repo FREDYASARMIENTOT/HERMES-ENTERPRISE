@@ -35,7 +35,7 @@ Enterprise-grade PowerShell framework for project automation, virtual environmen
 - 3 Azure configuration commands: `Get-HermesAzureConfiguration`, `Set-HermesAzureConfiguration`, `Resolve-HermesAppServicePlanId`
 - Canonical Azure configuration at `config/Hermes.Azure.json`
 - Interactive Azure config phase in BootstrapWizard
-- 86/86 Pester unit tests passing (Pester 3.4.0 compatible)
+- Prueba canónica: 47/47 PASS — validación determinista de Factory → Child (ver `pruebas/canonicas/Test-ChildTemplateRendering.ps1`)
 - 10+ comprehensive documentation guides
 - 0 PSScriptAnalyzer errors in module and manifest
 - SQLite persistence via HermesSQLiteProvider
@@ -74,7 +74,7 @@ Get-HermesWorkspace
 | `Hermes.Commands.psd1` | Module manifest with aliases and exports |
 | `Providers/EnvironmentProvider.ps1` | Virtual environment provider (venv/conda) |
 | `Providers/ProviderBase.ps1` | Base provider contract implementation |
-| `pruebas/unitarias/Hermes.Commands.RC63.Tests.ps1` | 64 Pester unit tests |
+| `pruebas/canonicas/Test-ChildTemplateRendering.ps1` | Prueba canónica de renderizado Factory → Child (47 tests) |
 
 ## 25 Public Commands
 

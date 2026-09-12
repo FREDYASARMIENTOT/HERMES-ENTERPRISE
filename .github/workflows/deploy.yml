@@ -169,7 +169,7 @@ jobs:
         run: |
           URL="https://as-${PROJECT_NAME}.azurewebsites.net"
           echo "Polling ${URL} for readiness..."
-          MAX_ATTEMPTS=30
+          MAX_ATTEMPTS=60
           ATTEMPT=1
           while [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ]; do
             echo "[${ATTEMPT}/${MAX_ATTEMPTS}] Checking ${URL}/health ..."

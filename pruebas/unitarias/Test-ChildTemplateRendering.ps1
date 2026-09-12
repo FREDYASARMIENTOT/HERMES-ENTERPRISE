@@ -1,57 +1,154 @@
-<# .SYNOPSIS RC84 Test-ChildTemplateRendering #>
-$HermesRoot="D:\HERMES-ENTERPRISE"
-$tp=0;$tf=0
-function wt([string]$n,[bool]$r){if($r){Write-Host "  [PASS] $n" -ForegroundColor Green;$script:tp++}else{Write-Host "  [FAIL] $n" -ForegroundColor Red;$script:tf++}}
-$c=Get-Content (Join-Path $HermesRoot "tools\Templates\backend\main.py") -Raw -Encoding UTF8
-Write-Host "[Test 1] Functions" -ForegroundColor Yellow
-wt "_resolve_meta" ($c -match "def _resolve_meta")
-wt "_build_pipeline" ($c -match "def _build_pipeline")
-wt "consultar_sqlite_param" ($c -match "def consultar_sqlite_param")
-Write-Host "[Test 2] Landing" -ForegroundColor Yellow
-wt "response_class=HTMLResponse" ($c -match "response_class=HTMLResponse")
-wt "Pipeline nodes defined" ($c -match "_PIPELINE_DEF")
-Write-Host "[Test 3] Nodes" -ForegroundColor Yellow
-# Nodes are defined with double quotes in Python:  "factory", "child-repo", etc.
-foreach($n in @("factory","child-repo","ci","control-plane","oidc","asp-iaur","web-app","zip-deploy","readiness","functional-tests","evidence","online")){wt "Node $n" ($c -match "`"$n`"")}
-Write-Host "[Test 4] Env Fallback" -ForegroundColor Yellow
-foreach($v in @("HERMES_PROJECT_NAME","HERMES_REGION","HERMES_DEPLOYMENT_ID","HERMES_CORRELATION_ID","HERMES_WEBAPP_NAME")){wt "Env $v" ($c -match $v)}
-Write-Host "[Test 5] SQL Parameterized" -ForegroundColor Yellow
-wt "WHERE ?" ($c -match "WHERE CorrelationId = \?")
-wt "execute params" ($c -match "c\.execute\(query, params\)")
-Write-Host "[Test 6] UI Sections" -ForegroundColor Yellow
-wt "IDENTIDAD section" ($c -match "IDENTIDAD DEL PROYECTO")
-wt "INFRAESTRUCTURA section" ($c -match "INFRAESTRUCTURA")
-wt "TRAZABILIDAD section" ($c -match "TRAZABILIDAD DE DESPLIEGUE")
-wt "DETALLE DE IMPLEMENTACION" ($c -match "DETALLE DE IMPLEMENTACI")
-wt "ACCESOS section" ($c -match "ACCESOS")
-wt "PRUEBAS FUNCIONALES" ($c -match "PRUEBAS FUNCIONALES")
-wt "Redoc" ($c -match "redoc")
-wt "Footer" ($c -match "Hermes Enterprise")
-Write-Host "[Test 7] Plan indicators" -ForegroundColor Yellow
-wt "Plan REUTILIZADO badge" ($c -match "REUTILIZADO")
-wt "Plan Creado NO" ($c -match "Plan Creado.*NO")
-wt "Plan Reutilizado SI" ($c -match "Plan Reutilizado.*S")
-wt "OIDC badge" ($c -match "OIDC")
-Write-Host "[Test 8] No duplicates" -ForegroundColor Yellow
-$accesosCount = ([regex]::Matches($c, "ACCESOS")).Count
-wt "ACCESOS appears exactly once" ($accesosCount -eq 1)
-Write-Host "[Test 9] Template placeholders" -ForegroundColor Yellow
-# {{REGION}} and {{DEPLOYMENT_ID}} ARE valid template placeholders in variable definitions.
-# They should exist in _REGION and _DEPLOYMENT_ID assignments (Factory replaces them later).
-wt "REGION placeholder variable" ($c -match '_REGION = "\{\{REGION\}\}"')
-wt "DEPLOYMENT_ID placeholder variable" ($c -match '_DEPLOYMENT_ID = "\{\{DEPLOYMENT_ID\}\}"')
-Write-Host "[Test 10] Detail implementation" -ForegroundColor Yellow
-wt "Factory mention" ($c -match "Crear-HermesProyecto")
-wt "Control Plane mention" ($c -match "deploy-child.yml")
-wt "ZIP Deploy mention" ($c -match "ZIP Deploy")
-wt "Evidence mention" ($c -match "deployment-report.json")
-Write-Host "[Test 11] Factory" -ForegroundColor Yellow
-$fc=Get-Content (Join-Path $HermesRoot "tools\Crear-HermesProyecto.ps1") -Raw -Encoding UTF8
-wt ".Replace() not -replace" ($fc -match "\.Replace\(")
-wt "REGION" ($fc -match "REGION" -and $fc -match "Replace")
-wt "DEPLOYMENT_ID" ($fc -match "DEPLOYMENT_ID" -and $fc -match "Replace")
-wt "Location validation" ($fc -match "ContainsKey")
+﻿<#
+.SYNOPSIS
+    RC85 - Prueba canonica de renderizado de plantilla Child
+.DESCRIPTION
+    Valida el contrato actual de la plantilla main.py usada por Factory
+    para generar la landing page de cada proyecto Child.
+
+    PRINCIPIO DE PORTABILIDAD:
+    No depende de rutas absolutas. Calcula la raiz del repositorio
+    a partir de $PSScriptRoot (dos niveles arriba de pruebas/unitarias/).
+    Funciona en Windows local y en GitHub Actions Windows Runner.
+
+    CONTEXTO:
+    - Factory canonico: tools/Crear-HermesProyecto.ps1
+    - Plantilla Child: tools/Templates/backend/main.py
+#>
+
+# Inicializacion portable
+$RaizRepositorio = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
+$RutaPlantilla = Join-Path -Path $RaizRepositorio -ChildPath "tools/Templates/backend/main.py"
+$RutaFactory = Join-Path -Path $RaizRepositorio -ChildPath "tools/Crear-HermesProyecto.ps1"
+
+$ConteoExitos = 0
+$ConteoFallos = 0
+
+function Escribir-ResultadoPrueba {
+    param([string]$NombrePrueba, [bool]$Resultado)
+    if ($Resultado) {
+        Write-Host "  [PASS] $NombrePrueba" -ForegroundColor Green
+        $script:ConteoExitos++
+    } else {
+        Write-Host "  [FAIL] $NombrePrueba" -ForegroundColor Red
+        $script:ConteoFallos++
+    }
+}
+
+function Mostrar-EncabezadoPrueba {
+    param([string]$Titulo)
+    Write-Host "[Prueba] $Titulo" -ForegroundColor Yellow
+}
+
+# Verificacion pre-vuelo: archivos obligatorios
+$ArchivosObligatorios = @{}
+$ArchivosObligatorios["Plantilla main.py"] = $RutaPlantilla
+$ArchivosObligatorios["Factory canonico"]  = $RutaFactory
+
+$ArchivosFaltantes = @()
+foreach ($par in $ArchivosObligatorios.GetEnumerator()) {
+    if (-not (Test-Path -LiteralPath $par.Value -PathType Leaf)) {
+        $ArchivosFaltantes += $par.Key
+    }
+}
+if ($ArchivosFaltantes.Count -gt 0) {
+    Write-Host "[FAIL] Archivos obligatorios no encontrados:" -ForegroundColor Red
+    foreach ($nombre in $ArchivosFaltantes) {
+        Write-Host "  - $nombre" -ForegroundColor Red
+    }
+    Write-Host "[FAIL] La prueba no puede continuar sin los archivos del contrato actual." -ForegroundColor Red
+    Write-Host "[INFO] Raiz calculada: $RaizRepositorio" -ForegroundColor Yellow
+    exit 1
+}
+
+# Cargar contenido de archivos
+$ContenidoPlantilla = Get-Content -LiteralPath $RutaPlantilla -Raw -Encoding UTF8
+$ContenidoFactory = Get-Content -LiteralPath $RutaFactory -Raw -Encoding UTF8
+
+# ========== PRUEBA 1 - Funciones internas de la plantilla ==========
+Mostrar-EncabezadoPrueba "Funciones de la plantilla"
+Escribir-ResultadoPrueba "_resolve_meta" ($ContenidoPlantilla -match "def _resolve_meta")
+Escribir-ResultadoPrueba "_build_pipeline" ($ContenidoPlantilla -match "def _build_pipeline")
+Escribir-ResultadoPrueba "consultar_sqlite_param" ($ContenidoPlantilla -match "def consultar_sqlite_param")
+
+# ========== PRUEBA 2 - Landing page ==========
+Mostrar-EncabezadoPrueba "Landing page"
+Escribir-ResultadoPrueba "response_class=HTMLResponse" ($ContenidoPlantilla -match "response_class=HTMLResponse")
+Escribir-ResultadoPrueba "Pipeline definido (_PIPELINE_DEF)" ($ContenidoPlantilla -match "_PIPELINE_DEF")
+
+# ========== PRUEBA 3 - Nodos del pipeline ==========
+Mostrar-EncabezadoPrueba "Nodos del pipeline"
+$NodosEsperados = @("factory","child-repo","ci","control-plane","oidc","asp-iaur","web-app","zip-deploy","readiness","functional-tests","evidence","online")
+foreach ($nodo in $NodosEsperados) {
+    Escribir-ResultadoPrueba "Nodo $nodo" ($ContenidoPlantilla -match [regex]::Escape("`"$nodo`""))
+}
+
+# ========== PRUEBA 4 - Variables de entorno (fallback) ==========
+Mostrar-EncabezadoPrueba "Variables de entorno (fallback)"
+$VariablesEntorno = @("HERMES_PROJECT_NAME","HERMES_REGION","HERMES_DEPLOYMENT_ID","HERMES_CORRELATION_ID","HERMES_WEBAPP_NAME")
+foreach ($var in $VariablesEntorno) {
+    Escribir-ResultadoPrueba "Variable $var" ($ContenidoPlantilla -match $var)
+}
+
+# ========== PRUEBA 5 - SQL parametrizado (seguridad) ==========
+Mostrar-EncabezadoPrueba "SQL parametrizado (seguridad)"
+Escribir-ResultadoPrueba "WHERE CorrelationId = ?" ($ContenidoPlantilla -match [regex]::Escape("WHERE CorrelationId = ?"))
+Escribir-ResultadoPrueba "execute(query, params)" ($ContenidoPlantilla -match [regex]::Escape("c.execute(query, params)"))
+
+# ========== PRUEBA 6 - Secciones de la UI ==========
+Mostrar-EncabezadoPrueba "Secciones de la UI"
+Escribir-ResultadoPrueba "IDENTIDAD DEL PROYECTO" ($ContenidoPlantilla -match "IDENTIDAD DEL PROYECTO")
+Escribir-ResultadoPrueba "INFRAESTRUCTURA" ($ContenidoPlantilla -match ">INFRAESTRUCTURA<")
+Escribir-ResultadoPrueba "TRAZABILIDAD DE DESPLIEGUE" ($ContenidoPlantilla -match "TRAZABILIDAD DE DESPLIEGUE")
+Escribir-ResultadoPrueba "DETALLE DE IMPLEMENTACION" ($ContenidoPlantilla -match "DETALLE DE IMPLEMENTACI")
+Escribir-ResultadoPrueba "ACCESOS" ($ContenidoPlantilla -match ">ACCESOS<")
+Escribir-ResultadoPrueba "PRUEBAS FUNCIONALES" ($ContenidoPlantilla -match "PRUEBAS FUNCIONALES")
+Escribir-ResultadoPrueba "Redoc" ($ContenidoPlantilla -match "redoc")
+Escribir-ResultadoPrueba "Footer (Hermes Enterprise 2026)" ($ContenidoPlantilla -match "Hermes Enterprise" -and $ContenidoPlantilla -match "2026")
+
+# ========== PRUEBA 7 - Indicadores visuales del Plan ==========
+Mostrar-EncabezadoPrueba "Indicadores visuales del Plan"
+Escribir-ResultadoPrueba "Badge REUTILIZADO" ($ContenidoPlantilla -match "REUTILIZADO")
+Escribir-ResultadoPrueba "Plan Creado: NO" ($ContenidoPlantilla -match "Plan Creado.*NO")
+Escribir-ResultadoPrueba "Plan Reutilizado: SI" ($ContenidoPlantilla -match [regex]::Escape("Plan Reutilizado"))
+Escribir-ResultadoPrueba "Badge OIDC" ($ContenidoPlantilla -match "OIDC")
+
+# ========== PRUEBA 8 - Sin duplicados en secciones criticas ==========
+Mostrar-EncabezadoPrueba "Sin duplicados"
+$CantidadAccesos = ([regex]::Matches($ContenidoPlantilla, ">ACCESOS<")).Count
+Escribir-ResultadoPrueba "ACCESOS aparece exactamente una vez" ($CantidadAccesos -eq 1)
+
+# ========== PRUEBA 9 - Placeholders de Factory (variables internas) ==========
+Mostrar-EncabezadoPrueba "Placeholders de Factory (variables internas)"
+Escribir-ResultadoPrueba "Variable _REGION con placeholder {{REGION}}" ($ContenidoPlantilla -match [regex]::Escape('_REGION = "{{REGION}}"'))
+Escribir-ResultadoPrueba "Variable _DEPLOYMENT_ID con placeholder {{DEPLOYMENT_ID}}" ($ContenidoPlantilla -match [regex]::Escape('_DEPLOYMENT_ID = "{{DEPLOYMENT_ID}}"'))
+
+# ========== PRUEBA 10 - Detalle de implementacion ==========
+Mostrar-EncabezadoPrueba "Detalle de implementacion"
+Escribir-ResultadoPrueba "Menciona Crear-HermesProyecto" ($ContenidoPlantilla -match "Crear-HermesProyecto")
+Escribir-ResultadoPrueba "Menciona deploy-child.yml" ($ContenidoPlantilla -match "deploy-child.yml")
+Escribir-ResultadoPrueba "Menciona ZIP Deploy" ($ContenidoPlantilla -match "ZIP Deploy")
+Escribir-ResultadoPrueba "Menciona deployment-report.json" ($ContenidoPlantilla -match "deployment-report.json")
+
+# ========== PRUEBA 11 - Factory canonico ==========
+Mostrar-EncabezadoPrueba "Factory canonico (Crear-HermesProyecto.ps1)"
+Escribir-ResultadoPrueba "Usa .Replace() (no -replace)" ($ContenidoFactory -match [regex]::Escape('.Replace('))
+Escribir-ResultadoPrueba "Reemplaza REGION mediante .Replace()" ($ContenidoFactory -match "REGION" -and $ContenidoFactory -match "Replace")
+Escribir-ResultadoPrueba "Reemplaza DEPLOYMENT_ID mediante .Replace()" ($ContenidoFactory -match "DEPLOYMENT_ID" -and $ContenidoFactory -match "Replace")
+Escribir-ResultadoPrueba "Validacion de ubicacion (ContainsKey)" ($ContenidoFactory -match "ContainsKey")
+
+# ========== RESULTADO FINAL ==========
 Write-Host "================================" -ForegroundColor Cyan
-if($tf -eq 0){Write-Host "RESULT: ALL $tp PASSED" -ForegroundColor Green}else{Write-Host "RESULT: $tp/$tf" -ForegroundColor Red}
+Write-Host "RESULTADO" -ForegroundColor Cyan
+Write-Host "TOTAL : $($ConteoExitos + $ConteoFallos)" -ForegroundColor Cyan
+Write-Host "PASS  : $ConteoExitos" -ForegroundColor Green
+Write-Host "FAIL  : $ConteoFallos" -ForegroundColor $(if ($ConteoFallos -eq 0) { 'Green' } else { 'Red' })
+if ($ConteoFallos -eq 0) {
+    Write-Host "RESULT: ALL PASSED" -ForegroundColor Green
+} else {
+    Write-Host "RESULT: $ConteoExitos/$($ConteoExitos + $ConteoFallos)" -ForegroundColor Red
+}
 Write-Host "================================" -ForegroundColor Cyan
-if($tf -gt 0){exit 1}
+
+if ($ConteoFallos -gt 0) {
+    exit 1
+}

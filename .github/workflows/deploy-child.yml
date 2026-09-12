@@ -716,6 +716,64 @@ jobs:
           echo "=== Evidence Generated ==="
           cat deployment-report.json
 
+      - name: Register Implementation Steps
+        shell: bash
+        run: |
+          URL="${{ needs.provision-webapp.outputs.app_service_url }}"
+          PROJ="${{ needs.validate-inputs.outputs.project_name }}"
+          REPO="${{ needs.validate-inputs.outputs.repository }}"
+          SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          VERIFIED_SHA="${{ needs.checkout-child.outputs.deployed_sha }}"
+
+          # Helper function
+          register_paso() {
+            local NUM=$1 NAME=$2 ESTADO=$3 DETALLE=$4 RESULT=$5
+            curl -s -X POST "${URL}/api/implementacion/paso" \
+              -H "Content-Type: application/json" \
+              -d "{\"numero_paso\":${NUM},\"nombre_paso\":\"${NAME}\",\"estado\":\"${ESTADO}\",\"detalle\":\"${DETALLE}\",\"resultado\":\"${RESULT}\"}" \
+              > /dev/null 2>&1 && echo "  OK: Paso ${NUM} ${NAME} -> ${ESTADO}" || echo "  WARN: Paso ${NUM} ${NAME} -> fallo al registrar"
+          }
+
+          # Registrar CI Child (paso 4)
+          register_paso 4 "CI CHILD" "COMPLETADO" "CI ejecutado en repositorio Child" "PASS"
+
+          # Registrar Control Plane (paso 5)
+          register_paso 5 "CONTROL PLANE" "COMPLETADO" "Parametros validados y checkout completado" "PASS"
+
+          # Registrar OIDC (paso 6)
+          OIDC_RES="${{ needs.oidc-login.outputs.login_result }}"
+          register_paso 6 "AUTENTICACIÓN" "${OIDC_RES}" "GitHub OIDC -> Azure login" "${OIDC_RES}"
+
+          # Registrar Azure (paso 7)
+          ASP_RES="COMPLETADO"
+          register_paso 7 "AZURE" "${ASP_RES}" "WebApp aprovisionada en ASP-IAUR (reutilizado)" "PASS"
+
+          # Registrar Deploy (paso 8)
+          DEP_RES="${{ needs.deploy.outputs.deploy_result }}"
+          register_paso 8 "DEPLOY" "${DEP_RES}" "ZIP Deploy a Azure WebApp" "${DEP_RES}"
+
+          # Registrar Readiness (paso 9)
+          RDY_RES="${{ needs.readiness.outputs.readiness_result }}"
+          register_paso 9 "READINESS" "${RDY_RES}" "Health endpoint verificado" "${RDY_RES}"
+
+          # Registrar Pruebas Funcionales (paso 10)
+          FUNC_RES="${{ needs.functional-tests.outputs.functional_result }}"
+          register_paso 10 "PRUEBAS FUNCIONALES" "${FUNC_RES}" "Endpoints HTTP verificados" "${FUNC_RES}"
+
+          # Registrar Evidencia (paso 11)
+          register_paso 11 "EVIDENCIA" "COMPLETADO" "deployment-report.json generado" "PASS"
+
+          # Finalizar implementacion
+          FINAL_STATUS="COMPLETADO"
+          if [ "${OIDC_RES}" = "FAIL" ] || [ "${DEP_RES}" = "FAIL" ] || [ "${RDY_RES}" = "FAIL" ] || [ "${FUNC_RES}" = "FAIL" ]; then
+            FINAL_STATUS="FALLIDO"
+          fi
+          curl -s -X POST "${URL}/api/implementacion/finalizar" \
+            -H "Content-Type: application/json" \
+            -d "{\"estado\":\"${FINAL_STATUS}\",\"detalle\":\"Control Plane deployment completed\"}" \
+            > /dev/null 2>&1 && echo "  OK: Implementacion finalizada: ${FINAL_STATUS}" || echo "  WARN: Fallo al finalizar implementacion"
+          echo "=== Registry Steps Registered ==="
+
       - name: Upload Evidence Artifact
         if: always()
         uses: actions/upload-artifact@v4

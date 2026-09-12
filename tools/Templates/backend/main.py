@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from registro_implementacion import RegistroImplementacion, ESTADO_COMPLETADO, ESTADO_FALLIDO
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
 logger = logging.getLogger("{{PROJECT_NAME}}")
@@ -75,6 +76,49 @@ def obtener_smoke_results(corr_id: str) -> list:
 def obtener_bitacora(corr_id: str) -> list:
     return consultar_sqlite_param("SELECT * FROM BitacoraEventos WHERE CorrelationId = ? ORDER BY Id DESC LIMIT 20", (corr_id,))
 
+# ─── Registro de Implementación ───
+def obtener_implementacion(corr_id: str) -> dict:
+    """Obtiene el registro completo de implementación desde SQLite."""
+    import os
+    db = os.environ.get("SQLITE_DB", SQLITE_DB)
+    if not os.path.exists(db):
+        return {"error": "Base de datos no encontrada", "db": db}
+    reg = RegistroImplementacion.obtener_desde_sqlite(db, corr_id)
+    if reg is None:
+        return {"error": "No se encontro implementacion", "correlation_id": corr_id}
+    return reg
+
+def registrar_paso_api(corr_id: str, paso_data: dict) -> dict:
+    """Registra un paso de implementación desde la API del Control Plane."""
+    import os
+    db = os.environ.get("SQLITE_DB", SQLITE_DB)
+    if not os.path.exists(db):
+        return {"error": "Base de datos no encontrada"}
+    try:
+        reg = RegistroImplementacion(db)
+        reg.iniciar_implementacion("", corr_id)
+        num = paso_data.get("numero_paso", 1)
+        estado = paso_data.get("estado", ESTADO_COMPLETADO)
+        detalle = paso_data.get("detalle", "")
+        evidencia = paso_data.get("evidencia", "")
+        resultado = paso_data.get("resultado", "")
+        reg.iniciar_paso(num, detalle)
+        reg.finalizar_paso(num, estado, detalle, evidencia, resultado)
+
+        # Subpasos opcionales
+        subpasos = paso_data.get("subpasos", [])
+        for sp in subpasos:
+            reg.iniciar_subpaso(num, sp.get("numero_subpaso", ""), sp.get("detalle", ""))
+            reg.finalizar_subpaso(num, sp.get("numero_subpaso", ""),
+                                   sp.get("estado", ESTADO_COMPLETADO),
+                                   sp.get("detalle", ""), sp.get("evidencia", ""),
+                                   sp.get("resultado", ""))
+
+        reg.persistir()
+        return {"status": "ok", "paso": num, "estado": estado}
+    except Exception as e:
+        return {"status": "error", "mensaje": str(e)}
+
 # Placeholders renderizados por la Factory en tiempo de creación del proyecto
 _PROJECT_NAME = "{{PROJECT_NAME}}"
 _CORRELATION_ID = "{{CORRELATION_ID}}"
@@ -133,6 +177,50 @@ async def api_despliegue():
     corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
     info = obtener_info_proyecto(corr_id)
     return {"estado":info.get("Estado",""),"total_commits":0,"total_deploys":0,"total_corrections":0}
+
+# ─── API: Registro de Implementación ───
+@app.post("/api/implementacion/paso")
+async def api_registrar_paso(request: Request):
+    """Registra un paso de implementación (llamado por el Control Plane)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"status":"error","mensaje":"JSON inválido"}, status_code=400)
+    corr_id = body.get("correlation_id", _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID"))
+    if not corr_id:
+        return JSONResponse({"status":"error","mensaje":"correlation_id requerido"}, status_code=400)
+    result = registrar_paso_api(corr_id, body)
+    if result.get("status") == "ok":
+        return JSONResponse(result)
+    return JSONResponse(result, status_code=500)
+
+@app.get("/api/implementacion")
+async def api_obtener_implementacion():
+    """Obtiene el registro completo de implementación."""
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    result = obtener_implementacion(corr_id)
+    return JSONResponse(result)
+
+@app.post("/api/implementacion/finalizar")
+async def api_finalizar_implementacion(request: Request):
+    """Finaliza el registro de implementación."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"status":"error","mensaje":"JSON inválido"}, status_code=400)
+    corr_id = body.get("correlation_id", _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID"))
+    estado = body.get("estado", "COMPLETADO")
+    db = os.environ.get("SQLITE_DB", SQLITE_DB)
+    if not os.path.exists(db):
+        return JSONResponse({"error":"Base de datos no encontrada"}, status_code=500)
+    try:
+        reg = RegistroImplementacion(db)
+        reg.iniciar_implementacion("", corr_id)
+        reg.finalizar_implementacion(estado, body.get("detalle", ""))
+        reg.persistir()
+        return JSONResponse({"status":"ok","estado_general":estado})
+    except Exception as e:
+        return JSONResponse({"status":"error","mensaje":str(e)}, status_code=500)
 
 # ─── Definición de nodos del pipeline de implementación ───
 _PIPELINE_DEF = [
@@ -395,6 +483,13 @@ body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-ser
     html += """
     </div></div>
 
+    <!-- IMPLEMENTATION REGISTRY -->
+    <div class="card mb-4" id="implRegistryCard">
+        <h5><i class="bi bi-diagram-3 me-2"></i>REGISTRO DE IMPLEMENTACIÓN</h5>
+        <div id="implSummary" class="mb-3"></div>
+        <div id="implTimeline"></div>
+    </div>
+
     <!-- FOOTER -->
     <div class="footer">
         <p>Powered by Hermes Enterprise &copy; 2026</p>
@@ -402,6 +497,81 @@ body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-ser
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ─── Cargar Registro de Implementación ───
+fetch('/api/implementacion')
+.then(r => r.json())
+.then(data => {
+    if(data.error) { return; }
+    const imp = data;
+    const total = imp.pasos_totales || 13;
+    const completados = imp.pasos_completados || 0;
+    const fallidos = imp.pasos_fallidos || 0;
+    const dur = imp.duracion_total_segundos || 0;
+    const status = imp.estado_general || 'PENDIENTE';
+    const statusBadge = status === 'COMPLETADO' ? 'bg-success' : status === 'FALLIDO' ? 'bg-danger' : 'bg-warning';
+
+    document.getElementById('implSummary').innerHTML = `
+        <div class="row text-center mb-3">
+            <div class="col"><strong>Total:</strong> ${total}</div>
+            <div class="col text-success"><strong>Completados:</strong> ${completados}</div>
+            <div class="col text-danger"><strong>Fallidos:</strong> ${fallidos}</div>
+            <div class="col"><strong>Duración:</strong> ${dur.toFixed(1)}s</div>
+            <div class="col"><span class="badge ${statusBadge}">${status}</span></div>
+        </div>`;
+
+    if(!data.pasos || data.pasos.length === 0) {
+        document.getElementById('implTimeline').innerHTML = '<div class="text-secondary">No hay pasos registrados</div>';
+        return;
+    }
+
+    let html = '<div class="impl-steps">';
+    data.pasos.forEach(p => {
+        const st = (p.Resultado || 'PENDIENTE').toLowerCase();
+        const icon = st === 'pass' ? 'bi-check-circle-fill text-success' : st === 'fail' ? 'bi-x-circle-fill text-danger' : 'bi-hourglass-split text-warning';
+        const label = p.Resultado || 'PENDIENTE';
+        const durPaso = (p.DuracionSegundos || 0).toFixed(1);
+
+        html += '<div class="impl-step card mb-2 bg-dark border-secondary">';
+        html += '<div class="card-body py-2 px-3" onclick="toggleSubpasos(this)" style="cursor:pointer">';
+        html += '<div class="d-flex justify-content-between align-items-center">';
+        html += `<div><i class="bi ${icon} me-2"></i><strong>PASO ${p.NumeroPaso}:</strong> ${p.NombrePaso}</div>`;
+        html += `<div><span class="badge bg-${st === 'pass' ? 'success' : st === 'fail' ? 'danger' : 'warning'} me-2">${label}</span> ${durPaso}s</div>`;
+        html += '</div></div>';
+
+        // Subpasos
+        let subs = p.subpasos;
+        if(subs && subs.length > 0) {
+            html += '<div class="impl-subpasos" style="display:none">';
+            html += '<table class="table table-dark-custom table-sm mb-0">';
+            html += '<thead><tr><th>Subpaso</th><th>Nombre</th><th>Estado</th><th>Duración</th><th>Detalle</th></tr></thead><tbody>';
+            subs.forEach(sp => {
+                const spSt = (sp.Resultado || 'PENDIENTE').toLowerCase();
+                const spIcon = spSt === 'pass' ? 'bi-check-circle-fill text-success' : spSt === 'fail' ? 'bi-x-circle-fill text-danger' : 'bi-hourglass-split text-warning';
+                const spDur = (sp.duracion_segundos || 0).toFixed(1);
+                html += `<tr><td><code>${sp.numero_subpaso || ''}</code></td><td>${sp.nombre_subpaso || ''}</td><td><i class="bi ${spIcon} me-1"></i>${sp.Resultado || 'PENDIENTE'}</td><td>${spDur}s</td><td>${sp.detalle || ''}</td></tr>`;
+            });
+            html += '</tbody></table></div>';
+        }
+        html += '</div>';
+    });
+    html += '</div>';
+    document.getElementById('implTimeline').innerHTML = html;
+})
+.catch(() => {});
+
+function toggleSubpasos(el) {
+    const subs = el.nextElementSibling;
+    if(subs && subs.classList.contains('impl-subpasos')) {
+        subs.style.display = subs.style.display === 'none' ? 'block' : 'none';
+    }
+}
+</script>
+<style>
+.impl-step .card-body:hover { background: rgba(255,255,255,0.05); }
+.impl-subpasos { border-top: 1px solid #2c3e50; }
+.impl-subpasos table { margin: 0; }
+</style>
 </body>
 </html>"""
     return HTMLResponse(content=html)

@@ -152,5 +152,13 @@ Export-ModuleMember -Function @(
     'Invoke-RenderTemplateFromString',
     'Get-TemplatePath',
     'Copy-TemplateDirectory',
-    'New-ProyectoLanding'
+    'New-ProyectoLanding',
+    # Registro Implementacion
+    'Iniciar-RegistroImplementacion',
+    'Iniciar-PasoImplementacion',
+    'Finalizar-PasoImplementacion',
+    'Iniciar-SubpasoImplementacion',
+    'Finalizar-SubpasoImplementacion',
+    'Finalizar-RegistroImplementacion',
+    'Persistir-RegistroImplementacion'
 )

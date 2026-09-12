@@ -49,6 +49,9 @@ $AzureConfigPath = Join-Path $HermesRoot "config/Hermes.Azure.json"
 $GuardianConfigPath = Join-Path $HermesRoot "config/Hermes.InfrastructureProtection.json"
 $Metadata = Nuevo-MetadatosVacios; $Metadata.ProjectName = $NombreProyecto; $Metadata.CorrelationId = $CorrelationId; $Metadata.WebAppName = $WebAppName
 
+# Inicializar Registro de Implementación (RC87)
+$RegistroImpl = Iniciar-RegistroImplementacion -DbPath $DbPath -CorrelationId $CorrelationId -NombreProyecto $NombreProyecto
+
 function Write-Step { param([string]$S,[string]$E,[string]$M) $icon = if($E -eq "OK"){"[OK]"}elseif($E -eq "FAIL"){"[FAIL]"}else{"[..]"};Write-Host ("[$(Get-Date -Format HH:mm:ss)] $icon [$S] $E :: $M") }
 function Update-Metadata { param([hashtable]$Props);foreach($k in $Props.Keys){ $Metadata[$k] = $Props[$k] } }
 
@@ -70,6 +73,11 @@ try {
 
     # ===== 3. Register Project =====
     Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Workspace" -Estado "OK" -Detalle $ProjRoot
+
+    # RC87: Registry - Factory completada
+    Iniciar-PasoImplementacion -Registro $RegistroImpl -NumeroPaso 2 -Detalle "Factory: workspace + SQLite"
+    Finalizar-PasoImplementacion -Registro $RegistroImpl -NumeroPaso 2 -Estado "COMPLETADO" -Detalle "Workspace, SQLite y estructura creados"
+    Persistir-RegistroImplementacion -Registro $RegistroImpl
 
     # ===== 4. Read Azure Config (early, needed for template placeholders) =====
     $azureConfig = Leer-ConfiguracionAzure -ConfigPath $AzureConfigPath
@@ -148,6 +156,11 @@ try {
     Write-Step "Push" "START" "Pushing to GitHub"
     $pushResult = Publicar-ProyectoEnGitHub -ProjectDir $ProjRoot -Branch "main"
     Write-Step "Push" "OK" "Push completed"
+
+    # RC87: Registry - GitHub completado
+    Iniciar-PasoImplementacion -Registro $RegistroImpl -NumeroPaso 3 -Detalle "GitHub: repositorio + push"
+    Finalizar-PasoImplementacion -Registro $RegistroImpl -NumeroPaso 3 -Estado "COMPLETADO" -Detalle "Repositorio creado y codigo publicado"
+    Persistir-RegistroImplementacion -Registro $RegistroImpl
 
     # ===== 11. Configure GitHub Actions Secrets (OIDC) =====
     Write-Step "OIDC" "START" "Configuring Azure OIDC secrets for GitHub Actions"
@@ -380,6 +393,12 @@ try {
         Write-Step "ControlPlane" "INFO" "Manual trigger command:"
         Write-Host "    gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha" -ForegroundColor Yellow
     }
+
+    # RC87: Persistir registro de implementacion
+    $RegistroImpl.Implementacion.commit_solicitado = $commitSha
+    $RegistroImpl.Implementacion.repositorio = $repoName
+    Finalizar-RegistroImplementacion -Registro $RegistroImpl -Estado "COMPLETADO"
+    Persistir-RegistroImplementacion -Registro $RegistroImpl
 
     # -- Success banner --
     Write-Host "`n$(('='*60))" -ForegroundColor Cyan

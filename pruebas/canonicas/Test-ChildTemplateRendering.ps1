@@ -152,3 +152,6 @@ Write-Host "================================" -ForegroundColor Cyan
 if ($ConteoFallos -gt 0) {
     exit 1
 }
+
+# Contrato explícito de salida: 0 cuando todas las pruebas pasan
+exit 0

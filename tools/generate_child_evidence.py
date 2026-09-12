@@ -30,6 +30,7 @@ def main():
     proj = os.environ.get('PROJ', '')
     repo = os.environ.get('REPO', '')
     sha = os.environ.get('SHA', '')
+    verified_sha = os.environ.get('VERIFIED_SHA', '')
     app_name = os.environ.get('APP_NAME', '')
     wf_rg = os.environ.get('WEBAPP_RG', '')
     plan_rg = os.environ.get('PLAN_RG', '')
@@ -68,7 +69,7 @@ def main():
         'project_name': proj,
         'repository': repo,
         'requested_commit_sha': sha,
-        'deployed_commit_sha': sha,
+        'deployed_commit_sha': verified_sha if verified_sha else sha,
         'github_run_id': github_run,
         'github_workflow': github_wf,
         'webapp_resource_group': wf_rg,

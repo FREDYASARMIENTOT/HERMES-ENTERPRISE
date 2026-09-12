@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS Proyecto (
     Branch TEXT DEFAULT 'main',
     CommitHash TEXT DEFAULT '',
     UrlPublica TEXT DEFAULT '',
+    Region TEXT DEFAULT '',
+    DeploymentId TEXT DEFAULT '',
     EstadoAzure TEXT DEFAULT 'PENDIENTE',
     EstadoGitHub TEXT DEFAULT 'PENDIENTE',
     EstadoCI TEXT DEFAULT 'PENDIENTE',

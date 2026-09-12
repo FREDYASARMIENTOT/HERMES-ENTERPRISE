@@ -100,7 +100,13 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $ProjRoot "backend") -Force | Out-Null
     # Render main.py
     $mainPy = Get-Content (Join-Path $tmplSrc "main.py") -Raw
-    $mainPy = $mainPy -replace '\{\{PROJECT_NAME\}\}',$NombreProyecto -replace '\{\{CORRELATION_ID\}\}',$CorrelationId -replace '\{\{WEBAPP_NAME\}\}',$WebAppName -replace '\{\{REGION\}\}',$azureConfig.location -replace '\{\{DEPLOYMENT_ID\}\}',$CorrelationId
+    # Literal .Replace() avoids regex escaping issues with {{PLACEHOLDER}}
+    $mainPy = $mainPy.Replace('{{PROJECT_NAME}}', $NombreProyecto)
+    $mainPy = $mainPy.Replace('{{CORRELATION_ID}}', $CorrelationId)
+    $mainPy = $mainPy.Replace('{{WEBAPP_NAME}}', $WebAppName)
+    $regionVal = if ($azureConfig.ContainsKey('Location') -and $azureConfig['Location']) { $azureConfig['Location'] } else { 'eastus' }
+    $mainPy = $mainPy.Replace('{{REGION}}', $regionVal)
+    $mainPy = $mainPy.Replace('{{DEPLOYMENT_ID}}', $CorrelationId)
     $mainPy | Out-File (Join-Path $ProjRoot "backend/main.py") -Encoding utf8
     Write-Step "Backend" "OK" "Project files created"
     Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Build" -Estado "OK"

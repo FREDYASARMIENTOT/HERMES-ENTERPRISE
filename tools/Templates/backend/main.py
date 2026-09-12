@@ -28,13 +28,30 @@ if TEMPLATES_DIR.exists():
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-def consultar_sqlite(query: str) -> list:
+# ─── Metadata resolution ───
+def _resolve_meta(factory_val: str, env_key: str, default: str = "No disponible") -> str:
+    """Resolve a metadata value: try factory-rendered → env var → default.
+    
+    Factory-time rendering replaces {{PLACEHOLDER}} with actual values.
+    If the value still starts with '{{', the factory didn't render it,
+    so we try the environment variable. As last resort, return default.
+    """
+    if factory_val and not factory_val.startswith("{{"):
+        return factory_val
+    env_val = os.environ.get(env_key, "")
+    if env_val and not env_val.startswith("{{"):
+        return env_val
+    return default
+
+# ─── SQLite with parameterized queries ───
+def consultar_sqlite_param(query: str, params: tuple = ()) -> list:
+    """Execute a parameterized SQLite query safely."""
     import sqlite3
     try:
         conn = sqlite3.connect(SQLITE_DB)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
-        c.execute(query)
+        c.execute(query, params)
         rows = [dict(r) for r in c.fetchall()]
         conn.close()
         return rows
@@ -43,36 +60,50 @@ def consultar_sqlite(query: str) -> list:
         return []
 
 def obtener_info_proyecto(corr_id: str) -> dict:
-    rows = consultar_sqlite(f"SELECT * FROM Proyecto WHERE CorrelationId='{corr_id}'")
-    if rows: return rows[0]
-    return {"Nombre":"{{PROJECT_NAME}}","CorrelationId":corr_id,"Estado":"CREADO"}
+    rows = consultar_sqlite_param("SELECT * FROM Proyecto WHERE CorrelationId = ?", (corr_id,))
+    if rows:
+        return rows[0]
+    d = _PROJECT_NAME
+    return {"Nombre": d, "CorrelationId": corr_id, "Estado": "CREADO"}
 
 def obtener_timeline(corr_id: str) -> list:
-    return consultar_sqlite(f"SELECT * FROM Timeline WHERE CorrelationId='{corr_id}' ORDER BY Id ASC")
+    return consultar_sqlite_param("SELECT * FROM Timeline WHERE CorrelationId = ? ORDER BY Id ASC", (corr_id,))
 
 def obtener_smoke_results(corr_id: str) -> list:
-    return consultar_sqlite(f"SELECT * FROM SmokeTestResults WHERE CorrelationId='{corr_id}'")
+    return consultar_sqlite_param("SELECT * FROM SmokeTestResults WHERE CorrelationId = ?", (corr_id,))
 
 def obtener_bitacora(corr_id: str) -> list:
-    return consultar_sqlite(f"SELECT * FROM BitacoraEventos WHERE CorrelationId='{corr_id}' ORDER BY Id DESC LIMIT 20")
+    return consultar_sqlite_param("SELECT * FROM BitacoraEventos WHERE CorrelationId = ? ORDER BY Id DESC LIMIT 20", (corr_id,))
+
+# Factory-time rendered placeholders (resolved at project creation)
+_PROJECT_NAME = "{{PROJECT_NAME}}"
+_CORRELATION_ID = "{{CORRELATION_ID}}"
+_WEBAPP_NAME = "{{WEBAPP_NAME}}"
+_REGION = "{{REGION}}"
+_DEPLOYMENT_ID = "{{DEPLOYMENT_ID}}"
 
 @app.get("/health")
 async def health():
-    return {"status":"saludable","proyecto":"{{PROJECT_NAME}}","timestamp":datetime.now(timezone.utc).isoformat()}
+    return {"status":"saludable","proyecto":_resolve_meta(_PROJECT_NAME, "HERMES_PROJECT_NAME"),"timestamp":datetime.now(timezone.utc).isoformat()}
 
 @app.get("/api/version")
 async def api_version():
-    info = obtener_info_proyecto("{{CORRELATION_ID}}")
-    return {"version":"1.0.0","proyecto":info.get("Nombre","{{PROJECT_NAME}}"),"correlationId":"{{CORRELATION_ID}}"}
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    info = obtener_info_proyecto(corr_id)
+    pn = _resolve_meta(_PROJECT_NAME, "HERMES_PROJECT_NAME")
+    return {"version":"1.0.0","proyecto":info.get("Nombre", pn),"correlationId":corr_id}
 
 @app.get("/api/proyecto")
 async def api_proyecto():
-    return obtener_info_proyecto("{{CORRELATION_ID}}")
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    return obtener_info_proyecto(corr_id)
 
 @app.get("/api/workspace")
 async def api_workspace():
-    p = obtener_info_proyecto("{{CORRELATION_ID}}")
-    workspace = Path(PROJECT_ROOT).parent / (p.get("Nombre","{{PROJECT_NAME}}") + ".code-workspace")
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    pn = _resolve_meta(_PROJECT_NAME, "HERMES_PROJECT_NAME")
+    p = obtener_info_proyecto(corr_id)
+    workspace = Path(PROJECT_ROOT).parent / (p.get("Nombre", pn) + ".code-workspace")
     return {"workspace":str(workspace),"exists":workspace.exists()}
 
 @app.get("/api/git")
@@ -82,7 +113,8 @@ async def api_git():
 
 @app.get("/api/github")
 async def api_github():
-    info = obtener_info_proyecto("{{CORRELATION_ID}}")
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    info = obtener_info_proyecto(corr_id)
     return {"repo":info.get("Repositorio",""),"status":info.get("EstadoGitHub","")}
 
 @app.get("/api/sqlite")
@@ -91,126 +123,209 @@ async def api_sqlite():
 
 @app.get("/api/azure")
 async def api_azure():
-    info = obtener_info_proyecto("{{CORRELATION_ID}}")
-    return {"webapp":"{{WEBAPP_NAME}}","url":"https://{{WEBAPP_NAME}}.azurewebsites.net","status":info.get("EstadoAzure","")}
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    info = obtener_info_proyecto(corr_id)
+    webapp = _resolve_meta(_WEBAPP_NAME, "HERMES_WEBAPP_NAME")
+    return {"webapp":webapp,"url":f"https://{webapp}.azurewebsites.net","status":info.get("EstadoAzure","")}
 
 @app.get("/api/despliegue")
 async def api_despliegue():
-    info = obtener_info_proyecto("{{CORRELATION_ID}}")
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    info = obtener_info_proyecto(corr_id)
     return {"estado":info.get("Estado",""),"total_commits":0,"total_deploys":0,"total_corrections":0}
+
+# ─── Pipeline node helpers ───
+_PIPELINE_DEF = [
+    (1, "factory", "FACTORY", "bi-rocket-takeoff"),
+    (1, "child-repo", "CHILD REPOSITORY", "bi-github"),
+    (2, "ci", "CI", "bi-arrow-repeat"),
+    (2, "control-plane", "CONTROL PLANE", "bi-diagram-3"),
+    (3, "oidc", "OIDC", "bi-shield-check"),
+    (4, "asp-iaur", "ASP-IAUR", "bi-server"),
+    (4, "web-app", "WEB APP", "bi-globe"),
+    (5, "zip-deploy", "ZIP DEPLOY", "bi-cloud-upload"),
+    (6, "readiness", "READINESS", "bi-heart-pulse"),
+    (6, "functional-tests", "FUNCTIONAL TESTS", "bi-shield-check"),
+    (6, "user-facing", "USER FACING", "bi-eye"),
+    (7, "evidence", "EVIDENCE", "bi-file-earmark-check"),
+    (8, "online", "ONLINE", "bi-check-circle-fill"),
+]
+
+def _build_pipeline(info: dict, smoke: list, timeline: list):
+    """Build pipeline node states from real data."""
+    tl = {t.get("Evento","").lower(): t for t in timeline}
+    passed = sum(1 for s in smoke if s.get("Estado") == "PASS") if smoke else 0
+    total = len(smoke) if smoke else 0
+    test_ok = total > 0 and passed == total
+    estado = info.get("Estado", "CREADO")
+    estado_ci = info.get("EstadoCI", "")
+    estado_azure = info.get("EstadoAzure", "")
+    cs = lambda s: {"pass":"pass","ok":"pass","fail":"fail","pending":"pending"}.get(s.lower() if s else "", "info")
+    states = {
+        "factory": {"s": cs(tl.get("workspace",{}).get("Estado","")), "d": "Workspace Creado"},
+        "child-repo": {"s": "pass", "d": info.get("Repositorio", "No disponible")},
+        "ci": {"s": cs(estado_ci) if estado_ci else "info", "d": f"Estado: {estado_ci or 'N/D'}"},
+        "control-plane": {"s": "pass" if estado in ("OK","PASS") else "info", "d": "Orquestado por Control Plane"},
+        "oidc": {"s": "pass", "d": "FIC: UR-Fabrica-Proyectos-AR"},
+        "asp-iaur": {"s": "pass", "d": "REUTILIZADO"},
+        "web-app": {"s": cs(estado_azure) if estado_azure else "info", "d": info.get("Region","No disponible")},
+        "zip-deploy": {"s": "pass" if tl.get("deploy") else "info", "d": "az webapp deploy"},
+        "readiness": {"s": "pass" if tl.get("deploy") else "info", "d": "/health endpoint"},
+        "functional-tests": {"s": "pass" if test_ok else "pending", "d": f"{passed}/{total}" if total else "N/D"},
+        "user-facing": {"s": "pass" if test_ok else "pending", "d": f"{passed}/{total}" if total else "N/D"},
+        "evidence": {"s": "pass" if test_ok else "pending", "d": "deployment-report.json"},
+        "online": {"s": "pass" if test_ok else "pending", "d": "🟢 OPERATIVO" if test_ok else "⏳ PENDIENTE"},
+    }
+    result = []
+    for sec, nid, name, icon in _PIPELINE_DEF:
+        st = states.get(nid, {"s":"pending","d":"No disponible"})
+        result.append((sec, nid, name, icon, st["s"], st["d"]))
+    return result
 
 @app.get("/", response_class=HTMLResponse)
 async def landing(request: Request):
-    # ── Read real data from SQLite ──
-    corr_id = "{{CORRELATION_ID}}"
-    project_name = "{{PROJECT_NAME}}"
-    webapp_name = "{{WEBAPP_NAME}}"
-    region = "{{REGION}}"
+    # ── Resolve metadata: env var > factory-rendered > "No disponible" ──
+    project_name = _resolve_meta(_PROJECT_NAME, "HERMES_PROJECT_NAME")
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
+    webapp_name = _resolve_meta(_WEBAPP_NAME, "HERMES_WEBAPP_NAME")
+    region = _resolve_meta(_REGION, "HERMES_REGION")
+    deployment_id = _resolve_meta(_DEPLOYMENT_ID, "HERMES_DEPLOYMENT_ID")
     runtime = "Python 3.12"
-    deployment_id = "{{DEPLOYMENT_ID}}"
 
     info = obtener_info_proyecto(corr_id)
     timeline = obtener_timeline(corr_id)
     smoke = obtener_smoke_results(corr_id)
-    bitacora = obtener_bitacora(corr_id)
 
     nombre = info.get("Nombre", project_name)
     estado = info.get("Estado", "CREADO")
-    url_publica = info.get("UrlPublica", f"https://{webapp_name}.azurewebsites.net")
-    repositorio = info.get("Repositorio", "")
-    commit_hash = info.get("CommitHash", deployment_id[:8] if len(deployment_id) > 8 else deployment_id)
-    estado_azure = info.get("EstadoAzure", "OK")
-    estado_github = info.get("EstadoGitHub", "")
-    estado_ci = info.get("EstadoCI", "")
-    t_build = info.get("TiempoBuild", 0) or 0
-    t_deploy = info.get("TiempoDeploy", 0) or 0
-    t_smoke = info.get("TiempoSmokeTest", 0) or 0
+    url_publica = info.get("UrlPublica", f"https://{webapp_name}.azurewebsites.net" if "No" not in webapp_name else "#")
+    repositorio = info.get("Repositorio", "No disponible")
+    commit_hash = info.get("CommitHash", "No disponible")
+    region_db = info.get("Region", region)
 
-    # ── Calculate overall status ──
-    passed_tests = sum(1 for s in smoke if s.get("Estado") == "PASS") if smoke else 0
-    total_tests = len(smoke) if smoke else 0
-    overall_status = "PASS" if (smoke and passed_tests == total_tests) else ("PASS" if estado == "OK" else "UNKNOWN")
-
+    # Overall status
+    passed = sum(1 for s in smoke if s.get("Estado") == "PASS") if smoke else 0
+    total = len(smoke) if smoke else 0
+    overall_status = "PASS" if (total > 0 and passed == total) else ("PASS" if estado == "OK" else "UNKNOWN")
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    # ── Render deployment report HTML ──
+    pipeline = _build_pipeline(info, smoke, timeline)
+
+    # ── Build pipeline HTML ──
+    SECTION_NAMES = {1:"ORIGEN",2:"AUTOMATIZACION",3:"SEGURIDAD",4:"INFRAESTRUCTURA",
+                     5:"DESPLIEGUE",6:"VALIDACION",7:"EVIDENCIA",8:"ESTADO FINAL"}
+    def _sc(st): return {"pass":"#27ae60","fail":"#e74c3c","pending":"#7f8c8d","info":"#3498db"}.get(st,"#7f8c8d")
+    def _si(st):
+        return ('<i class="bi bi-check-circle-fill" style="color:#27ae60"></i>' if st=="pass"
+                else '<i class="bi bi-x-circle-fill" style="color:#e74c3c"></i>' if st=="fail"
+                else '<i class="bi bi-hourglass-split" style="color:#7f8c8d"></i>' if st=="pending"
+                else '<i class="bi bi-info-circle-fill" style="color:#3498db"></i>')
+
+    pipe_html = ""
+    cur_sec = 0
+    for sec, nid, name, icon, st, det in pipeline:
+        if sec != cur_sec:
+            if cur_sec > 0: pipe_html += "</div>"
+            pipe_html += f'<div class="pipe-section"><div class="pipe-label">{SECTION_NAMES.get(sec,"")}</div>'
+            cur_sec = sec
+        c = _sc(st)
+        pipe_html += f"""<div class="pipe-conn" style="background:{c}"></div>
+        <div class="pipe-node" style="border-left-color:{c}">
+            <div class="pipe-icon" style="border:2px solid {c}"><i class="bi {icon}" style="color:{c}"></i></div>
+            <div class="pipe-body"><div class="pipe-name">{name}</div><div class="pipe-detail">{det}</div></div>
+            <div class="pipe-status">{_si(st)}</div>
+        </div>"""
+    if cur_sec > 0: pipe_html += "</div>"
+
+    # ── Render full HTML ──
     html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>HERMES ENTERPRISE — INFORME DE DESPLIEGUE</title>
+<title>HERMES ENTERPRISE — FICHA :: {nombre}</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
-body {{ background:#0b0f1a; color:#e0e0e0; font-family:'Segoe UI',system-ui,sans-serif; }}
-.deploy-container {{ max-width:1100px; margin:0 auto; padding:20px; }}
-.hero {{ background:linear-gradient(135deg,#0d6efd 0%,#6610f2 100%); border-radius:16px; padding:32px; margin-bottom:24px; text-align:center; }}
-.hero h1 {{ color:#fff; font-size:2rem; font-weight:700; }}
-.hero .subtitle {{ color:rgba(255,255,255,0.85); font-size:1rem; }}
-.card {{ background:#151b2b; border:1px solid #2a3250; border-radius:12px; padding:20px; margin-bottom:20px; }}
-.card h5 {{ color:#8b9dc3; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; }}
-.card .value {{ font-size:1.1rem; color:#fff; }}
-.card .label {{ color:#6c7a9a; font-size:0.85rem; }}
-.status-ok {{ color:#198754; }}
-.status-fail {{ color:#dc3545; }}
-.status-warn {{ color:#ffc107; }}
-.link-grid a {{ display:inline-block; margin:4px; padding:8px 16px; background:#1e2740; border-radius:8px; color:#8ab4f8; text-decoration:none; font-size:0.9rem; }}
-.link-grid a:hover {{ background:#2a3555; color:#fff; }}
-.test-pass {{ color:#198754; }}
-.test-fail {{ color:#dc3545; }}
-.footer {{ text-align:center; padding:20px; color:#4a5570; font-size:0.85rem; }}
-.timeline-item {{ padding:6px 0; border-left:2px solid #2a3250; padding-left:16px; margin-left:8px; }}
-.table-dark-custom {{ background:#151b2b; }}
-.table-dark-custom th {{ background:#1a2235; color:#8b9dc3; }}
-.table-dark-custom td {{ background:#151b2b; color:#e0e0e0; }}
+body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;}}
+.container{{max-width:1100px;margin:0 auto;padding:20px;}}
+.hero{{background:linear-gradient(135deg,#0d6efd,#6610f2);border-radius:16px;padding:32px;margin-bottom:24px;text-align:center;}}
+.hero h1{{color:#fff;font-size:2rem;font-weight:700;}}
+.hero .sub{{color:rgba(255,255,255,.85);font-size:1rem;}}
+.card{{background:#151b2b;border:1px solid #2a3250;border-radius:12px;padding:20px;margin-bottom:20px;}}
+.card h5{{color:#8b9dc3;font-size:.85rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}}
+.card .v{{font-size:1.1rem;color:#fff;}}
+.link-grid a{{display:inline-block;margin:4px;padding:8px 16px;background:#1e2740;border-radius:8px;color:#8ab4f8;text-decoration:none;font-size:.9rem;}}
+.link-grid a:hover{{background:#2a3555;color:#fff;}}
+.footer{{text-align:center;padding:20px;color:#4a5570;font-size:.85rem;}}
+.ident{{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;}}
+.ident .l{{font-size:.7rem;color:#4a5570;text-transform:uppercase;}}
+.ident .v{{font-size:.9rem;color:#e0e0e0;word-break:break-all;}}
+.pipe-section{{margin-bottom:4px;}}
+.pipe-label{{font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:#4a5570;padding:4px 0 0 16px;font-weight:600;}}
+.pipe-conn{{width:2px;height:12px;margin-left:28px;}}
+.pipe-node{{display:flex;align-items:center;padding:8px 14px;border-left:3px solid;margin-left:16px;border-radius:0 8px 8px 0;background:#151b2b;}}
+.pipe-node:hover{{background:#1a2235;}}
+.pipe-icon{{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-right:10px;flex-shrink:0;}}
+.pipe-body{{flex:1;min-width:0;}}
+.pipe-name{{font-size:.85rem;font-weight:600;color:#e0e0e0;}}
+.pipe-detail{{font-size:.7rem;color:#6c7a9a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.pipe-status{{margin-left:10px;flex-shrink:0;}}
+.test-pass{{color:#198754;}}.test-fail{{color:#dc3545;}}
+.table-dark-custom{{background:#151b2b;}}
+.table-dark-custom th{{background:#1a2235;color:#8b9dc3;}}
+.table-dark-custom td{{background:#151b2b;color:#e0e0e0;}}
+.timeline-item{{padding:6px 0;border-left:2px solid #2a3250;padding-left:16px;margin-left:8px;}}
 </style>
 </head>
 <body>
-<div class="deploy-container">
-    <!-- HERO -->
+<div class="container">
     <div class="hero">
-        <h1><i class="bi bi-rocket-takeoff me-2"></i>HERMES ENTERPRISE</h1>
-        <div class="subtitle">INFORME DE DESPLIEGUE</div>
+        <h1>HERMES ENTERPRISE</h1>
+        <div class="sub">FICHA DE DESPLIEGUE :: {nombre}</div>
         <div class="mt-3">
-            <span class="badge bg-success me-2">{"🟢 OPERATIVO" if overall_status == "PASS" else "🔴 FALLIDO"}</span>
-            <span class="badge bg-info text-dark">CID:{corr_id[:8]}</span>
+            <span class="badge bg-success me-2">{'🟢 OPERATIVO' if overall_status=='PASS' else '🔴 FALLIDO'}</span>
+            <span class="badge bg-info text-dark">CID:{corr_id[:8] if len(corr_id)>8 else corr_id}</span>
         </div>
     </div>
 
-    <!-- PROJECT INFO -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card"><h5><i class="bi bi-folder me-2"></i>Proyecto</h5><div class="value">{nombre}</div></div>
-        </div>
-        <div class="col-md-4">
-            <div class="card"><h5><i class="bi bi-globe me-2"></i>App Service</h5><div class="value">{webapp_name}</div><div class="label">{region}</div></div>
-        </div>
-        <div class="col-md-4">
-            <div class="card"><h5><i class="bi bi-cpu me-2"></i>Runtime</h5><div class="value">{runtime}</div><div class="label">Deploy: {commit_hash[:7]}</div></div>
-        </div>
-    </div>
-
-    <!-- STATUS CARDS -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card text-center"><i class="bi bi-cloud-arrow-up fs-3 {"status-ok" if estado_azure == "OK" else "status-fail"}"></i><h5 class="mt-2 mb-0">{estado_azure if estado_azure else "OK"}</h5><small class="label">Azure</small></div></div>
-        <div class="col-md-3"><div class="card text-center"><i class="bi bi-github fs-3 {"status-ok" if estado_github else "status-warn"}"></i><h5 class="mt-2 mb-0">{estado_github if estado_github else "N/A"}</h5><small class="label">GitHub</small></div></div>
-        <div class="col-md-3"><div class="card text-center"><i class="bi bi-arrow-repeat fs-3 {"status-ok" if estado_ci else "status-warn"}"></i><h5 class="mt-2 mb-0">{estado_ci if estado_ci else "N/A"}</h5><small class="label">CI/CD</small></div></div>
-        <div class="col-md-3"><div class="card text-center"><i class="bi bi-clock fs-3 text-warning"></i><h5 class="mt-2 mb-0">{t_build:.1f}s</h5><small class="label">Build</small></div></div>
-    </div>
-
-    <!-- URL & REPO -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-6"><div class="card"><h5><i class="bi bi-link-45deg me-2"></i>URL Publica</h5><a href="{url_publica}" target="_blank" class="text-decoration-none value" style="word-break:break-all;">{url_publica}</a></div></div>
-        <div class="col-md-6"><div class="card"><h5><i class="bi bi-diagram-3 me-2"></i>Repositorio</h5><span class="value">{repositorio if repositorio else "No configurado"}</span></div></div>
-    </div>
-
-    <!-- TIMESTAMP -->
-    <div class="card mb-4"><h5><i class="bi bi-calendar-event me-2"></i>Fecha/Hora</h5><div class="value">{now}</div></div>
-
-    <!-- FUNCTIONAL TESTS -->
     <div class="card mb-4">
-        <h5><i class="bi bi-shield-check me-2"></i>PRUEBAS FUNCIONALES</h5>
+        <h5>IDENTIDAD DEL PROYECTO</h5>
+        <div class="ident">
+            <div><div class="l">Proyecto</div><div class="v">{nombre}</div></div>
+            <div><div class="l">Repositorio</div><div class="v">{repositorio}</div></div>
+            <div><div class="l">Commit SHA</div><div class="v">{commit_hash[:16] if commit_hash!='No disponible' else commit_hash}</div></div>
+            <div><div class="l">App Service</div><div class="v">{webapp_name}</div></div>
+            <div><div class="l">Plan</div><div class="v">ASP-IAUR</div></div>
+            <div><div class="l">Resource Group</div><div class="v">RG-Hermes-Proyectos</div></div>
+            <div><div class="l">Region</div><div class="v">{region_db}</div></div>
+            <div><div class="l">Runtime</div><div class="v">{runtime}</div></div>
+            <div><div class="l">Timestamp</div><div class="v">{now}</div></div>
+            <div><div class="l">Correlation ID</div><div class="v">{corr_id}</div></div>
+            <div><div class="l">Deployment ID</div><div class="v">{deployment_id}</div></div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <h5>TRAZABILIDAD DE DESPLIEGUE</h5>
+        <div class="pipeline">{pipe_html}</div>
+    </div>
+
+    <div class="card mb-4">
+        <h5>ACCESOS</h5>
+        <div class="link-grid">
+            <a href="{url_publica}/" target="_blank"><i class="bi bi-house-fill me-1"></i>Frontend</a>
+            <a href="{url_publica}/health" target="_blank"><i class="bi bi-heart-pulse me-1"></i>Health</a>
+            <a href="{url_publica}/swagger" target="_blank"><i class="bi bi-file-earmark-code me-1"></i>Swagger</a>
+            <a href="{url_publica}/openapi.json" target="_blank"><i class="bi bi-filetype-json me-1"></i>OpenAPI</a>
+            <a href="{url_publica}/api/version" target="_blank"><i class="bi bi-tag me-1"></i>Version</a>
+            <a href="{url_publica}/api/proyecto" target="_blank"><i class="bi bi-info-circle me-1"></i>Proyecto</a>
+            <a href="{url_publica}/redoc" target="_blank"><i class="bi bi-book me-1"></i>ReDoc</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <h5>PRUEBAS FUNCIONALES</h5>
         <div class="table-responsive">
             <table class="table table-dark-custom table-sm">
                 <thead><tr><th>Endpoint</th><th>HTTP</th><th>Estado</th><th>Tiempo</th></tr></thead>

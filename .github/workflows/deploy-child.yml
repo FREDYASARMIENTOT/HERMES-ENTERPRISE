@@ -690,6 +690,7 @@ jobs:
           export PROJ="${{ needs.validate-inputs.outputs.project_name }}"
           export REPO="${{ needs.validate-inputs.outputs.repository }}"
           export SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          export VERIFIED_SHA="${{ needs.checkout-child.outputs.deployed_sha }}"
           export APP_NAME="${{ needs.validate-inputs.outputs.app_service_name }}"
           export WEBAPP_RG="${{ env.WEBAPP_RESOURCE_GROUP }}"
           export PLAN_RG="${{ env.APP_SERVICE_PLAN_RG }}"

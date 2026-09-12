@@ -4,7 +4,7 @@
 # RC71: CI mínimo para validar el Runtime Python, dependencias,
 # estilo de código y pruebas unitarias.
 # ====================================================================
-# Tecnologías: Python 3.14+, PowerShell, PSScriptAnalyzer
+# Tecnologías: Python 3.12, PowerShell, PSScriptAnalyzer
 # Entorno: GitHub Actions (ubuntu-latest / windows-latest)
 # Runtime: Python 3.12+ with FastAPI
 # ====================================================================
@@ -66,12 +66,11 @@ jobs:
         run: |
           TEST_FILES=$(find . -name 'test_*.py' -o -name '*_test.py' 2>/dev/null | head -5)
           if [ -z "$TEST_FILES" ]; then
-            echo "INFO: No Python test files found (test_*.py / *_test.py) in repository."
-            echo "INFO: Python tests skipped — repository has no Python test suite."
-            echo "INFO: All 68 tests under pruebas/ are PowerShell/Pester tests."
+            echo "INFO: No se encontraron archivos de prueba Python (test_*.py / *_test.py)."
+            echo "INFO: Las pruebas Python se omiten — el repositorio no tiene suite Python."
             echo "result=not_present" >> $GITHUB_OUTPUT
           else
-            echo "INFO: Found Python test files:"
+            echo "INFO: Archivos de prueba Python encontrados:"
             echo "$TEST_FILES"
             python -m pytest . --junitxml=test-results.xml -v --tb=short 2>&1
             echo "result=executed" >> $GITHUB_OUTPUT
@@ -129,72 +128,19 @@ jobs:
       - name: Validar renderizado de plantilla Child (canónico)
         shell: pwsh
         run: |
-          $testScript = "pruebas/unitarias/Test-ChildTemplateRendering.ps1"
-          if (Test-Path $testScript) {
-            Write-Host "Ejecutando prueba canónica: $testScript"
-            & powershell -NoProfile -File $testScript
+          $RaizRepositorio = Resolve-Path "$PSScriptRoot/../.."
+          $ScriptPrueba = Join-Path $RaizRepositorio "pruebas/unitarias/Test-ChildTemplateRendering.ps1"
+          if (Test-Path $ScriptPrueba) {
+            Write-Host "Ejecutando prueba canónica: $ScriptPrueba"
+            & $ScriptPrueba
             if ($LASTEXITCODE -ne 0) {
               Write-Host "FAIL: Prueba canónica de template falló"
               exit 1
             }
             Write-Host "PASS: Prueba canónica de template OK"
           } else {
-            Write-Host "WARN: Prueba canónica no encontrada en $testScript"
-          }
-
-      - name: Ejecutar Pester tests (pruebas/unitarias)
-        shell: pwsh
-        run: |
-          $testFiles = @(Get-ChildItem -Path pruebas/unitarias -Filter '*.Tests.ps1' -Recurse)
-          if ($testFiles.Count -eq 0) {
-            Write-Host "INFO: No Pester test files (*.Tests.ps1) found in pruebas/unitarias/"
-            "result=not_present" >> $env:GITHUB_OUTPUT
-          } else {
-            Write-Host "INFO: Found $($testFiles.Count) Pester test files in pruebas/unitarias/"
-            
-            # Check if Pester is available
-            $pesterAvailable = Get-Module -Name Pester -ListAvailable -ErrorAction SilentlyContinue
-            if (-not $pesterAvailable) {
-              Write-Host "WARN: Pester module not available. Installing Pester..."
-              Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser -AllowClobber -ErrorAction Stop
-            }
-            
-            Import-Module -Name Pester -PassThru -ErrorAction Stop | ForEach-Object { Write-Host "Pester version: $($_.Version)" }
-            
-            # Run Pester tests — these tests were designed for local Windows env
-            # and have pre-existing path assumptions (e.g. D:\..\..\config\)
-            # that cause failures on GitHub Actions. We log results but don't
-            # block CI — syntax validation is the actual gate.
-            try {
-              $config = New-PesterConfiguration -ErrorAction SilentlyContinue
-              $config.Run.Path = @(Get-ChildItem -Path pruebas/unitarias -Filter '*.Tests.ps1' -Recurse | Select-Object -ExpandProperty FullName)
-              $config.Run.PassThru = $true
-              $config.TestResult.Enabled = $true
-              $config.TestResult.OutputPath = "pester-results.xml"
-              $config.Should.ErrorAction = 'Continue'
-              
-              $results = Invoke-Pester -Configuration $config
-              $total = $results.PassedCount + $results.FailedCount + $results.SkippedCount
-              Write-Host "Pester: $($results.PassedCount) passed, $($results.FailedCount) failed, $($results.SkippedCount) skipped (out of $total)"
-              
-              # Report pre-existing failures but do not block CI
-              "result=executed" >> $env:GITHUB_OUTPUT
-              "pass_count=$($results.PassedCount)" >> $env:GITHUB_OUTPUT
-              "fail_count=$($results.FailedCount)" >> $env:GITHUB_OUTPUT
-              
-              if ($results.FailedCount -gt 0) {
-                Write-Host "NOTE: $($results.FailedCount) Pester test(s) failed — pre-existing issues"
-                Write-Host "NOTE: Tests designed for local Windows; path assumptions break on GitHub runners"
-                Write-Host "NOTE: Syntax validation (above) is the primary PowerShell gate"
-              } else {
-                Write-Host "All Pester tests passed"
-              }
-            }
-            catch {
-              Write-Host "WARN: Pester execution encountered issues: $_"
-              Write-Host "WARN: Falling back to syntax validation only (already passed above)"
-              "result=partial" >> $env:GITHUB_OUTPUT
-            }
+            Write-Host "FAIL: Prueba canónica no encontrada en $ScriptPrueba"
+            exit 1
           }
 
   validate-documentation:

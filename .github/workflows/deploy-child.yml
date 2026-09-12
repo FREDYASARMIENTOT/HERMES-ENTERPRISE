@@ -603,10 +603,11 @@ jobs:
             FAIL=$((FAIL+1)); echo "  FAIL: GET / -> ${HTTP_CODE}"
           fi
 
-          # 2. Content-Type: text/html
-          CT=$(head -c 1024 /tmp/user-facing.html 2>/dev/null | grep -c "text/html" 2>/dev/null || echo 0)
-          if [ "${CT}" -gt 0 ] || head -c 200 /tmp/user-facing.html 2>/dev/null | grep -qi "<\!DOCTYPE\|<html\|<head" >/dev/null 2>&1; then
-            PASS=$((PASS+1)); echo "  PASS: Content-Type HTML detected"
+          # 2. Content-Type: text/html (use file command or check HTTP headers via curl -I)
+          CT_HEAD=$(curl -s -I --connect-timeout 10 --max-time 15 "${URL}/" 2>/dev/null | grep -ci "content-type:.*text/html" 2>/dev/null || true)
+          CT_FILE=$(head -c 200 /tmp/user-facing.html 2>/dev/null | grep -ciE "<\!DOCTYPE|<html|<head" 2>/dev/null || true)
+          if [ "${CT_HEAD}" -gt 0 ] || [ "${CT_FILE}" -gt 0 ]; then
+            PASS=$((PASS+1)); echo "  PASS: Content-Type text/html detected (header=$CT_HEAD file=$CT_FILE)"
             echo "content_type=text/html" >> $GITHUB_OUTPUT
           else
             FAIL=$((FAIL+1)); echo "  FAIL: Content-Type NOT text/html"
@@ -624,11 +625,11 @@ jobs:
             echo "html_not_empty=false" >> $GITHUB_OUTPUT
           fi
 
-          # 4. No error page
-          ERROR_COUNT=$(grep -ci "error\|exception\|traceback\|500\|503\|internal server" \
-            /tmp/user-facing.html 2>/dev/null || echo 0)
-          if [ "${ERROR_COUNT}" -eq 0 ]; then
-            PASS=$((PASS+1)); echo "  PASS: No error page detected"
+          # 4. No error page detected
+          ERROR_COUNT=$(grep -ciE "error|exception|traceback|500|503|internal.server" \
+            /tmp/user-facing.html 2>/dev/null || true)
+          if [ -z "${ERROR_COUNT}" ] || [ "${ERROR_COUNT}" -eq 0 ] 2>/dev/null; then
+            PASS=$((PASS+1)); echo "  PASS: No error page detected (matches=0)"
             echo "error_page_detected=false" >> $GITHUB_OUTPUT
           else
             FAIL=$((FAIL+1)); echo "  FAIL: Error page detected (${ERROR_COUNT} matches)"
@@ -636,8 +637,8 @@ jobs:
           fi
 
           # 5. Project identity in HTML
-          IDENTITY_MATCH=$(grep -ci "${PROJ}" /tmp/user-facing.html 2>/dev/null || echo 0)
-          if [ "${IDENTITY_MATCH}" -gt 0 ]; then
+          IDENTITY_COUNT=$(grep -ci "${PROJ}" /tmp/user-facing.html 2>/dev/null || true)
+          if [ -n "${IDENTITY_COUNT}" ] && [ "${IDENTITY_COUNT}" -gt 0 ] 2>/dev/null; then
             PASS=$((PASS+1)); echo "  PASS: Project identity '${PROJ}' found in HTML"
             echo "identity_match=true" >> $GITHUB_OUTPUT
           else

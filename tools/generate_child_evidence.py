@@ -46,6 +46,7 @@ def main():
     deploy_res = os.environ.get('DEPLOY_RESULT', 'FAIL')
     readiness_res = os.environ.get('READINESS_RESULT', 'FAIL')
     func_res = os.environ.get('FUNC_RESULT', 'FAIL')
+    user_facing_res = os.environ.get('USER_FACING_RESULT', 'FAIL')
 
     # ── Verificaciones HTTP en vivo (datos reales, no codificados) ──
     health_code = sh(f'curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" {url}/health 2>/dev/null || echo "000"')
@@ -58,7 +59,7 @@ def main():
 
     # ── Resultado general derivado de resultados reales ──
     overall = 'PASS'
-    if oidc_res != 'PASS' or deploy_res != 'PASS' or readiness_res != 'PASS' or func_res != 'PASS':
+    if oidc_res != 'PASS' or deploy_res != 'PASS' or readiness_res != 'PASS' or func_res != 'PASS' or user_facing_res != 'PASS':
         overall = 'FAIL'
 
     # ── Construir documento de evidencia ──
@@ -135,6 +136,17 @@ def main():
             'project': f'{url}/api/proyecto',
             'openapi': f'{url}/openapi.json',
             'swagger': f'{url}/swagger'
+        },
+        'user_facing': {
+            'result': user_facing_res,
+            'url': f'{url}/',
+            'http_status': root_code,
+            'content_type': os.environ.get('UF_CONTENT_TYPE', 'text/html'),
+            'html_size_bytes': os.environ.get('UF_HTML_SIZE', ''),
+            'html_not_empty': os.environ.get('UF_HTML_NOT_EMPTY', '') == 'true',
+            'identity_match': os.environ.get('UF_IDENTITY_MATCH', '') == 'true',
+            'project_name_in_html': os.environ.get('UF_IDENTITY_MATCH', '') == 'true',
+            'error_page_detected': os.environ.get('UF_ERROR_PAGE', '') == 'true'
         },
         'timestamp': timestamp
     }

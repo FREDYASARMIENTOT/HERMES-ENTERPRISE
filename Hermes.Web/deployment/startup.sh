@@ -46,19 +46,18 @@ cd "$HERMES_WEB_DIR"
 echo "Contenido de Hermes.Web: $(ls -la)"
 echo "PYTHONPATH: $HERMES_WEB_DIR"
 
-# 4. Iniciar servidor Gunicorn + Uvicorn
-echo "[3/3] Iniciando servidor Gunicorn + Uvicorn..."
+# 4. Iniciar servidor Uvicorn (1 worker para B1)
+echo "[3/3] Iniciando servidor Uvicorn..."
 echo "Host: 0.0.0.0"
 echo "Puerto: ${PORT:-8000}"
-echo "Workers: ${WEB_CONCURRENCY:-4}"
+echo "Workers: 1 (B1 single-core)"
 echo "========================================="
 
-PYTHONPATH="$HERMES_WEB_DIR" python3 -m gunicorn \
+cd "$HERMES_WEB_DIR"
+PYTHONPATH="$HERMES_WEB_DIR" python3 -m uvicorn \
     backend.main:app \
-    --worker-class uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:${PORT:-8000} \
-    --workers ${WEB_CONCURRENCY:-4} \
-    --timeout 120 \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level info
+    --host 0.0.0.0 \
+    --port ${PORT:-8000} \
+    --workers 1 \
+    --log-level info \
+    --access-log

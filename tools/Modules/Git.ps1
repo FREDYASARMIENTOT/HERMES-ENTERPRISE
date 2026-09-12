@@ -79,7 +79,7 @@ function Crear-CommitProyecto {
         }
 
         $hashCommit = git rev-parse HEAD 2>&1
-        $archivosCambiados = (git diff --cached --name-only 2>&1).Count
+        $archivosCambiados = @(git diff --cached --name-only 2>&1).Count
 
         Write-Host "[Git] Commit creado: $($hashCommit.Trim())"
         Write-Host "[Git] Archivos cambiados: $archivosCambiados"

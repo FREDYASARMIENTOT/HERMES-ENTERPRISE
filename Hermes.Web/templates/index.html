@@ -96,6 +96,39 @@
             <p class="text-secondary">Sistema de Automatización y Gestión de Proyectos Hermes</p>
         </div>
 
+        <!-- Fábrica de Proyectos -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-building-gear me-2"></i>Fábrica de Proyectos</span>
+                        <span class="badge bg-primary bg-opacity-25 text-primary" id="fabrica-proyectos-count">0 proyectos</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="nuevo-proyecto-input"
+                                           placeholder="Nombre del proyecto (ej: hermes-fabrica-04)"
+                                           maxlength="40" pattern="[a-z0-9-]+">
+                                    <button class="btn btn-primary" id="crear-proyecto-btn" onclick="crearProyecto()">
+                                        <i class="bi bi-plus-circle me-1"></i>Crear Proyecto
+                                    </button>
+                                </div>
+                                <div id="crear-proyecto-mensaje" class="mt-2"></div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="/proyectos" class="btn btn-outline-info btn-sm" id="ver-proyectos-btn" style="display:none;">
+                                    <i class="bi bi-list-check me-1"></i>Ver Proyectos
+                                </a>
+                                <div id="ultimo-proyecto-creado" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- System Status Cards Row -->
         <div class="row g-3 mb-4" id="system-status">
             <div class="col-md-3">
@@ -547,6 +580,75 @@
                 document.getElementById('ultimo-despliegue').textContent = 'No desplegado';
             }
         }
+
+        // ══════════════════════════════════════════════════
+        // Funciones de Fábrica de Proyectos
+        // ══════════════════════════════════════════════════
+
+        async function crearProyecto() {
+            const input = document.getElementById('nuevo-proyecto-input');
+            const mensaje = document.getElementById('crear-proyecto-mensaje');
+            const btn = document.getElementById('crear-proyecto-btn');
+            const nombre = input.value.trim();
+
+            if (!nombre) {
+                mensaje.innerHTML = '<span class="text-warning">Ingrese un nombre de proyecto</span>';
+                return;
+            }
+            if (nombre.length < 3) {
+                mensaje.innerHTML = '<span class="text-warning">El nombre debe tener al menos 3 caracteres</span>';
+                return;
+            }
+            if (!/^[a-z0-9-]+$/.test(nombre)) {
+                mensaje.innerHTML = '<span class="text-warning"> Solo minúsculas, números y guiones</span>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creando...';
+            mensaje.innerHTML = '';
+
+            try {
+                const resp = await fetch('/api/fabrica/proyectos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre_proyecto: nombre, descripcion: '' })
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    mensaje.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.mensaje}</span>`;
+                    document.getElementById('ultimo-proyecto-creado').innerHTML =
+                        `<a href="/proyectos/${data.deployment_id}" class="btn btn-sm btn-success">
+                            <i class="bi bi-eye me-1"></i>Ver estado: ${data.nombre_proyecto}
+                        </a>`;
+                    document.getElementById('ver-proyectos-btn').style.display = 'inline-block';
+                    actualizarContadorProyectos();
+                    input.value = '';
+                } else {
+                    mensaje.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>${data.detail || 'Error'}</span>`;
+                }
+            } catch (e) {
+                mensaje.innerHTML = `<span class="text-danger">Error de conexión: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Crear Proyecto';
+            }
+        }
+
+        async function actualizarContadorProyectos() {
+            try {
+                const resp = await fetch('/api/fabrica/proyectos?limite=1');
+                const data = await resp.json();
+                const total = data.total || 0;
+                document.getElementById('fabrica-proyectos-count').textContent = `${total} proyectos`;
+                if (total > 0) document.getElementById('ver-proyectos-btn').style.display = 'inline-block';
+            } catch (e) {
+                console.error('Error actualizando contador:', e);
+            }
+        }
+
+        // Inicializar contador al cargar
+        actualizarContadorProyectos();
 
         loadAll();
     </script>

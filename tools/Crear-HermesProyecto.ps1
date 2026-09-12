@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     RC74-C — Autonomous Project Factory (fixed pipeline)
 .DESCRIPTION
@@ -432,3 +432,5 @@ try {
     Write-Host "CorrelationId: $CorrelationId" -ForegroundColor Yellow
     throw
 }
+
+

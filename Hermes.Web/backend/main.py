@@ -24,6 +24,7 @@ import importlib.util
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any, List
+from Hermes.Web.backend.servicio_fabrica import obtener_servicio_fabrica
 
 # ──────────────────────────────────────────────────────────────
 # Resolver Hermes.Web como paquete importable
@@ -348,6 +349,7 @@ _router_modules = [
     ("azure", "Azure"),
     ("sqlite", "SQLite"),
     ("despliegue", "Despliegue"),
+    ("fabrica", "Fabrica"),
 ]
 
 # Cargar __init__.py de api/ primero si existe
@@ -509,6 +511,43 @@ async def health_check():
 
 
 # ──────────────────────────────────────────────────────────────
+# Rutas de la Fábrica de Proyectos (Frontend)
+# ──────────────────────────────────────────────────────────────
+
+@app.get("/proyectos", response_class=HTMLResponse, tags=["Fabrica"])
+async def listado_proyectos(request: Request):
+    """Renderiza la página de listado de proyectos."""
+    if templates:
+        try:
+            servicio = request.app.state.servicio_fabrica
+            proyectos = servicio.listar_solicitudes(limite=50) if servicio else []
+        except Exception:
+            proyectos = []
+        return templates.TemplateResponse(
+            request, "proyecto_listado.html",
+            {"request": request, "proyectos": [p.a_dict() for p in proyectos]}
+        )
+    return HTMLResponse(content="<h1>Proyectos</h1><p>Página no disponible (templates no cargados)</p>")
+
+
+@app.get("/proyectos/{deployment_id}", response_class=HTMLResponse, tags=["Fabrica"])
+async def detalle_proyecto(request: Request, deployment_id: str):
+    """Renderiza la página de seguimiento de un proyecto."""
+    if templates:
+        return templates.TemplateResponse(
+            request, "proyecto.html",
+            {
+                "request": request,
+                "deployment_id": deployment_id,
+                "titulo": "Hermes Enterprise - Implementación del Proyecto",
+                "version": "2.0.0",
+                "anio_actual": datetime.now().year
+            }
+        )
+    return HTMLResponse(content=f"<h1>Proyecto {deployment_id}</h1><p>Página no disponible</p>")
+
+
+# ──────────────────────────────────────────────────────────────
 # Manejador de eventos de inicio y cierre
 # ──────────────────────────────────────────────────────────────
 
@@ -526,6 +565,16 @@ async def evento_inicio_aplicacion():
     logger.info(f"Directorio commands: {RUTA_MODULO_COMMANDS}")
     logger.info(f"ServicioDatos disponible: {SERVICIO_DATOS_DISPONIBLE}")
     logger.info(f"Middleware disponible: {MIDDLEWARE_DISPONIBLE}")
+
+    # Inicializar ServicioFabrica
+    try:
+        servicio_fabrica = obtener_servicio_fabrica()
+        app.state.servicio_fabrica = servicio_fabrica
+        logger.info(f"ServicioFabrica inicializado. DB: {servicio_fabrica.ruta_db}")
+    except Exception as e:
+        logger.error(f"Error inicializando ServicioFabrica: {e}")
+        app.state.servicio_fabrica = None
+
     logger.info("=" * 60)
 
 

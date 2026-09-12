@@ -128,18 +128,28 @@ jobs:
       - name: Validar renderizado de plantilla Child (canónico)
         shell: pwsh
         run: |
-          $RaizRepositorio = Resolve-Path "$PSScriptRoot/../.."
-          $ScriptPrueba = Join-Path $RaizRepositorio "pruebas/unitarias/Test-ChildTemplateRendering.ps1"
-          if (Test-Path $ScriptPrueba) {
-            Write-Host "Ejecutando prueba canónica: $ScriptPrueba"
-            & $ScriptPrueba
+          # Ruta contractual: GITHUB_WORKSPACE es la raíz del repositorio
+          # en GitHub Actions. En local se puede usar cualquier directorio
+          # siempre que $env:GITHUB_WORKSPACE apunte a la raíz.
+          $RaizRepositorio = $env:GITHUB_WORKSPACE
+          if (-not $RaizRepositorio) {
+            # Fallback para ejecución local fuera de GitHub Actions
+            $RaizRepositorio = Resolve-Path "$PSScriptRoot/../.."
+          }
+          $RutaCanonica = Join-Path $RaizRepositorio "pruebas/canonicas/Test-ChildTemplateRendering.ps1"
+          Write-Host "Buscando prueba canónica en: $RutaCanonica"
+          if (Test-Path $RutaCanonica) {
+            Write-Host "Ejecutando prueba canónica: $RutaCanonica"
+            & $RutaCanonica
             if ($LASTEXITCODE -ne 0) {
-              Write-Host "FAIL: Prueba canónica de template falló"
+              Write-Host "FAIL: Prueba canónica de template falló (exit code: $LASTEXITCODE)"
               exit 1
             }
             Write-Host "PASS: Prueba canónica de template OK"
           } else {
-            Write-Host "FAIL: Prueba canónica no encontrada en $ScriptPrueba"
+            Write-Host "FAIL: Prueba canónica NO ENCONTRADA en $RutaCanonica"
+            Write-Host "Contenido de pruebas/:"
+            Get-ChildItem -Path (Join-Path $RaizRepositorio "pruebas") -Recurse -Name | Where-Object { $_ -match "\.ps1$" } | ForEach-Object { Write-Host "  $_" }
             exit 1
           }
 

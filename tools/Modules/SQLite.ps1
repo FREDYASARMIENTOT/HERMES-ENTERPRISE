@@ -93,10 +93,11 @@ function Establecer-InformacionProyecto {
     if ($existente -eq "0") {
         $nom = Escapar-CadenaSQL $Properties["Nombre"]
         $desc = Escapar-CadenaSQL $Properties["Descripcion"]
-        $version = $Properties["Version"]
+        $version = Escapar-CadenaSQL $Properties["Version"]
+        $cid = Escapar-CadenaSQL $CorrelationId
         $consulta = @"
 INSERT INTO Proyecto (Nombre, Descripcion, Version, CorrelationId, Estado)
-VALUES ('$nom', '$desc', '$version', '$CorrelationId', 'CREADO');
+VALUES ('$nom', '$desc', '$version', '$cid', 'CREADO');
 "@
     }
     else {
@@ -104,10 +105,16 @@ VALUES ('$nom', '$desc', '$version', '$CorrelationId', 'CREADO');
         foreach ($k in $Properties.Keys) {
             $v = $Properties[$k]
             $ev = Escapar-CadenaSQL $v
+            # Validar que el nombre de columna solo contenga caracteres permitidos
+            if ($k -notmatch '^[a-zA-Z_][a-zA-Z0-9_]*$') {
+                Write-Host "[SQLite] ADVERTENCIA: nombre de columna inválido omitido: $k" -ForegroundColor Yellow
+                continue
+            }
             $asignaciones += "$k='$ev'"
         }
         $clausulaAsignacion = $asignaciones -join ", "
-        $consulta = "UPDATE Proyecto SET $clausulaAsignacion, FechaActualizacion=datetime('now','localtime') WHERE CorrelationId='$CorrelationId';"
+        $cid = Escapar-CadenaSQL $CorrelationId
+        $consulta = "UPDATE Proyecto SET $clausulaAsignacion, FechaActualizacion=datetime('now','localtime') WHERE CorrelationId='$cid';"
     }
 
     sqlite3 $DbPath $consulta 2>&1 | Out-Null
@@ -117,13 +124,16 @@ function Obtener-InformacionProyecto {
     <#
     .SYNOPSIS
         Obtiene la información del proyecto desde SQLite.
+    .NOTES
+        CorrelationId escapado contra SQL injection.
     #>
     param(
         [Parameter(Mandatory)] [string] $DbPath,
         [Parameter(Mandatory)] [string] $CorrelationId
     )
 
-    $resultado = sqlite3 $DbPath -header -column "SELECT * FROM Proyecto WHERE CorrelationId='$CorrelationId'" 2>&1
+    $cidSeguro = Escapar-CadenaSQL $CorrelationId
+    $resultado = sqlite3 $DbPath -header -column "SELECT * FROM Proyecto WHERE CorrelationId='$cidSeguro'" 2>&1
     return $resultado
 }
 
@@ -171,9 +181,14 @@ function Probar-ConexionSQLite {
 function Escapar-CadenaSQL {
     <#
     .SYNOPSIS
-        Escapa caracteres especiales (comillas simples) para SQL.
+        Escapa caracteres especiales para SQLite (comillas simples).
+    .NOTES
+        Seguridad: Previene SQL injection por interpolación en valores string.
+        Limitación: Columna/key names no son escapados aquí — deben validarse por separado.
+        Recomendación futura: Migrar a System.Data.SQLite con consultas parametrizadas reales.
     #>
     param([string] $Value)
+    # En SQLite, el escape de comillas simples se hace duplicándolas: ' → ''
     return $Value -replace "'", "''"
 }
 

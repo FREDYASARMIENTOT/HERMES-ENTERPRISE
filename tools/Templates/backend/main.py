@@ -28,13 +28,13 @@ if TEMPLATES_DIR.exists():
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# ─── Metadata resolution ───
+# ─── Resolución de metadatos ───
 def _resolve_meta(factory_val: str, env_key: str, default: str = "No disponible") -> str:
-    """Resolve a metadata value: try factory-rendered → env var → default.
+    """Resuelve un metadato: valor renderizado por Factory → variable de entorno → valor por defecto.
     
-    Factory-time rendering replaces {{PLACEHOLDER}} with actual values.
-    If the value still starts with '{{', the factory didn't render it,
-    so we try the environment variable. As last resort, return default.
+    El renderizado en tiempo de Factory reemplaza {{PLACEHOLDER}} por valores reales.
+    Si el valor aún comienza con '{{', la Factory no lo reemplazó,
+    así que se intenta la variable de entorno. Como último recurso, retorna el valor por defecto.
     """
     if factory_val and not factory_val.startswith("{{"):
         return factory_val
@@ -43,9 +43,9 @@ def _resolve_meta(factory_val: str, env_key: str, default: str = "No disponible"
         return env_val
     return default
 
-# ─── SQLite with parameterized queries ───
+# ─── SQLite con consultas parametrizadas ───
 def consultar_sqlite_param(query: str, params: tuple = ()) -> list:
-    """Execute a parameterized SQLite query safely."""
+    """Ejecuta una consulta SQLite parametrizada de forma segura."""
     import sqlite3
     try:
         conn = sqlite3.connect(SQLITE_DB)
@@ -56,7 +56,7 @@ def consultar_sqlite_param(query: str, params: tuple = ()) -> list:
         conn.close()
         return rows
     except Exception as e:
-        logger.warning(f"SQLite error: {e}")
+        logger.warning(f"SQLite error en consulta: {e} | DB: {SQLITE_DB} | Query: {query[:80]}")
         return []
 
 def obtener_info_proyecto(corr_id: str) -> dict:
@@ -75,7 +75,7 @@ def obtener_smoke_results(corr_id: str) -> list:
 def obtener_bitacora(corr_id: str) -> list:
     return consultar_sqlite_param("SELECT * FROM BitacoraEventos WHERE CorrelationId = ? ORDER BY Id DESC LIMIT 20", (corr_id,))
 
-# Factory-time rendered placeholders (resolved at project creation)
+# Placeholders renderizados por la Factory en tiempo de creación del proyecto
 _PROJECT_NAME = "{{PROJECT_NAME}}"
 _CORRELATION_ID = "{{CORRELATION_ID}}"
 _WEBAPP_NAME = "{{WEBAPP_NAME}}"
@@ -134,7 +134,7 @@ async def api_despliegue():
     info = obtener_info_proyecto(corr_id)
     return {"estado":info.get("Estado",""),"total_commits":0,"total_deploys":0,"total_corrections":0}
 
-# ─── Pipeline node helpers ───
+# ─── Definición de nodos del pipeline de implementación ───
 _PIPELINE_DEF = [
     (1, "factory", "FACTORY", "bi-rocket-takeoff"),
     (1, "child-repo", "CHILD REPOSITORY", "bi-github"),
@@ -152,7 +152,7 @@ _PIPELINE_DEF = [
 ]
 
 def _build_pipeline(info: dict, smoke: list, timeline: list):
-    """Build pipeline node states from real data."""
+    """Construye los estados de los nodos del pipeline a partir de datos reales."""
     tl = {t.get("Evento","").lower(): t for t in timeline}
     passed = sum(1 for s in smoke if s.get("Estado") == "PASS") if smoke else 0
     total = len(smoke) if smoke else 0
@@ -203,7 +203,7 @@ async def landing(request: Request):
     commit_hash = info.get("CommitHash", "No disponible")
     region_db = info.get("Region", region)
 
-    # Overall status
+    # ── Estado general ──
     passed = sum(1 for s in smoke if s.get("Estado") == "PASS") if smoke else 0
     total = len(smoke) if smoke else 0
     overall_status = "PASS" if (total > 0 and passed == total) else ("PASS" if estado == "OK" else "UNKNOWN")
@@ -211,7 +211,7 @@ async def landing(request: Request):
 
     pipeline = _build_pipeline(info, smoke, timeline)
 
-    # ── Build pipeline HTML ──
+    # ── Construir HTML del pipeline ──
     SECTION_NAMES = {1:"ORIGEN",2:"AUTOMATIZACION",3:"SEGURIDAD",4:"INFRAESTRUCTURA",
                      5:"DESPLIEGUE",6:"VALIDACION",7:"EVIDENCIA",8:"ESTADO FINAL"}
     def _sc(st): return {"pass":"#27ae60","fail":"#e74c3c","pending":"#7f8c8d","info":"#3498db"}.get(st,"#7f8c8d")
@@ -237,7 +237,7 @@ async def landing(request: Request):
         </div>"""
     if cur_sec > 0: pipe_html += "</div>"
 
-    # ── Render full HTML ──
+    # ── Renderizar HTML completo ──
     html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -290,29 +290,56 @@ body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-ser
     </div>
 
     <div class="card mb-4">
-        <h5>IDENTIDAD DEL PROYECTO</h5>
+        <h5><i class="bi bi-info-circle me-2"></i>IDENTIDAD DEL PROYECTO</h5>
         <div class="ident">
             <div><div class="l">Proyecto</div><div class="v">{nombre}</div></div>
             <div><div class="l">Repositorio</div><div class="v">{repositorio}</div></div>
-            <div><div class="l">Commit SHA</div><div class="v">{commit_hash[:16] if commit_hash!='No disponible' else commit_hash}</div></div>
-            <div><div class="l">App Service</div><div class="v">{webapp_name}</div></div>
-            <div><div class="l">Plan</div><div class="v">ASP-IAUR</div></div>
-            <div><div class="l">Resource Group</div><div class="v">RG-Hermes-Proyectos</div></div>
-            <div><div class="l">Region</div><div class="v">{region_db}</div></div>
-            <div><div class="l">Runtime</div><div class="v">{runtime}</div></div>
-            <div><div class="l">Timestamp</div><div class="v">{now}</div></div>
+            <div><div class="l">Commit Solicitado</div><div class="v">{commit_hash[:16] if commit_hash!='No disponible' else commit_hash}</div></div>
             <div><div class="l">Correlation ID</div><div class="v">{corr_id}</div></div>
             <div><div class="l">Deployment ID</div><div class="v">{deployment_id}</div></div>
         </div>
     </div>
 
     <div class="card mb-4">
-        <h5>TRAZABILIDAD DE DESPLIEGUE</h5>
+        <h5><i class="bi bi-server me-2"></i>INFRAESTRUCTURA</h5>
+        <div class="ident">
+            <div><div class="l">App Service</div><div class="v">{webapp_name}</div></div>
+            <div><div class="l">Plan</div><div class="v">ASP-IAUR <span class="badge bg-success ms-1">REUTILIZADO</span></div></div>
+            <div><div class="l">Resource Group</div><div class="v">RG-Hermes-Proyectos</div></div>
+            <div><div class="l">Region</div><div class="v">{region_db}</div></div>
+            <div><div class="l">Runtime</div><div class="v">{runtime}</div></div>
+            <div><div class="l">Plan Creado</div><div class="v"><span class="badge bg-warning text-dark">NO</span></div></div>
+            <div><div class="l">Plan Reutilizado</div><div class="v"><span class="badge bg-success">SÍ</span></div></div>
+            <div><div class="l">Autenticación</div><div class="v"><span class="badge bg-info text-dark">OIDC</span></div></div>
+            <div><div class="l">Timestamp</div><div class="v">{now}</div></div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <h5><i class="bi bi-diagram-3 me-2"></i>TRAZABILIDAD DE DESPLIEGUE</h5>
         <div class="pipeline">{pipe_html}</div>
     </div>
 
     <div class="card mb-4">
-        <h5>ACCESOS</h5>
+        <h5><i class="bi bi-journal-text me-2"></i>DETALLE DE IMPLEMENTACIÓN</h5>
+        <div style="font-size:.85rem;line-height:1.7;color:#c0c8e0;">
+            <ol style="padding-left:20px;margin-bottom:0;">
+                <li><strong>Creación:</strong> La Factory <code>Crear-HermesProyecto.ps1</code> generó el proyecto <strong>{nombre}</strong> con Correlation ID <code>{corr_id}</code>.</li>
+                <li><strong>Código fuente:</strong> El repositorio <code>{repositorio}</code> contiene el código del proyecto.</li>
+                <li><strong>Commit desplegado:</strong> <code>{commit_hash[:16] if commit_hash!='No disponible' else commit_hash}</code></li>
+                <li><strong>CI:</strong> El repositorio Child ejecuta su propio CI (<code>ci.yml</code>) para validar el código.</li>
+                <li><strong>CD:</strong> El <strong>Control Plane</strong> (<code>deploy-child.yml</code> en HERMES-ENTERPRISE) orquesta el despliegue completo.</li>
+                <li><strong>Autenticación Azure:</strong> <strong>OIDC</strong> federado (FIC: UR-Fabrica-Proyectos-AR) — sin secrets locales.</li>
+                <li><strong>Infraestructura:</strong> App Service creado en <strong>ASP-IAUR</strong> reutilizado (NO se creó un nuevo Plan).</li>
+                <li><strong>Despliegue:</strong> ZIP Deploy mediante <code>az webapp deploy</code>.</li>
+                <li><strong>Verificación:</strong> Readiness check ({url_publica}/health) + Pruebas funcionales ({passed}/{total} PASS).</li>
+                <li><strong>Evidencia:</strong> <code>deployment-report.json</code> con SHA verificado (solicitado == desplegado).</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <h5><i class="bi bi-link me-2"></i>ACCESOS</h5>
         <div class="link-grid">
             <a href="{url_publica}/" target="_blank"><i class="bi bi-house-fill me-1"></i>Frontend</a>
             <a href="{url_publica}/health" target="_blank"><i class="bi bi-heart-pulse me-1"></i>Health</a>
@@ -325,12 +352,12 @@ body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-ser
     </div>
 
     <div class="card mb-4">
-        <h5>PRUEBAS FUNCIONALES</h5>
+        <h5><i class="bi bi-check-circle me-2"></i>PRUEBAS FUNCIONALES</h5>
         <div class="table-responsive">
             <table class="table table-dark-custom table-sm">
                 <thead><tr><th>Endpoint</th><th>HTTP</th><th>Estado</th><th>Tiempo</th></tr></thead>
                 <tbody>"""
-    # end of f-string for tests section
+    # fin del f-string para la sección de pruebas
 
     # Smoke test rows
     if smoke:
@@ -344,20 +371,6 @@ body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-ser
     else:
         html += '<tr><td colspan="4" class="text-secondary text-center">No hay resultados de pruebas disponibles</td></tr>'
     html += """</tbody></table></div></div>
-
-    <!-- ACCESS LINKS -->
-    <div class="card mb-4">
-        <h5><i class="bi bi-link me-2"></i>ACCESOS</h5>
-        <div class="link-grid">
-            <a href="{url_publica}/" target="_blank"><i class="bi bi-house-fill me-1"></i>Frontend</a>
-            <a href="{url_publica}/health" target="_blank"><i class="bi bi-heart-pulse me-1"></i>Health</a>
-            <a href="{url_publica}/swagger" target="_blank"><i class="bi bi-file-earmark-code me-1"></i>Swagger UI</a>
-            <a href="{url_publica}/openapi.json" target="_blank"><i class="bi bi-filetype-json me-1"></i>OpenAPI</a>
-            <a href="{url_publica}/api/version" target="_blank"><i class="bi bi-tag me-1"></i>Version</a>
-            <a href="{url_publica}/api/proyecto" target="_blank"><i class="bi bi-info-circle me-1"></i>Proyecto</a>
-            <a href="{url_publica}/redoc" target="_blank"><i class="bi bi-book me-1"></i>ReDoc</a>
-        </div>
-    </div>
 
     <!-- TIMELINE -->
     <div class="card mb-4">

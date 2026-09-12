@@ -50,10 +50,10 @@ env:
 
 jobs:
   # ==================================================================
-  # TRABAJO 1: validate-inputs — Capa de validación de seguridad
+  # TRABAJO 1: validate-inputs — Validación de seguridad de entradas
   # ==================================================================
   validate-inputs:
-    name: Validate Inputs
+    name: Validar Entradas
     runs-on: ubuntu-latest
     outputs:
       project_name: ${{ steps.validate.outputs.project_name }}

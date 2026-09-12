@@ -122,7 +122,7 @@ jobs:
             --resource-group "$RG" \
             --src-path "$ZIP_FILE" \
             --type zip \
-            --clean true \
+            --clean false \
             --output table
 
           echo "=== Deployment complete ==="

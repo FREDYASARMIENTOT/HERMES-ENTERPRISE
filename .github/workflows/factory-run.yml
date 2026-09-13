@@ -29,7 +29,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 env:
   FACTORY_GITHUB_USER: FREDYASARMIENTOT

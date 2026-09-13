@@ -108,7 +108,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Configure startup command BEFORE deploy (CRITICAL: order matters)
+      - name: "Configure startup command BEFORE deploy (CRITICAL: order matters)"
         shell: bash
         run: |
           echo "=== Setting startup command BEFORE deploy ==="

@@ -1,0 +1,174 @@
+# ====================================================================
+# factory-run.yml -- FACTORY RUNNER EN GITHUB ACTIONS
+# ====================================================================
+# RC94.20: Ejecuta Crear-HermesProyecto.ps1 en GitHub Actions runner
+# (NO en Azure App Service).
+# Portal -> factory-run.yml -> Crear-HermesProyecto.ps1 -> Child Repo
+#   -> git push -> SHA REAL -> deploy-child.yml -> Control Plane -> Azure
+# ====================================================================
+
+name: Hermes Factory Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: Nombre del proyecto
+        required: true
+        type: string
+      correlation_id:
+        description: Correlation ID
+        required: false
+        default: ""
+        type: string
+      deployment_id:
+        description: Deployment ID
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+  workflows: write
+
+env:
+  FACTORY_GITHUB_USER: FREDYASARMIENTOT
+  FACTORY_SKIP_AZURE: "true"
+
+jobs:
+  validate:
+    name: Validar Entradas
+    runs-on: ubuntu-latest
+    outputs:
+      project_name: ${{ steps.validate.outputs.project_name }}
+      correlation_id: ${{ steps.validate.outputs.correlation_id }}
+      deployment_id: ${{ steps.validate.outputs.deployment_id }}
+      valid: ${{ steps.validate.outputs.valid }}
+    steps:
+      - name: Validate Inputs
+        id: validate
+        shell: bash
+        run: |
+          PROJ="${{ inputs.project_name }}"
+          CID="${{ inputs.correlation_id }}"
+          DID="${{ inputs.deployment_id }}"
+          if ! echo "${PROJ}" | grep -qP '^[a-z0-9-]{3,40}$'; then exit 1; fi
+          if [ -z "${CID}" ]; then CID="gha-$(date +%s)-${PROJ}"; fi
+          if [ -z "${DID}" ]; then DID="${CID}"; fi
+          echo "project_name=${PROJ}" >> $GITHUB_OUTPUT
+          echo "correlation_id=${CID}" >> $GITHUB_OUTPUT
+          echo "deployment_id=${DID}" >> $GITHUB_OUTPUT
+          echo "valid=true" >> $GITHUB_OUTPUT
+
+  factory:
+    name: Ejecutar Factory
+    runs-on: ubuntu-latest
+    needs: [validate]
+    outputs:
+      commit_sha: ${{ steps.capture-sha.outputs.commit_sha }}
+      repository: ${{ steps.capture-sha.outputs.repository }}
+      project_name: ${{ steps.capture-sha.outputs.project_name }}
+      correlation_id: ${{ steps.capture-sha.outputs.correlation_id }}
+      deployment_id: ${{ steps.capture-sha.outputs.deployment_id }}
+      factory_result: ${{ steps.factory-run.outputs.factory_result }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          path: hermes-enterprise
+
+      - name: Setup Workspace
+        shell: bash
+        run: mkdir -p "${{ github.workspace }}/workspace"
+
+      - name: Verify Tools
+        shell: bash
+        run: |
+          echo "pwsh: $(which pwsh || echo NOT-FOUND)"
+          echo "git: $(which git || echo NOT-FOUND)"
+          echo "gh: $(which gh || echo NOT-FOUND)"
+
+      - name: Install PowerShell 7
+        shell: bash
+        run: |
+          if ! which pwsh &>/dev/null; then
+            apt-get update -qq
+            apt-get install -y -qq wget apt-transport-https software-properties-common
+            wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+            dpkg -i packages-microsoft-prod.deb
+            apt-get update -qq
+            apt-get install -y -qq powershell
+          fi
+
+      - name: Configure Git
+        shell: bash
+        run: |
+          git config --global user.name "Hermes Enterprise Factory"
+          git config --global user.email "factory@hermes.enterprise"
+
+      - name: Auth GitHub CLI
+        shell: bash
+        run: gh auth status 2>&1 || echo AUTH-NOT-CONFIRMED
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Factory (SkipAzure)
+        id: factory-run
+        shell: pwsh
+        working-directory: ${{ github.workspace }}/hermes-enterprise
+        env:
+          GH_TOKEN: ${{ secrets.GH_PORTAL_HERMES_REPO_WRITE_TOKEN }}
+          HermesRoot: ${{ github.workspace }}/hermes-enterprise
+        run: |
+          $ErrorActionPreference = "Stop"
+          $p = "${{ needs.validate.outputs.project_name }}"
+          $w = "${{ github.workspace }}/workspace"
+          $g = "${{ env.FACTORY_GITHUB_USER }}"
+          & ".\tools\Crear-HermesProyecto.ps1" -NombreProyecto $p -WorkspaceRoot $w -GitHubUser $g -TriggerControlPlane -SkipAzure
+          if ($LASTEXITCODE -ne 0) { throw "Factory fallo" }
+          "factory_result=PASS" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Capture SHA
+        id: capture-sha
+        shell: bash
+        working-directory: ${{ github.workspace }}/workspace/${{ needs.validate.outputs.project_name }}
+        run: |
+          SHA=$(git rev-parse HEAD)
+          REPO="${{ env.FACTORY_GITHUB_USER }}/${{ needs.validate.outputs.project_name }}"
+          if ! echo "${SHA}" | grep -qP '^[0-9a-f]{40}$'; then echo "FAIL: SHA invalido"; exit 1; fi
+          if [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then echo "FAIL: SHA placeholder"; exit 1; fi
+          echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
+          echo "repository=${REPO}" >> $GITHUB_OUTPUT
+          echo "project_name=${{ needs.validate.outputs.project_name }}" >> $GITHUB_OUTPUT
+          echo "correlation_id=${{ needs.validate.outputs.correlation_id }}" >> $GITHUB_OUTPUT
+          echo "deployment_id=${{ needs.validate.outputs.deployment_id }}" >> $GITHUB_OUTPUT
+
+      - name: Verify SHA
+        if: always()
+        shell: bash
+        run: |
+          SHA="${{ steps.capture-sha.outputs.commit_sha }}"
+          if [ -z "${SHA}" ]; then echo "FAIL: SHA vacio"; exit 1; fi
+          if [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then echo "FAIL: SHA placeholder"; exit 1; fi
+          echo "OK: SHA integro y real"
+
+  verify:
+    name: Verificar Resultado
+    runs-on: ubuntu-latest
+    needs: [validate, factory]
+    if: always()
+    steps:
+      - name: Collect Results
+        shell: bash
+        run: |
+          FR="${{ needs.factory.outputs.factory_result }}"
+          SHA="${{ needs.factory.outputs.commit_sha }}"
+          REPO="${{ needs.factory.outputs.repository }}"
+          PROJ="${{ needs.factory.outputs.project_name }}"
+          CID="${{ needs.factory.outputs.correlation_id }}"
+          echo "=== Factory Runner Summary ==="
+          echo "Project: $PROJ  Repo: $REPO  SHA: $SHA  CID: $CID"
+          if [ "${FR}" != "PASS" ]; then echo "FAIL: Factory fallo"; exit 1; fi
+          if [ -z "${SHA}" ] || [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then echo "FAIL: SHA invalido"; exit 1; fi
+          echo "=== FACTORY RUNNER COMPLETADO ==="
+          echo "Control Plane disparado con SHA REAL: ${SHA}"

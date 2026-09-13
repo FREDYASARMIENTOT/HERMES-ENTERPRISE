@@ -27,13 +27,14 @@ param(
     [string]$GitHubUser = "FREDYASARMIENTOT",
     [int]$MaxAutocorrectionCycles = 5,
     [int]$MaxDeployRetries = 3,
-    [switch]$TriggerControlPlane = $false
+    [switch]$TriggerControlPlane = $false,
+    [switch]$SkipAzure = $false
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Continue"
 
-$HermesRoot = "d:\HERMES-ENTERPRISE"
+$HermesRoot = if ($env:HermesRoot) { $env:HermesRoot } elseif (Test-Path (Join-Path $PSScriptRoot ".." "config")) { (Resolve-Path (Join-Path $PSScriptRoot "..")).Path } else { "d:\HERMES-ENTERPRISE" }
 
 # Load unified module
 $modulePath = Join-Path $HermesRoot "tools\Modules\HermesProjectFactory.psm1"
@@ -204,7 +205,10 @@ try {
         Write-Warning "[OIDC] OIDC setup incomplete: $_"
     }
 
-    # ===== 12. Validate Infrastructure =====
+    # ===== 12. Validate Infrastructure (SKIP if SkipAzure) =====
+    $webApp = $null
+    $smokeResult = $null
+    if (-not $SkipAzure) {
     Write-Step "Guardian" "START" "Validating infrastructure protection"
     $guardianState = Test-GuardianRestrictions -ConfigPath $GuardianConfigPath
     Assert-ProyectoSafeToProceed -Operation "CreateWebApp" -GuardianState $guardianState | Out-Null
@@ -281,6 +285,7 @@ try {
         Write-Step "Autocorrection" "$($smokeResult.OverallStatus)" "$($smokeResult.Passed)/$($smokeResult.Total) after correction"
     }
     $Metadata.AutoCorrections = $TotalCorrections
+    }
 
     # ===== 19. Update SQLite =====
     Write-Step "SQLiteUpdate" "START" "Updating SQLite with final state"
@@ -300,7 +305,8 @@ try {
     Write-Step "Reports" "START" "Generating reports"
     $totalTime = [math]::Round(((Get-Date)-$StartTime).TotalSeconds,2)
     $Metadata.TotalTime = $totalTime
-    $Metadata.OverallStatus = if($smokeResult.OverallStatus -eq "PASS"){"OK"}else{"FAIL"}
+    $overallStatus = if ($smokeResult -and $smokeResult.OverallStatus -eq "PASS") { "OK" } else { "OK-SkipAzure" }
+    $Metadata.OverallStatus = $overallStatus
     $Metadata.CIStatus = "OK"
     $Metadata.TotalDeploys = $TotalDeploys
     $Metadata.TotalCommits = $TotalCommits
@@ -312,18 +318,10 @@ try {
 
     # ===== 23. Generate Deployment Report JSON =====
     Write-Step "DeployReport" "START" "Generating deployment report"
-    $deployReport = @{
-        project = $NombreProyecto
-        app_service = $WebAppName
-        resource_group = $azureConfig.resourceGroup
-        region = $azureConfig.location
-        runtime = "Python 3.12"
-        deployment = $TotalDeploys.ToString()
-        commit = (Obtener-EstadoGitProyecto -ProjectDir $ProjRoot).CommitHash
-        url = $webApp.Url
-        timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
-        status = $(if($smokeResult.OverallStatus -eq "PASS"){"PASS"}else{"FAIL"})
-        tests = $smokeResult.Endpoints | ForEach-Object {
+    $deployReportUrl = if ($webApp) { $webApp.Url } else { "https://github.com/$GitHubUser/$NombreProyecto" }
+    $deployReportStatus = if ($smokeResult -and $smokeResult.OverallStatus -eq "PASS") { "PASS" } elseif ($SkipAzure) { "FACTORY_OK" } else { "FAIL" }
+    $deployReportTests = if ($smokeResult) {
+        $smokeResult.Endpoints | ForEach-Object {
             @{
                 endpoint = $_.Endpoint
                 http_code = $_.HTTPCode
@@ -331,14 +329,36 @@ try {
                 time_s = $_.TiempoRespuesta
             }
         }
+    } else {
+        @(@{ endpoint = "Factory"; http_code = 0; status = "SKIP_AZURE"; time_s = 0 })
+    }
+    $deployReport = @{
+        project = $NombreProyecto
+        app_service = if ($webApp) { $WebAppName } else { "N/A (SkipAzure)" }
+        resource_group = if ($azureConfig) { $azureConfig.resourceGroup } else { "N/A" }
+        region = if ($azureConfig) { $azureConfig.location } else { "N/A" }
+        runtime = "Python 3.12"
+        deployment = $TotalDeploys.ToString()
+        commit = (Obtener-EstadoGitProyecto -ProjectDir $ProjRoot).CommitHash
+        url = $deployReportUrl
+        timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+        status = $deployReportStatus
+        tests = $deployReportTests
     } | ConvertTo-Json -Depth 4
     $deployReportPath = Join-Path $ProjRoot "deployment-report.json"
     $deployReport | Out-File -FilePath $deployReportPath -Encoding UTF8 -Force
     Write-Step "DeployReport" "OK" "Saved to $deployReportPath"
 
     # ===== 24. Open URL =====
-    Write-Step "Browser" "OK" "Opening $($webApp.Url)"
-    Start-Process $webApp.Url
+    if (-not $SkipAzure) {
+        Write-Step "Browser" "OK" "Opening $($webApp.Url)"
+        try { Start-Process $webApp.Url } catch { Write-Step "Browser" "WARN" "Cannot open browser (no disponible en Linux)" }
+    } else {
+        Write-Step "Azure" "SKIP" "SkipAzure activo — Control Plane manejara deploy"
+        Write-Step "WebApp" "SKIP" "No se crea WebApp en Factory"
+        Write-Step "Deploy" "SKIP" "Control Plane hara ZIP Deploy"
+        Write-Step "SmokeTest" "SKIP" "Control Plane ejecutara smoke tests"
+    }
 
     # ===== 26. Git Status Clean =====
     Write-Step "GitStatus" "START" "Verifying Git status"
@@ -400,31 +420,53 @@ try {
     Finalizar-RegistroImplementacion -Registro $RegistroImpl -Estado "COMPLETADO"
     Persistir-RegistroImplementacion -Registro $RegistroImpl
 
-    # -- Success banner --
-    Write-Host "`n$(('='*60))" -ForegroundColor Cyan
-    Write-Host "    HERMES ENTERPRISE — DEPLOYMENT COMPLETE" -ForegroundColor Cyan
-    Write-Host "$(('='*60))" -ForegroundColor Cyan
-    Write-Host " Proyecto     : $NombreProyecto" -ForegroundColor White
-    Write-Host " App Service  : $WebAppName" -ForegroundColor White
-    Write-Host " Frontend     : $($webApp.Url)/" -ForegroundColor Green
-    Write-Host " FastAPI      : $($webApp.Url)/health" -ForegroundColor Green
-    Write-Host " Swagger      : $($webApp.Url)/swagger" -ForegroundColor Green
-    Write-Host " OpenAPI      : $($webApp.Url)/openapi.json" -ForegroundColor Green
-    Write-Host " Version      : $($webApp.Url)/api/version" -ForegroundColor Green
-    Write-Host " Proyecto     : $($webApp.Url)/api/proyecto" -ForegroundColor Green
-    Write-Host "$(('='*60))" -ForegroundColor Cyan
-    Write-Host " CID          : $CorrelationId" -ForegroundColor Yellow
-    Write-Host " Time         : ${totalTime}s" -ForegroundColor Yellow
-    Write-Host " Tests        : $($smokeResult.Passed)/$($smokeResult.Total) passed" -ForegroundColor $(if($smokeResult.OverallStatus -eq "PASS"){"Green"}else{"Red"})
-    Write-Host " Corrections  : $TotalCorrections" -ForegroundColor Yellow
-    Write-Host " Commits      : $TotalCommits" -ForegroundColor Yellow
-    Write-Host " Deploys      : $TotalDeploys" -ForegroundColor Yellow
-    Write-Host " Git          : Working tree clean" -ForegroundColor Yellow
-    Write-Host " SHA          : $commitSha" -ForegroundColor Yellow
-    Write-Host " Repo         : $repoName" -ForegroundColor Yellow
-    Write-Host "$(('='*60))" -ForegroundColor Cyan
-    Write-Host " Navegador abierto: $($webApp.Url)/" -ForegroundColor Green
-    Write-Host "$(('='*60))`n" -ForegroundColor Cyan
+    # -- Success banner (adaptado para SkipAzure y modo normal) --
+    if ($SkipAzure) {
+        Write-Host "`n$(('='*60))" -ForegroundColor Cyan
+        Write-Host "    FACTORY RUNNER — REPOSITORIO CREADO + SHA CAPTURADO" -ForegroundColor Cyan
+        Write-Host "$(('='*60))" -ForegroundColor Cyan
+        Write-Host " Proyecto     : $NombreProyecto" -ForegroundColor White
+        Write-Host " Repositorio  : $repoName" -ForegroundColor Green
+        Write-Host " SHA          : $commitSha" -ForegroundColor Green
+        Write-Host "$(('='*60))" -ForegroundColor Cyan
+        Write-Host " CID          : $CorrelationId" -ForegroundColor Yellow
+        Write-Host " Time         : ${totalTime}s" -ForegroundColor Yellow
+        Write-Host " Commits      : $TotalCommits" -ForegroundColor Yellow
+        Write-Host " Git          : Working tree clean" -ForegroundColor Yellow
+        Write-Host " SkipAzure    : true (Control Plane hara deploy)" -ForegroundColor Yellow
+        Write-Host " ControlPlane : $(if($TriggerControlPlane){'DISPARADO'}else{'NO'})" -ForegroundColor Yellow
+        Write-Host "$(('='*60))" -ForegroundColor Cyan
+    } else {
+        $webAppUrl = if ($webApp) { $webApp.Url } else { "https://$WebAppName.azurewebsites.net" }
+        $smokePassed = if ($smokeResult) { $smokeResult.Passed } else { 0 }
+        $smokeTotal = if ($smokeResult) { $smokeResult.Total } else { 0 }
+        $smokeStatus = if ($smokeResult -and $smokeResult.OverallStatus -eq "PASS") { "Green" } else { "Red" }
+
+        Write-Host "`n$(('='*60))" -ForegroundColor Cyan
+        Write-Host "    HERMES ENTERPRISE — DEPLOYMENT COMPLETE" -ForegroundColor Cyan
+        Write-Host "$(('='*60))" -ForegroundColor Cyan
+        Write-Host " Proyecto     : $NombreProyecto" -ForegroundColor White
+        Write-Host " App Service  : $WebAppName" -ForegroundColor White
+        Write-Host " Frontend     : ${webAppUrl}/" -ForegroundColor Green
+        Write-Host " FastAPI      : ${webAppUrl}/health" -ForegroundColor Green
+        Write-Host " Swagger      : ${webAppUrl}/swagger" -ForegroundColor Green
+        Write-Host " OpenAPI      : ${webAppUrl}/openapi.json" -ForegroundColor Green
+        Write-Host " Version      : ${webAppUrl}/api/version" -ForegroundColor Green
+        Write-Host " Proyecto     : ${webAppUrl}/api/proyecto" -ForegroundColor Green
+        Write-Host "$(('='*60))" -ForegroundColor Cyan
+        Write-Host " CID          : $CorrelationId" -ForegroundColor Yellow
+        Write-Host " Time         : ${totalTime}s" -ForegroundColor Yellow
+        Write-Host " Tests        : ${smokePassed}/${smokeTotal} passed" -ForegroundColor $smokeStatus
+        Write-Host " Corrections  : $TotalCorrections" -ForegroundColor Yellow
+        Write-Host " Commits      : $TotalCommits" -ForegroundColor Yellow
+        Write-Host " Deploys      : $TotalDeploys" -ForegroundColor Yellow
+        Write-Host " Git          : Working tree clean" -ForegroundColor Yellow
+        Write-Host " SHA          : $commitSha" -ForegroundColor Yellow
+        Write-Host " Repo         : $repoName" -ForegroundColor Yellow
+        Write-Host "$(('='*60))" -ForegroundColor Cyan
+        Write-Host " Navegador abierto: ${webAppUrl}/" -ForegroundColor Green
+        Write-Host "$(('='*60))`n" -ForegroundColor Cyan
+    }
 
 } catch {
     Write-Host "`n[RC74-C] PIPELINE FAILED" -ForegroundColor Red

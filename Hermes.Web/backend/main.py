@@ -219,7 +219,17 @@ def obtener_ruta_raiz_hermes() -> Path:
 RUTA_HERMES: Path = obtener_ruta_raiz_hermes()
 RUTA_CONFIG: Path = RUTA_HERMES / "config"
 RUTA_HERMES_WEB: Path = RUTA_HERMES / "Hermes.Web"
-RUTA_TEMPLATES: Path = RUTA_HERMES_WEB / "templates"
+
+# RC94.40: RUTA_TEMPLATES se resuelve primero relativo al archivo actual (backend/main.py)
+# para soportar deployment Azure donde Hermes.Web/ es el root del ZIP.
+_RUTA_DESDE_MAIN: Path = Path(__file__).resolve().parent.parent / "templates"
+if _RUTA_DESDE_MAIN.exists():
+    RUTA_TEMPLATES: Path = _RUTA_DESDE_MAIN
+    logger.info(f"RUTA_TEMPLATES resuelta desde ubicacion de main.py: {RUTA_TEMPLATES}")
+else:
+    RUTA_TEMPLATES: Path = RUTA_HERMES_WEB / "templates"
+    logger.info(f"RUTA_TEMPLATES resuelta desde RUTA_HERMES_WEB: {RUTA_TEMPLATES}")
+
 RUTA_STATIC: Path = RUTA_HERMES_WEB / "static"
 RUTA_MOTOR: Path = RUTA_HERMES / "motor"
 RUTA_MODULO_COMMANDS: Path = RUTA_MOTOR / "kernel" / "Module" / "Hermes.Commands"

@@ -47,7 +47,7 @@ ESTADOS_PROYECTO = [
 # 13 pasos canónicos del flujo Factory -> GitHub -> Control Plane -> Azure
 PASOS_CANONICOS = [
     {"numero": 1,  "nombre": "SOLICITUD",       "descripcion": "Registro de solicitud de proyecto"},
-    {"numero": 2,  "nombre": "FACTORY",         "descripcion": "Ejecución de Factory local"},
+    {"numero": 2,  "nombre": "FACTORY",         "descripcion": "Disparo de Factory Runner remoto (GitHub Actions)"},
     {"numero": 3,  "nombre": "GITHUB",          "descripcion": "Creación de repositorio y push"},
     {"numero": 4,  "nombre": "CI CHILD",        "descripcion": "GitHub Actions CI del Child"},
     {"numero": 5,  "nombre": "CONTROL PLANE",   "descripcion": "Orquestación de despliegue"},

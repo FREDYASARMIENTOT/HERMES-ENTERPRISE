@@ -134,6 +134,13 @@ jobs:
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --settings "HERMES_DB_PATH=/home/data/proyecto.db"
+          echo "=== Setting HERMES_GITHUB_TOKEN for Factory Runner dispatch ==="
+          echo "=== Source: GH_PORTAL_HERMES_REPO_WRITE_TOKEN (GitHub Secret) ==="
+          echo "=== Security: value NEVER printed, NEVER stored in code ==="
+          az webapp config appsettings set \
+            --name "${{ env.APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --settings "HERMES_GITHUB_TOKEN=${{ secrets.GH_PORTAL_HERMES_REPO_WRITE_TOKEN }}"
           echo "=== Metadata: creating /home/data/ via startup.sh ==="
           echo "=== Setting startup command BEFORE deploy ==="
           echo "Target: deployment/startup.sh"

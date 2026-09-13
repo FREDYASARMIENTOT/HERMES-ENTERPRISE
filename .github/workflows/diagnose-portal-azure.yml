@@ -1,0 +1,140 @@
+# ====================================================================
+# DIAGNOSE PORTAL AZURE — Workflow temporal de diagnóstico
+# ====================================================================
+# Propósito: Obtener evidencia del runtime de AS-HermesPortal
+#             usando el mismo mecanismo OIDC del despliegue productivo.
+# ====================================================================
+# NO modifica:
+#   - main.py, startup.sh, requirements.txt
+#   - portal-ci-cd.yml, OIDC, FIC, RBAC
+#   - AS-HermesEnterprise, ASP-IAUR, proyectos hijos
+# ====================================================================
+# Trigger: SOLO workflow_dispatch (manual)
+# ====================================================================
+
+name: Diagnose Portal Azure
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      correlationId:
+        description: 'Correlation ID for tracking'
+        required: false
+        default: 'diagnose'
+        type: string
+
+env:
+  APP_NAME: as-hermesportal
+  RESOURCE_GROUP: RG-Hermes-Proyectos
+  CORRELATION_ID: ${{ inputs.correlationId || github.sha }}
+
+jobs:
+  diagnose:
+    name: Diagnose Azure Runtime
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "[1/7] Verify OIDC Auth"
+        run: |
+          echo "=== Azure Authentication ==="
+          az account show --query "{name:name,id:id,tenantId:tenantId,user:user.name}" -o json
+          echo "OK: OIDC authentication successful"
+
+      - name: "[2/7] App Service State"
+        run: |
+          echo "=== App Service Show ==="
+          az webapp show \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "{state:state,defaultHostName:defaultHostName,serverFarmId:serverFarmId,kind:kind,linuxFxVersion:siteConfig.linuxFxVersion,appCommandLine:siteConfig.appCommandLine}" \
+            -o json
+
+          echo ""
+          echo "=== App Service Config ==="
+          az webapp config show \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "{linuxFxVersion:linuxFxVersion,appCommandLine:appCommandLine,alwaysOn:alwaysOn,pythonVersion:pythonVersion}" \
+            -o json
+
+      - name: "[3/7] App Settings (SCM_DO_BUILD only)"
+        run: |
+          echo "=== App Settings: SCM_DO_BUILD_DURING_DEPLOYMENT ==="
+          az webapp config appsettings list \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "[?name=='SCM_DO_BUILD_DURING_DEPLOYMENT']" \
+            -o json
+
+      - name: "[4/7] Deployment List"
+        run: |
+          echo "=== Deployment List (last 5) ==="
+          az webapp deployment list \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "[0:5].{id:id,status:status,author:author,deployer:deployer,endTime:endTime,active:active}" \
+            -o json 2>&1 || echo "COMMAND NOT AVAILABLE in this CLI version"
+
+      - name: "[5/7] Deployment Log"
+        run: |
+          echo "=== Deployment Log ==="
+          az webapp log deployment show \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            -o json 2>&1 || echo "COMMAND NOT AVAILABLE in this CLI version"
+
+      - name: "[6/7] Startup Log (PRIORITY)"
+        continue-on-error: true
+        run: |
+          echo "=== Startup Log ==="
+          az webapp log startup show \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            2>&1 || echo "COMMAND NOT AVAILABLE in this CLI version"
+
+      - name: "[7/7] HTTP Health Check"
+        run: |
+          echo "=== HTTP Health Check ==="
+          URL="https://${{ env.APP_NAME }}.azurewebsites.net"
+          echo "Testing: ${URL}/health"
+          HTTP_CODE=$(curl -s --connect-timeout 15 --max-time 20 -o /tmp/health_response.txt -w "%{http_code}" "${URL}/health" 2>/dev/null || echo "000")
+          echo "HTTP Status: ${HTTP_CODE}"
+          if [ -f /tmp/health_response.txt ]; then
+            echo "--- Response ---"
+            cat /tmp/health_response.txt | head -100
+            echo "---"
+          fi
+          echo ""
+          echo "Testing: ${URL}/"
+          HTTP_CODE_ROOT=$(curl -s --connect-timeout 15 --max-time 20 -o /tmp/root_response.txt -w "%{http_code}" "${URL}/" 2>/dev/null || echo "000")
+          echo "HTTP Status: ${HTTP_CODE_ROOT}"
+          if [ -f /tmp/root_response.txt ]; then
+            echo "--- Response (first 200 chars) ---"
+            head -c 200 /tmp/root_response.txt
+            echo ""
+            echo "---"
+          fi
+
+      - name: Summary
+        run: |
+          echo "========================================"
+          echo "DIAGNOSIS COMPLETE — ${{ env.CORRELATION_ID }}"
+          echo "========================================"
+          echo "Review all outputs above for evidence."
+          echo "No code was modified."
+          echo "No deployment was triggered."
+          echo "========================================"

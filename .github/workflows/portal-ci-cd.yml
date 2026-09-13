@@ -45,7 +45,7 @@ jobs:
           echo "Target: ${APP_NAME}.azurewebsites.net"
           test -f Hermes.Web/backend/main.py && echo "OK: main.py"
           test -f Hermes.Web/deployment/startup.sh && echo "OK: startup.sh"
-          test -f requirements.txt && echo "OK: requirements.txt"
+          test -f Hermes.Web/requirements.txt && echo "OK: requirements.txt (Hermes.Web/)"
           echo "Validation complete"
 
   build:
@@ -76,18 +76,21 @@ jobs:
           print('All dependencies OK')
           "
 
-      - name: Validate Portal entrypoint
+      - name: Validate Portal entrypoint (backend.main:app)
         run: |
+          # Probar entrypoint definitivo desde Hermes.Web/
+          # Este es el mismo que usará Azure en producción
+          cd Hermes.Web
           python -c "
           import sys, os
           sys.path.insert(0, os.getcwd())
-          from Hermes.Web.backend.main import app
+          from backend.main import app
           print(f'Portal FastAPI app: {app.title}')
           print(f'Routes: {len(app.routes)}')
           routes = [r.path for r in app.routes if hasattr(r, 'path')]
           assert '/' in routes, 'Missing /'
           assert '/health' in routes, 'Missing /health'
-          print('Portal entrypoint validated')
+          print('Portal entrypoint validated (backend.main:app)')
           " 2>&1
   deploy:
     name: Deploy to Azure
@@ -110,14 +113,18 @@ jobs:
         run: |
           ZIP_FILE="/tmp/portal-deploy-${{ github.sha }}.zip"
           echo "=== Creating deployment package ==="
-          # 1. Package Hermes.Web/ (runtime) + root requirements.txt
-          # 2. Include bootstrap_portal.py at root level for uvicorn import
-          #    (bootstrap resolves the Hermes.Web dotted-directory issue)
-          cp Hermes.Web/deployment/bootstrap_portal.py bootstrap_portal.py
-          zip -r "$ZIP_FILE" Hermes.Web/ -x '__pycache__/*' '.venv/*' '*.pyc'
-          zip -j "$ZIP_FILE" requirements.txt
-          zip "$ZIP_FILE" bootstrap_portal.py
-          rm -f bootstrap_portal.py
+          # RC93: ZIP root = contenido de Hermes.Web/
+          #   backend/      ← Hermes.Web/backend/
+          #   api/          ← Hermes.Web/api/
+          #   middleware/   ← Hermes.Web/middleware/
+          #   templates/    ← Hermes.Web/templates/
+          #   data/         ← Hermes.Web/data/
+          #   requirements.txt  ← Hermes.Web/requirements.txt
+          #   deployment/startup.sh
+          cd Hermes.Web
+          zip -r "$ZIP_FILE" . \
+            -x '__pycache__/*' '.venv/*' '*.pyc'
+          cd ..
           echo "Package contents:"
           unzip -l "$ZIP_FILE" | head -40
           echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
@@ -136,9 +143,9 @@ jobs:
           echo "=== Verifying startup configuration ==="
           CMD=$(az webapp show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "siteConfig.appCommandLine" -o tsv)
           echo "Startup command: ${CMD}"
-          if [ "${CMD}" != "Hermes.Web/deployment/startup.sh" ]; then
+          if [ "${CMD}" != "deployment/startup.sh" ]; then
             echo "Setting startup command..."
-            az webapp config set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --startup-file "Hermes.Web/deployment/startup.sh"
+            az webapp config set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --startup-file "deployment/startup.sh"
           fi
 
   smoketest:

@@ -72,8 +72,19 @@ class HermesWebFinder(importlib.abc.MetaPathFinder):
     def __init__(self, hermes_web_dir: Path):
         self._hermes_web_dir = hermes_web_dir
         self._hermes_web_str = "Hermes.Web"
+        self._root_package = self._hermes_web_str.split('.')[0]  # "Hermes"
     
     def find_spec(self, fullname, path=None, target=None):
+        # Si es el paquete raiz "Hermes", crear namespace virtual
+        # Esto permite que Python resuelva Hermes.Web.xxx aunque
+        # el directorio Hermes/ no exista en el filesystem (Azure)
+        if fullname == self._root_package:
+            spec = importlib.machinery.ModuleSpec(
+                fullname, None, is_package=True
+            )
+            spec.submodule_search_locations = [str(self._hermes_web_dir)]
+            return spec
+        
         # Solo procesar fullnames que comiencen con Hermes.Web
         if fullname == self._hermes_web_str:
             # El paquete raiz Hermes.Web

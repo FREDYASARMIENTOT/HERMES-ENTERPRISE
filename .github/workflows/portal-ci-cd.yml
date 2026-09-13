@@ -253,7 +253,7 @@ jobs:
 
           echo "--- [Root Page] ---"
           ROOT=$(curl -s --connect-timeout 10 --max-time 15 "$URL/")
-          echo "$ROOT" | grep -qi "Hermes" && pass "Root: Hermes content" || fail "Root: missing Hermes"
+          grep -qi "Portal Web Canónico" <<< "$ROOT" && pass "Root: canonical frontend" || fail "Root: missing canonical frontend"
 
           echo "--- [Swagger] ---"
           CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL/swagger")

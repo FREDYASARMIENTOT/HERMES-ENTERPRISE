@@ -103,7 +103,7 @@ _diag ls -la
 _diag ls -la backend/
 _diag ls -la deployment/
 _diag ls -la templates/ 2>/dev/null
-_diag ls -la static/ 2>/dev/null
+_diag_info ls -la static/ 2>/dev/null
 _diag_info find . -maxdepth 2 -type f -name '*.py' 2>/dev/null | head -20
 
 # ─── [5] PYTHON RUNTIME INFO ──────────────────────────────────────

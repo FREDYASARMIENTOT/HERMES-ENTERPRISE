@@ -196,8 +196,14 @@ echo "========================================="
 # 1. Ir a /home/site/wwwroot (raíz de la app)
 cd /home/site/wwwroot
 
-# 2. Validaciones rápidas
-echo "[1/3] Validando estructura..."
+# 2. Create writable data directory for SQLite (if HERMES_DB_PATH is used)
+echo "[1.5/3] Ensuring writable data directory..."
+mkdir -p /home/data 2>/dev/null || true
+test -d /home/data && echo "  OK: /home/data exists" || echo "  WARN: /home/data"
+ls -la /home/data/
+
+# 3. Validaciones rápidas
+echo "[2/3] Validando estructura..."
 test -f backend/main.py && echo "  OK: backend/main.py" || echo "  FAIL: backend/main.py"
 test -f requirements.txt && echo "  OK: requirements.txt" || echo "  FAIL: requirements.txt"
 echo "pwd: $(pwd)"
@@ -207,7 +213,7 @@ echo "backend/:"
 ls -la backend/
 
 # 3. Verificar dependencias (preinstaladas por Oryx durante build phase)
-echo "[2/3] Verificando dependencias..."
+echo "[3/3] Verificando dependencias..."
 python3 -c "
 import fastapi; print(f'  FastAPI: {fastapi.__version__}')
 import uvicorn; print(f'  Uvicorn: OK')
@@ -216,7 +222,7 @@ print('  Dependencias OK')
 " 2>&1
 
 # 4. Iniciar Uvicorn (proceso único — sin --workers)
-echo "[3/3] Iniciando servidor..."
+echo "[4/4] Iniciando servidor..."
 echo "Host: 0.0.0.0 | Puerto: ${PORT:-8000}"
 echo "Module: backend.main:app"
 echo "========================================="

@@ -129,6 +129,12 @@ jobs:
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false"
+          echo "=== Setting HERMES_DB_PATH to writable /home/data/proyecto.db ==="
+          az webapp config appsettings set \
+            --name "${{ env.APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --settings "HERMES_DB_PATH=/home/data/proyecto.db"
+          echo "=== Metadata: creating /home/data/ via startup.sh ==="
           echo "=== Setting startup command BEFORE deploy ==="
           echo "Target: deployment/startup.sh"
           echo "Current: $(az webapp show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "siteConfig.appCommandLine" -o tsv)"

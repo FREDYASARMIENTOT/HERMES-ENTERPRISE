@@ -27,18 +27,21 @@ on:
         default: 'diagnose'
         type: string
       mode:
-        description: 'Diagnostic mode: readonly (no restart) or recovery (stop/start)'
+        description: 'Diagnostic mode'
         required: false
         default: 'readonly'
         type: choice
         options:
           - readonly
           - recovery
+          - evidence
 
 env:
   APP_NAME: as-hermesportal
   RESOURCE_GROUP: RG-Hermes-Proyectos
   CORRELATION_ID: ${{ inputs.correlationId || github.sha }}
+  EVIDENCE_DIR: /tmp/evidence
+  DEPLOY_TS: '2026-09-13 17:03 UTC'
 
 jobs:
   diagnose:
@@ -64,12 +67,12 @@ jobs:
 
       - name: "[2/7] App Service State"
         run: |
+          mkdir -p ${{ env.EVIDENCE_DIR }}
           echo "=== App Service Show ==="
           az webapp show \
             --name ${{ env.APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --query "{state:state,defaultHostName:defaultHostName,serverFarmId:serverFarmId,kind:kind,linuxFxVersion:siteConfig.linuxFxVersion,appCommandLine:siteConfig.appCommandLine}" \
-            -o json
+            -o json 2>&1 | tee ${{ env.EVIDENCE_DIR }}/01-appservice.json
 
           echo ""
           echo "=== App Service Config ==="
@@ -118,25 +121,411 @@ jobs:
         run: |
           echo "=== HTTP Health Check ==="
           URL="https://${{ env.APP_NAME }}.azurewebsites.net"
-          echo "Testing: ${URL}/health"
-          HTTP_CODE=$(curl -s --connect-timeout 15 --max-time 20 -o /tmp/health_response.txt -w "%{http_code}" "${URL}/health" 2>/dev/null || echo "000")
-          echo "HTTP Status: ${HTTP_CODE}"
-          if [ -f /tmp/health_response.txt ]; then
-            echo "--- Response ---"
-            cat /tmp/health_response.txt | head -100
-            echo "---"
-          fi
-          echo ""
-          echo "Testing: ${URL}/"
-          HTTP_CODE_ROOT=$(curl -s --connect-timeout 15 --max-time 20 -o /tmp/root_response.txt -w "%{http_code}" "${URL}/" 2>/dev/null || echo "000")
-          echo "HTTP Status: ${HTTP_CODE_ROOT}"
-          if [ -f /tmp/root_response.txt ]; then
-            echo "--- Response (first 200 chars) ---"
-            head -c 200 /tmp/root_response.txt
+
+          for endpoint in "/health" "/" "/openapi.json" "/docs"; do
             echo ""
-            echo "---"
+            echo "Testing: ${URL}${endpoint}"
+            START_TS=$(date -u +%s)
+            HTTP_CODE=$(curl -s --connect-timeout 15 --max-time 20 -o /tmp/http_response.txt -w "%{http_code}" "${URL}${endpoint}" 2>/dev/null || echo "000")
+            END_TS=$(date -u +%s)
+            DURATION=$((END_TS - START_TS))
+            echo "HTTP Status: ${HTTP_CODE} (${DURATION}s)"
+            if [ -f /tmp/http_response.txt ]; then
+              RESP_SIZE=$(wc -c < /tmp/http_response.txt 2>/dev/null || echo "0")
+              echo "Response size: ${RESP_SIZE} bytes"
+              echo "--- Response (first 200 chars) ---"
+              head -c 200 /tmp/http_response.txt
+              echo ""
+              echo "---"
+            fi
+            # Save to evidence
+            echo "Endpoint: ${endpoint}" >> ${{ env.EVIDENCE_DIR }}/06-http.txt
+            echo "HTTP Status: ${HTTP_CODE} (${DURATION}s)" >> ${{ env.EVIDENCE_DIR }}/06-http.txt
+            echo "---" >> ${{ env.EVIDENCE_DIR }}/06-http.txt
+          done
+
+      # ====================================================================
+      # EVIDENCE MODE — Captura fresca de runtime autenticado a Kudu
+      # ====================================================================
+      - name: "[E1/9] EVIDENCE: Get Publishing Credentials"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== COMMAND: az webapp deployment list-publishing-credentials ==="
+          echo "Target: ${{ env.APP_NAME }} / ${{ env.RESOURCE_GROUP }}"
+          echo "Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          echo "---"
+          CRED_JSON=$(az webapp deployment list-publishing-credentials \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            -o json 2>&1)
+          EXIT_CODE=$?
+          echo "EXIT_CODE: ${EXIT_CODE}"
+          if [ "${EXIT_CODE}" -eq 0 ] && [ -n "${CRED_JSON}" ]; then
+            echo "$CRED_JSON" | python3 -c "import json,sys; d=json.load(sys.stdin); print('publishingUserName:', d.get('publishingUserName','N/A')[:8]+'...'); print('publishingPassword:', '[REDACTED]'); print('scmUri:', d.get('scmUri','N/A'))" 2>/dev/null || echo "$CRED_JSON" | head -5
+            echo "$CRED_JSON" > /tmp/kudu_creds.json
+            echo "USERNAME=$(echo "$CRED_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['publishingUserName'])" 2>/dev/null)" >> /tmp/kudu_env.sh
+            echo "PASSWORD=$(echo "$CRED_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['publishingPassword'])" 2>/dev/null)" >> /tmp/kudu_env.sh
+            echo "KUDU_URL=https://${{ env.APP_NAME }}.scm.azurewebsites.net" >> /tmp/kudu_env.sh
+            chmod +x /tmp/kudu_env.sh
+            echo "CREDENTIALS_OBTAINED=true"
+          else
+            echo "CREDENTIALS_OBTAINED=false"
+            echo "Error output: ${CRED_JSON}"
+          fi
+          echo "---"
+
+      - name: "[E2/9] EVIDENCE: Download & Parse All Logs"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== COMMAND: az webapp log download ==="
+          echo "Target: ${{ env.APP_NAME }} / ${{ env.RESOURCE_GROUP }}"
+          echo "Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          echo "---"
+          LOG_DIR="${{ env.EVIDENCE_DIR }}/logs"
+          mkdir -p "$LOG_DIR"
+          ZIP_PATH="$LOG_DIR/all_logs.zip"
+          az webapp log download \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --log-file "$ZIP_PATH" 2>&1
+          EXIT_CODE=$?
+          echo "EXIT_CODE: ${EXIT_CODE}"
+          echo "---"
+          if [ -f "$ZIP_PATH" ] && [ -s "$ZIP_PATH" ]; then
+            ZIP_SIZE=$(stat --format=%s "$ZIP_PATH" 2>/dev/null || wc -c < "$ZIP_PATH" 2>/dev/null)
+            echo "ZIP_SIZE: ${ZIP_SIZE} bytes"
+            unzip -o "$ZIP_PATH" -d "$LOG_DIR" 2>/dev/null || true
+            echo ""
+            echo "=== ALL FILES EXTRACTED ==="
+            find "$LOG_DIR" -type f \( -name "*.log" -o -name "*.txt" -o -name "*.json" \) 2>/dev/null | sort | while read f; do
+              FNAME=$(basename "$f")
+              FSIZE=$(stat --format=%s "$f" 2>/dev/null || wc -c < "$f" 2>/dev/null)
+              FIRST_TS=$(head -5 "$f" 2>/dev/null | grep -oP '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' | head -1 || echo "N/A")
+              LAST_TS=$(tail -5 "$f" 2>/dev/null | grep -oP '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' | tail -1 || echo "N/A")
+              echo "  ${FNAME} | size=${FSIZE} | first=${FIRST_TS} | last=${LAST_TS}"
+            done
+            echo ""
+            echo "=== FILE LISTING (raw) ==="
+            find "$LOG_DIR" -type f 2>/dev/null | sort | while read f; do
+              echo "  $(stat --format='%s %y' "$f" 2>/dev/null || echo "?") $(basename "$f")"
+            done
+          else
+            echo "LOG_DOWNLOAD_FAILED=true"
+            echo "No ZIP produced or ZIP is empty"
+          fi
+          echo "---"
+
+      - name: "[E3/9] EVIDENCE: Filter Logs by Timestamp"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== FILTERING LOGS POST-DEPLOYMENT ==="
+          echo "Deployment timestamp: ${{ env.DEPLOY_TS }}"
+          echo "Cutoff: 2026-09-13T17:03:00"
+          echo "---"
+          LOG_DIR="${{ env.EVIDENCE_DIR }}/logs"
+          FRESH_DIR="${{ env.EVIDENCE_DIR }}/logs_fresh"
+          HIST_DIR="${{ env.EVIDENCE_DIR }}/logs_historical"
+          mkdir -p "$FRESH_DIR" "$HIST_DIR"
+
+          CUTOFF_EPOCH=$(date -d '2026-09-13T17:03:00Z' +%s 2>/dev/null || echo "0")
+
+          find "$LOG_DIR" -type f 2>/dev/null | while read f; do
+            REL_PATH="${f#$LOG_DIR/}"
+            CLASSIFIED="false"
+            LATEST_TS=$(tail -100 "$f" 2>/dev/null | grep -oP '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' | tail -1 || echo "")
+            if [ -n "$LATEST_TS" ]; then
+              FILE_EPOCH=$(date -d "$(echo $LATEST_TS | tr 'T' ' ' | cut -d'.' -f1)Z" +%s 2>/dev/null || echo "0")
+              if [ "$FILE_EPOCH" -gt "$CUTOFF_EPOCH" ] 2>/dev/null; then
+                cp "$f" "$FRESH_DIR/" 2>/dev/null
+                echo "  FRESH:  ${REL_PATH} (latest: ${LATEST_TS})"
+                CLASSIFIED="true"
+              fi
+            fi
+            if [ "$CLASSIFIED" != "true" ]; then
+              cp "$f" "$HIST_DIR/" 2>/dev/null
+              echo "  HIST:   ${REL_PATH} (latest: ${LATEST_TS:-N/A})"
+            fi
+          done
+
+          echo ""
+          echo "=== FRESH LOGS COUNT ==="
+          FRESH_COUNT=$(find "$FRESH_DIR" -type f 2>/dev/null | wc -l)
+          echo "Fresh log files: ${FRESH_COUNT}"
+          if [ "${FRESH_COUNT}" -gt 0 ]; then
+            find "$FRESH_DIR" -type f -exec basename {} \; | sort
           fi
 
+          echo ""
+          echo "=== HISTORICAL LOGS COUNT ==="
+          HIST_COUNT=$(find "$HIST_DIR" -type f 2>/dev/null | wc -l)
+          echo "Historical log files: ${HIST_COUNT}"
+          echo "---"
+
+      - name: "[E4/9] EVIDENCE: Search Fresh Logs for Startup Markers"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== SEARCHING FRESH LOGS FOR STARTUP MARKERS ==="
+          echo "Cutoff: 2026-09-13T17:03:00"
+          echo "---"
+          FRESH_DIR="${{ env.EVIDENCE_DIR }}/logs_fresh"
+          RESULTS_FILE="${{ env.EVIDENCE_DIR }}/02-startup.log"
+          ALL_RESULTS="${{ env.EVIDENCE_DIR }}/08-command-results.txt"
+
+          if [ ! -d "$FRESH_DIR" ] || [ -z "$(ls -A "$FRESH_DIR" 2>/dev/null)" ]; then
+            echo "NO_FRESH_LOGS=true" | tee -a "$RESULTS_FILE"
+            echo "No fresh logs found after 17:03 UTC" | tee -a "$RESULTS_FILE"
+            echo "COMMAND: grep across fresh logs" >> "$ALL_RESULTS"
+            echo "EXIT_CODE: 0" >> "$ALL_RESULTS"
+            echo "OUTPUT: No fresh logs to search" >> "$ALL_RESULTS"
+            echo "---"
+            exit 0
+          fi
+
+          echo "=== STARTUP_DIAGNOSTIC markers ===" >> "$RESULTS_FILE"
+          MARKERS=$(grep -ri "STARTUP_DIAGNOSTIC\|CMD_[0-9]*_EXIT\|ALL_DIAGNOSTICS_PASSED" "$FRESH_DIR" 2>/dev/null)
+          MARKERS_EXIT=$?
+          echo "COMMAND: grep -ri STARTUP_DIAGNOSTIC" >> "$ALL_RESULTS"
+          echo "EXIT_CODE: ${MARKERS_EXIT}" >> "$ALL_RESULTS"
+          if [ -n "$MARKERS" ]; then
+            echo "$MARKERS" >> "$RESULTS_FILE"
+            echo "OUTPUT: Markers found" >> "$ALL_RESULTS"
+            echo "STARTUP_DIAGNOSTIC_FOUND=true"
+          else
+            echo "No startup diagnostic markers found in fresh logs" >> "$RESULTS_FILE"
+            echo "OUTPUT: No markers found" >> "$ALL_RESULTS"
+            echo "STARTUP_DIAGNOSTIC_FOUND=false"
+          fi
+          echo "" >> "$RESULTS_FILE"
+
+          echo "=== Python errors ===" >> "$RESULTS_FILE"
+          PY_ERR=$(grep -ri "Traceback\|ModuleNotFoundError\|ImportError\|Permission denied\|not found\|Killed\|OSError\|SyntaxError" "$FRESH_DIR" 2>/dev/null)
+          if [ -n "$PY_ERR" ]; then
+            echo "$PY_ERR" >> "$RESULTS_FILE"
+            echo "PYTHON_ERRORS_FOUND=true"
+          else
+            echo "No Python errors found in fresh logs" >> "$RESULTS_FILE"
+            echo "PYTHON_ERRORS_FOUND=false"
+          fi
+          echo "" >> "$RESULTS_FILE"
+
+          echo "=== Uvicorn/FastAPI markers ===" >> "$RESULTS_FILE"
+          UV_ERR=$(grep -ri "uvicorn\|Uvicorn\|fastapi\|FastAPI\|backend.main\|Application startup\|evento_inicio\|iniciando" "$FRESH_DIR" 2>/dev/null)
+          if [ -n "$UV_ERR" ]; then
+            echo "$UV_ERR" >> "$RESULTS_FILE"
+            echo "UVICORN_MARKERS_FOUND=true"
+          else
+            echo "No Uvicorn/FastAPI markers found" >> "$RESULTS_FILE"
+            echo "UVICORN_MARKERS_FOUND=false"
+          fi
+          echo "" >> "$RESULTS_FILE"
+
+          echo "=== Python sys.path / PYTHONPATH ===" >> "$RESULTS_FILE"
+          PY_PATH=$(grep -ri "sys.path\|PYTHONPATH\|sys.executable\|__deps__\|site-packages" "$FRESH_DIR" 2>/dev/null)
+          if [ -n "$PY_PATH" ]; then
+            echo "$PY_PATH" >> "$RESULTS_FILE"
+            echo "PYTHON_PATH_MARKERS_FOUND=true"
+          else
+            echo "No Python path markers found" >> "$RESULTS_FILE"
+          fi
+          echo "---"
+
+      - name: "[E5/9] EVIDENCE: Authenticated Kudu VFS"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== AUTHENTICATED KUDU VFS FILESYSTEM ==="
+          echo "Target: https://${{ env.APP_NAME }}.scm.azurewebsites.net"
+          echo "---"
+          KUDU_FILE="${{ env.EVIDENCE_DIR }}/07-kudu.txt"
+
+          if [ -f /tmp/kudu_env.sh ]; then
+            source /tmp/kudu_env.sh
+            AUTH_HEADER="Authorization: Basic $(echo -n \"${USERNAME}:${PASSWORD}\" | base64 -w0)"
+            echo "AUTH_METHOD: Basic auth (publishing credentials)" | tee "$KUDU_FILE"
+            echo "KUDU_URL: ${KUDU_URL}" | tee -a "$KUDU_FILE"
+            echo "" | tee -a "$KUDU_FILE"
+          else
+            echo "AUTH_METHOD: No credentials available (anonymous)" | tee "$KUDU_FILE"
+            AUTH_HEADER=""
+          fi
+
+          for endpoint in \
+            "/api/vfs/site/wwwroot/" \
+            "/api/vfs/site/wwwroot/backend/" \
+            "/api/vfs/site/wwwroot/backend/main.py" \
+            "/api/vfs/site/wwwroot/deployment/startup.sh" \
+            "/api/vfs/site/wwwroot/__deps__/" \
+            "/api/vfs/site/wwwroot/requirements.txt" \
+            "/api/logs/docker" \
+            "/api/deployments/latest"; do
+
+            URL="https://${{ env.APP_NAME }}.scm.azurewebsites.net${endpoint}"
+            echo "" | tee -a "$KUDU_FILE"
+            echo "=== GET ${endpoint} ===" | tee -a "$KUDU_FILE"
+
+            if [ -n "$AUTH_HEADER" ]; then
+              RESPONSE=$(curl -s --connect-timeout 10 --max-time 15 \
+                -H "$AUTH_HEADER" \
+                -w "\n%{http_code}\n%{size_download}\n%{content_type}" \
+                -o /tmp/kudu_response.txt \
+                "${URL}" 2>&1)
+              CURL_EXIT=$?
+            else
+              RESPONSE=$(curl -s --connect-timeout 10 --max-time 15 \
+                -w "\n%{http_code}\n%{size_download}\n%{content_type}" \
+                -o /tmp/kudu_response.txt \
+                "${URL}" 2>&1)
+              CURL_EXIT=$?
+            fi
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -3 | head -1)
+            SIZE_DOWN=$(echo "$RESPONSE" | tail -2 | head -1)
+            CONTENT_TYPE=$(echo "$RESPONSE" | tail -1)
+
+            echo "CURL_EXIT: ${CURL_EXIT}" | tee -a "$KUDU_FILE"
+            echo "HTTP_CODE: ${HTTP_CODE}" | tee -a "$KUDU_FILE"
+            echo "SIZE_BYTES: ${SIZE_DOWN}" | tee -a "$KUDU_FILE"
+            echo "CONTENT_TYPE: ${CONTENT_TYPE}" | tee -a "$KUDU_FILE"
+
+            if [ "${CURL_EXIT}" -ne 0 ]; then
+              echo "INTERPRETATION: CURL_FAILURE (exit=${CURL_EXIT})" | tee -a "$KUDU_FILE"
+            elif [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "301" ] || [ "${HTTP_CODE}" = "302" ]; then
+              if [ "${SIZE_DOWN}" -gt 0 ]; then
+                echo "INTERPRETATION: SUCCESS (${SIZE_DOWN} bytes)" | tee -a "$KUDU_FILE"
+                echo "--- First 300 chars ---" | tee -a "$KUDU_FILE"
+                head -c 300 /tmp/kudu_response.txt | tee -a "$KUDU_FILE"
+                echo "" | tee -a "$KUDU_FILE"
+                echo "---" | tee -a "$KUDU_FILE"
+              else
+                echo "INTERPRETATION: SUCCESS_EMPTY (empty dir/file)" | tee -a "$KUDU_FILE"
+              fi
+            elif [ "${HTTP_CODE}" = "401" ]; then
+              echo "INTERPRETATION: AUTHENTICATION_FAILURE (HTTP 401)" | tee -a "$KUDU_FILE"
+            elif [ "${HTTP_CODE}" = "403" ]; then
+              echo "INTERPRETATION: AUTHENTICATION_FAILURE (HTTP 403)" | tee -a "$KUDU_FILE"
+            elif [ "${HTTP_CODE}" = "404" ]; then
+              echo "INTERPRETATION: NOT_FOUND (HTTP 404)" | tee -a "$KUDU_FILE"
+            elif [ "${HTTP_CODE}" = "000" ]; then
+              echo "INTERPRETATION: CONNECTION_FAILURE (timeout/unreachable)" | tee -a "$KUDU_FILE"
+            else
+              echo "INTERPRETATION: UNEXPECTED_HTTP_${HTTP_CODE}" | tee -a "$KUDU_FILE"
+            fi
+          done
+          echo "---"
+
+      - name: "[E6/9] EVIDENCE: Log Tail (120s)"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== COMMAND: az webapp log tail (120s limit) ==="
+          echo "Target: ${{ env.APP_NAME }} / ${{ env.RESOURCE_GROUP }}"
+          echo "Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          echo "---"
+          TAIL_FILE="${{ env.EVIDENCE_DIR }}/03-docker.log"
+          echo "=== az webapp log tail ===" > "$TAIL_FILE"
+          echo "Started at: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$TAIL_FILE"
+          timeout 120 az webapp log tail \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            2>&1 | head -300 >> "$TAIL_FILE" || true
+          TAIL_EXIT=$?
+          echo "EXIT_CODE: ${TAIL_EXIT}" >> "$TAIL_FILE"
+          echo "Completed at: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$TAIL_FILE"
+          TAIL_SIZE=$(wc -c < "$TAIL_FILE" 2>/dev/null || echo "0")
+          echo "TAIL_SIZE: ${TAIL_SIZE} bytes"
+          echo "Finished: exit=${TAIL_EXIT}, size=${TAIL_SIZE}"
+          echo "---"
+
+      - name: "[E7/9] EVIDENCE: Classify Result"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== CLASSIFICATION ==="
+          echo "Deployment: ${{ env.DEPLOY_TS }}"
+          echo "---"
+          CLASS_FILE="${{ env.EVIDENCE_DIR }}/09-classification.txt"
+
+          FRESH_DIR="${{ env.EVIDENCE_DIR }}/logs_fresh"
+          FRESH_COUNT=$(find "$FRESH_DIR" -type f 2>/dev/null | wc -l)
+
+          HTTP_HEALTH=$(grep -A2 "/health" "${{ env.EVIDENCE_DIR }}/06-http.txt" 2>/dev/null | grep "HTTP Status" | awk '"'"'{print $3}'"'"')
+          HTTP_ROOT=$(grep -A2 "/$" "${{ env.EVIDENCE_DIR }}/06-http.txt" 2>/dev/null | grep "HTTP Status" | awk '"'"'{print $3}'"'"')
+
+          STARTUP_FOUND=$(grep -c "STARTUP_DIAGNOSTIC" "${{ env.EVIDENCE_DIR }}/02-startup.log" 2>/dev/null || echo "0")
+          UVICORN_FOUND=$(grep -c "uvicorn\|Uvicorn\|FastAPI" "${{ env.EVIDENCE_DIR }}/02-startup.log" 2>/dev/null || echo "0")
+          PYTHON_ERRORS=$(grep -c "Traceback\|ImportError\|ModuleNotFoundError" "${{ env.EVIDENCE_DIR }}/02-startup.log" 2>/dev/null || echo "0")
+
+          {
+            echo "=========================================="
+            echo "RC94.30 CLASSIFICATION"
+            echo "=========================================="
+            echo "Deployment timestamp: ${{ env.DEPLOY_TS }}"
+            echo "Diagnosis timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo ""
+            echo "Fresh log files count: ${FRESH_COUNT}"
+            echo "HTTP /health: ${HTTP_HEALTH:-N/A}"
+            echo "HTTP /: ${HTTP_ROOT:-N/A}"
+            echo "Startup markers in fresh logs: ${STARTUP_FOUND}"
+            echo "Uvicorn/FastAPI markers: ${UVICORN_FOUND}"
+            echo "Python errors found: ${PYTHON_ERRORS}"
+            echo ""
+
+            if [ "${FRESH_COUNT}" -eq 0 ]; then
+              echo "CLASSIFICATION: K — UNKNOWN_INSUFFICIENT_RUNTIME_LOGS"
+              echo "REASON: No fresh log files found after 2026-09-13T17:03:00Z"
+              echo "DETAIL: az webapp log download produced no logs with timestamps"
+              echo "        after the deployment window."
+            elif [ "${STARTUP_FOUND}" -eq 0 ] && [ "${UVICORN_FOUND}" -eq 0 ]; then
+              echo "CLASSIFICATION: A — STARTUP_SCRIPT_NOT_EXECUTED"
+              echo "REASON: Fresh logs exist but contain no STARTUP_DIAGNOSTIC"
+              echo "        or Uvicorn markers, suggesting startup.sh never ran."
+            elif [ "${PYTHON_ERRORS}" -gt 0 ]; then
+              echo "CLASSIFICATION: E — IMPORT_FAILURE"
+              echo "REASON: Python errors (Traceback/ImportError) found in fresh logs."
+            else
+              echo "CLASSIFICATION: K — UNKNOWN_INSUFFICIENT_RUNTIME_LOGS"
+              echo "REASON: Cannot determine exact failure from available evidence."
+            fi
+            echo ""
+            echo "=== EVIDENCE SUMMARY ==="
+            echo "Fresh logs: ${FRESH_COUNT} files"
+            echo "Historical logs: $(find "${{ env.EVIDENCE_DIR }}/logs_historical" -type f 2>/dev/null | wc -l) files"
+            echo "HTTP /health: ${HTTP_HEALTH:-N/A}"
+            echo "HTTP /: ${HTTP_ROOT:-N/A}"
+            echo "Startup markers found: ${STARTUP_FOUND}"
+            echo "Uvicorn markers found: ${UVICORN_FOUND}"
+            echo "Python errors: ${PYTHON_ERRORS}"
+          } | tee "$CLASS_FILE"
+          echo "---"
+
+      - name: "[E8/9] EVIDENCE: Copy Startup Log Output"
+        if: github.event.inputs.mode == 'evidence'
+        continue-on-error: true
+        run: |
+          echo "=== COPY STARTUP LOG RAW OUTPUT ==="
+          STARTUP_RAW="${{ env.EVIDENCE_DIR }}/02-startup-raw.log"
+          az webapp log startup show \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            2>&1 > "$STARTUP_RAW" || echo "Command N/A" > "$STARTUP_RAW"
+          echo "File saved: $(wc -c < "$STARTUP_RAW") bytes"
+          echo "---"
+
+      - name: "[E9/9] EVIDENCE: Upload Artifact"
+        if: github.event.inputs.mode == 'evidence'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc94.30-runtime-evidence
+          path: ${{ env.EVIDENCE_DIR }}/
+          retention-days: 14
+
+      # ====================================================================
+      # READ-ONLY MODE LOGS (existing)
+      # ====================================================================
       - name: "[7a/7] READ-ONLY Download Startup Logs"
         if: github.event.inputs.mode == 'readonly'
         continue-on-error: true
@@ -233,7 +622,6 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "{state:state}" -o json
           
-          # Verify it's really stopped before proceeding
           STATE=$(az webapp show \
             --name ${{ env.APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -274,7 +662,6 @@ jobs:
         if: github.event.inputs.mode == 'recovery'
         run: |
           echo "=== Waiting 60 seconds for container to start === "
-          # Wait with progressive checks
           for i in $(seq 1 6); do
             sleep 10
             STATE=$(az webapp show \
@@ -391,7 +778,6 @@ jobs:
           echo "=== [10/10] RUNTIME SSH: Verify Python runtime & ANTENV ==="
           echo ""
           
-          # Try with --command parameter (newer CLI)
           echo "--- Attempt 1: az webapp ssh --command ---"
           SSH_CMD='echo "=== PATH ==="; echo "$PATH"; echo "=== PYTHON ==="; which python3 2>&1 || true; python3 --version 2>&1 || true; echo "=== EXECUTABLE ==="; python3 -c "import sys; print(sys.executable)" 2>&1 || true; echo "=== SYSPATH ==="; python3 -c "import sys; [print(p) for p in sys.path]" 2>&1 || true; echo "=== ANTENV ==="; ls -ld /antenv 2>&1 || true; ls -ld /antenv/bin 2>&1 || true; ls -l /antenv/bin/python* 2>&1 || true; ls -l /antenv/bin/activate 2>&1 || true; echo "=== OPT/ANTENV ==="; ls -ld /opt/antenv 2>&1 || true; ls -ld /opt/antenv/bin 2>&1 || true; echo "=== WWWROOT ==="; ls -ld /home/site/wwwroot/antenv 2>&1 || true; echo "=== FASTAPI ==="; python3 -c "import fastapi; print(f\"fastapi={fastapi.__version__} at {fastapi.__file__}\")" 2>&1 || echo "fastapi=FAILED"; echo "=== UVICORN ==="; python3 -c "import uvicorn; print(f\"uvicorn={uvicorn.__version__} at {uvicorn.__file__}\")" 2>&1 || echo "uvicorn=FAILED"; echo "=== JINJA2 ==="; python3 -c "import jinja2; print(f\"jinja2={jinja2.__version__} at {jinja2.__file__}\")" 2>&1 || echo "jinja2=FAILED"; echo "=== FINDSPEC ==="; python3 -c "import importlib.util; print(\"uvicorn:\", importlib.util.find_spec(\"uvicorn\"))" 2>&1; python3 -c "import importlib.util; print(\"fastapi:\", importlib.util.find_spec(\"fastapi\"))" 2>&1; echo "=== ENTRYPOINT ==="; python3 -c "import importlib.util; s=importlib.util.find_spec(\"backend.main\"); print(\"backend.main:\", s)" 2>&1 || echo "backend.main=NOT FOUND"; echo "=== WWWROOT LS ==="; ls -la /home/site/wwwroot/ 2>&1 || true; find /home/site/wwwroot -maxdepth 3 -type f 2>/dev/null | sort | head -80 || true; echo "=== PWD ==="; pwd 2>&1 || true'
           
@@ -403,7 +789,6 @@ jobs:
           
           echo ""
           echo "--- Attempt 2: az webapp ssh extension with inline ---"
-          # Try with extension if available
           az extension add --name webapp 2>/dev/null || true
           az webapp ssh \
             --name ${{ env.APP_NAME }} \
@@ -428,7 +813,10 @@ jobs:
           echo "========================================"
           echo "Mode: ${MODE}"
           echo "Review all outputs above for evidence."
-          if [ "${MODE}" = "recovery" ]; then
+          if [ "${MODE}" = "evidence" ]; then
+            echo "Evidence mode: artifact rc94.30-runtime-evidence uploaded."
+            echo "See E classes above for detailed analysis."
+          elif [ "${MODE}" = "recovery" ]; then
             echo "Recovery STOP/START was executed."
             echo "Startup logs and health check post-recovery"
             echo "are available above."

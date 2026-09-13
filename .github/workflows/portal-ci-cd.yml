@@ -169,9 +169,7 @@ jobs:
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --src-path "$ZIP_FILE" \
-            --type zip \
-            --clean true \
-            --restart true
+            --type zip
           echo "=== Deploy submitted ==="
 
       - name: Verify startup command and build setting after deploy

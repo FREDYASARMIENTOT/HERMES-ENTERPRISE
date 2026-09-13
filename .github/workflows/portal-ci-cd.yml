@@ -110,11 +110,16 @@ jobs:
         run: |
           ZIP_FILE="/tmp/portal-deploy-${{ github.sha }}.zip"
           echo "=== Creating deployment package ==="
-          # Only package Hermes.Web/ + root requirements.txt — NOT the entire repo
+          # 1. Package Hermes.Web/ (runtime) + root requirements.txt
+          # 2. Include bootstrap_portal.py at root level for uvicorn import
+          #    (bootstrap resolves the Hermes.Web dotted-directory issue)
+          cp Hermes.Web/deployment/bootstrap_portal.py bootstrap_portal.py
           zip -r "$ZIP_FILE" Hermes.Web/ -x '__pycache__/*' '.venv/*' '*.pyc'
           zip -j "$ZIP_FILE" requirements.txt
+          zip "$ZIP_FILE" bootstrap_portal.py
+          rm -f bootstrap_portal.py
           echo "Package contents:"
-          unzip -l "$ZIP_FILE" | head -30
+          unzip -l "$ZIP_FILE" | head -40
           echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
           echo "=== Deploying ${{ env.APP_NAME }} ==="
           az webapp deploy \

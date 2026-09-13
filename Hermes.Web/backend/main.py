@@ -24,7 +24,6 @@ import importlib.util
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from Hermes.Web.backend.servicio_fabrica import obtener_servicio_fabrica
 
 # ──────────────────────────────────────────────────────────────
 # Resolver Hermes.Web como paquete importable
@@ -125,6 +124,9 @@ sys.meta_path.insert(0, HermesWebFinder(_HERMES_WEB_DIR))
 logger_init = logging.getLogger("Hermes.Web.setup")
 logger_init.info(f"Finder registrado para Hermes.Web en: {_HERMES_WEB_DIR}")
 logger_init.info(f"Raiz del proyecto en sys.path: {_PROJECT_ROOT}")
+
+# Importar módulos locales de Hermes.Web (el finder ya está activo)
+from Hermes.Web.backend.servicio_fabrica import obtener_servicio_fabrica
 
 # ──────────────────────────────────────────────────────────────
 # Configuracion de logging global para la aplicacion

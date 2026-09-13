@@ -108,6 +108,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Configure startup command BEFORE deploy (CRITICAL: order matters)
+        shell: bash
+        run: |
+          echo "=== Setting startup command BEFORE deploy ==="
+          echo "Target: deployment/startup.sh"
+          echo "Current: $(az webapp show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "siteConfig.appCommandLine" -o tsv)"
+          az webapp config set \
+            --name "${{ env.APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --startup-file "deployment/startup.sh"
+          echo "Updated: $(az webapp show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "siteConfig.appCommandLine" -o tsv)"
+
       - name: Deploy to Azure Web App
         shell: bash
         run: |
@@ -137,14 +149,13 @@ jobs:
             --restart true
           echo "=== Deploy submitted ==="
 
-      - name: Validate Azure startup command
+      - name: Verify startup command after deploy
         shell: bash
         run: |
-          echo "=== Verifying startup configuration ==="
           CMD=$(az webapp show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "siteConfig.appCommandLine" -o tsv)
-          echo "Startup command: ${CMD}"
+          echo "=== Startup command after deploy: ${CMD} ==="
           if [ "${CMD}" != "deployment/startup.sh" ]; then
-            echo "Setting startup command..."
+            echo "ERROR: Startup command was reset! Re-setting..."
             az webapp config set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --startup-file "deployment/startup.sh"
           fi
 

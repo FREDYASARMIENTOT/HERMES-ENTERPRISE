@@ -623,3 +623,76 @@ class TestOpenAPISpec:
         paths = r.json().get("paths", {})
         for ep in ["/api/fabrica/proyectos", "/health", "/api/fabrica/proyectos/{deployment_id}"]:
             assert ep in paths
+
+
+class TestHistorialEndpoint:
+    def setup_method(self):
+        from fastapi.testclient import TestClient
+        from Hermes.Web.backend.main import app
+        from Hermes.Web.backend.servicio_fabrica import _instancia_servicio, ServicioFabrica
+        _instancia_servicio = None
+        app.state.servicio_fabrica = ServicioFabrica()
+        self.client = TestClient(app)
+
+    def test_historial_vacio(self):
+        r = self.client.get("/api/fabrica/proyectos/historial?limit=5")
+        assert r.status_code == 200
+        data = r.json()
+        assert "proyectos" in data
+        assert data["total"] == 0
+        assert isinstance(data["proyectos"], list)
+
+    def test_historial_con_proyectos(self):
+        for i in range(3):
+            self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": f"test-hist-{i}"})
+        r = self.client.get("/api/fabrica/proyectos/historial?limit=5")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["total"] >= 3
+        fechas = [p["fecha_solicitud"] for p in data["proyectos"]]
+        assert fechas == sorted(fechas, reverse=True)
+
+    def test_historial_limit(self):
+        for i in range(5):
+            self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": f"test-hist-limit-{i}"})
+        r = self.client.get("/api/fabrica/proyectos/historial?limit=3")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["total"] == 3
+
+    def test_historial_no_expone_secretos(self):
+        import json
+        self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "test-hist-sec"})
+        r = self.client.get("/api/fabrica/proyectos/historial?limit=5")
+        t = json.dumps(r.json()).lower()
+        for s in ["ghp_", "gho_", "token", "bearer", "authorization"]:
+            assert s not in t
+
+
+class TestFrontendFeatures:
+    def test_historial_section_exists(self):
+        c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read()
+        assert "Ultimas 5 Creaciones" in c
+        assert "historial-tbody" in c
+        assert "historial-refresh-badge" in c
+
+    def test_tracking_tab_exists(self):
+        c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read()
+        assert "window.open" in c
+        assert "tracking-tab-status" in c
+        assert "Pestana de tracking" in c
+
+    def test_popup_blocked_fallback(self):
+        c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read()
+        assert "bloqueo la pestana" in c
+        assert "Abrir seguimiento del proyecto" in c
+
+    def test_historial_polling_exists(self):
+        c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read()
+        assert "setInterval(actualizarHistorial, 10000)" in c
+        assert "actualizarHistorial" in c
+
+    def test_no_secretos_frontend(self):
+        c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read().lower()
+        for s in ["ghp_", "gho_", "pat_", "authorization"]:
+            assert s not in c

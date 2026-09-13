@@ -129,6 +129,36 @@
             </div>
         </div>
 
+        <!-- Ultimas 5 Creaciones -->
+        <div class="row mb-4" id="historial-row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-clock-history me-2"></i>Ultimas 5 Creaciones de Proyectos Hijos</span>
+                        <span class="badge bg-info bg-opacity-25 text-info" id="historial-refresh-badge">Auto-refresh</span>
+                    </div>
+                    <div class="card-body" id="historial-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="historial-table">
+                                <thead>
+                                    <tr>
+                                        <th>Proyecto</th>
+                                        <th>Estado</th>
+                                        <th>Resultado</th>
+                                        <th>Duracion</th>
+                                        <th>Detalle / Paso</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historial-tbody">
+                                    <tr><td colspan="5" class="text-center text-muted py-3"><i class="bi bi-hourglass-split me-1"></i>Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- System Status Cards Row -->
         <div class="row g-3 mb-4" id="system-status">
             <div class="col-md-3">
@@ -682,6 +712,54 @@
                                     <span class="text-muted">${dispatchExitoso ? 'El proyecto fue enviado a la fábrica de Hermes.' : dispatchMensaje}</span>
                                 </div>
                             </div>
+                            <!-- Abrir pestana de tracking automaticamente -->
+                            <div id="tracking-tab-status" class="mt-2 small"></div>
+                            <script>
+                                (function() {
+                                    var did = "${deploymentId}";
+                                    var cid = "${correlationId}";
+                                    var pname = "${data.nombre_proyecto}";
+                                    if (did && did !== "undefined") {
+                                        var trackingUrl = "/proyectos/" + did;
+                                        var tab = window.open(trackingUrl, "hermes-tracking-" + did);
+                                        var statusDiv = document.getElementById("tracking-tab-status");
+                                        if (!tab || tab.closed || typeof tab.closed === "undefined") {
+                                            statusDiv.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>El navegador bloqueo la pestana automatica. <a href="' + trackingUrl + '" target="_blank" class="text-info">Abrir seguimiento del proyecto</a></span>';
+                                        } else {
+                                            statusDiv.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Pestana de tracking abierta</span>';
+                                        }
+                                        if (!window.portalTrackingIntervals) { window.portalTrackingIntervals = {}; }
+                                        if (!window.portalTrackingIntervals[did]) {
+                                            window.portalTrackingIntervals[did] = setInterval(function() {
+                                                fetch("/api/fabrica/proyectos/" + did)
+                                                    .then(function(r) { return r.json(); })
+                                                    .then(function(proj) {
+                                                        if (!statusDiv) return;
+                                                        var oldBadge = document.getElementById("tracking-badge-" + did);
+                                                        if (oldBadge) oldBadge.remove();
+                                                        var badge = document.createElement("span");
+                                                        badge.id = "tracking-badge-" + did;
+                                                        var cls = "badge bg-secondary ms-2";
+                                                        if (proj.estado === "COMPLETADO") cls = "badge bg-success ms-2";
+                                                        else if (proj.estado === "FALLIDO") cls = "badge bg-danger ms-2";
+                                                        else if (["CREANDO","PUBLICANDO","CI_EN_PROGRESO","DESPLEGANDO","VALIDANDO"].indexOf(proj.estado) >= 0) cls = "badge bg-warning text-dark ms-2";
+                                                        badge.className = cls;
+                                                        badge.textContent = proj.estado;
+                                                        statusDiv.appendChild(badge);
+                                                        if (proj.estado === "COMPLETADO" || proj.estado === "FALLIDO") {
+                                                            if (window.portalTrackingIntervals[did]) {
+                                                                clearInterval(window.portalTrackingIntervals[did]);
+                                                                delete window.portalTrackingIntervals[did];
+                                                            }
+                                                            if (typeof actualizarHistorial === "function") actualizarHistorial();
+                                                        }
+                                                    })
+                                                    .catch(function() {});
+                                            }, 10000);
+                                        }
+                                    }
+                                })();
+                            </script>
                             <hr class="border-secondary">
                             <a href="/proyectos/${deploymentId}" class="btn btn-sm btn-primary w-100">
                                 <i class="bi bi-eye me-1"></i>Seguimiento del proyecto
@@ -715,6 +793,60 @@
 
         // Inicializar contador al cargar
         actualizarContadorProyectos();
+
+        // ══════════════════════════════════════════════════
+        // Top 5 Historial - Actualizacion automatica
+        // ══════════════════════════════════════════════════
+
+        async function actualizarHistorial() {
+            try {
+                const resp = await fetch('/api/fabrica/proyectos/historial?limit=5');
+                const data = await resp.json();
+                if (!data.proyectos || !Array.isArray(data.proyectos)) return;
+                const tbody = document.getElementById('historial-tbody');
+                if (!tbody) return;
+                if (data.proyectos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3"><i class="bi bi-folder-open me-1"></i>No hay proyectos registrados aun.</td></tr>';
+                    return;
+                }
+                let html = '';
+                data.proyectos.forEach(function(p) {
+                    var estadoBadge = '<span class="badge bg-secondary">' + (p.estado || 'DESCONOCIDO') + '</span>';
+                    if (p.estado === 'COMPLETADO') estadoBadge = '<span class="badge bg-success">COMPLETADO</span>';
+                    else if (p.estado === 'FALLIDO') estadoBadge = '<span class="badge bg-danger">FALLIDO</span>';
+                    else if (['SOLICITADO','CREANDO','PUBLICANDO','CI_EN_PROGRESO','DESPLEGANDO','VALIDANDO'].indexOf(p.estado) >= 0) estadoBadge = '<span class="badge bg-warning text-dark">' + p.estado + '</span>';
+
+                    var resultadoBadge = '<span class="text-muted">--</span>';
+                    if (p.resultado === 'PASS') resultadoBadge = '<span class="badge bg-success">PASS</span>';
+                    else if (p.resultado === 'FAIL') resultadoBadge = '<span class="badge bg-danger">FAIL</span>';
+
+                    var detalle = p.detalle || '';
+                    if (p.paso_final && !detalle) detalle = 'Paso: ' + p.paso_final;
+                    if (detalle && detalle.length > 60) detalle = detalle.substring(0, 60) + '...';
+
+                    html += '<tr>' +
+                        '<td><strong><a href="/proyectos/' + p.deployment_id + '" class="text-light text-decoration-none">' + p.nombre_proyecto + '</a></strong></td>' +
+                        '<td>' + estadoBadge + '</td>' +
+                        '<td>' + resultadoBadge + '</td>' +
+                        '<td><small class="text-muted">' + (p.duracion || '--') + '</small></td>' +
+                        '<td><small class="text-muted">' + (detalle || '--') + '</small></td>' +
+                        '</tr>';
+                });
+                tbody.innerHTML = html;
+                var badge = document.getElementById('historial-refresh-badge');
+                if (badge) {
+                    badge.textContent = new Date().toLocaleTimeString();
+                    badge.className = 'badge bg-info bg-opacity-25 text-info';
+                }
+            } catch (e) {
+                console.error('Error actualizando historial:', e);
+            }
+        }
+
+        // Iniciar polling del historial cada 10 segundos
+        setInterval(actualizarHistorial, 10000);
+        // Cargar inicial
+        actualizarHistorial();
 
         loadAll();
     </script>

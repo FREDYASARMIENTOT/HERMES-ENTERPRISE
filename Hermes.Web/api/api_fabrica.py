@@ -51,7 +51,9 @@ class ActualizarPasoRequest(BaseModel):
 class FinalizarRequest(BaseModel):
     """Modelo para finalizar una solicitud."""
     resultado: str = Field("PASS", pattern="^(PASS|FAIL)$")
-    error: str = ""# ──────────────────────────────────────────────────────────────
+    error: str = ''
+
+# ──────────────────────────────────────────────────────────────
 # Endpoints
 # ──────────────────────────────────────────────────────────────
 
@@ -96,6 +98,55 @@ async def listar_proyectos(request: Request, limite: int = 20, estado: Optional[
     except Exception as e:
         logger.error(f"Error listando solicitudes: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+
+@router.get("/fabrica/proyectos/historial", summary="Obtener historial de proyectos (Top 5)")
+async def historial_proyectos(request: Request, limit: int = 5):
+    """Obtiene las ultimas N solicitudes de proyectos ordenadas por fecha descendente."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        proyectos = servicio.listar_solicitudes(limite=max(1, min(50, limit)))
+        resultado = []
+        for p in proyectos:
+            d = p.a_dict()
+            duracion = ""
+            if d.get("fecha_solicitud") and d.get("fecha_actualizacion"):
+                try:
+                    from datetime import datetime
+                    inicio = datetime.fromisoformat(d["fecha_solicitud"])
+                    fin = datetime.fromisoformat(d["fecha_actualizacion"])
+                    segundos = int((fin - inicio).total_seconds())
+                    if segundos >= 60:
+                        duracion = f"{segundos // 60}m {segundos % 60}s"
+                    else:
+                        duracion = f"{segundos}s"
+                except Exception:
+                    pass
+            paso_final = None
+            for paso in d.get("pasos", []):
+                if paso.get("estado") in ("COMPLETADO", "FALLIDO", "EN_PROCESO"):
+                    paso_final = paso
+            resultado.append({
+                "nombre_proyecto": d.get("nombre_proyecto", ""),
+                "estado": d.get("estado", ""),
+                "resultado": d.get("resultado", ""),
+                "fecha_solicitud": d.get("fecha_solicitud", ""),
+                "fecha_actualizacion": d.get("fecha_actualizacion", ""),
+                "duracion": duracion,
+                "deployment_id": d.get("deployment_id", ""),
+                "correlation_id": d.get("correlation_id", ""),
+                "repositorio": d.get("repositorio", ""),
+                "web_app_url": d.get("web_app_url", ""),
+                "commit_sha": d.get("commit_sha", ""),
+                "paso_final": paso_final["nombre"] if paso_final else None,
+                "paso_estado": paso_final["estado"] if paso_final else None,
+                "detalle": d.get("error", "") or (paso_final.get("detalle", "") if paso_final else ""),
+            })
+        return {"proyectos": resultado, "total": len(resultado)}
+    except Exception as e:
+        logger.error(f"Error obteniendo historial: {e}")
+        return {"proyectos": [], "total": 0, "error": str(e)}
 
 
 @router.get("/fabrica/proyectos/{deployment_id}", summary="Obtener estado de un proyecto")
@@ -218,3 +269,5 @@ async def finalizar_proyecto(request: Request, deployment_id: str, final: Finali
     except Exception as e:
         logger.error(f"Error finalizando solicitud: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+

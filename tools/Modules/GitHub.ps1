@@ -1,7 +1,7 @@
 function Crear-RepositorioGitHubProyecto {
     <#
     .SYNOPSIS
-        Crea un repositorio en GitHub para el proyecto.
+        Crea un repositorio en GitHub para el proyecto usando REST API.
     .PARAMETER ProjectName
         Nombre del proyecto (se usará como nombre del repositorio).
     .PARAMETER ProjectDir
@@ -12,6 +12,10 @@ function Crear-RepositorioGitHubProyecto {
         Visibilidad del repositorio (public/private).
     .OUTPUTS
         Hashtable con la información del repositorio creado.
+    .NOTES
+        RC94.38: Usa REST API (POST /user/repos) en vez de 'gh repo create'
+        porque la GraphQL API no soporta tokens OAuth (gho_).
+        La REST API funciona con cualquier token que tenga scope 'repo'.
     #>
     param(
         [Parameter(Mandatory)] [string] $ProjectName,
@@ -27,11 +31,11 @@ function Crear-RepositorioGitHubProyecto {
 
     Write-Host "[GitHub] Creando repositorio: $nombreRepositorio"
 
-    # Verifica si el repositorio ya existe
+    # Verifica si el repositorio ya existe via REST API
     $existente = $null
     try {
-        $existente = gh repo view $nombreRepositorio --json name 2>&1
-        if ($LASTEXITCODE -ne 0) { $existente = $null }
+        $repoCheck = gh api "/repos/FREDYASARMIENTOT/$nombreRepositorio" --jq .name 2>&1
+        if ($LASTEXITCODE -eq 0 -and $repoCheck) { $existente = $repoCheck }
     } catch { $existente = $null }
 
     if ($existente) {
@@ -39,9 +43,20 @@ function Crear-RepositorioGitHubProyecto {
         $creado = $false
     }
     else {
-        $salidaCreacion = gh repo create $nombreRepositorio --$Visibility --description $Description 2>&1
+        # Usar REST API (POST /user/repos) en lugar de 'gh repo create'
+        # para evitar dependencia de GraphQL. Funciona con tokens OAuth (gho_)
+        # y cualquier token con scope 'repo'.
+        $repoData = gh api --method POST /user/repos `
+            -f name=$nombreRepositorio `
+            -f private=($Visibility -eq "private") `
+            -f description=$Description `
+            -f auto_init=false `
+            -f has_issues=false `
+            -f has_projects=false `
+            -f has_wiki=false 2>&1
+        
         if ($LASTEXITCODE -ne 0) {
-            throw "Error al crear repositorio en GitHub: $nombreRepositorio ($salidaCreacion)"
+            throw "Error al crear repositorio en GitHub: $nombreRepositorio ($repoData)"
         }
         Write-Host "[GitHub] Repositorio creado: $nombreRepositorio"
         $creado = $true

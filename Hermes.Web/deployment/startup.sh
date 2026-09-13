@@ -41,19 +41,29 @@ print(f'Jinja2: {jinja2.__version__}')
 print('Dependencias OK')
 " 2>&1
 
-# 3. PYTHONPATH debe incluir /home/site/wwwroot (raiz del proyecto)
-#    bootstrap_portal.py tambien establece PYTHONPATH para consistencia.
-echo "[2/2] Configurando PYTHONPATH..."
+# 3. PYTHONPATH hereda el App Setting + agregamos wwwroot explicitamente
+echo "[2/2] Configurando PYTHONPATH y directorio..."
 PROJECT_ROOT="/home/site/wwwroot"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
-export PYTHONPATH="$PROJECT_ROOT"
+echo "PYTHONPATH actual: $PYTHONPATH"
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH}"
+echo "PYTHONPATH final: $PYTHONPATH"
 
-# 4. Iniciar servidor Uvicorn (1 worker para B1)
+# 4. Listar contenido para debug
+echo "Contenido de wwwroot:"
+ls -la "$PROJECT_ROOT"/
+echo "Contenido de Hermes.Web/backend:"
+ls -la "$PROJECT_ROOT/Hermes.Web/backend/" 2>/dev/null || echo "(no existe o no accesible)"
+
+# 5. Iniciar servidor Uvicorn (modo proceso unico — sin --workers)
+#    B1 es single-core; un solo worker evita subprocesos multiprocessing
+#    que no heredan sys.path[0] (CWD) correctamente.
+#    --app-dir fuerza la ruta del modulo bootstrap para workers futuros.
 echo "Iniciando servidor Uvicorn..."
 echo "Host: 0.0.0.0"
 echo "Puerto: ${PORT:-8000}"
-echo "Workers: 1 (B1 single-core)"
-echo "Module: bootstrap_portal:app (bootstrap que carga Hermes.Web.backend.main)"
+echo "Workers: 1 (proceso unico, sin fork)"
+echo "Module: bootstrap_portal:app (bootstrap -> Hermes.Web.backend.main)"
 echo "========================================="
 
 cd "$PROJECT_ROOT"
@@ -61,6 +71,6 @@ python3 -m uvicorn \
     bootstrap_portal:app \
     --host 0.0.0.0 \
     --port ${PORT:-8000} \
-    --workers 1 \
+    --app-dir "$PROJECT_ROOT" \
     --log-level info \
     --access-log

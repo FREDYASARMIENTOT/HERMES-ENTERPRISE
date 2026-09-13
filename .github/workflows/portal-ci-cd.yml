@@ -146,6 +146,7 @@ jobs:
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --src-path "$ZIP_FILE" \
             --type zip \
+            --clean true \
             --restart true
           echo "=== Deploy submitted ==="
 

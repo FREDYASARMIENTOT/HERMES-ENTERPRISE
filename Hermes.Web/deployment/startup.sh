@@ -32,21 +32,16 @@ ls -la
 echo "backend/:"
 ls -la backend/
 
-# 3. Instalar dependencias
-echo "[2/3] Instalando dependencias..."
-pip install -r requirements.txt -q 2>&1
-echo "  OK: dependencias instaladas"
-
-# 4. Verificar dependencias críticas
-echo "[3/4] Verificando dependencias..."
+# 3. Verificar dependencias (preinstaladas por Oryx durante build phase)
+echo "[2/3] Verificando dependencias..."
 python3 -c "
-import fastapi; print(f'FastAPI: {fastapi.__version__}')
-import uvicorn; print(f'Uvicorn: OK')
-import jinja2; print(f'Jinja2: {jinja2.__version__}')
-print('Dependencias OK')
+import fastapi; print(f'  FastAPI: {fastapi.__version__}')
+import uvicorn; print(f'  Uvicorn: OK')
+import jinja2; print(f'  Jinja2: {jinja2.__version__}')
+print('  Dependencias OK')
 " 2>&1
 
-# 5. Iniciar Uvicorn (proceso único — sin --workers)
+# 4. Iniciar Uvicorn (proceso único — sin --workers)
 echo "[3/3] Iniciando servidor..."
 echo "Host: 0.0.0.0 | Puerto: ${PORT:-8000}"
 echo "Module: backend.main:app"

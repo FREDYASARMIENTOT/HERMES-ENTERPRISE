@@ -609,26 +609,92 @@
             mensaje.innerHTML = '';
 
             try {
+                // ─── Paso 1: Crear solicitud ───────────────────
                 const resp = await fetch('/api/fabrica/proyectos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nombre_proyecto: nombre, descripcion: '' })
                 });
                 const data = await resp.json();
-                if (resp.ok) {
-                    mensaje.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.mensaje}</span>`;
-                    document.getElementById('ultimo-proyecto-creado').innerHTML =
-                        `<a href="/proyectos/${data.deployment_id}" class="btn btn-sm btn-success">
-                            <i class="bi bi-eye me-1"></i>Ver estado: ${data.nombre_proyecto}
-                        </a>`;
-                    document.getElementById('ver-proyectos-btn').style.display = 'inline-block';
-                    actualizarContadorProyectos();
-                    input.value = '';
-                } else {
-                    mensaje.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>${data.detail || 'Error'}</span>`;
+                if (!resp.ok) {
+                    mensaje.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>${data.detail || 'Error al crear solicitud'}</span>`;
+                    return;
                 }
+
+                // ─── Paso 2: Disparar Factory Runner remoto ────
+                const deploymentId = data.deployment_id;
+                const correlationId = data.correlation_id;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando a la fábrica...';
+
+                let dispatchExitoso = false;
+                let dispatchMensaje = '';
+                try {
+                    const dispResp = await fetch(`/api/fabrica/proyectos/${deploymentId}/disparar`, {
+                        method: 'POST'
+                    });
+                    const dispData = await dispResp.json();
+                    if (dispResp.ok) {
+                        dispatchExitoso = true;
+                        dispatchMensaje = dispData.mensaje || 'Factory Runner disparado';
+                    } else {
+                        dispatchMensaje = dispData.detail || 'Error al disparar Factory Runner';
+                    }
+                } catch (e) {
+                    dispatchMensaje = `Error de conexión al disparar: ${e.message}`;
+                }
+
+                // ─── Paso 3: Mostrar resultado UX ─────────────
+                const estadoIcono = dispatchExitoso ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning';
+                const estadoTexto = dispatchExitoso ? 'CREANDO' : 'SOLICITADO (disparo pendiente)';
+                const estadoBadge = dispatchExitoso
+                    ? '<span class="badge bg-warning text-dark">CREANDO</span>'
+                    : '<span class="badge bg-secondary">SOLICITADO</span>';
+
+                mensaje.innerHTML = `
+                    <div class="card border-primary mt-2">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi ${estadoIcono} fs-3 me-2"></i>
+                                <div>
+                                    <strong class="text-light">PROYECTO SOLICITADO</strong><br>
+                                    ${estadoBadge}
+                                </div>
+                            </div>
+                            <hr class="border-secondary">
+                            <div class="row small">
+                                <div class="col-6">
+                                    <span class="text-muted">Proyecto:</span><br>
+                                    <strong>${data.nombre_proyecto}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted">Estado:</span><br>
+                                    <strong class="${dispatchExitoso ? 'text-warning' : 'text-secondary'}">${estadoTexto}</strong>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <span class="text-muted">Deployment ID:</span><br>
+                                    <code>${deploymentId}</code>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <span class="text-muted">Correlation ID:</span><br>
+                                    <code>${correlationId}</code>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <span class="text-muted">${dispatchExitoso ? 'El proyecto fue enviado a la fábrica de Hermes.' : dispatchMensaje}</span>
+                                </div>
+                            </div>
+                            <hr class="border-secondary">
+                            <a href="/proyectos/${deploymentId}" class="btn btn-sm btn-primary w-100">
+                                <i class="bi bi-eye me-1"></i>Seguimiento del proyecto
+                            </a>
+                        </div>
+                    </div>`;
+
+                document.getElementById('ultimo-proyecto-creado').innerHTML = '';
+                document.getElementById('ver-proyectos-btn').style.display = 'inline-block';
+                actualizarContadorProyectos();
+                input.value = '';
             } catch (e) {
-                mensaje.innerHTML = `<span class="text-danger">Error de conexión: ${e.message}</span>`;
+                mensaje.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Error de conexión: ${e.message}</span>`;
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Crear Proyecto';

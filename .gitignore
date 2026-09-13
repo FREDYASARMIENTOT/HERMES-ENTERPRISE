@@ -159,7 +159,10 @@ deploy.zip
 evidence/
 smoke-result.json
 # ██████ TEMP / DEBUG FILES ██████
+!Hermes.Web/tests/__init__.py
+!Hermes.Web/tests/test_*.py
 _*.*
+Hermes.Web/data/
 _azure_logs/
 _azure_logs2/
 deploy_err.txt

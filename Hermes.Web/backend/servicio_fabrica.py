@@ -28,6 +28,7 @@ import time
 import logging
 import sqlite3
 import subprocess
+import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Union
@@ -486,6 +487,79 @@ class ServicioFabrica:
                 detalle=f"Error ejecutando Factory: {str(e)}", evidencia=""
             )
         return solicitud
+
+    # ──────────────────────────────────────────────────────────
+    # Métodos para Factory remota (GitHub Actions)
+    # ──────────────────────────────────────────────────────────
+
+    async def ejecutar_factory_remoto(
+        self, solicitud: SolicitudProyecto
+    ) -> Dict[str, Any]:
+        """
+        Dispara factory-run.yml en HERMES-ENTERPRISE via GitHub API
+        (NO ejecuta PowerShell localmente).
+
+        Args:
+            solicitud: Solicitud de proyecto a procesar
+
+        Returns:
+            Dict con resultado del dispatch
+        """
+        from .servicio_github import ServicioGitHub
+
+        solicitud = self.actualizar_estado(
+            solicitud, "CREANDO", numero_paso=1,
+            detalle=(
+                f"Disparando Factory Runner (GitHub Actions) "
+                f"para {solicitud.nombre_proyecto}"
+            ),
+            evidencia=(
+                f"Modo: remoto (workflow_dispatch)"
+            )
+        )
+        try:
+            svc_gh = ServicioGitHub(workflow="factory-run.yml")
+            resultado = await svc_gh.disparar_factory_runner(
+                project_name=solicitud.nombre_proyecto,
+                correlation_id=solicitud.correlation_id,
+                deployment_id=solicitud.deployment_id,
+            )
+            if resultado.get("exito"):
+                solicitud = self.actualizar_estado(
+                    solicitud, "CREANDO", numero_paso=2,
+                    detalle=(
+                        f"Factory Runner disparado exitosamente. "
+                        f"Status: {resultado.get('status_code')}"
+                    ),
+                    evidencia=(
+                        f"Dispatch: {resultado.get('payload_enviado', {})}"
+                    )
+                )
+            else:
+                solicitud = self.actualizar_estado(
+                    solicitud, "FALLIDO", numero_paso=2,
+                    detalle=(
+                        f"Factory Runner fallo al disparar: "
+                        f"{resultado.get('mensaje', 'Error desconocido')}"
+                    ),
+                    evidencia=(
+                        f"Error: {resultado.get('error_tecnico', '')}"
+                    )
+                )
+            self._guardar(solicitud)
+            return resultado
+        except Exception as e:
+            solicitud = self.actualizar_estado(
+                solicitud, "FALLIDO", numero_paso=2,
+                detalle=f"Error disparando Factory Runner: {str(e)}",
+                evidencia=""
+            )
+            self._guardar(solicitud)
+            return {
+                "exito": False,
+                "mensaje": f"Error interno: {str(e)}",
+                "error_tecnico": str(e),
+            }
 
     # ──────────────────────────────────────────────────────────
     # Métodos para Control Plane (actualización remota)

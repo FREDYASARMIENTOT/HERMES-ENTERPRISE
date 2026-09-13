@@ -7,7 +7,8 @@ Endpoints:
     POST   /api/fabrica/proyectos          -> Crear solicitud de proyecto
     GET    /api/fabrica/proyectos          -> Listar solicitudes
     GET    /api/fabrica/proyectos/{id}     -> Obtener estado de solicitud
-    POST   /api/fabrica/proyectos/{id}/ejecutar -> Ejecutar Factory local
+    POST   /api/fabrica/proyectos/{id}/ejecutar -> Ejecutar Factory local (PowerShell)
+    POST   /api/fabrica/proyectos/{id}/disparar -> Disparar Factory Runner remoto (GitHub Actions)
     POST   /api/fabrica/proyectos/{id}/paso     -> Actualizar paso (Control Plane)
     POST   /api/fabrica/proyectos/{id}/finalizar -> Finalizar solicitud
 ====================================================================
@@ -111,6 +112,46 @@ async def obtener_proyecto(request: Request, deployment_id: str):
     except Exception as e:
         logger.error(f"Error obteniendo solicitud {deployment_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.post("/fabrica/proyectos/{deployment_id}/disparar",
+             summary="Disparar Factory Runner (GitHub Actions remoto)",
+             status_code=202)
+async def disparar_factory_runner(request: Request, deployment_id: str):
+    """Dispara factory-run.yml en HERMES-ENTERPRISE via GitHub API."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        solicitud = servicio.obtener_solicitud(deployment_id)
+        if not solicitud:
+            raise HTTPException(status_code=404,
+                                detail=f"Solicitud no encontrada: {deployment_id}")
+        if solicitud.estado != "SOLICITADO":
+            raise HTTPException(
+                status_code=400,
+                detail=f"La solicitud está en estado '{solicitud.estado}', no se puede disparar"
+            )
+        resultado = await servicio.ejecutar_factory_remoto(solicitud)
+        if resultado.get("exito"):
+            return {
+                "mensaje": "Factory Runner disparado exitosamente",
+                "deployment_id": deployment_id,
+                "estado": "CREANDO",
+                "dispatch_result": resultado.get("payload_enviado", {})
+            }
+        else:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Error disparando Factory Runner: "
+                    f"{resultado.get('mensaje', 'Error desconocido')}"
+                )
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disparando Factory Runner {deployment_id}: {e}")
+        raise HTTPException(status_code=500,
+                            detail=f"Error interno: {str(e)}")
 
 
 @router.post("/fabrica/proyectos/{deployment_id}/ejecutar", summary="Ejecutar Factory local")

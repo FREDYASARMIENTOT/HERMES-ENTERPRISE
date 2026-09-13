@@ -250,7 +250,7 @@ jobs:
           echo "$ROOT" | grep -qi "Hermes" && pass "Root: Hermes content" || fail "Root: missing Hermes"
 
           echo "--- [Swagger] ---"
-          CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL/docs")
+          CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL/swagger")
           [ "$CODE" -eq 200 ] && pass "Swagger: 200" || fail "Swagger: $CODE"
 
           echo "--- [Factory API] ---"

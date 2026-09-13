@@ -26,6 +26,14 @@ on:
         required: false
         default: 'diagnose'
         type: string
+      mode:
+        description: 'Diagnostic mode: readonly (no restart) or recovery (stop/start)'
+        required: false
+        default: 'readonly'
+        type: choice
+        options:
+          - readonly
+          - recovery
 
 env:
   APP_NAME: as-hermesportal
@@ -129,7 +137,81 @@ jobs:
             echo "---"
           fi
 
+      - name: "[7a/7] READ-ONLY Download Startup Logs"
+        if: github.event.inputs.mode == 'readonly'
+        continue-on-error: true
+        run: |
+          echo "=== [7a/7] READ-ONLY: Download Startup Logs === "
+          LOG_DIR="/tmp/applogs_ro_${{ env.CORRELATION_ID }}"
+          mkdir -p "$LOG_DIR"
+          ZIP_PATH="$LOG_DIR/logs.zip"
+          az webapp log download \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --log-file "$ZIP_PATH" 2>&1 || echo "Log download N/A"
+
+      - name: "[7a2/7] Extract & Search Logs"
+        if: github.event.inputs.mode == 'readonly'
+        continue-on-error: true
+        run: |
+          LOG_DIR="/tmp/applogs_ro_${{ env.CORRELATION_ID }}"
+          ZIP_PATH="$LOG_DIR/logs.zip"
+          if [ -f "$ZIP_PATH" ] && [ -s "$ZIP_PATH" ]; then
+            unzip -o "$ZIP_PATH" -d "$LOG_DIR" 2>/dev/null || true
+            find "$LOG_DIR" -type f 2>/dev/null | head -30
+            echo "=== Docker logs ==="
+            find "$LOG_DIR" -name "default_docker*" | while read f; do cat "$f" 2>/dev/null | tail -100; done
+            echo "=== STARTUP_DIAGNOSTIC markers ==="
+            grep -ri "STARTUP_DIAGNOSTIC\|CMD_[0-9]*_EXIT" "$LOG_DIR" 2>/dev/null | head -40 || echo "No markers found"
+            echo "=== Python errors ==="
+            grep -ri "Traceback\|ImportError\|ModuleNotFoundError" "$LOG_DIR" 2>/dev/null | head -40 || echo "No errors found"
+            echo "=== Uvicorn/FastAPI ==="
+            grep -ri "uvicorn\|Uvicorn\|fastapi\|FastAPI\|evento_inicio" "$LOG_DIR" 2>/dev/null | head -30 || echo "No uvicorn entries"
+          else
+            echo "No log ZIP available"
+            ls -la "$ZIP_PATH" 2>/dev/null || echo "ZIP not found"
+          fi
+
+      - name: "[7b/7] READ-ONLY Kudu API Filesystem"
+        if: github.event.inputs.mode == 'readonly'
+        continue-on-error: true
+        run: |
+          SCM="https://${{ env.APP_NAME }}.scm.azurewebsites.net"
+          echo "=== Kudu: /api/vfs/site/wwwroot/ ==="
+          curl -s --connect-timeout 10 --max-time 15 "$SCM/api/vfs/site/wwwroot/" 2>&1 | head -60
+          echo ""
+          echo "=== Kudu: /api/logs/docker/ ==="
+          curl -s --connect-timeout 10 --max-time 15 "$SCM/api/logs/docker" 2>&1 | head -80
+          echo ""
+          echo "=== Kudu: startup.sh ==="
+          curl -s --connect-timeout 10 --max-time 15 "$SCM/api/vfs/site/wwwroot/deployment/startup.sh" 2>&1 | head -120
+          echo ""
+          echo "=== Kudu: backend/main.py ==="
+          curl -s --connect-timeout 10 --max-time 15 "$SCM/api/vfs/site/wwwroot/backend/main.py" 2>&1 | head -30
+          echo ""
+          echo "=== Kudu: /api/deployments/latest ==="
+          curl -s --connect-timeout 10 --max-time 15 "$SCM/api/deployments/latest" 2>&1 | head -40
+
+      - name: "[7c/7] READ-ONLY Full Deployment History"
+        if: github.event.inputs.mode == 'readonly'
+        continue-on-error: true
+        run: |
+          echo "=== Deployments (last 10) ==="
+          az webapp deployment list \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "[0:10].{id:id,status:status,endTime:endTime,active:active}" -o json 2>&1 || echo "N/A"
+          echo "=== Deployment Log ==="
+          az webapp log deployment show \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} -o json 2>&1 || echo "N/A"
+          echo "=== Startup Log ==="
+          az webapp log startup show \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} 2>&1 || echo "N/A"
+
       - name: "[8/9] STOP App Service (Controlled Recovery)"
+        if: github.event.inputs.mode == 'recovery'
         run: |
           echo "=== STOP App Service ==="
           echo "Current state before stop:"
@@ -164,12 +246,14 @@ jobs:
           echo "STOP complete"
 
       - name: "[8a/9] Wait after STOP (30s)"
+        if: github.event.inputs.mode == 'recovery'
         run: |
           echo "=== Waiting 30 seconds after STOP ==="
           sleep 30
           echo "Resume in 30 seconds done"
 
       - name: "[8b/9] START App Service"
+        if: github.event.inputs.mode == 'recovery'
         run: |
           echo "=== START App Service ==="
           az webapp start \
@@ -187,6 +271,7 @@ jobs:
           echo "START complete. Container will begin booting..."
 
       - name: "[8c/9] Wait for container warmup (60s)"
+        if: github.event.inputs.mode == 'recovery'
         run: |
           echo "=== Waiting 60 seconds for container to start === "
           # Wait with progressive checks
@@ -210,6 +295,7 @@ jobs:
           echo "Container warmup wait complete"
 
       - name: "[9/9] POST-RECOVERY Capture Docker & App Logs"
+        if: github.event.inputs.mode == 'recovery'
         continue-on-error: true
         run: |
           echo "=== POST-RECOVERY capture container logs ==="
@@ -265,6 +351,7 @@ jobs:
           fi
 
       - name: "[9a/9] POST-RECOVERY HTTP Health Check"
+        if: github.event.inputs.mode == 'recovery'
         run: |
           echo "=== POST-RECOVERY HTTP Health Check ==="
           URL="https://${{ env.APP_NAME }}.azurewebsites.net"
@@ -298,6 +385,7 @@ jobs:
             -o json
 
       - name: "[10/10] RUNTIME SSH — Verify Python & ANTENV"
+        if: github.event.inputs.mode == 'recovery'
         continue-on-error: true
         run: |
           echo "=== [10/10] RUNTIME SSH: Verify Python runtime & ANTENV ==="
@@ -334,13 +422,20 @@ jobs:
       - name: Summary
         if: always()
         run: |
+          MODE="${{ github.event.inputs.mode }}"
           echo "========================================"
           echo "DIAGNOSIS COMPLETE — ${{ env.CORRELATION_ID }}"
           echo "========================================"
+          echo "Mode: ${MODE}"
           echo "Review all outputs above for evidence."
-          echo "Recovery STOP/START was executed."
-          echo "Startup logs and health check post-recovery"
-          echo "are available above."
+          if [ "${MODE}" = "recovery" ]; then
+            echo "Recovery STOP/START was executed."
+            echo "Startup logs and health check post-recovery"
+            echo "are available above."
+          else
+            echo "Read-only mode: NO changes were made to the App Service."
+            echo "No restart performed. No files modified."
+          fi
           echo "No production code was modified."
           echo "No deployment was triggered."
           echo "========================================"

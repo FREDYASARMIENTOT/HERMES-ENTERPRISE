@@ -92,6 +92,17 @@ jobs:
           assert '/health' in routes, 'Missing /health'
           print('Portal entrypoint validated (backend.main:app)')
           " 2>&1
+
+      - name: Build self-contained package (pre-installed deps)
+        run: |
+          echo "=== Pre-installing pip packages into __deps__/ ==="
+          cd Hermes.Web
+          pip install -r requirements.txt --target ./__deps__ --no-compile -q 2>&1
+          echo "=== __deps__/ contents ==="
+          ls -la __deps__/ | head -20
+          echo "Total packages: $(ls __deps__/ | wc -l)"
+          cd ..
+          echo "=== Self-contained package ready ==="
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
@@ -111,11 +122,12 @@ jobs:
       - name: "Configure startup command and build BEFORE deploy (CRITICAL: order matters)"
         shell: bash
         run: |
-          echo "=== Setting SCM_DO_BUILD_DURING_DEPLOYMENT=true (Oryx pre-builds deps) ==="
+          echo "=== Setting SCM_DO_BUILD_DURING_DEPLOYMENT=false (self-contained package) ==="
+          echo "=== Dependencies pre-installed in __deps__/ during Build phase ==="
           az webapp config appsettings set \
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
-            --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
+            --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false"
           echo "=== Setting startup command BEFORE deploy ==="
           echo "Target: deployment/startup.sh"
           echo "Current: $(az webapp show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "siteConfig.appCommandLine" -o tsv)"
@@ -166,9 +178,9 @@ jobs:
           fi
           BUILD=$(az webapp config appsettings list --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "[?name=='SCM_DO_BUILD_DURING_DEPLOYMENT'].value" -o tsv)
           echo "=== SCM_DO_BUILD_DURING_DEPLOYMENT after deploy: ${BUILD} ==="
-          if [ "${BUILD}" != "true" ]; then
+          if [ "${BUILD}" != "false" ]; then
             echo "WARNING: SCM_DO_BUILD_DURING_DEPLOYMENT was reset! Re-setting..."
-            az webapp config appsettings set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
+            az webapp config appsettings set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false"
           fi
 
   smoketest:

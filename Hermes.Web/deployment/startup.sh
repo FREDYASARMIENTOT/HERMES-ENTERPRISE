@@ -8,6 +8,10 @@
 #   - Sin bootstrap_portal, sin --app-dir, sin --workers
 #   - Igual patrón que los proyectos hijos funcionales
 # ====================================================================
+# RC94.27: Dependencias preinstaladas en __deps/ (paquete autocontenido)
+# Activamos PYTHONPATH para que Python encuentre los paquetes locales
+# SIN ejecutar pip install, SIN modificar el runtime del sistema.
+export PYTHONPATH="/home/site/wwwroot/__deps__:$PYTHONPATH"
 
 # ====================================================================
 # RC94.16-DIAG — INICIO BLOQUE DIAGNÓSTICO

@@ -297,6 +297,40 @@ jobs:
             --query "{state:state,linuxFxVersion:siteConfig.linuxFxVersion,appCommandLine:siteConfig.appCommandLine}" \
             -o json
 
+      - name: "[10/10] RUNTIME SSH — Verify Python & ANTENV"
+        continue-on-error: true
+        run: |
+          echo "=== [10/10] RUNTIME SSH: Verify Python runtime & ANTENV ==="
+          echo ""
+          
+          # Try with --command parameter (newer CLI)
+          echo "--- Attempt 1: az webapp ssh --command ---"
+          SSH_CMD='echo "=== PATH ==="; echo "$PATH"; echo "=== PYTHON ==="; which python3 2>&1 || true; python3 --version 2>&1 || true; echo "=== EXECUTABLE ==="; python3 -c "import sys; print(sys.executable)" 2>&1 || true; echo "=== SYSPATH ==="; python3 -c "import sys; [print(p) for p in sys.path]" 2>&1 || true; echo "=== ANTENV ==="; ls -ld /antenv 2>&1 || true; ls -ld /antenv/bin 2>&1 || true; ls -l /antenv/bin/python* 2>&1 || true; ls -l /antenv/bin/activate 2>&1 || true; echo "=== OPT/ANTENV ==="; ls -ld /opt/antenv 2>&1 || true; ls -ld /opt/antenv/bin 2>&1 || true; echo "=== WWWROOT ==="; ls -ld /home/site/wwwroot/antenv 2>&1 || true; echo "=== FASTAPI ==="; python3 -c "import fastapi; print(f\"fastapi={fastapi.__version__} at {fastapi.__file__}\")" 2>&1 || echo "fastapi=FAILED"; echo "=== UVICORN ==="; python3 -c "import uvicorn; print(f\"uvicorn={uvicorn.__version__} at {uvicorn.__file__}\")" 2>&1 || echo "uvicorn=FAILED"; echo "=== JINJA2 ==="; python3 -c "import jinja2; print(f\"jinja2={jinja2.__version__} at {jinja2.__file__}\")" 2>&1 || echo "jinja2=FAILED"; echo "=== FINDSPEC ==="; python3 -c "import importlib.util; print(\"uvicorn:\", importlib.util.find_spec(\"uvicorn\"))" 2>&1; python3 -c "import importlib.util; print(\"fastapi:\", importlib.util.find_spec(\"fastapi\"))" 2>&1; echo "=== ENTRYPOINT ==="; python3 -c "import importlib.util; s=importlib.util.find_spec(\"backend.main\"); print(\"backend.main:\", s)" 2>&1 || echo "backend.main=NOT FOUND"; echo "=== WWWROOT LS ==="; ls -la /home/site/wwwroot/ 2>&1 || true; find /home/site/wwwroot -maxdepth 3 -type f 2>/dev/null | sort | head -80 || true; echo "=== PWD ==="; pwd 2>&1 || true'
+          
+          az webapp ssh \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --command "$SSH_CMD" \
+            2>&1 || echo "NOTE: az webapp ssh --command not supported in this CLI version"
+          
+          echo ""
+          echo "--- Attempt 2: az webapp ssh extension with inline ---"
+          # Try with extension if available
+          az extension add --name webapp 2>/dev/null || true
+          az webapp ssh \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --command "echo '=== TEST ==='; python3 --version; python3 -c 'import fastapi; print(\"OK fastapi\")' 2>&1; python3 -c 'import uvicorn; print(\"OK uvicorn\")' 2>&1; python3 -c 'import jinja2; print(\"OK jinja2\")' 2>&1" \
+            2>&1 || echo "NOTE: --command not available, falling back to log tail"
+          
+          echo ""
+          echo "--- Attempt 3: Fallback: log download for runtime evidence ---"
+          az webapp log download \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --log-file /tmp/applogs_runtime.zip \
+            2>&1 || true
+
       - name: Summary
         if: always()
         run: |

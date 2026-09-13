@@ -1,6 +1,6 @@
 #!/bin/bash
 # ====================================================================
-# startup.sh — Script de inicio para Azure App Service (Linux)
+# startup.sh ? Script de inicio para Azure App Service (Linux)
 # ====================================================================
 # RC72: Los archivos se despliegan con prefijo Hermes.Web/
 # para mantener compatibilidad con imports como:
@@ -11,7 +11,7 @@ set -e
 
 HERMES_WEB_DIR="/home/site/wwwroot/Hermes.Web"
 echo "========================================="
-echo "Hermes.Web — Inicio en Azure App Service"
+echo "Hermes.Web ? Inicio en Azure App Service"
 echo "========================================="
 echo "Fecha: $(date)"
 echo "Python: $(python3 --version 2>&1)"
@@ -23,13 +23,13 @@ echo "========================================="
 # 1. Instalar dependencias
 echo "[1/3] Instalando dependencias desde requirements.txt..."
 if [ -f "/home/site/wwwroot/requirements.txt" ]; then
-    python3 -m pip install -r /home/site/wwwroot/requirements.txt --no-cache-dir 2>&1
+    python3 -m pip install -r /home/site/wwwroot/requirements.txt 2>&1
 elif [ -f "$HERMES_WEB_DIR/requirements.txt" ]; then
     python3 -m pip install "$HERMES_WEB_DIR/requirements.txt" --no-cache-dir 2>&1
 fi
 
-# 2. Verificar dependencias críticas
-echo "[2/3] Verificando dependencias críticas..."
+# 2. Verificar dependencias cr?ticas
+echo "[2/3] Verificando dependencias cr?ticas..."
 python3 -c "
 import fastapi
 import uvicorn
@@ -40,22 +40,26 @@ print(f'Jinja2: {jinja2.__version__}')
 print('Dependencias OK')
 " 2>&1
 
-# 3. Cambiar al directorio Hermes.Web
-echo "[2b/3] Cambiando a $HERMES_WEB_DIR..."
-cd "$HERMES_WEB_DIR"
-echo "Contenido de Hermes.Web: $(ls -la)"
-echo "PYTHONPATH: $HERMES_WEB_DIR"
+# 3. PYTHONPATH debe incluir /home/site/wwwroot (ra?z del proyecto)
+#    para que main.py pueda importar Hermes.Web.backend.servicio_fabrica
+#    ANTES de registrar el HermesWebFinder personalizado.
+echo "[2b/3] Configurando PYTHONPATH..."
+PROJECT_ROOT="/home/site/wwwroot"
+echo "PROJECT_ROOT: $PROJECT_ROOT"
+echo "PYTHONPATH: $PROJECT_ROOT"
+export PYTHONPATH="$PROJECT_ROOT"
 
 # 4. Iniciar servidor Uvicorn (1 worker para B1)
 echo "[3/3] Iniciando servidor Uvicorn..."
 echo "Host: 0.0.0.0"
 echo "Puerto: ${PORT:-8000}"
 echo "Workers: 1 (B1 single-core)"
+echo "Module: Hermes.Web.backend.main:app"
 echo "========================================="
 
-cd "$HERMES_WEB_DIR"
-PYTHONPATH="$HERMES_WEB_DIR" python3 -m uvicorn \
-    backend.main:app \
+cd "$PROJECT_ROOT"
+python3 -m uvicorn \
+    Hermes.Web.backend.main:app \
     --host 0.0.0.0 \
     --port ${PORT:-8000} \
     --workers 1 \

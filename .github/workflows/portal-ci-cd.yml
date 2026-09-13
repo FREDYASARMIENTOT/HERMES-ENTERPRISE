@@ -110,7 +110,11 @@ jobs:
         run: |
           ZIP_FILE="/tmp/portal-deploy-${{ github.sha }}.zip"
           echo "=== Creating deployment package ==="
-          zip -r "$ZIP_FILE" . -x '*.git*' '_azure_logs*' '__pycache__/*' '.venv/*' '*.zip' 'node_modules/*'
+          # Only package Hermes.Web/ + root requirements.txt — NOT the entire repo
+          zip -r "$ZIP_FILE" Hermes.Web/ -x '__pycache__/*' '.venv/*' '*.pyc'
+          zip -j "$ZIP_FILE" requirements.txt
+          echo "Package contents:"
+          unzip -l "$ZIP_FILE" | head -30
           echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
           echo "=== Deploying ${{ env.APP_NAME }} ==="
           az webapp deploy \
@@ -118,7 +122,7 @@ jobs:
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --src-path "$ZIP_FILE" \
             --type zip \
-            --clean true
+            --restart true
           echo "=== Deploy submitted ==="
 
       - name: Validate Azure startup command

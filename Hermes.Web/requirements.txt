@@ -21,6 +21,7 @@ jinja2>=3.1.0
 
 # === Utilidades de sistema ===
 python-dotenv>=1.0.0
+httpx>=0.27.0
 
 # === Testing (no desplegadas en producción) ===
 pytest>=8.0.0

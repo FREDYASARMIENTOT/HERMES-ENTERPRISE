@@ -103,6 +103,7 @@ jobs:
           echo "Total packages: $(ls __deps__/ | wc -l)"
           cd ..
           echo "=== Self-contained package ready ==="
+
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
@@ -141,21 +142,27 @@ jobs:
         shell: bash
         run: |
           ZIP_FILE="/tmp/portal-deploy-${{ github.sha }}.zip"
-          echo "=== Creating deployment package ==="
+          echo "=== Pre-installing pip packages into __deps__/ ==="
+          cd Hermes.Web
+          pip install -r requirements.txt --target ./__deps__ --no-compile -q 2>&1
+          echo "=== __deps__/ contents ==="
+          ls -la __deps__/ | head -20
+          echo "Total packages: $(ls __deps__/ | wc -l)"
+          echo "=== Creating deployment package (with __deps__/) ==="
           # RC93: ZIP root = contenido de Hermes.Web/
           #   backend/      ← Hermes.Web/backend/
           #   api/          ← Hermes.Web/api/
           #   middleware/   ← Hermes.Web/middleware/
           #   templates/    ← Hermes.Web/templates/
           #   data/         ← Hermes.Web/data/
+          #   __deps__/     ← pre-installed pip packages
           #   requirements.txt  ← Hermes.Web/requirements.txt
           #   deployment/startup.sh
-          cd Hermes.Web
           zip -r "$ZIP_FILE" . \
             -x '__pycache__/*' '.venv/*' '*.pyc'
           cd ..
           echo "Package contents:"
-          unzip -l "$ZIP_FILE" | head -40
+          unzip -l "$ZIP_FILE" | head -60
           echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
           echo "=== Deploying ${{ env.APP_NAME }} ==="
           az webapp deploy \

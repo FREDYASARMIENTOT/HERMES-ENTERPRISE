@@ -65,7 +65,14 @@ function Crear-RepositorioGitHubProyecto {
     $ghUser = (gh api user -q .login 2>&1).Trim()
     if (-not $ghUser) { $ghUser = "FREDYASARMIENTOT" }
     $repoCompleto = "$ghUser/$nombreRepositorio"
-    $urlRemoto = "https://github.com/$repoCompleto.git"
+    # Embed token in remote URL if GH_TOKEN is available, so 'git push' works
+    # (GH_TOKEN env var is NOT automatically used by git over HTTPS)
+    $ghToken = $env:GH_TOKEN
+    if ($ghToken) {
+        $urlRemoto = "https://FREDYASARMIENTOT:${ghToken}@github.com/$repoCompleto.git"
+    } else {
+        $urlRemoto = "https://github.com/$repoCompleto.git"
+    }
 
     $directorioOriginal = Get-Location
     Set-Location $ProjectDir
@@ -123,6 +130,9 @@ function Publicar-ProyectoEnGitHub {
         if ($LASTEXITCODE -ne 0) {
             Write-Host "[GitHub] Publicación fallida, reintentando con --force..."
             $salidaPublicacion = git push -u origin $Branch --force 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "Error al publicar en GitHub (incluso con --force): $salidaPublicacion"
+            }
         }
         Write-Host "[GitHub] Publicación completada en origin/$Branch"
     }

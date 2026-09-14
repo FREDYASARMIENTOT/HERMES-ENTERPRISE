@@ -315,8 +315,18 @@ jobs:
           curl -s --connect-timeout 10 --max-time 15 "$URL/api/fabrica/proyectos" | python3 -c "import sys,json;d=json.load(sys.stdin)" 2>/dev/null && pass "Factory API: valid" || fail "Factory API: invalid"
 
           echo "--- [App Service Plans API] ---"
-          ASP_DATA=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/fabrica/app-service-plans" 2>/dev/null || echo '{"exito":false}')
-          echo "$ASP_DATA" | python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('exito')==True; plans=d.get('planes',[]); assert len(plans)>0; assert any(p.get('resource_group')=='RG-Hermes-Proyectos' for p in plans); print(f'OK: {len(plans)} planes reales de RG-Hermes-Proyectos')" 2>/dev/null && pass "App Service Plans: real, dinamico, RG-Hermes-Proyectos" || fail "App Service Plans: FAIL"
+          ASP_RETRIES=3
+          ASP_DELAY=30
+          ASP_PASS=false
+          for i in $(seq 1 ${ASP_RETRIES}); do
+            ASP_DATA=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/fabrica/app-service-plans" 2>/dev/null || echo '{"exito":false}')
+            if echo "$ASP_DATA" | python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('exito')==True; plans=d.get('planes',[]); assert len(plans)>0; assert any(p.get('resource_group')=='RG-Hermes-Proyectos' for p in plans); print(f'OK: {len(plans)} planes reales de RG-Hermes-Proyectos')" 2>/dev/null; then
+              ASP_PASS=true; break
+            fi
+            echo "  [App Service Plans] Intento ${i}/${ASP_RETRIES} falló, esperando ${ASP_DELAY}s (RBAC propagation)..."
+            sleep ${ASP_DELAY}
+          done
+          if [ "$ASP_PASS" = true ]; then pass "App Service Plans: real, dinamico, RG-Hermes-Proyectos"; else fail "App Service Plans: FAIL"; fi
 
           echo "--- [HTML Selector Validation] ---"
           ROOT_HTML=$(curl -s --connect-timeout 10 --max-time 15 "$URL/" 2>/dev/null || echo "")

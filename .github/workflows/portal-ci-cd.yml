@@ -99,7 +99,7 @@ jobs:
           cd Hermes.Web
           pip install -r requirements.txt --target ./__deps__ --no-compile -q 2>&1
           echo "=== __deps__/ contents ==="
-          ls -la __deps__/ | head -20
+          ls -la __deps__/ 2>&1 || true
           echo "Total packages: $(ls __deps__/ | wc -l)"
           cd ..
           echo "=== Self-contained package ready ==="
@@ -159,7 +159,7 @@ jobs:
           cd Hermes.Web
           pip install -r requirements.txt --target ./__deps__ --no-compile -q 2>&1
           echo "=== __deps__/ contents ==="
-          ls -la __deps__/ | head -20
+          ls -la __deps__/ 2>&1 || true
           echo "Total packages: $(ls __deps__/ | wc -l)"
           echo "=== Creating deployment package (with __deps__/) ==="
           # RC93: ZIP root = contenido de Hermes.Web/
@@ -175,7 +175,7 @@ jobs:
             -x '__pycache__/*' '.venv/*' '*.pyc'
           cd ..
           echo "Package contents:"
-          unzip -l "$ZIP_FILE" | head -60
+          unzip -l "$ZIP_FILE" 2>&1 || true
           echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
           echo "=== Deploying ${{ env.APP_NAME }} ==="
           az webapp deploy \

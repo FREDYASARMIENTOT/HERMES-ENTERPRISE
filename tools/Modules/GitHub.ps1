@@ -47,9 +47,9 @@ function Crear-RepositorioGitHubProyecto {
         # para evitar dependencia de GraphQL. Funciona con tokens OAuth (gho_)
         # y cualquier token con scope 'repo'.
         $repoData = gh api --method POST /user/repos `
-            -f name=$nombreRepositorio `
-            -f private=($Visibility -eq "private") `
-            -f description=$Description `
+            -f "name=$nombreRepositorio" `
+            -f "private=$($Visibility -eq 'private')" `
+            -F "description=$Description" `
             -f auto_init=false `
             -f has_issues=false `
             -f has_projects=false `

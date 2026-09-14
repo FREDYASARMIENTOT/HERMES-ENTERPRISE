@@ -140,7 +140,8 @@ class ServicioGitHub:
     def construir_payload_factory_runner(
         project_name: str,
         correlation_id: str = "",
-        deployment_id: str = ""
+        deployment_id: str = "",
+        app_service_plan_id: str = ""
     ) -> Dict[str, Any]:
         """
         Construye el payload para disparar factory-run.yml.
@@ -148,6 +149,7 @@ class ServicioGitHub:
             project_name: Nombre del proyecto (ej: hermes-fabrica-04)
             correlation_id: Correlation ID del tracking (opcional)
             deployment_id: Deployment ID del tracking (opcional)
+            app_service_plan_id: Resource ID del App Service Plan (opcional)
         Returns:
             Dict con ref e inputs para workflow_dispatch
         """
@@ -156,6 +158,8 @@ class ServicioGitHub:
             inputs["correlation_id"] = correlation_id
         if deployment_id:
             inputs["deployment_id"] = deployment_id
+        if app_service_plan_id:
+            inputs["app_service_plan_id"] = app_service_plan_id
         return {"ref": RAMA_POR_DEFECTO, "inputs": inputs}
 
     async def disparar_factory_runner(
@@ -163,6 +167,7 @@ class ServicioGitHub:
         project_name: str,
         correlation_id: str = "",
         deployment_id: str = "",
+        app_service_plan_id: str = "",
         token_sobreescribe: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -171,6 +176,7 @@ class ServicioGitHub:
             project_name: Nombre del proyecto a crear
             correlation_id: Correlation ID opcional
             deployment_id: Deployment ID opcional
+            app_service_plan_id: Resource ID del App Service Plan (opcional)
             token_sobreescribe: Token opcional
         Returns:
             Dict con resultado del dispatch
@@ -193,7 +199,8 @@ class ServicioGitHub:
         payload = self.construir_payload_factory_runner(
             project_name=project_name,
             correlation_id=correlation_id,
-            deployment_id=deployment_id
+            deployment_id=deployment_id,
+            app_service_plan_id=app_service_plan_id
         )
         resultado["payload_enviado"] = payload
         workflow = WORKFLOW_FACTORY_RUNNER

@@ -111,7 +111,11 @@
                                     <input type="text" class="form-control" id="nuevo-proyecto-input"
                                            placeholder="Nombre del proyecto (ej: hermes-fabrica-04)"
                                            maxlength="40" pattern="[a-z0-9-]+">
-                                    <button class="btn btn-primary" id="crear-proyecto-btn" onclick="crearProyecto()">
+                                    <select class="form-select" id="app-service-plan-select"
+                                            style="max-width:260px;">
+                                        <option value="">Cargando planes...</option>
+                                    </select>
+                                    <button class="btn btn-primary" id="crear-proyecto-btn" onclick="crearProyecto()" disabled>
                                         <i class="bi bi-plus-circle me-1"></i>Crear Proyecto
                                     </button>
                                 </div>
@@ -646,7 +650,11 @@
                 const resp = await fetch('/api/fabrica/proyectos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre_proyecto: nombre, descripcion: '' })
+                    body: JSON.stringify({
+                        nombre_proyecto: nombre,
+                        descripcion: '',
+                        app_service_plan_id: document.getElementById('app-service-plan-select').value || ''
+                    })
                 });
                 const data = await resp.json();
                 if (!resp.ok) {
@@ -796,6 +804,54 @@
 
         // Inicializar contador al cargar
         actualizarContadorProyectos();
+
+        // ══════════════════════════════════════════════════
+        // App Service Plan - Carga dinamica
+        // ══════════════════════════════════════════════════
+
+        async function cargarPlanes() {
+            const select = document.getElementById('app-service-plan-select');
+            if (!select) return;
+            try {
+                const resp = await fetch('/api/fabrica/app-service-plans');
+                const data = await resp.json();
+                if (!data.exito || !data.planes || data.planes.length === 0) {
+                    select.innerHTML = '<option value="">No hay planes disponibles</option>';
+                    return;
+                }
+                let html = '<option value="">Seleccione un plan...</option>';
+                data.planes.forEach(function(plan) {
+                    html += '<option value="' + plan.id + '">' + plan.name + ' (' + plan.sku + ')</option>';
+                });
+                select.innerHTML = html;
+                habilitarBotonCrear();
+            } catch (e) {
+                console.error('Error cargando planes:', e);
+                select.innerHTML = '<option value="">Error al cargar planes</option>';
+            }
+        }
+
+        function habilitarBotonCrear() {
+            const btn = document.getElementById('crear-proyecto-btn');
+            const select = document.getElementById('app-service-plan-select');
+            if (!btn || !select) return;
+            btn.disabled = !select.value;
+        }
+
+        // Eventos para habilitar/deshabilitar boton
+        document.addEventListener('DOMContentLoaded', function() {
+            const select = document.getElementById('app-service-plan-select');
+            const input = document.getElementById('nuevo-proyecto-input');
+            if (select) {
+                select.addEventListener('change', habilitarBotonCrear);
+            }
+            if (input) {
+                input.addEventListener('input', habilitarBotonCrear);
+            }
+        });
+
+        // Cargar planes al iniciar
+        cargarPlanes();
 
         // ══════════════════════════════════════════════════
         // Top 5 Historial - Actualizacion automatica

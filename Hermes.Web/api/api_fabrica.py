@@ -7,6 +7,7 @@ Endpoints:
     POST   /api/fabrica/proyectos          -> Crear solicitud de proyecto
     GET    /api/fabrica/proyectos          -> Listar solicitudes
     GET    /api/fabrica/proyectos/{id}     -> Obtener estado de solicitud
+    GET    /api/fabrica/app-service-plans  -> Listar App Service Plans disponibles
     POST   /api/fabrica/proyectos/{id}/ejecutar -> Ejecutar Factory local (PowerShell)
     POST   /api/fabrica/proyectos/{id}/disparar -> Disparar Factory Runner remoto (GitHub Actions)
     POST   /api/fabrica/proyectos/{id}/paso     -> Actualizar paso (Control Plane)
@@ -31,6 +32,10 @@ class SolicitudCrear(BaseModel):
     nombre_proyecto: str = Field(..., min_length=3, max_length=40,
                                  description="Nombre del proyecto (ej: hermes-fabrica-04)")
     descripcion: str = Field("", description="Descripción del proyecto")
+    app_service_plan_id: str = Field(
+        "",
+        description="Resource ID completo del App Service Plan de destino (RG-Hermes-Proyectos)"
+    )
 
 class SolicitudResponse(BaseModel):
     """Modelo de respuesta para una solicitud."""
@@ -67,11 +72,13 @@ async def crear_proyecto(request: Request, solicitud: SolicitudCrear):
         servicio = request.app.state.servicio_fabrica
         resultado = servicio.crear_solicitud(
             nombre_proyecto=solicitud.nombre_proyecto,
-            descripcion=solicitud.descripcion
+            descripcion=solicitud.descripcion,
+            app_service_plan_id=solicitud.app_service_plan_id
         )
         logger.info(
             f"Proyecto solicitado: {resultado.nombre_proyecto} "
-            f"(deployment: {resultado.deployment_id})"
+            f"(deployment: {resultado.deployment_id}) "
+            f"(plan: {solicitud.app_service_plan_id or 'NO_ESPECIFICADO'})"
         )
         return SolicitudResponse(
             id=resultado.id,
@@ -269,5 +276,37 @@ async def finalizar_proyecto(request: Request, deployment_id: str, final: Finali
     except Exception as e:
         logger.error(f"Error finalizando solicitud: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+# ──────────────────────────────────────────────────────────────
+# Endpoint: Listar App Service Plans
+# ──────────────────────────────────────────────────────────────
+
+
+@router.get("/fabrica/app-service-plans",
+            summary="Listar App Service Plans disponibles",
+            description="Obtiene la lista de App Service Plans en RG-Hermes-Proyectos")
+async def listar_app_service_planes(request: Request):
+    """Lista los App Service Plans disponibles en RG-Hermes-Proyectos."""
+    try:
+        from Hermes.Web.backend.servicio_azure import obtener_servicio_azure
+        servicio_azure = obtener_servicio_azure()
+        resultado = servicio_azure.listar_app_service_plans()
+        if not resultado["exito"]:
+            logger.warning(f"Error listando planes: {resultado.get('error', '')}")
+            return {
+                "exito": False,
+                "planes": [],
+                "error": resultado.get("error", "No fue posible obtener los App Service Plans.")
+            }
+        return {
+            "exito": True,
+            "planes": resultado["planes"],
+            "total": len(resultado["planes"])
+        }
+    except ImportError:
+        logger.error("servicio_azure no disponible")
+        return {"exito": False, "planes": [], "error": "Módulo Azure no disponible"}
+    except Exception as e:
+        logger.error(f"Error en listar_app_service_planes: {e}")
+        return {"exito": False, "planes": [], "error": f"Error interno: {str(e)}"}
 
 

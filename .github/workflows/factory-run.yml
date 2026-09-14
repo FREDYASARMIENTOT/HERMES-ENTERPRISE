@@ -26,6 +26,11 @@ on:
         required: false
         default: ""
         type: string
+      app_service_plan_id:
+        description: Resource ID del App Service Plan de destino (RG-Hermes-Proyectos)
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -178,7 +183,9 @@ jobs:
           $p = "${{ needs.validate.outputs.project_name }}"
           $w = "${{ github.workspace }}/workspace"
           $g = "${{ env.FACTORY_GITHUB_USER }}"
-          & ".\tools\Crear-HermesProyecto.ps1" -NombreProyecto $p -WorkspaceRoot $w -GitHubUser $g -TriggerControlPlane -SkipAzure
+          $aspId = "${{ inputs.app_service_plan_id }}"
+          if ([string]::IsNullOrEmpty($aspId)) { $aspId = "" }
+          & ".\tools\Crear-HermesProyecto.ps1" -NombreProyecto $p -WorkspaceRoot $w -GitHubUser $g -TriggerControlPlane -SkipAzure -AppServicePlanId $aspId
           if ($LASTEXITCODE -ne 0) { throw "Factory fallo" }
           "factory_result=PASS" | Out-File $env:GITHUB_OUTPUT -Append
 

@@ -281,6 +281,14 @@ jobs:
           echo "--- [Factory API] ---"
           curl -s --connect-timeout 10 --max-time 15 "$URL/api/fabrica/proyectos" | python3 -c "import sys,json;d=json.load(sys.stdin)" 2>/dev/null && pass "Factory API: valid" || fail "Factory API: invalid"
 
+          echo "--- [App Service Plans API] ---"
+          ASP_DATA=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/fabrica/app-service-plans" 2>/dev/null || echo '{"exito":false}')
+          echo "$ASP_DATA" | python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('exito')==True; plans=d.get('planes',[]); assert len(plans)>0; assert any(p.get('resource_group')=='RG-Hermes-Proyectos' for p in plans); print(f'OK: {len(plans)} planes reales de RG-Hermes-Proyectos')" 2>/dev/null && pass "App Service Plans: real, dinamico, RG-Hermes-Proyectos" || fail "App Service Plans: FAIL"
+
+          echo "--- [HTML Selector Validation] ---"
+          ROOT_HTML=$(curl -s --connect-timeout 10 --max-time 15 "$URL/" 2>/dev/null || echo "")
+          echo "$ROOT_HTML" | python3 -c "import sys; html=sys.stdin.read(); assert 'app-service-plan-select' in html; assert 'crearProyecto' in html; assert 'cargarPlanes' in html; print('OK: HTML contiene selector dinamico y funciones JS')" 2>/dev/null && pass "HTML selector: presente, dinamico" || fail "HTML selector: ausente"
+
           echo "--- [Proyectos Page] ---"
           CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL/proyectos")
           [ "$CODE" -eq 200 ] && pass "Proyectos: 200" || fail "Proyectos: $CODE"

@@ -52,7 +52,7 @@ PASOS_CANONICOS = [
     {"numero": 4,  "nombre": "CI CHILD",        "descripcion": "GitHub Actions CI del Child"},
     {"numero": 5,  "nombre": "CONTROL PLANE",   "descripcion": "Orquestación de despliegue"},
     {"numero": 6,  "nombre": "AUTENTICACIÓN",   "descripcion": "OIDC / FIC"},
-    {"numero": 7,  "nombre": "AZURE",           "descripcion": "Aprovisionamiento en ASP-IAUR"},
+    {"numero": 7,  "nombre": "AZURE",           "descripcion": "Aprovisionamiento en plan seleccionado por el usuario"},
     {"numero": 8,  "nombre": "DEPLOY",          "descripcion": "ZIP Deploy a Web App"},
     {"numero": 9,  "nombre": "READINESS",       "descripcion": "Health check del Child"},
     {"numero": 10, "nombre": "PRUEBAS FUNC.",   "descripcion": "Pruebas funcionales de endpoints"},
@@ -97,6 +97,7 @@ class SolicitudProyecto:
         estado, correlation_id, deployment_id, commit_sha
         repo_url, web_app_url, pasos (13 pasos canónicos)
         fecha_solicitud, fecha_actualizacion, resultado, error
+        app_service_plan_id, app_service_plan_name, app_service_plan_resource_group
     """
 
     def __init__(
@@ -107,7 +108,8 @@ class SolicitudProyecto:
         web_app: str = "",
         correlation_id: str = "",
         deployment_id: str = "",
-        estado: str = "SOLICITADO"
+        estado: str = "SOLICITADO",
+        app_service_plan_id: str = ""
     ):
         self.id: str = _generar_id()
         self.nombre_proyecto: str = nombre_proyecto
@@ -125,6 +127,9 @@ class SolicitudProyecto:
         self.fecha_actualizacion: str = self.fecha_solicitud
         self.resultado: str = ""
         self.error: str = ""
+        self.app_service_plan_id: str = app_service_plan_id
+        self.app_service_plan_name: str = ""
+        self.app_service_plan_resource_group: str = ""
         self._inicializar_pasos()
 
     def _inicializar_pasos(self) -> None:
@@ -183,7 +188,10 @@ class SolicitudProyecto:
             "commit_sha": self.commit_sha, "pasos": self.pasos,
             "fecha_solicitud": self.fecha_solicitud,
             "fecha_actualizacion": self.fecha_actualizacion,
-            "resultado": self.resultado, "error": self.error
+            "resultado": self.resultado, "error": self.error,
+            "app_service_plan_id": self.app_service_plan_id,
+            "app_service_plan_name": self.app_service_plan_name,
+            "app_service_plan_resource_group": self.app_service_plan_resource_group
         }
 
     @classmethod
@@ -196,7 +204,8 @@ class SolicitudProyecto:
             web_app=datos.get("web_app", ""),
             correlation_id=datos.get("correlation_id", ""),
             deployment_id=datos.get("deployment_id", ""),
-            estado=datos.get("estado", "SOLICITADO")
+            estado=datos.get("estado", "SOLICITADO"),
+            app_service_plan_id=datos.get("app_service_plan_id", "")
         )
         s.id = datos.get("id", s.id)
         s.commit_sha = datos.get("commit_sha", "")
@@ -206,6 +215,8 @@ class SolicitudProyecto:
         s.fecha_actualizacion = datos.get("fecha_actualizacion", s.fecha_solicitud)
         s.resultado = datos.get("resultado", "")
         s.error = datos.get("error", "")
+        s.app_service_plan_name = datos.get("app_service_plan_name", "")
+        s.app_service_plan_resource_group = datos.get("app_service_plan_resource_group", "")
         pasos_json = datos.get("pasos_json")
         if pasos_json:
             try:
@@ -261,7 +272,10 @@ class ServicioFabrica:
                     fecha_solicitud TEXT DEFAULT '',
                     fecha_actualizacion TEXT DEFAULT '',
                     resultado TEXT DEFAULT '',
-                    error TEXT DEFAULT ''
+                    error TEXT DEFAULT '',
+                    app_service_plan_id TEXT DEFAULT '',
+                    app_service_plan_name TEXT DEFAULT '',
+                    app_service_plan_resource_group TEXT DEFAULT ''
                 )
             """)
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes_proyecto(estado)")
@@ -276,17 +290,31 @@ class ServicioFabrica:
     # Operaciones CRUD
     # ──────────────────────────────────────────────────────────
 
-    def crear_solicitud(self, nombre_proyecto: str, descripcion: str = "") -> SolicitudProyecto:
+    def crear_solicitud(
+        self,
+        nombre_proyecto: str,
+        descripcion: str = "",
+        app_service_plan_id: str = ""
+    ) -> SolicitudProyecto:
         """Crea una nueva solicitud de proyecto."""
         if not nombre_proyecto or len(nombre_proyecto) < 3:
             raise ValueError("El nombre del proyecto debe tener al menos 3 caracteres")
+        if not app_service_plan_id:
+            raise ValueError(
+                "app_service_plan_id es REQUERIDO. "
+                "Debe seleccionar un App Service Plan de RG-Hermes-Proyectos."
+            )
         existente = self._buscar_por_nombre(nombre_proyecto)
         if existente and existente.estado not in ("FALLIDO", "COMPLETADO"):
             raise ValueError(
                 f"Ya existe una solicitud activa para '{nombre_proyecto}' "
                 f"(estado: {existente.estado})"
             )
-        solicitud = SolicitudProyecto(nombre_proyecto=nombre_proyecto, descripcion=descripcion)
+        solicitud = SolicitudProyecto(
+            nombre_proyecto=nombre_proyecto,
+            descripcion=descripcion,
+            app_service_plan_id=app_service_plan_id
+        )
         solicitud.iniciar_paso(1, f"Solicitud registrada para {nombre_proyecto}")
         self._guardar(solicitud)
         logger.info(f"Solicitud creada: {solicitud.id} / {solicitud.nombre_proyecto} "
@@ -374,15 +402,18 @@ class ServicioFabrica:
                 (id, nombre_proyecto, descripcion, repositorio, web_app,
                  web_app_url, repo_url, estado, correlation_id, deployment_id,
                  commit_sha, pasos_json, fecha_solicitud, fecha_actualizacion,
-                 resultado, error)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 resultado, error, app_service_plan_id, app_service_plan_name,
+                 app_service_plan_resource_group)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 datos["id"], datos["nombre_proyecto"], datos["descripcion"],
                 datos["repositorio"], datos["web_app"], datos["web_app_url"],
                 datos["repo_url"], datos["estado"], datos["correlation_id"],
                 datos["deployment_id"], datos["commit_sha"], datos["pasos_json"],
                 datos["fecha_solicitud"], datos["fecha_actualizacion"],
-                datos["resultado"], datos["error"]
+                datos["resultado"], datos["error"],
+                datos["app_service_plan_id"], datos["app_service_plan_name"],
+                datos["app_service_plan_resource_group"]
             ))
             conn.commit()
             conn.close()
@@ -523,6 +554,7 @@ class ServicioFabrica:
                 project_name=solicitud.nombre_proyecto,
                 correlation_id=solicitud.correlation_id,
                 deployment_id=solicitud.deployment_id,
+                app_service_plan_id=solicitud.app_service_plan_id,
             )
             if resultado.get("exito"):
                 solicitud = self.actualizar_estado(

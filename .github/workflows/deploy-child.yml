@@ -1,18 +1,20 @@
 # deploy-child.yml — PLANO DE CONTROL DE HERMES-ENTERPRISE
 # ====================================================================
-# RC77-C9-FIX: Orquesta despliegue de proyectos Hermes hijos desde
+# RCXX: Orquesta despliegue de proyectos Hermes hijos desde
 # HERMES-ENTERPRISE usando OIDC (FIC existente sin modificar).
 #
 # Arquitectura:
 #   HERMES-ENTERPRISE → OIDC → Azure
-#     ├── RG-Hermes-Proyectos     (Web Apps)
-#     └── RG-Datamining-SII2.0-Dev (ASP-IAUR compartido)
+#     ├── RG-Hermes-Proyectos     (Web Apps + App Service Plans dinámicos)
+#     └── Plan seleccionado por el usuario desde el Portal
 #
 # Principios:
-#   - NO crear App Service Plan (reutilizar ASP-IAUR)
+#   - NO crear App Service Plan (reutilizar plan seleccionado)
 #   - NO modificar FIC
 #   - NO usar Kudu / publishing profiles
 #   - Evidence con resultados REALES
+#   - app_service_plan_id recibido como input REQUIRED (workflow_dispatch)
+#   - Si app_service_plan_id está ausente: FAIL explícito (no hay fallback)
 # ====================================================================
 
 name: Control Plane — Deploy Child Project
@@ -32,15 +34,16 @@ on:
         description: 'SHA del commit a desplegar (40 caracteres hex)'
         required: true
         type: string
+      app_service_plan_id:
+        description: 'Resource ID del App Service Plan en RG-Hermes-Proyectos (REQUIRED)'
+        required: true
+        type: string
 
 permissions:
   contents: read
   id-token: write
 
 env:
-  APP_SERVICE_PLAN: ASP-IAUR
-  APP_SERVICE_PLAN_RG: RG-Datamining-SII2.0-Dev
-  APP_SERVICE_PLAN_RESOURCE_ID: /subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/RG-Datamining-SII2.0-Dev/providers/Microsoft.Web/serverfarms/ASP-IAUR
   WEBAPP_RESOURCE_GROUP: RG-Hermes-Proyectos
   LOCATION: eastus
   RUNTIME: 'PYTHON:3.12'
@@ -60,6 +63,7 @@ jobs:
       repository: ${{ steps.validate.outputs.repository }}
       commit_sha: ${{ steps.validate.outputs.commit_sha }}
       app_service_name: ${{ steps.validate.outputs.app_service_name }}
+      app_service_plan_id: ${{ steps.validate.outputs.app_service_plan_id }}
       validation_result: ${{ steps.validate.outputs.validation_result }}
     steps:
       - name: Validate Inputs (Security)
@@ -96,10 +100,29 @@ jobs:
           echo "OK: No URL injection"
 
           APP_NAME="as-$(echo "${PROJ}" | sed 's/[^a-z0-9]//g')"
+
+          # Resolver App Service Plan ID (REQUIRED)
+          ASP_ID="${{ inputs.app_service_plan_id }}"
+          if [ -z "${ASP_ID}" ]; then
+            echo "FAIL: app_service_plan_id es REQUIRED. No se proporcionó ningún plan."
+            echo "  El usuario debe seleccionar un App Service Plan de RG-Hermes-Proyectos"
+            echo "  desde el Portal antes de crear un proyecto."
+            exit 1
+          fi
+          # Validar que el resource ID pertenezca a RG-Hermes-Proyectos con patrón exacto
+          ASP_PATTERN='^/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/RG-Hermes-Proyectos/providers/Microsoft.Web/serverfarms/[a-zA-Z0-9_-]+$'
+          if ! echo "${ASP_ID}" | grep -qP "${ASP_PATTERN}"; then
+            echo "FAIL: app_service_plan_id no pertenece a RG-Hermes-Proyectos"
+            echo "  Valor: ${ASP_ID}"
+            echo "  Solo se aceptan planes en el resource group autorizado."
+            exit 1
+          fi
+
           echo "project_name=${PROJ}" >> $GITHUB_OUTPUT
           echo "repository=${REPO}" >> $GITHUB_OUTPUT
           echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
           echo "app_service_name=${APP_NAME}" >> $GITHUB_OUTPUT
+          echo "app_service_plan_id=${ASP_ID}" >> $GITHUB_OUTPUT
           echo "validation_result=PASS" >> $GITHUB_OUTPUT
 
           echo ""
@@ -110,6 +133,7 @@ jobs:
           echo "  Repository  : ${REPO}"
           echo "  SHA         : ${SHA}"
           echo "  Web App     : ${APP_NAME}"
+          echo "  ASP ID      : ${ASP_ID}"
           echo "=========================================="
 
   # ==================================================================
@@ -165,15 +189,14 @@ jobs:
         shell: bash
         run: |
           echo "=== Infrastructure Configuration ==="
-          echo "App Service Plan     : ${{ env.APP_SERVICE_PLAN }}"
-          echo "Plan Resource Group  : ${{ env.APP_SERVICE_PLAN_RG }}"
+          echo "App Service Plan ID : ${{ needs.validate-inputs.outputs.app_service_plan_id }}"
           echo "WebApp Resource Group: ${{ env.WEBAPP_RESOURCE_GROUP }}"
           echo "Web App Name         : ${{ needs.validate-inputs.outputs.app_service_name }}"
           echo "Location             : ${{ env.LOCATION }}"
           echo "Runtime              : ${{ env.RUNTIME }}"
           echo ""
-          echo "Plan and WebApp RGs are DIFFERENT:"
-          echo "  Plan RG     : ${{ env.APP_SERVICE_PLAN_RG }}"
+          echo "App Service Plan PROVIDED BY USER (validated):"
+          echo "  Plan ID     : ${{ needs.validate-inputs.outputs.app_service_plan_id }}"
           echo "  WebApp RG   : ${{ env.WEBAPP_RESOURCE_GROUP }}"
           echo ""
           echo "OIDC: Only from HERMES-ENTERPRISE (FIC existente)"
@@ -216,29 +239,22 @@ jobs:
           echo "Account: ${ACCOUNT_NAME}"
           echo "login_result=PASS" >> $GITHUB_OUTPUT
 
-      - name: Verify ASP-IAUR Exists (Read-Only)
+      - name: Verify App Service Plan Exists (Read-Only)
         shell: bash
         run: |
-          echo "=== Verifying Shared ASP-IAUR ==="
-          echo "Plan : ${{ env.APP_SERVICE_PLAN }}"
-          echo "RG   : ${{ env.APP_SERVICE_PLAN_RG }}"
+          ASP_ID="${{ needs.validate-inputs.outputs.app_service_plan_id }}"
+          echo "=== Verifying App Service Plan ==="
+          echo "Resource ID: ${ASP_ID}"
           echo ""
           echo "NOTE: SP scope is RG-Hermes-Proyectos only."
           echo "Plan is validated via ARM resource ID at provision time."
           echo ""
-          echo "Validating plan name format..."
-          PLAN="${{ env.APP_SERVICE_PLAN }}"
-          PLAN_RG="${{ env.APP_SERVICE_PLAN_RG }}"
-          LOC="${{ env.LOCATION }}"
-          if ! echo "${PLAN}" | grep -qP '^[a-zA-Z0-9_-]{1,60}$'; then
-            echo "FAIL: Invalid plan name format"
+          echo "Validating plan resource ID format..."
+          if ! echo "${ASP_ID}" | grep -qP '^/subscriptions/[a-f0-9-]+/resourceGroups/[a-zA-Z0-9_.-]+/providers/Microsoft.Web/serverfarms/[a-zA-Z0-9_-]+$'; then
+            echo "FAIL: Invalid plan resource ID format"
             exit 1
           fi
-          if ! echo "${PLAN_RG}" | grep -qP '^[a-zA-Z0-9_.-]{1,90}$'; then
-            echo "FAIL: Invalid plan RG format"
-            exit 1
-          fi
-          echo "OK: ASP-IAUR static validation passed — plan will be referenced by resource ID"
+          echo "OK: App Service Plan resource ID format validated"
 
       - name: Verify WebApp Resource Group
         shell: bash
@@ -248,7 +264,7 @@ jobs:
           echo "OK: RG ${{ env.WEBAPP_RESOURCE_GROUP }} exists"
 
   # ==================================================================
-  # TRABAJO 5: provision-webapp — Crear/reutilizar Web App con ASP-IAUR
+  # TRABAJO 5: provision-webapp — Crear/reutilizar Web App con App Service Plan dinámico
   # ==================================================================
   provision-webapp:
     name: Provision Web App
@@ -273,17 +289,14 @@ jobs:
         run: |
           APP_NAME="${{ needs.validate-inputs.outputs.app_service_name }}"
           RG="${{ env.WEBAPP_RESOURCE_GROUP }}"
-          PLAN="${{ env.APP_SERVICE_PLAN }}"
           RUNTIME="${{ env.RUNTIME }}"
-          STARTUP="${{ env.STARTUP_COMMAND }}"
 
           echo "=== Web App Provision ==="
           echo "App  : ${APP_NAME}"
           echo "RG   : ${RG}"
-          echo "Plan : ${PLAN} (shared from ${APP_SERVICE_PLAN_RG})"
 
-          # Usar ID completo del plan de recursos ya que está en otro RG
-          PLAN_ID="${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
+          # Usar ID completo del plan (viene del input validado, es REQUIRED)
+          PLAN_ID="${{ needs.validate-inputs.outputs.app_service_plan_id }}"
           echo "Plan ID: ${PLAN_ID}"
 
           EXISTING=$(az webapp show \
@@ -334,18 +347,18 @@ jobs:
           WA_FARM=$(echo "${RESULT}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['serverFarmId'])")
           WA_STATE=$(echo "${RESULT}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['state'])")
 
-          EXPECTED_FARM_ID="${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
+          EXPECTED_FARM_ID="${{ needs.validate-inputs.outputs.app_service_plan_id }}"
           if [ "${WA_FARM}" != "${EXPECTED_FARM_ID}" ]; then
-            echo "WARN: Web App not using ASP-IAUR (farm=${WA_FARM})"
+            echo "WARN: Web App not using expected plan (farm=${WA_FARM})"
             echo "Expected: ${EXPECTED_FARM_ID}"
           else
-            echo "OK: Web App is using ASP-IAUR (exact match)"
+            echo "OK: Web App is using expected plan (exact match)"
           fi
           [ "${WA_STATE}" != "Running" ] && { echo "FAIL: State=${WA_STATE}"; exit 1; }
 
           echo "app_service_url=${WA_URL}" >> $GITHUB_OUTPUT
           echo "webapp_result=PASS" >> $GITHUB_OUTPUT
-          echo "Plan Created: NO (shared ASP-IAUR reused)"
+          echo "Plan: user-selected or default"
 
   # ==================================================================
   # TRABAJO 6: deploy — Desplegar via az webapp deploy (reemplaza Azure/webapps-deploy@v3)
@@ -693,9 +706,7 @@ jobs:
           export VERIFIED_SHA="${{ needs.checkout-child.outputs.deployed_sha }}"
           export APP_NAME="${{ needs.validate-inputs.outputs.app_service_name }}"
           export WEBAPP_RG="${{ env.WEBAPP_RESOURCE_GROUP }}"
-          export PLAN_RG="${{ env.APP_SERVICE_PLAN_RG }}"
-          export PLAN_NAME="${{ env.APP_SERVICE_PLAN }}"
-          export PLAN_RESOURCE_ID="${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
+          export PLAN_RESOURCE_ID="${{ needs.validate-inputs.outputs.app_service_plan_id }}"
           export LOCATION="${{ env.LOCATION }}"
           export RUNTIME="${{ env.RUNTIME }}"
           export GITHUB_RUN_ID="${{ github.run_id }}"
@@ -745,8 +756,9 @@ jobs:
           register_paso 6 "AUTENTICACIÓN" "${OIDC_RES}" "GitHub OIDC -> Azure login" "${OIDC_RES}"
 
           # Registrar Azure (paso 7)
+          ASP_ID="${{ needs.validate-inputs.outputs.app_service_plan_id }}"
           ASP_RES="COMPLETADO"
-          register_paso 7 "AZURE" "${ASP_RES}" "WebApp aprovisionada en ASP-IAUR (reutilizado)" "PASS"
+          register_paso 7 "AZURE" "${ASP_RES}" "WebApp aprovisionada en plan: ${ASP_ID}" "PASS"
 
           # Registrar Deploy (paso 8)
           DEP_RES="${{ needs.deploy.outputs.deploy_result }}"
@@ -798,9 +810,7 @@ jobs:
             echo "  Repository : ${{ needs.validate-inputs.outputs.repository }}"
             echo "  SHA        : ${{ needs.validate-inputs.outputs.commit_sha }}"
             echo "  Web App    : ${{ needs.provision-webapp.outputs.app_service_url }}"
-            echo "  Plan       : ${{ env.APP_SERVICE_PLAN }} (reused, not created)"
-            echo "  Plan ResID : ${{ env.APP_SERVICE_PLAN_RESOURCE_ID }}"
-            echo "  Plan RG    : ${{ env.APP_SERVICE_PLAN_RG }}"
+            echo "  Plan ResID : ${{ needs.validate-inputs.outputs.app_service_plan_id }}"
             echo "  WebApp RG  : ${{ env.WEBAPP_RESOURCE_GROUP }}"
             echo "  OIDC       : PASS (FIC reutilizada)"
             echo "=========================================="

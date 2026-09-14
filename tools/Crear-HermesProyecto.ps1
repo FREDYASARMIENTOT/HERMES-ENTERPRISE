@@ -28,7 +28,8 @@ param(
     [int]$MaxAutocorrectionCycles = 5,
     [int]$MaxDeployRetries = 3,
     [switch]$TriggerControlPlane = $false,
-    [switch]$SkipAzure = $false
+    [switch]$SkipAzure = $false,
+    [string]$AppServicePlanId = ""
 )
 
 Set-StrictMode -Version Latest
@@ -395,18 +396,23 @@ try {
 
     if ($TriggerControlPlane) {
         Write-Step "ControlPlane" "START" "Triggering deploy-child.yml workflow"
+        $aspField = ""
+        if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) {
+            $aspField = " --field app_service_plan_id=$AppServicePlanId"
+        }
         $triggerResult = gh workflow run deploy-child.yml `
             --repo "$GitHubUser/HERMES-ENTERPRISE" `
             --ref main `
             --field project_name=$NombreProyecto `
             --field repository=$repoName `
             --field commit_sha=$commitSha `
+            $aspField `
             2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-Step "ControlPlane" "OK" "Triggered! Check Actions: https://github.com/$GitHubUser/HERMES-ENTERPRISE/actions"
         } else {
             Write-Step "ControlPlane" "WARN" "Trigger failed: $triggerResult"
-            Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha"
+            Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$aspField"
         }
     } else {
         Write-Step "ControlPlane" "SKIP" "Use -TriggerControlPlane to auto-deploy via Control Plane"

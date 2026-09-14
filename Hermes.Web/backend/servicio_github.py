@@ -50,27 +50,15 @@ def _obtener_token() -> Optional[str]:
     Obtiene el token de GitHub desde variable de entorno.
     Retorna: Token o None si no esta configurado.
     Seguridad: Nunca imprime el token en logs ni respuestas.
-
-    Busca en múltiples nombres de variable de entorno para
-    compatibilidad con diferentes entornos de Azure App Service:
-      1. HERMES_GITHUB_TOKEN (nombre canónico)
-      2. GH_PORTAL_HERMES_REPO_WRITE_TOKEN (nombre original del secreto)
-      3. APPSETTING_HERMES_GITHUB_TOKEN (prefijo Azure App Service legacy)
     """
-    nombres_variables = [
-        ENV_TOKEN_GITHUB,
-        "GH_PORTAL_HERMES_REPO_WRITE_TOKEN",
-        f"APPSETTING_{ENV_TOKEN_GITHUB}",
-    ]
-    for var_name in nombres_variables:
-        token = os.environ.get(var_name, "")
-        if token:
-            return token
-    logger.warning(
-        f"Variable de entorno {ENV_TOKEN_GITHUB} no configurada. "
-        f"El dispatch a GitHub no estara disponible."
-    )
-    return None
+    token = os.environ.get(ENV_TOKEN_GITHUB, "")
+    if not token:
+        logger.warning(
+            f"Variable de entorno {ENV_TOKEN_GITHUB} no configurada. "
+            f"El dispatch a GitHub no estara disponible."
+        )
+        return None
+    return token
 
 
 class ServicioGitHub:

@@ -388,14 +388,53 @@ try {
         Write-Step "GitFinal" "OK" "Working tree clean - nothing to commit"
     }
 
-    # ===== SHA Capture + Control Plane Trigger =====
+    # ===== SHA Capture + REMOTE VERIFICATION + Control Plane Trigger =====
     Write-Step "SHA" "START" "Capturing HEAD commit SHA"
     $commitSha = (git rev-parse HEAD 2>&1).Trim()
     $repoName = "$GitHubUser/$NombreProyecto"
     Write-Step "SHA" "OK" "SHA=$commitSha Repo=$repoName"
 
+    # Validar formato SHA
+    if ($commitSha -notmatch '^[0-9a-f]{40}$') {
+        Write-Step "SHA" "FAIL" "SHA inválido: $commitSha (debe ser 40 caracteres hex)"
+        throw "SHA inválido: $commitSha"
+    }
+
+    # ── VERIFICACIÓN ACTIVA DE SHA REMOTO ──
+    # Esperar que GitHub haya replicado el commit y exponer el SHA vía API
+    # Backoff: 0s, 5s, 10s, 20s, 30s (5 intentos, max ~65s)
     if ($TriggerControlPlane) {
-        Write-Step "ControlPlane" "START" "Triggering deploy-child.yml workflow"
+        Write-Step "SHA" "START" "Verificando que SHA existe remotamente en $repoName"
+        $shaVerified = $false
+        $backoffIntervals = @(0, 5, 10, 20, 30)
+        for ($attempt = 0; $attempt -lt $backoffIntervals.Length; $attempt++) {
+            $delay = $backoffIntervals[$attempt]
+            if ($attempt -gt 0) {
+                Write-Step "SHA" "WAIT" "Esperando ${delay}s (intento $($attempt+1)/$($backoffIntervals.Length))..."
+                Start-Sleep -Seconds $delay
+            }
+            # NO imprimir token. gh usa GH_TOKEN del env.
+            $shaCheck = gh api "/repos/$repoName/git/commits/$commitSha" --jq '.sha' 2>&1
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -eq 0 -and $shaCheck -match '^[0-9a-f]{40}$') {
+                Write-Step "SHA" "OK" "SHA verificado remotamente: ${shaCheck}"
+                $shaVerified = $true
+                break
+            }
+            else {
+                $errMsg = ($shaCheck -replace '[\r\n]',' ').Substring(0, [Math]::Min(120, $shaCheck.Length))
+                Write-Step "SHA" "RETRY" "SHA aún no disponible: $errMsg"
+            }
+        }
+
+        if (-not $shaVerified) {
+            Write-Step "SHA" "FAIL" "SHA $commitSha NO VERIFICABLE remotamente tras $($backoffIntervals.Length) intentos"
+            Write-Step "SHA" "FAIL" "No se disparará Control Plane. El SHA no está disponible en GitHub."
+            throw "SHA_REMOTE_VERIFICATION_FAILED: No se pudo verificar $commitSha en $repoName después de reintentos"
+        }
+
+        # ── DISPARAR CONTROL PLANE ──
+        Write-Step "ControlPlane" "START" "Triggering deploy-child.yml workflow (SHA remoto verificado)"
         $aspField = ""
         if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) {
             $aspField = " --field app_service_plan_id=$AppServicePlanId"
@@ -409,7 +448,7 @@ try {
             $aspField `
             2>&1
         if ($LASTEXITCODE -eq 0) {
-            Write-Step "ControlPlane" "OK" "Triggered! Check Actions: https://github.com/$GitHubUser/HERMES-ENTERPRISE/actions"
+            Write-Step "ControlPlane" "OK" "Triggered! SHA remoto verificado + Control Plane disparado"
         } else {
             Write-Step "ControlPlane" "WARN" "Trigger failed: $triggerResult"
             Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$aspField"

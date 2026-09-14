@@ -147,15 +147,66 @@ jobs:
       checkout_result: ${{ steps.checkout.outputs.checkout_result }}
       deployed_sha: ${{ steps.verify.outputs.deployed_sha }}
     steps:
-      - name: Checkout Child Repository
+      - name: Checkout Child Repository (with retry)
         id: checkout
-        uses: actions/checkout@v7
-        with:
-          repository: ${{ needs.validate-inputs.outputs.repository }}
-          ref: ${{ needs.validate-inputs.outputs.commit_sha }}
-          path: child-project
-          fetch-depth: 1
-          token: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
+        shell: bash
+        env:
+          GH_CHILD_READ_TOKEN: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
+        run: |
+          REPO="${{ needs.validate-inputs.outputs.repository }}"
+          SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          TARGET="child-project"
+          RETRIES=3
+          DELAY=10
+          RC=1
+
+          for i in $(seq 1 ${RETRIES}); do
+            echo "--- Checkout attempt ${i}/${RETRIES} ---"
+            echo "Repository: ${REPO}"
+            echo "SHA: ${SHA}"
+
+            rm -rf "${TARGET}" 2>/dev/null || true
+
+            GIT_URL="https://x-access-token:${GH_CHILD_READ_TOKEN}@github.com/${REPO}.git"
+            git clone --depth 1 "${GIT_URL}" "${TARGET}" 2>&1
+            CLONE_RC=$?
+
+            if [ ${CLONE_RC} -eq 0 ]; then
+              cd "${TARGET}" || continue
+              # Verify the clone got the right commit
+              CLONED_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+              if [ "${CLONED_SHA}" = "${SHA}" ]; then
+                echo "OK: Exact match on clone — ${CLONED_SHA}"
+                RC=0
+                break
+              fi
+              # SHA mismatch — try fetching the exact ref
+              echo "Cloned SHA (${CLONED_SHA}) != requested (${SHA}), fetching exact ref..."
+              git fetch --depth 1 origin "${SHA}" 2>&1
+              git checkout "${SHA}" 2>&1
+              CHECKOUT_RC=$?
+              if [ ${CHECKOUT_RC} -eq 0 ]; then
+                CONFIRMED_SHA=$(git rev-parse HEAD)
+                if [ "${CONFIRMED_SHA}" = "${SHA}" ]; then
+                  echo "OK: Fetch + checkout success — ${CONFIRMED_SHA}"
+                  RC=0
+                  break
+                fi
+              fi
+            fi
+
+            if [ ${i} -lt ${RETRIES} ]; then
+              echo "Checkout attempt ${i} failed. Waiting ${DELAY}s before retry..."
+              sleep ${DELAY}
+            fi
+          done
+
+          if [ ${RC} -ne 0 ]; then
+            echo "::error::CHECKOUT_FAILED after ${RETRIES} retries — ref ${SHA} not accessible on ${REPO}"
+            exit 1
+          fi
+
+          echo "checkout_result=PASS" >> $GITHUB_OUTPUT
 
       - name: Verify SHA Match
         id: verify
@@ -371,14 +422,57 @@ jobs:
     outputs:
       deploy_result: ${{ steps.deploy.outputs.deploy_result }}
     steps:
-      - name: Checkout Child Code
-        uses: actions/checkout@v7
-        with:
-          repository: ${{ needs.validate-inputs.outputs.repository }}
-          ref: ${{ needs.validate-inputs.outputs.commit_sha }}
-          path: child-project
-          fetch-depth: 1
-          token: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
+      - name: Checkout Child Code (with retry)
+        shell: bash
+        env:
+          GH_CHILD_READ_TOKEN: ${{ secrets.GH_CHILD_REPO_READ_TOKEN }}
+        run: |
+          REPO="${{ needs.validate-inputs.outputs.repository }}"
+          SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          TARGET="child-project"
+          RETRIES=3
+          DELAY=10
+          RC=1
+
+          for i in $(seq 1 ${RETRIES}); do
+            echo "--- Checkout attempt ${i}/${RETRIES} ---"
+            rm -rf "${TARGET}" 2>/dev/null || true
+
+            GIT_URL="https://x-access-token:${GH_CHILD_READ_TOKEN}@github.com/${REPO}.git"
+            git clone --depth 1 "${GIT_URL}" "${TARGET}" 2>&1
+            CLONE_RC=$?
+
+            if [ ${CLONE_RC} -eq 0 ]; then
+              cd "${TARGET}" || continue
+              CLONED_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+              if [ "${CLONED_SHA}" = "${SHA}" ]; then
+                echo "OK: Exact match — ${CLONED_SHA}"
+                RC=0; break
+              fi
+              echo "Cloned SHA (${CLONED_SHA}) != requested (${SHA}), fetching exact ref..."
+              git fetch --depth 1 origin "${SHA}" 2>&1
+              git checkout "${SHA}" 2>&1
+              CHECKOUT_RC=$?
+              if [ ${CHECKOUT_RC} -eq 0 ]; then
+                CONFIRMED_SHA=$(git rev-parse HEAD)
+                if [ "${CONFIRMED_SHA}" = "${SHA}" ]; then
+                  echo "OK: Fetch + checkout — ${CONFIRMED_SHA}"
+                  RC=0; break
+                fi
+              fi
+            fi
+
+            if [ ${i} -lt ${RETRIES} ]; then
+              echo "Retry ${i} failed. Waiting ${DELAY}s..."
+              sleep ${DELAY}
+            fi
+          done
+
+          if [ ${RC} -ne 0 ]; then
+            echo "::error::CHECKOUT_FAILED after ${RETRIES} retries — ref ${SHA} not accessible on ${REPO}"
+            exit 1
+          fi
+          echo "deploy_checkout_result=PASS" >> $GITHUB_OUTPUT
 
       - name: Package deployment (zip from GITHUB_WORKSPACE root)
         shell: bash

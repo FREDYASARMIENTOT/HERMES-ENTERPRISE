@@ -227,13 +227,23 @@ jobs:
           MI_ID=$(az webapp identity show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query principalId -o tsv 2>/dev/null)
           if [ -n "$MI_ID" ]; then
             echo "MI Principal ID: ${MI_ID}"
+            # GIT-ACTIONS-OIDC-HINT: The OIDC FIC (principal 5616db94-97be-44d4-8216-f38b704522c2)
+            # needs Microsoft.Authorization/roleAssignments/write at the RG scope.
+            # If this step fails with AuthorizationFailed, run:
+            #   az role assignment create --assignee-object-id "${MI_ID}" \
+            #     --assignee-principal-type "ServicePrincipal" \
+            #     --role "Reader" \
+            #     --scope "/subscriptions/SUBSCRIPTION_ID/resourceGroups/RG-Hermes-Proyectos"
+            # from a machine with Owner/UserAccessAdmin privileges (e.g. Azure Portal Cloud Shell).
             az role assignment create \
               --assignee "${MI_ID}" \
+              --assignee-object-id "${MI_ID}" \
+              --assignee-principal-type "ServicePrincipal" \
               --role "Reader" \
               --scope "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.RESOURCE_GROUP }}" \
-              --output none && echo "Reader role assigned at RG scope" || echo "WARN: Cannot assign Reader role (may already exist)"
+              --output none 2>&1 && echo "Reader role assigned at RG scope" || echo "WARN: Cannot assign Reader role at pipeline level (manual assignment may be needed)"
           else
-            echo "WARN: No Managed Identity found"
+            echo "WARN: No Managed Identity found for Portal"
           fi
 
   smoketest:

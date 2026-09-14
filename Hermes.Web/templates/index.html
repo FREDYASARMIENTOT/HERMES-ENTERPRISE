@@ -619,22 +619,25 @@
             const input = document.getElementById('nuevo-proyecto-input');
             const mensaje = document.getElementById('crear-proyecto-mensaje');
             const btn = document.getElementById('crear-proyecto-btn');
+            if (btn.disabled) return; // Prevenir doble click
+            btn.disabled = true;
             const nombre = input.value.trim();
 
             if (!nombre) {
+                btn.disabled = false;
                 mensaje.innerHTML = '<span class="text-warning">Ingrese un nombre de proyecto</span>';
                 return;
             }
             if (nombre.length < 3) {
                 mensaje.innerHTML = '<span class="text-warning">El nombre debe tener al menos 3 caracteres</span>';
+                btn.disabled = false;
                 return;
             }
             if (!/^[a-z0-9-]+$/.test(nombre)) {
                 mensaje.innerHTML = '<span class="text-warning"> Solo minúsculas, números y guiones</span>';
+                btn.disabled = false;
                 return;
             }
-
-            btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creando...';
             mensaje.innerHTML = '';
 

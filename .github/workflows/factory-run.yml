@@ -105,14 +105,69 @@ jobs:
           git config --global user.name "Hermes Enterprise Factory"
           git config --global user.email "factory@hermes.enterprise"
 
-      - name: Auth GitHub CLI
+      - name: Diagnóstico GitHub
+        id: diagnose-github
         shell: bash
-        run: gh auth status 2>&1 || echo AUTH-NOT-CONFIRMED
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PORTAL_HERMES_REPO_WRITE_TOKEN }}
+        run: |
+          echo "::group::=== GitHub Authentication Diagnosis ==="
+
+          # --- FASE 2: Verificar que el token NO está vacío ---
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::GH_TOKEN EMPTY — el secreto GH_PORTAL_HERMES_REPO_WRITE_TOKEN no está configurado o está vacío"
+            echo "token_present=false" >> "$GITHUB_OUTPUT"
+            echo "authenticated=false" >> "$GITHUB_OUTPUT"
+            echo "::endgroup::"
+            exit 1
+          fi
+          echo "token_present=true" >> "$GITHUB_OUTPUT"
+          echo "[PASS] Token presente (longitud: ${#GH_TOKEN} chars)"
+
+          # --- FASE 2: Autenticar contra GitHub API ---
+          GH_USER=$(gh api /user --jq '.login' 2>&1)
+          RC=$?
+
+          if [ "${RC}" = "0" ] && [ -n "${GH_USER}" ]; then
+            echo "authenticated=true" >> "$GITHUB_OUTPUT"
+            echo "github_user=${GH_USER}" >> "$GITHUB_OUTPUT"
+            echo "[PASS] GitHub API /user → HTTP 200"
+            echo "[INFO] Autenticado como: ${GH_USER}"
+            echo "::notice title=GitHub Auth::PASS — autenticado como ${GH_USER}"
+          else
+            echo "authenticated=false" >> "$GITHUB_OUTPUT"
+            ERROR_LINE=$(echo "${GH_USER}" | head -1)
+            if echo "${GH_USER}" | grep -qi "bad credentials\|401"; then
+              echo "::error::GITHUB_AUTHENTICATION_FAILED — Token rechazado (HTTP 401 Bad credentials)"
+              echo "failure_reason=GITHUB_AUTHENTICATION_FAILED" >> "$GITHUB_OUTPUT"
+            elif echo "${GH_USER}" | grep -qi "403\|resource not accessible\|must have admin"; then
+              echo "::error::GITHUB_PERMISSION_FAILED — Token sin permisos (HTTP 403)"
+              echo "failure_reason=GITHUB_PERMISSION_FAILED" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::GITHUB_AUTHENTICATION_FAILED — ${ERROR_LINE}"
+              echo "failure_reason=GITHUB_AUTHENTICATION_FAILED" >> "$GITHUB_OUTPUT"
+            fi
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          # --- FASE 3: Verificar acceso al repositorio padre (HERMES-ENTERPRISE) ---
+          # Necesario para: dispatch de deploy-child.yml
+          PARENT_REPO=$(gh api /repos/FREDYASARMIENTOT/HERMES-ENTERPRISE --jq '.full_name' 2>&1) || true
+          if [ -n "${PARENT_REPO}" ]; then
+            echo "parent_repo_access=true" >> "$GITHUB_OUTPUT"
+            echo "[PASS] Acceso a repositorio padre: ${PARENT_REPO}"
+          else
+            echo "parent_repo_access=false" >> "$GITHUB_OUTPUT"
+            echo "[WARN] No se pudo verificar acceso al repositorio padre"
+            echo "::warning::No se pudo verificar acceso a FREDYASARMIENTOT/HERMES-ENTERPRISE"
+          fi
+
+          echo "::endgroup::"
 
       - name: Run Factory (SkipAzure)
         id: factory-run
+        if: steps.diagnose-github.outputs.authenticated == 'true'
         shell: pwsh
         working-directory: ${{ github.workspace }}/hermes-enterprise
         env:
@@ -130,26 +185,113 @@ jobs:
       - name: Capture SHA
         id: capture-sha
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_PORTAL_HERMES_REPO_WRITE_TOKEN }}
         working-directory: ${{ github.workspace }}/workspace/${{ needs.validate.outputs.project_name }}
         run: |
-          SHA=$(git rev-parse HEAD)
-          REPO="${{ env.FACTORY_GITHUB_USER }}/${{ needs.validate.outputs.project_name }}"
-          if ! echo "${SHA}" | grep -qP '^[0-9a-f]{40}$'; then echo "FAIL: SHA invalido"; exit 1; fi
-          if [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then echo "FAIL: SHA placeholder"; exit 1; fi
-          echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
-          echo "repository=${REPO}" >> $GITHUB_OUTPUT
-          echo "project_name=${{ needs.validate.outputs.project_name }}" >> $GITHUB_OUTPUT
-          echo "correlation_id=${{ needs.validate.outputs.correlation_id }}" >> $GITHUB_OUTPUT
-          echo "deployment_id=${{ needs.validate.outputs.deployment_id }}" >> $GITHUB_OUTPUT
+          PROJ="${{ needs.validate.outputs.project_name }}"
+          REPO="${{ env.FACTORY_GITHUB_USER }}/${PROJ}"
+
+          echo "::group::=== FASE 6-7: Validar Repositorio y SHA ==="
+
+          # --- FASE 6: Validar que el repositorio existe en GitHub ---
+          echo "[FASE 6] Verificando repositorio en GitHub..."
+          GH_REPO=$(gh api "/repos/${REPO}" --jq '{name, full_name, visibility, private, default_branch}' 2>&1) || true
+          RC=$?
+          if [ "${RC}" -ne 0 ] || [ -z "${GH_REPO}" ]; then
+            echo "::error::FACTORY_REPOSITORY_CREATION_FAILED — Repo ${REPO} no encontrado en GitHub"
+            echo "repo_exists=false" >> "$GITHUB_OUTPUT"
+            echo "::endgroup::"
+            exit 1
+          fi
+          echo "repo_exists=true" >> "$GITHUB_OUTPUT"
+
+          REPO_NAME=$(echo "${GH_REPO}" | jq -r '.name')
+          REPO_VISIBILITY=$(echo "${GH_REPO}" | jq -r '.visibility // "unknown"')
+          REPO_PRIVATE=$(echo "${GH_REPO}" | jq -r '.private')
+          REPO_BRANCH=$(echo "${GH_REPO}" | jq -r '.default_branch // "unknown"')
+          echo "[PASS] Repositorio: ${REPO_NAME} (${REPO_VISIBILITY})"
+          echo "[PASS] Rama por defecto: ${REPO_BRANCH}"
+
+          # Registrar visibilidad
+          echo "repo_visibility=${REPO_VISIBILITY}" >> "$GITHUB_OUTPUT"
+          echo "repo_name=${REPO_NAME}" >> "$GITHUB_OUTPUT"
+          echo "repo_private=${REPO_PRIVATE}" >> "$GITHUB_OUTPUT"
+          echo "default_branch=${REPO_BRANCH}" >> "$GITHUB_OUTPUT"
+
+          if [ "${REPO_VISIBILITY}" != "private" ] && [ "${REPO_PRIVATE}" != "true" ]; then
+            echo "::error::El repositorio NO es privado (visibility=${REPO_VISIBILITY})"
+            exit 1
+          fi
+          echo "[FASE 6] REPOSITORIO PRIVADO: OK"
+
+          # Verificar que el repositorio tiene contenido
+          REPO_CONTENT=$(gh api "/repos/${REPO}/contents" --jq 'length' 2>&1) || true
+          echo "[INFO] Archivos en raíz del repositorio: ${REPO_CONTENT:-0}"
+
+          # --- FASE 7: Obtener SHA local y remoto ---
+          echo ""
+          echo "[FASE 7] Verificando SHA..."
+          SHA_LOCAL=$(git rev-parse HEAD)
+          SHA_REMOTE=$(gh api "/repos/${REPO}/git/refs/heads/${REPO_BRANCH}" --jq '.object.sha' 2>&1) || ""
+
+          if ! echo "${SHA_LOCAL}" | grep -qP '^[0-9a-f]{40}$'; then
+            echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA local inválido: ${SHA_LOCAL}"
+            exit 1
+          fi
+          if [ "${SHA_LOCAL}" = "0000000000000000000000000000000000000000" ]; then
+            echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA local es placeholder"
+            exit 1
+          fi
+
+          if [ -z "${SHA_REMOTE}" ]; then
+            echo "::error::FACTORY_SHA_VALIDATION_FAILED — No se pudo obtener SHA remoto"
+            exit 1
+          fi
+          if ! echo "${SHA_REMOTE}" | grep -qP '^[0-9a-f]{40}$'; then
+            echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA remoto inválido: ${SHA_REMOTE}"
+            exit 1
+          fi
+
+          echo "[INFO] SHA local : ${SHA_LOCAL}"
+          echo "[INFO] SHA remoto: ${SHA_REMOTE}"
+
+          if [ "${SHA_LOCAL}" = "${SHA_REMOTE}" ]; then
+            echo "[FASE 7] SHA MATCH: OK — local == remoto"
+            echo "sha_match=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA local (${SHA_LOCAL}) != SHA remoto (${SHA_REMOTE})"
+            echo "sha_match=false" >> "$GITHUB_OUTPUT"
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          # --- Registrar outputs ---
+          echo "commit_sha=${SHA_LOCAL}" >> "$GITHUB_OUTPUT"
+          echo "remote_sha=${SHA_REMOTE}" >> "$GITHUB_OUTPUT"
+          echo "repository=${REPO}" >> "$GITHUB_OUTPUT"
+          echo "project_name=${PROJ}" >> "$GITHUB_OUTPUT"
+          echo "correlation_id=${{ needs.validate.outputs.correlation_id }}" >> "$GITHUB_OUTPUT"
+          echo "deployment_id=${{ needs.validate.outputs.deployment_id }}" >> "$GITHUB_OUTPUT"
+
+          echo ""
+          echo "=== FASE 6-7 COMPLETADO ==="
+          echo "::endgroup::"
 
       - name: Verify SHA
         if: always()
         shell: bash
         run: |
           SHA="${{ steps.capture-sha.outputs.commit_sha }}"
+          SHA_MATCH="${{ steps.capture-sha.outputs.sha_match }}"
+          REPO_EXISTS="${{ steps.capture-sha.outputs.repo_exists }}"
+          VISIBILITY="${{ steps.capture-sha.outputs.repo_visibility }}"
           if [ -z "${SHA}" ]; then echo "FAIL: SHA vacio"; exit 1; fi
           if [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then echo "FAIL: SHA placeholder"; exit 1; fi
-          echo "OK: SHA integro y real"
+          if [ "${REPO_EXISTS}" != "true" ]; then echo "FAIL: Repositorio no existe"; exit 1; fi
+          if [ "${VISIBILITY}" != "private" ]; then echo "FAIL: Repositorio no es privado"; exit 1; fi
+          if [ "${SHA_MATCH}" != "true" ]; then echo "FAIL: SHA local != SHA remoto"; exit 1; fi
+          echo "OK: Repositorio privado verificado, SHA local == SHA remoto"
 
   verify:
     name: Verificar Resultado
@@ -158,16 +300,82 @@ jobs:
     if: always()
     steps:
       - name: Collect Results
+        id: collect
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_PORTAL_HERMES_REPO_WRITE_TOKEN }}
         run: |
           FR="${{ needs.factory.outputs.factory_result }}"
           SHA="${{ needs.factory.outputs.commit_sha }}"
           REPO="${{ needs.factory.outputs.repository }}"
           PROJ="${{ needs.factory.outputs.project_name }}"
           CID="${{ needs.factory.outputs.correlation_id }}"
-          echo "=== Factory Runner Summary ==="
-          echo "Project: $PROJ  Repo: $REPO  SHA: $SHA  CID: $CID"
-          if [ "${FR}" != "PASS" ]; then echo "FAIL: Factory fallo"; exit 1; fi
-          if [ -z "${SHA}" ] || [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then echo "FAIL: SHA invalido"; exit 1; fi
-          echo "=== FACTORY RUNNER COMPLETADO ==="
-          echo "Control Plane disparado con SHA REAL: ${SHA}"
+          DID="${{ needs.factory.outputs.deployment_id }}"
+
+          echo "::group::=== FASE 8-11: FACTORY RUNNER REPORTE FINAL ==="
+
+          echo ""
+          echo "╔══════════════════════════════════════════════════╗"
+          echo "║   FACTORY RUNNER — REPORTE DE VERIFICACIÓN      ║"
+          echo "╚══════════════════════════════════════════════════╝"
+
+          # Check if Factory PASSED
+          if [ "${FR}" != "PASS" ]; then
+            echo "::error::FACTORY_RUNNER_FAILED — Factory result = ${FR}"
+            echo "factory_conclusion=FAILED" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "factory_conclusion=PASS" >> "$GITHUB_OUTPUT"
+
+          # Validate SHA
+          if [ -z "${SHA}" ] || [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then
+            echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA inválido: ${SHA}"
+            echo "sha_valid=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "sha_valid=true" >> "$GITHUB_OUTPUT"
+
+          # --- FASE 8: Detectar Control Plane dispatch real ---
+          echo ""
+          echo "--- FASE 8: CONTROL PLANE DISPATCH ---"
+          # Buscar en los runs recientes de deploy-child.yml
+          # El dispatch se hace con el SHA real del proyecto creado
+          CP_RUNS=$(gh api "/repos/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/workflows/deploy-child.yml/runs?per_page=5&status=queued,completed" \
+            --jq '.workflow_runs[] | select(.head_sha == "'"${SHA}"'") | {id, status, conclusion, run_number, head_sha, created_at}' 2>&1) || true
+
+          if [ -n "${CP_RUNS}" ]; then
+            CP_RUN_ID=$(echo "${CP_RUNS}" | jq -r '.id // empty' | head -1)
+            CP_STATUS=$(echo "${CP_RUNS}" | jq -r '.status // "unknown"' | head -1)
+            echo "control_plane_dispatched=true" >> "$GITHUB_OUTPUT"
+            echo "control_plane_run_id=${CP_RUN_ID}" >> "$GITHUB_OUTPUT"
+            echo "[PASS] Control Plane dispatcheado: run_id=${CP_RUN_ID}, status=${CP_STATUS}"
+            echo "[PASS] SHA enviado: ${SHA}"
+          else
+            echo "control_plane_dispatched=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No se encontró run de deploy-child.yml con SHA ${SHA}"
+            echo "[WARN] El Control Plane pudo no haberse disparado aún o SHA no coincide"
+            # No fallamos aquí porque el dispatch puede tomar tiempo
+          fi
+
+          # --- FASE 11: EVIDENCIA ---
+          echo ""
+          echo "--- FASE 11: EVIDENCIA ---"
+          echo "factory_run_id=${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          echo "factory_run_number=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "factory_conclusion=${FR}" >> "$GITHUB_OUTPUT"
+
+          echo ""
+          echo "═══════════════════════════════════════════════════"
+          echo "  RESUMEN EJECUTIVO — FACTORY RUNNER E2E"
+          echo "═══════════════════════════════════════════════════"
+          echo "  Factory run_id     : ${{ github.run_id }}"
+          echo "  Factory conclusion : ${FR}"
+          echo "  Proyecto           : ${PROJ}"
+          echo "  Repositorio        : ${REPO}"
+          echo "  SHA                : ${SHA}"
+          echo "  CID                : ${CID}"
+          echo "  DID                : ${DID}"
+          echo "  Control Plane      : ${CP_RUN_ID:-NO DETECTADO}"
+          echo "  AZ LOGIN           : NO"
+          echo "═══════════════════════════════════════════════════"
+          echo "::endgroup::"

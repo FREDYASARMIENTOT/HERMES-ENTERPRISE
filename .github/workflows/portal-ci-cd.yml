@@ -227,21 +227,27 @@ jobs:
           MI_ID=$(az webapp identity show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query principalId -o tsv 2>/dev/null)
           if [ -n "$MI_ID" ]; then
             echo "MI Principal ID: ${MI_ID}"
-            # GIT-ACTIONS-OIDC-HINT: The OIDC FIC (principal 5616db94-97be-44d4-8216-f38b704522c2)
-            # needs Microsoft.Authorization/roleAssignments/write at the RG scope.
-            # If this step fails with AuthorizationFailed, run:
-            #   az role assignment create --assignee-object-id "${MI_ID}" \
-            #     --assignee-principal-type "ServicePrincipal" \
-            #     --role "Reader" \
-            #     --scope "/subscriptions/SUBSCRIPTION_ID/resourceGroups/RG-Hermes-Proyectos"
-            # from a machine with Owner/UserAccessAdmin privileges (e.g. Azure Portal Cloud Shell).
-            az role assignment create \
-              --assignee "${MI_ID}" \
+            # PREREQUISITE: The Reader role MUST be assigned to the Portal's System-Assigned MI
+            # one-time before the App Service Plans API will work.
+            # The CI/CD OIDC identity (Website Contributor) cannot assign RBAC roles.
+            # This step tries but will fail with AuthorizationFailed — that's expected.
+            # 
+            # To fix, run THIS SCRIPT from Azure Portal Cloud Shell (Owner/UserAccessAdmin):
+            #   bash scripts/assign-portal-mi-reader.sh
+            #
+            # NOTE: --assignee and --assignee-object-id are MUTUALLY EXCLUSIVE in Azure CLI.
+            # Only --assignee-object-id is used here.
+            if az role assignment create \
               --assignee-object-id "${MI_ID}" \
               --assignee-principal-type "ServicePrincipal" \
               --role "Reader" \
               --scope "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.RESOURCE_GROUP }}" \
-              --output none 2>&1 && echo "Reader role assigned at RG scope" || echo "WARN: Cannot assign Reader role at pipeline level (manual assignment may be needed)"
+              --output none 2>&1; then
+              echo "Reader role assigned at RG scope"
+            else
+              echo "NOTE: Reader role not assignable from pipeline (requires Owner/UserAccessAdmin)."
+              echo "       Run: bash scripts/assign-portal-mi-reader.sh from Azure Cloud Shell."
+            fi
           else
             echo "WARN: No Managed Identity found for Portal"
           fi

@@ -200,6 +200,18 @@ jobs:
             echo "WARNING: SCM_DO_BUILD_DURING_DEPLOYMENT was reset! Re-setting..."
             az webapp config appsettings set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false"
           fi
+          echo "=== Checking HERMES_GITHUB_TOKEN after deploy ==="
+          TOKEN_SET=$(az webapp config appsettings list --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "[?name=='HERMES_GITHUB_TOKEN'].value" -o tsv)
+          if [ -z "${TOKEN_SET}" ]; then
+            echo "WARNING: HERMES_GITHUB_TOKEN was reset by deploy! Re-setting from GitHub secret..."
+            az webapp config appsettings set \
+              --name "${{ env.APP_NAME }}" \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --settings "HERMES_GITHUB_TOKEN=${{ secrets.GH_PORTAL_HERMES_REPO_WRITE_TOKEN }}"
+            echo "=== HERMES_GITHUB_TOKEN re-set after deploy ==="
+          else
+            echo "=== HERMES_GITHUB_TOKEN present after deploy ==="
+          fi
 
   smoketest:
     name: Smoke Test

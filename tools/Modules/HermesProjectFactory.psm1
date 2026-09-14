@@ -32,9 +32,8 @@ function Push-ProyectoToGitHub { Publicar-ProyectoEnGitHub @args }
 # Azure
 function Read-AzureConfiguration { Leer-ConfiguracionAzure @args }
 function Validate-AzureInfrastructure { Validar-InfraestructuraAzure @args }
-function New-ProyectoWebApp { New-ProyectoWebApp @args }
-function Deploy-ProyectoZipToAzure { Deploy-ProyectoZipToAzure @args }
-function Wait-ProyectoWebAppReady { Wait-ProyectoWebAppReady @args }
+# NOTA: New-ProyectoWebApp, Deploy-ProyectoZipToAzure, Wait-ProyectoWebAppReady
+# se definen directamente en Azure.ps1, no redeclarar aquí (evita self-recursion).
 function Get-AzureIdentityMode { Obtener-ModoIdentidadAzure @args }
 function Assert-AzureIdentityReady { Afirmar-IdentidadAzureLista @args }
 
@@ -52,9 +51,8 @@ function Invoke-ProyectoSmokeTests { Ejecutar-PruebasHumoProyecto @args }
 function Test-ProyectoLanding { Probar-PaginaInicioProyecto @args }
 
 # Reporting
-function New-ProyectoReportMD { New-ProyectoReportMD @args }
-function New-ProyectoReportJSON { New-ProyectoReportJSON @args }
-function New-ProyectoReportHTML { New-ProyectoReportHTML @args }
+# NOTA: New-ProyectoReportMD, New-ProyectoReportJSON, New-ProyectoReportHTML
+# se definen directamente en Reporting.ps1, no redeclarar aquí (evita self-recursion).
 function New-BlankMetadata { Nuevo-MetadatosVacios @args }
 
 # RenderEngine

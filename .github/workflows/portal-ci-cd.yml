@@ -213,6 +213,29 @@ jobs:
             echo "=== HERMES_GITHUB_TOKEN present after deploy ==="
           fi
 
+      - name: Enable System-Assigned Managed Identity for Portal
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "=== Enabling System-Assigned Managed Identity ==="
+          az webapp identity assign --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --output none && echo "MI enabled" || echo "MI may already exist"
+
+      - name: Assign Reader role to Portal MI for App Service Plans access
+        continue-on-error: true
+        shell: bash
+        run: |
+          MI_ID=$(az webapp identity show --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query principalId -o tsv 2>/dev/null)
+          if [ -n "$MI_ID" ]; then
+            echo "MI Principal ID: ${MI_ID}"
+            az role assignment create \
+              --assignee "${MI_ID}" \
+              --role "Reader" \
+              --scope "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.RESOURCE_GROUP }}" \
+              --output none && echo "Reader role assigned at RG scope" || echo "WARN: Cannot assign Reader role (may already exist)"
+          else
+            echo "WARN: No Managed Identity found"
+          fi
+
   smoketest:
     name: Smoke Test
     if: success() && needs.deploy.result == 'success'

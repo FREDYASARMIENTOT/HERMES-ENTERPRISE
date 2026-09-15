@@ -167,3 +167,10 @@ _azure_logs/
 _azure_logs2/
 deploy_err.txt
 deploy_out.txt
+# Test artifacts
+test-e2e-*.js
+validate.js
+portal-js-v2.js
+package.json
+package-lock.json
+scripts/

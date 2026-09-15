@@ -280,6 +280,19 @@ class ServicioFabrica:
             """)
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes_proyecto(estado)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_nombre ON solicitudes_proyecto(nombre_proyecto)")
+
+            # ── Schema migration: add missing columns (existing DB without columns) ──
+            for col_name, col_type in [
+                ("app_service_plan_id", "TEXT DEFAULT ''"),
+                ("app_service_plan_name", "TEXT DEFAULT ''"),
+                ("app_service_plan_resource_group", "TEXT DEFAULT ''"),
+            ]:
+                try:
+                    cursor.execute(f"ALTER TABLE solicitudes_proyecto ADD COLUMN {col_name} {col_type}")
+                    logger.info(f"Columna {col_name} agregada a solicitudes_proyecto")
+                except Exception:
+                    pass  # Columna ya existe
+
             conn.commit()
             conn.close()
             logger.info("Tabla solicitudes_proyecto inicializada")

@@ -390,7 +390,11 @@ try {
 
     # ===== SHA Capture + REMOTE VERIFICATION + Control Plane Trigger =====
     Write-Step "SHA" "START" "Capturing HEAD commit SHA"
-    $commitSha = (git rev-parse HEAD 2>&1).Trim()
+    # IMPORTANTE: Ejecutar git rev-parse HEAD dentro del directorio del child ($ProjRoot),
+    # NO en el directorio actual que puede ser HERMES-ENTERPRISE (donde el working-directory
+    # de factory-run.yml apunta). Todas las funciones del módulo restauran el CWD original
+    # después de ejecutarse, por lo que sin -C capturaríamos el SHA del repositorio PADRE.
+    $commitSha = (git -C $ProjRoot rev-parse HEAD 2>&1).Trim()
     $repoName = "$GitHubUser/$NombreProyecto"
     Write-Step "SHA" "OK" "SHA=$commitSha Repo=$repoName"
 

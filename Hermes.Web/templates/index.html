@@ -824,6 +824,14 @@
                     html += '<option value="' + plan.id + '">' + plan.name + ' (' + plan.sku + ')</option>';
                 });
                 select.innerHTML = html;
+                // Auto-seleccionar ASP-HERMES-PORTAL por defecto
+                var planDefault = data.planes.find(function(p) {
+                    return p.name === 'ASP-HERMES-PORTAL' ||
+                        p.id === '/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/RG-Hermes-Proyectos/providers/Microsoft.Web/serverfarms/ASP-HERMES-PORTAL';
+                });
+                if (planDefault) {
+                    select.value = planDefault.id;
+                }
                 habilitarBotonCrear();
             } catch (e) {
                 console.error('Error cargando planes:', e);

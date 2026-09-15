@@ -317,6 +317,19 @@ class ServicioFabrica:
                 "app_service_plan_id es REQUERIDO. "
                 "Debe seleccionar un App Service Plan de RG-Hermes-Proyectos."
             )
+        # Validar formato del App Service Plan ID
+        import re
+        patron_plan = re.compile(
+            r"^/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/"
+            r"resourceGroups/RG-Hermes-Proyectos/"
+            r"providers/Microsoft\.Web/serverfarms/[a-zA-Z0-9_-]+$"
+        )
+        if not patron_plan.match(app_service_plan_id):
+            raise ValueError(
+                f"app_service_plan_id inválido: '{app_service_plan_id}'. "
+                "Debe ser un resource ID válido de un App Service Plan "
+                "en RG-Hermes-Proyectos."
+            )
         existente = self._buscar_por_nombre(nombre_proyecto)
         if existente and existente.estado not in ("FALLIDO", "COMPLETADO"):
             raise ValueError(

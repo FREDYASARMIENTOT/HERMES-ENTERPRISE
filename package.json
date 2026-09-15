@@ -1,0 +1,28 @@
+{
+  "name": "hermes-enterprise",
+  "version": "1.0.0",
+  "description": "Enterprise-grade PowerShell framework for project automation, virtual environment management, and observability.",
+  "main": "test-e2e-click.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/issues"
+  },
+  "homepage": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE#readme",
+  "dependencies": {
+    "playwright": "^1.51.0"
+  }
+}

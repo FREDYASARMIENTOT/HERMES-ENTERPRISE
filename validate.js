@@ -1,0 +1,13 @@
+const fs = require('fs');
+const code = fs.readFileSync('d:/HERMES-ENTERPRISE/portal-js-v2.js', 'utf8');
+console.log('JS length:', code.length);
+console.log('Contains raw </script>:', code.includes('</script>'));
+console.log('Contains escaped: ', code.includes('<\\/script>'));
+console.log('');
+console.log('Has crearProyecto:', code.includes('function crearProyecto') ? 'YES' : 'NO');
+console.log('Has loadAll:', code.includes('function loadAll') ? 'YES' : 'NO');
+console.log('Has actualizarHistorial:', code.includes('function actualizarHistorial') ? 'YES' : 'NO');
+console.log('');
+console.log('Has double-click guard:', code.includes('if (btn.disabled) return;') ? 'YES' : 'NO');
+console.log('Has early btn.disabled = true:', code.includes('btn.disabled = true;') ? 'YES' : 'NO');
+console.log('Has re-enable on invalid name:', code.includes('btn.disabled = false;') ? 'YES' : 'NO');

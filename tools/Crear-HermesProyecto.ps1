@@ -439,28 +439,35 @@ try {
 
         # ── DISPARAR CONTROL PLANE ──
         Write-Step "ControlPlane" "START" "Triggering deploy-child.yml workflow (SHA remoto verificado)"
-        $aspField = ""
+
+        # Construir array de argumentos (splatting) — cada elemento es un argumento separado
+        # Evita el bug de PowerShell: string concatenado se pasa como un solo argumento al CLI
+        $triggerArgs = @(
+            'workflow', 'run', 'deploy-child.yml',
+            '--repo', "$GitHubUser/HERMES-ENTERPRISE",
+            '--ref', 'main',
+            '--field', "project_name=$NombreProyecto",
+            '--field', "repository=$repoName",
+            '--field', "commit_sha=$commitSha"
+        )
         if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) {
-            $aspField = " --field app_service_plan_id=$AppServicePlanId"
+            $triggerArgs += '--field'
+            $triggerArgs += "app_service_plan_id=$AppServicePlanId"
         }
-        $triggerResult = gh workflow run deploy-child.yml `
-            --repo "$GitHubUser/HERMES-ENTERPRISE" `
-            --ref main `
-            --field project_name=$NombreProyecto `
-            --field repository=$repoName `
-            --field commit_sha=$commitSha `
-            $aspField `
-            2>&1
+
+        $triggerResult = & gh @triggerArgs 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-Step "ControlPlane" "OK" "Triggered! SHA remoto verificado + Control Plane disparado"
         } else {
             Write-Step "ControlPlane" "WARN" "Trigger failed: $triggerResult"
-            Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$aspField"
+            $manualField = if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) { " --field app_service_plan_id=$AppServicePlanId" } else { "" }
+            Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$manualField"
         }
     } else {
         Write-Step "ControlPlane" "SKIP" "Use -TriggerControlPlane to auto-deploy via Control Plane"
+        $manualField = if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) { " --field app_service_plan_id=$AppServicePlanId" } else { "" }
         Write-Step "ControlPlane" "INFO" "Manual trigger command:"
-        Write-Host "    gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha" -ForegroundColor Yellow
+        Write-Host "    gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$manualField" -ForegroundColor Yellow
     }
 
     # RC87: Persistir registro de implementacion

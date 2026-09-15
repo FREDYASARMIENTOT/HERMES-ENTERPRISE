@@ -130,6 +130,9 @@ class SolicitudProyecto:
         self.app_service_plan_id: str = app_service_plan_id
         self.app_service_plan_name: str = ""
         self.app_service_plan_resource_group: str = ""
+        self.app_service_plan_subscription: str = "01bfad48-c092-4712-bc72-f141eb01a8d4"
+        self.web_app_resource_group: str = ""
+        self.web_app_resource_id: str = ""
         self._inicializar_pasos()
 
     def _inicializar_pasos(self) -> None:
@@ -191,7 +194,11 @@ class SolicitudProyecto:
             "resultado": self.resultado, "error": self.error,
             "app_service_plan_id": self.app_service_plan_id,
             "app_service_plan_name": self.app_service_plan_name,
-            "app_service_plan_resource_group": self.app_service_plan_resource_group
+            "app_service_plan_resource_group": self.app_service_plan_resource_group,
+            "app_service_plan_subscription": self.app_service_plan_subscription,
+            "web_app_resource_group": self.web_app_resource_group,
+            "web_app_resource_id": self.web_app_resource_id,
+            "server_farm_id": self.app_service_plan_id
         }
 
     @classmethod
@@ -217,6 +224,9 @@ class SolicitudProyecto:
         s.error = datos.get("error", "")
         s.app_service_plan_name = datos.get("app_service_plan_name", "")
         s.app_service_plan_resource_group = datos.get("app_service_plan_resource_group", "")
+        s.app_service_plan_subscription = datos.get("app_service_plan_subscription", "01bfad48-c092-4712-bc72-f141eb01a8d4")
+        s.web_app_resource_group = datos.get("web_app_resource_group", "")
+        s.web_app_resource_id = datos.get("web_app_resource_id", "")
         pasos_json = datos.get("pasos_json")
         if pasos_json:
             try:
@@ -286,6 +296,9 @@ class ServicioFabrica:
                 ("app_service_plan_id", "TEXT DEFAULT ''"),
                 ("app_service_plan_name", "TEXT DEFAULT ''"),
                 ("app_service_plan_resource_group", "TEXT DEFAULT ''"),
+                ("app_service_plan_subscription", "TEXT DEFAULT '01bfad48-c092-4712-bc72-f141eb01a8d4'"),
+                ("web_app_resource_group", "TEXT DEFAULT ''"),
+                ("web_app_resource_id", "TEXT DEFAULT ''"),
             ]:
                 try:
                     cursor.execute(f"ALTER TABLE solicitudes_proyecto ADD COLUMN {col_name} {col_type}")
@@ -429,8 +442,9 @@ class ServicioFabrica:
                  web_app_url, repo_url, estado, correlation_id, deployment_id,
                  commit_sha, pasos_json, fecha_solicitud, fecha_actualizacion,
                  resultado, error, app_service_plan_id, app_service_plan_name,
-                 app_service_plan_resource_group)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 app_service_plan_resource_group, app_service_plan_subscription,
+                 web_app_resource_group, web_app_resource_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 datos["id"], datos["nombre_proyecto"], datos["descripcion"],
                 datos["repositorio"], datos["web_app"], datos["web_app_url"],
@@ -439,7 +453,10 @@ class ServicioFabrica:
                 datos["fecha_solicitud"], datos["fecha_actualizacion"],
                 datos["resultado"], datos["error"],
                 datos["app_service_plan_id"], datos["app_service_plan_name"],
-                datos["app_service_plan_resource_group"]
+                datos["app_service_plan_resource_group"],
+                datos["app_service_plan_subscription"],
+                datos["web_app_resource_group"],
+                datos["web_app_resource_id"]
             ))
             conn.commit()
             conn.close()

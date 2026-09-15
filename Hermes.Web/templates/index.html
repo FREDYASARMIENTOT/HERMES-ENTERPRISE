@@ -75,7 +75,8 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark border-bottom border-light border-opacity-10">
         <div class="container">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/static/images/logoURrojoFondoTransparente.png" alt="Universidad del Rosario" height="32" class="me-2" style="filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));">
                 <i class="bi bi-shield-fill-check me-2"></i>Hermes Enterprise
             </a>
             <div class="d-flex align-items-center gap-3">
@@ -126,6 +127,35 @@
                                     <i class="bi bi-list-check me-1"></i>Ver Proyectos
                                 </a>
                                 <div id="ultimo-proyecto-creado" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Azure Resource Group Info -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <span><i class="bi bi-cloud-arrow-up me-2"></i>Azure — Resource Group</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1"><i class="bi bi-server me-1"></i>App Service Plan</h6>
+                                <p class="mb-0" id="plan-name-display"><strong>ASP-HERMES-PORTAL</strong></p>
+                                <small class="text-muted" id="plan-rg-display">Resource Group: RG-Hermes-Proyectos</small>
+                                <br>
+                                <small class="text-muted">Subscription: 01bfad48-c092-4712-bc72-f141eb01a8d4</small>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-1"><i class="bi bi-globe me-1"></i>Subscription</h6>
+                                <p class="mb-0"><code style="font-size:0.75rem;">01bfad48-c092-4712-bc72-f141eb01a8d4</code></p>
+                                <small class="text-muted">Todos los recursos se despliegan en</small>
+                                <br>
+                                <small class="text-muted"><strong>RG-Hermes-Proyectos</strong></small>
                             </div>
                         </div>
                     </div>
@@ -821,7 +851,7 @@
                 }
                 let html = '<option value="">Seleccione un plan...</option>';
                 data.planes.forEach(function(plan) {
-                    html += '<option value="' + plan.id + '">' + plan.name + ' (' + plan.sku + ')</option>';
+                    html += '<option value="' + plan.id + '">' + plan.name + ' (' + plan.sku + ') — ' + (plan.resource_group || 'RG-Hermes-Proyectos') + '</option>';
                 });
                 select.innerHTML = html;
                 // Auto-seleccionar ASP-HERMES-PORTAL por defecto
@@ -833,6 +863,7 @@
                     select.value = planDefault.id;
                 }
                 habilitarBotonCrear();
+                actualizarInfoPlan();
             } catch (e) {
                 console.error('Error cargando planes:', e);
                 select.innerHTML = '<option value="">Error al cargar planes</option>';
@@ -846,12 +877,29 @@
             btn.disabled = !select.value;
         }
 
-        // Eventos para habilitar/deshabilitar boton
+        function actualizarInfoPlan() {
+            const select = document.getElementById('app-service-plan-select');
+            const nameDisplay = document.getElementById('plan-name-display');
+            const rgDisplay = document.getElementById('plan-rg-display');
+            if (!select || !nameDisplay || !select.selectedOptions || !select.selectedOptions[0]) return;
+            const selectedText = select.selectedOptions[0].text;
+            // Extract plan name from option text like "ASP-HERMES-PORTAL (Basic B1) — RG-Hermes-Proyectos"
+            const match = selectedText.match(/^([^(]+)\s*\([^)]+\)\s*—\s*(.+)$/);
+            if (match) {
+                nameDisplay.innerHTML = '<strong>' + match[1].trim() + '</strong>';
+                rgDisplay.textContent = 'Resource Group: ' + match[2].trim();
+            }
+        }
+
+        // Eventos para habilitar/deshabilitar boton y actualizar info
         document.addEventListener('DOMContentLoaded', function() {
             const select = document.getElementById('app-service-plan-select');
             const input = document.getElementById('nuevo-proyecto-input');
             if (select) {
-                select.addEventListener('change', habilitarBotonCrear);
+                select.addEventListener('change', function() {
+                    habilitarBotonCrear();
+                    actualizarInfoPlan();
+                });
             }
             if (input) {
                 input.addEventListener('input', habilitarBotonCrear);

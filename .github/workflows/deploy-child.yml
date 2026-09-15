@@ -693,72 +693,31 @@ jobs:
         run: |
           URL="${{ needs.provision-webapp.outputs.app_service_url }}"
           PROJ="${{ needs.validate-inputs.outputs.project_name }}"
-          PASS=0; FAIL=0
 
           echo "=== User-Facing Validation ==="
           echo "URL: ${URL}/"
           echo "Expected Project: ${PROJ}"
           echo ""
 
-          # 1. GET / -> HTTP 200
+          # Fetch the page
           HTTP_CODE=$(curl -s --connect-timeout 10 --max-time 15 \
             -o /tmp/user-facing.html -w '%{http_code}' "${URL}/" 2>/dev/null || echo "000")
           echo "status_code=${HTTP_CODE}" >> $GITHUB_OUTPUT
-          if [ "${HTTP_CODE}" = "200" ]; then
-            PASS=$((PASS+1)); echo "  PASS: GET / -> ${HTTP_CODE}"
-          else
-            FAIL=$((FAIL+1)); echo "  FAIL: GET / -> ${HTTP_CODE}"
-          fi
 
-          # 2. Content-Type: text/html (use file command or check HTTP headers via curl -I)
-          CT_HEAD=$(curl -s -I --connect-timeout 10 --max-time 15 "${URL}/" 2>/dev/null | grep -ci "content-type:.*text/html" 2>/dev/null || true)
-          CT_FILE=$(head -c 200 /tmp/user-facing.html 2>/dev/null | grep -ciE "<\!DOCTYPE|<html|<head" 2>/dev/null || true)
-          if [ "${CT_HEAD}" -gt 0 ] || [ "${CT_FILE}" -gt 0 ]; then
-            PASS=$((PASS+1)); echo "  PASS: Content-Type text/html detected (header=$CT_HEAD file=$CT_FILE)"
-            echo "content_type=text/html" >> $GITHUB_OUTPUT
-          else
-            FAIL=$((FAIL+1)); echo "  FAIL: Content-Type NOT text/html"
-            echo "content_type=unknown" >> $GITHUB_OUTPUT
-          fi
+          # Run Python-based validation (robust against false positives)
+          python tools/validate_user_facing.py --html-file /tmp/user-facing.html "${PROJ}" 2>&1 | tee /tmp/validation-result.json
+          VALID_EXIT=$?
 
-          # 3. HTML not empty (minimum meaningful > 500 bytes)
-          SIZE=$(wc -c < /tmp/user-facing.html 2>/dev/null || echo 0)
-          echo "html_size=${SIZE}" >> $GITHUB_OUTPUT
-          if [ "${SIZE}" -gt 500 ]; then
-            PASS=$((PASS+1)); echo "  PASS: HTML size ${SIZE} bytes (> 500)"
-            echo "html_not_empty=true" >> $GITHUB_OUTPUT
-          else
-            FAIL=$((FAIL+1)); echo "  FAIL: HTML size ${SIZE} bytes (<= 500)"
-            echo "html_not_empty=false" >> $GITHUB_OUTPUT
-          fi
-
-          # 4. No error page detected (exclude JS false positives like data.error, .catch, try/catch)
-          ERROR_COUNT=$(grep -ciP "(?<!data\.)(?<!\.catch\()(?:^|[^a-zA-Z_.])error(?:$|[^a-zA-Z])|exception|traceback|500 Internal|503 Service|internal.server" \
-            /tmp/user-facing.html 2>/dev/null || echo 0)
-          if [ -z "${ERROR_COUNT}" ] || [ "${ERROR_COUNT}" -eq 0 ] 2>/dev/null; then
-            PASS=$((PASS+1)); echo "  PASS: No error page detected (matches=0)"
-            echo "error_page_detected=false" >> $GITHUB_OUTPUT
-          else
-            FAIL=$((FAIL+1)); echo "  FAIL: Error page detected (${ERROR_COUNT} matches)"
-            echo "error_page_detected=true" >> $GITHUB_OUTPUT
-          fi
-
-          # 5. Project identity in HTML
-          IDENTITY_COUNT=$(grep -ci "${PROJ}" /tmp/user-facing.html 2>/dev/null || true)
-          if [ -n "${IDENTITY_COUNT}" ] && [ "${IDENTITY_COUNT}" -gt 0 ] 2>/dev/null; then
-            PASS=$((PASS+1)); echo "  PASS: Project identity '${PROJ}' found in HTML"
-            echo "identity_match=true" >> $GITHUB_OUTPUT
-          else
-            FAIL=$((FAIL+1)); echo "  FAIL: Project identity '${PROJ}' NOT found in HTML"
-            echo "identity_match=false" >> $GITHUB_OUTPUT
-          fi
-
-          # 6. URL validated
+          # Parse JSON result for GITHUB_OUTPUT
+          echo "content_type=$(python -c "import json; print(json.load(open('/tmp/validation-result.json'))['details'].get('content_type','unknown'))")" >> $GITHUB_OUTPUT
+          echo "html_size=$(python -c "import json; print(json.load(open('/tmp/validation-result.json'))['details'].get('html_size',0))")" >> $GITHUB_OUTPUT
+          echo "error_page_detected=$(python -c "import json; print(json.load(open('/tmp/validation-result.json'))['result']=='FAIL' and any(m['type'] in ('error_title','structural_error','safe_error_pattern','http_status') for m in json.load(open('/tmp/validation-result.json'))['error_matches']))" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "identity_match=$(python -c "import json; print(json.load(open('/tmp/validation-result.json'))['details'].get('identity_found',False))" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           echo "url=${URL}/" >> $GITHUB_OUTPUT
 
           echo ""
-          echo "=== RESULTS: ${PASS} pass, ${FAIL} fail ==="
-          if [ "${FAIL}" -gt 0 ]; then
+          echo "=== Validation result: $(python -c "import json; print(json.load(open('/tmp/validation-result.json'))['result'], json.load(open('/tmp/validation-result.json'))['reason'])") ==="
+          if [ "${VALID_EXIT}" -ne 0 ]; then
             echo "user_facing_result=FAIL" >> $GITHUB_OUTPUT
             exit 1
           fi

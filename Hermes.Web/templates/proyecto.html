@@ -120,6 +120,84 @@
                     <div class="card-body">
                         <p class="mb-1" id="webapp-info">No disponible</p>
                         <p class="mb-0 text-muted small" id="webapp-url"></p>
+                        <hr class="border-secondary">
+                        <small class="text-muted d-block"><strong>Resource Group:</strong> <span id="webapp-rg">—</span></small>
+                        <small class="text-muted d-block"><strong>App Service Plan:</strong> <span id="webapp-asp">—</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Azure Resources -->
+    <div class="row mt-4 g-3">
+        <div class="col-md-6">
+            <div class="card"><div class="card-header"><i class="bi bi-server me-2"></i>Azure &mdash; App Service Plan</div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted ps-0" style="width:130px;">Nombre:</td><td class="fw-bold" id="azure-plan-name">&mdash;</td></tr>
+                        <tr><td class="text-muted ps-0">Resource Group:</td><td id="azure-plan-rg">&mdash;</td></tr>
+                        <tr><td class="text-muted ps-0">Subscription:</td><td><code id="azure-plan-sub" style="font-size:0.75rem;">&mdash;</code></td></tr>
+                        <tr><td class="text-muted ps-0" colspan="2">
+                            <a href="#" id="azure-plan-link" target="_blank" class="btn btn-sm btn-outline-primary mt-1" style="display:none;">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Ver App Service Plan
+                            </a>
+                        </td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card"><div class="card-header"><i class="bi bi-window-stack me-2"></i>Azure &mdash; Web App Hijo</div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted ps-0" style="width:130px;">Nombre:</td><td class="fw-bold" id="azure-webapp-name">&mdash;</td></tr>
+                        <tr><td class="text-muted ps-0">Resource Group:</td><td id="azure-webapp-rg">&mdash;</td></tr>
+                        <tr><td class="text-muted ps-0">App Service Plan:</td><td id="azure-webapp-asp">&mdash;</td></tr>
+                        <tr><td class="text-muted ps-0">serverFarmId:</td><td><code id="azure-serverfarm-id" style="font-size:0.7rem;">&mdash;</code></td></tr>
+                        <tr><td class="text-muted ps-0">URL:</td><td><a href="#" id="azure-webapp-url-link" target="_blank" class="text-primary">&mdash;</a></td></tr>
+                        <tr><td class="text-muted ps-0" colspan="2">
+                            <a href="#" id="azure-webapp-link" target="_blank" class="btn btn-sm btn-outline-primary mt-1" style="display:none;">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Ver Web App
+                            </a>
+                        </td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consistency Validation -->
+    <div class="row mt-4 g-3">
+        <div class="col-12">
+            <div class="card border-success border-opacity-25">
+                <div class="card-header text-success"><i class="bi bi-check2-square me-2"></i>Validaci&oacute;n de Consistencia Azure</div>
+                <div class="card-body">
+                    <div class="row g-2" id="consistency-validation">
+                        <div class="col-md-4">
+                            <div class="p-2 rounded bg-success bg-opacity-10 text-center">
+                                <small class="text-muted d-block">App Service Plan</small>
+                                <span class="fw-bold" id="cons-plan-name">&mdash;</span>
+                                <small class="text-muted d-block">&darr;</small>
+                                <small class="text-muted">RG: <span id="cons-plan-rg">&mdash;</span></small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 rounded bg-info bg-opacity-10 text-center">
+                                <small class="text-muted d-block">Web App</small>
+                                <span class="fw-bold" id="cons-webapp-name">&mdash;</span>
+                                <small class="text-muted d-block">&darr;</small>
+                                <small class="text-muted">RG: <span id="cons-webapp-rg">&mdash;</span></small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 rounded bg-primary bg-opacity-10 text-center">
+                                <small class="text-muted d-block">serverFarmId</small>
+                                <span id="cons-serverfarm" style="font-size:0.65rem;word-break:break-all;">&mdash;</span>
+                                <br>
+                                <small class="text-success" id="cons-result"><i class="bi bi-check-circle-fill"></i> Coincide con ASP-HERMES-PORTAL</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -239,6 +317,45 @@
             document.getElementById('webapp-url').innerHTML = data.web_app_url
                 ? `<a href="${data.web_app_url}" target="_blank" class="text-primary">${data.web_app_url}</a>`
                 : '';
+            document.getElementById('webapp-rg').textContent = data.web_app_resource_group || '—';
+            document.getElementById('webapp-asp').textContent = data.app_service_plan_name || '—';
+
+            // Azure Resource sections
+            document.getElementById('azure-plan-name').textContent = data.app_service_plan_name || '—';
+            document.getElementById('azure-plan-rg').textContent = data.app_service_plan_resource_group || '—';
+            document.getElementById('azure-plan-sub').textContent = data.app_service_plan_subscription || '—';
+            if (data.app_service_plan_id) {
+                var pl = document.getElementById('azure-plan-link');
+                pl.href = 'https://portal.azure.com/#resource' + data.app_service_plan_id;
+                pl.style.display = 'inline-block';
+            }
+            document.getElementById('azure-webapp-name').textContent = data.web_app || '—';
+            document.getElementById('azure-webapp-rg').textContent = data.web_app_resource_group || '—';
+            document.getElementById('azure-webapp-asp').textContent = data.app_service_plan_name || '—';
+            document.getElementById('azure-serverfarm-id').textContent = data.server_farm_id || data.app_service_plan_id || '—';
+            if (data.web_app_url) {
+                document.getElementById('azure-webapp-url-link').href = data.web_app_url;
+                document.getElementById('azure-webapp-url-link').textContent = data.web_app_url;
+            }
+            if (data.web_app_resource_id) {
+                var wl = document.getElementById('azure-webapp-link');
+                wl.href = 'https://portal.azure.com/#resource' + data.web_app_resource_id;
+                wl.style.display = 'inline-block';
+            }
+
+            // Consistency Validation
+            document.getElementById('cons-plan-name').textContent = data.app_service_plan_name || '—';
+            document.getElementById('cons-plan-rg').textContent = data.app_service_plan_resource_group || '—';
+            document.getElementById('cons-webapp-name').textContent = data.web_app || '—';
+            document.getElementById('cons-webapp-rg').textContent = data.web_app_resource_group || '—';
+            document.getElementById('cons-serverfarm').textContent = data.server_farm_id || data.app_service_plan_id || '—';
+            var prg = data.app_service_plan_resource_group || '';
+            var wrg = data.web_app_resource_group || '';
+            if (prg && wrg && prg === wrg) {
+                document.getElementById('cons-result').innerHTML = '<i class="bi bi-check-circle-fill"></i> Coincide: Ambos en ' + prg;
+            } else if (prg) {
+                document.getElementById('cons-result').innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning"></i> Diferente RG';
+            }
 
             if (data.estado && ['SOLICITADO','CREANDO','PUBLICANDO','CI_EN_PROGRESO','DESPLEGANDO','VALIDANDO'].includes(data.estado)) {
                 document.getElementById('auto-refresh-status').textContent = 'Actualizando...';

@@ -169,7 +169,10 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-clock-history me-2"></i>Ultimas 5 Creaciones de Proyectos Hijos</span>
-                        <span class="badge bg-info bg-opacity-25 text-info" id="historial-refresh-badge">Auto-refresh</span>
+                        <span>
+                            <span class="badge bg-info bg-opacity-25 text-info" id="historial-refresh-badge" title="Polling cada 10s durante ejecucion activa">Auto-refresh</span>
+                            <small class="text-muted ms-2" id="ultima-actualizacion-label"><i class="bi bi-arrow-repeat me-1"></i>Ultima actualizacion: <span id="ultima-actualizacion-ts">--</span></small>
+                        </span>
                     </div>
                     <div class="card-body" id="historial-body">
                         <div class="table-responsive">
@@ -915,6 +918,12 @@
 
         async function actualizarHistorial() {
             try {
+                // Actualizar timestamp de ultima actualizacion
+                const tsEl = document.getElementById('ultima-actualizacion-ts');
+                if (tsEl) {
+                    const ahora = new Date();
+                    tsEl.textContent = ahora.toISOString().replace('T', ' ').substring(0, 19);
+                }
                 const resp = await fetch('/api/fabrica/proyectos/historial?limit=5');
                 const data = await resp.json();
                 if (!data.proyectos || !Array.isArray(data.proyectos)) return;

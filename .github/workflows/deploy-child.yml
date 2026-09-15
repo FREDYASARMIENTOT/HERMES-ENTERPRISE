@@ -156,8 +156,8 @@ jobs:
           REPO="${{ needs.validate-inputs.outputs.repository }}"
           SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
           TARGET="child-project"
-          RETRIES=3
-          DELAY=10
+          RETRIES=5
+          BACKOFF_DELAYS=(5 10 20 30 60)
           RC=1
 
           for i in $(seq 1 ${RETRIES}); do
@@ -180,15 +180,31 @@ jobs:
                 RC=0
                 break
               fi
-              # SHA mismatch — try fetching the exact ref
-              echo "Cloned SHA (${CLONED_SHA}) != requested (${SHA}), fetching exact ref..."
-              git fetch --depth 1 origin "${SHA}" 2>&1
+              # SHA mismatch — try multiple strategies for GitHub propagation delay
+              echo "Cloned SHA (${CLONED_SHA}) != requested (${SHA}), trying wider fetch..."
+
+              # Strategy 1: Fetch all refs to update default branch
+              git fetch origin 2>&1
               git checkout "${SHA}" 2>&1
               CHECKOUT_RC=$?
               if [ ${CHECKOUT_RC} -eq 0 ]; then
                 CONFIRMED_SHA=$(git rev-parse HEAD)
                 if [ "${CONFIRMED_SHA}" = "${SHA}" ]; then
-                  echo "OK: Fetch + checkout success — ${CONFIRMED_SHA}"
+                  echo "OK: Fetch all + checkout success — ${CONFIRMED_SHA}"
+                  RC=0
+                  break
+                fi
+              fi
+
+              # Strategy 2: Direct SHA fetch (handles "not our ref" propagation delay)
+              echo "Trying direct SHA fetch (backup)..."
+              git fetch --depth 50 origin "${SHA}" 2>&1
+              git checkout "${SHA}" 2>&1
+              CHECKOUT_RC=$?
+              if [ ${CHECKOUT_RC} -eq 0 ]; then
+                CONFIRMED_SHA=$(git rev-parse HEAD)
+                if [ "${CONFIRMED_SHA}" = "${SHA}" ]; then
+                  echo "OK: Direct SHA fetch + checkout success — ${CONFIRMED_SHA}"
                   RC=0
                   break
                 fi
@@ -196,6 +212,7 @@ jobs:
             fi
 
             if [ ${i} -lt ${RETRIES} ]; then
+              DELAY=${BACKOFF_DELAYS[$((i-1))]}
               echo "Checkout attempt ${i} failed. Waiting ${DELAY}s before retry..."
               sleep ${DELAY}
             fi
@@ -430,8 +447,8 @@ jobs:
           REPO="${{ needs.validate-inputs.outputs.repository }}"
           SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
           TARGET="child-project"
-          RETRIES=3
-          DELAY=10
+          RETRIES=5
+          BACKOFF_DELAYS=(5 10 20 30 60)
           RC=1
 
           for i in $(seq 1 ${RETRIES}); do
@@ -449,20 +466,36 @@ jobs:
                 echo "OK: Exact match — ${CLONED_SHA}"
                 RC=0; break
               fi
-              echo "Cloned SHA (${CLONED_SHA}) != requested (${SHA}), fetching exact ref..."
-              git fetch --depth 1 origin "${SHA}" 2>&1
+              echo "Cloned SHA (${CLONED_SHA}) != requested (${SHA}), trying wider fetch..."
+
+              # Strategy 1: Fetch all refs to update default branch
+              git fetch origin 2>&1
               git checkout "${SHA}" 2>&1
               CHECKOUT_RC=$?
               if [ ${CHECKOUT_RC} -eq 0 ]; then
                 CONFIRMED_SHA=$(git rev-parse HEAD)
                 if [ "${CONFIRMED_SHA}" = "${SHA}" ]; then
-                  echo "OK: Fetch + checkout — ${CONFIRMED_SHA}"
+                  echo "OK: Fetch all + checkout — ${CONFIRMED_SHA}"
+                  RC=0; break
+                fi
+              fi
+
+              # Strategy 2: Direct SHA fetch (handles "not our ref" delay)
+              echo "Trying direct SHA fetch (backup)..."
+              git fetch --depth 50 origin "${SHA}" 2>&1
+              git checkout "${SHA}" 2>&1
+              CHECKOUT_RC=$?
+              if [ ${CHECKOUT_RC} -eq 0 ]; then
+                CONFIRMED_SHA=$(git rev-parse HEAD)
+                if [ "${CONFIRMED_SHA}" = "${SHA}" ]; then
+                  echo "OK: Direct SHA fetch + checkout — ${CONFIRMED_SHA}"
                   RC=0; break
                 fi
               fi
             fi
 
             if [ ${i} -lt ${RETRIES} ]; then
+              DELAY=${BACKOFF_DELAYS[$((i-1))]}
               echo "Retry ${i} failed. Waiting ${DELAY}s..."
               sleep ${DELAY}
             fi

@@ -118,6 +118,8 @@ try {
     $mainPy = $mainPy.Replace('{{REGION}}', $regionVal)
     $mainPy = $mainPy.Replace('{{DEPLOYMENT_ID}}', $CorrelationId)
     $mainPy | Out-File (Join-Path $ProjRoot "backend/main.py") -Encoding utf8
+    # Copy registro_implementacion.py (required import for the child app)
+    Copy-Item (Join-Path $tmplSrc "registro_implementacion.py") (Join-Path $ProjRoot "backend/registro_implementacion.py") -Force -ErrorAction Stop
     Write-Step "Backend" "OK" "Project files created"
     Registrar-EventoLineaTiempo -DbPath $DbPath -CorrelationId $CorrelationId -Evento "Build" -Estado "OK"
 

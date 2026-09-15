@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from registro_implementacion import RegistroImplementacion, ESTADO_COMPLETADO, ESTADO_FALLIDO
+from .registro_implementacion import RegistroImplementacion, ESTADO_COMPLETADO, ESTADO_FALLIDO
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
 logger = logging.getLogger("{{PROJECT_NAME}}")

@@ -732,9 +732,9 @@ jobs:
             echo "html_not_empty=false" >> $GITHUB_OUTPUT
           fi
 
-          # 4. No error page detected
-          ERROR_COUNT=$(grep -ciE "error|exception|traceback|500|503|internal.server" \
-            /tmp/user-facing.html 2>/dev/null || true)
+          # 4. No error page detected (exclude JS false positives like data.error, .catch, try/catch)
+          ERROR_COUNT=$(grep -ciP "(?<!data\.)(?<!\.catch\()(?:^|[^a-zA-Z_.])error(?:$|[^a-zA-Z])|exception|traceback|500 Internal|503 Service|internal.server" \
+            /tmp/user-facing.html 2>/dev/null || echo 0)
           if [ -z "${ERROR_COUNT}" ] || [ "${ERROR_COUNT}" -eq 0 ] 2>/dev/null; then
             PASS=$((PASS+1)); echo "  PASS: No error page detected (matches=0)"
             echo "error_page_detected=false" >> $GITHUB_OUTPUT

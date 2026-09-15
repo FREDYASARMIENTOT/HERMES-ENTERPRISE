@@ -230,7 +230,17 @@ else:
     RUTA_TEMPLATES: Path = RUTA_HERMES_WEB / "templates"
     logger.info(f"RUTA_TEMPLATES resuelta desde RUTA_HERMES_WEB: {RUTA_TEMPLATES}")
 
-RUTA_STATIC: Path = RUTA_HERMES_WEB / "static"
+# RC94.25: RUTA_STATIC se resuelve primero relativo al archivo actual (backend/main.py)
+# para soportar deployment Azure donde Hermes.Web/ es el root del ZIP.
+# En Azure: /home/site/wwwroot/static/
+# En local: d:/HERMES-ENTERPRISE/Hermes.Web/static/
+_RUTA_STATIC_DESDE_MAIN: Path = Path(__file__).resolve().parent.parent / "static"
+if _RUTA_STATIC_DESDE_MAIN.exists():
+    RUTA_STATIC: Path = _RUTA_STATIC_DESDE_MAIN
+    logger.info(f"RUTA_STATIC resuelta desde ubicacion de main.py: {RUTA_STATIC}")
+else:
+    RUTA_STATIC: Path = RUTA_HERMES_WEB / "static"
+    logger.info(f"RUTA_STATIC resuelta desde RUTA_HERMES_WEB: {RUTA_STATIC}")
 RUTA_MOTOR: Path = RUTA_HERMES / "motor"
 RUTA_MODULO_COMMANDS: Path = RUTA_MOTOR / "kernel" / "Module" / "Hermes.Commands"
 

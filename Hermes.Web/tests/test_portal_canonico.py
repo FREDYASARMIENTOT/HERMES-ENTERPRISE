@@ -14,6 +14,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 logging.disable(logging.CRITICAL)
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+# Constante con App Service Plan vÃ¡lido para pruebas (ASP-HERMES-PORTAL)
+_ASP_VALIDO = (
+    "/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/"
+    "resourceGroups/RG-Hermes-Proyectos/"
+    "providers/Microsoft.Web/serverfarms/ASP-HERMES-PORTAL"
+)
+
+
+def _solicitud(svc, nombre, descripcion=""):
+    """Helper: crear solicitud con app_service_plan_id siempre presente."""
+    return svc.crear_solicitud(
+        nombre,
+        descripcion=descripcion,
+        app_service_plan_id=_ASP_VALIDO
+    )
 sys.path.insert(0, str(_PROJECT_ROOT))
 _HERMES_WEB_DIR = _PROJECT_ROOT / "Hermes.Web"
 sys.path.insert(0, str(_PROJECT_ROOT))
@@ -65,7 +81,7 @@ def svc_gh():
 
 @pytest.fixture
 def solicitud_valida(svc):
-    return svc.crear_solicitud("hermes-test-01", descripcion="Prueba")
+    return _solicitud(svc, "hermes-test-01", descripcion="Prueba")
 # ============================================================
 # TEST-B01 thru B06 - Validation
 # ============================================================
@@ -73,13 +89,13 @@ def solicitud_valida(svc):
 class TestB01SolicitudValida:
     """TEST-B01: Crear solicitud con nombre valido."""
     def test_crear(self, svc):
-        s = svc.crear_solicitud("hermes-test-01", descripcion="Test")
+        s = _solicitud(svc, "hermes-test-01", descripcion="Test")
         assert s.nombre_proyecto == "hermes-test-01"
     def test_sin_desc(self, svc):
-        s = svc.crear_solicitud("hermes-test-02")
+        s = _solicitud(svc, "hermes-test-02")
         assert s.nombre_proyecto == "hermes-test-02"
     def test_ids(self, svc):
-        s = svc.crear_solicitud("hermes-test-03")
+        s = _solicitud(svc, "hermes-test-03")
         assert s.id and s.deployment_id and s.correlation_id
 
 class TestB02NombreCorto:
@@ -87,7 +103,7 @@ class TestB02NombreCorto:
     def test_rechazado(self, svc):
         for n in ["ab", "a"]:
             with pytest.raises(ValueError, match="3 caracteres"):
-                svc.crear_solicitud(n)
+                _solicitud(svc, n)
 
 class TestB03NombreLargo:
     """TEST-B03: Nombre > 40 caracteres."""
@@ -108,23 +124,23 @@ class TestB04NombreVacio:
 class TestB05NombreEspacios:
     """TEST-B05: Nombre con espacios."""
     def test_aceptado(self, svc):
-        s = svc.crear_solicitud("mi proyecto test")
+        s = _solicitud(svc, "mi proyecto test")
         assert s.nombre_proyecto == "mi proyecto test"
 
 class TestB06CaracteresInvalidos:
     """TEST-B06: XSS, SQLi, Path traversal."""
     def test_xss(self, svc):
         n = "<script>alert(1)</script>"
-        s = svc.crear_solicitud(n)
+        s = _solicitud(svc, n)
         assert s.nombre_proyecto == n
     def test_sqli(self, svc):
         n = "' OR '1'='1'; DROP TABLE solicitudes_proyecto;--"
-        s = svc.crear_solicitud(n)
+        s = _solicitud(svc, n)
         s2 = svc.obtener_solicitud(s.deployment_id)
         assert s2 is not None
     def test_path_traversal(self, svc):
         n = "../../etc/passwd"
-        s = svc.crear_solicitud(n)
+        s = _solicitud(svc, n)
         assert s.nombre_proyecto == n
 
 # ============================================================
@@ -133,20 +149,20 @@ class TestB06CaracteresInvalidos:
 
 class TestB07Duplicado:
     def test_duplicado_rechazado(self, svc):
-        svc.crear_solicitud("hermes-test-dupe")
+        _solicitud(svc, "hermes-test-dupe")
         with pytest.raises(ValueError, match="activa"):
-            svc.crear_solicitud("hermes-test-dupe")
+            _solicitud(svc, "hermes-test-dupe")
     def test_duplicado_permitido_fallido(self, svc):
-        s = svc.crear_solicitud("hermes-test-dupe2")
+        s = _solicitud(svc, "hermes-test-dupe2")
         svc.actualizar_estado(s, "FALLIDO", numero_paso=1, detalle="Fallo")
         svc._guardar(s)
-        s2 = svc.crear_solicitud("hermes-test-dupe2")
+        s2 = _solicitud(svc, "hermes-test-dupe2")
         assert s2.deployment_id != s.deployment_id
     def test_duplicado_permitido_completado(self, svc):
-        s = svc.crear_solicitud("hermes-test-dupe3")
+        s = _solicitud(svc, "hermes-test-dupe3")
         svc.actualizar_estado(s, "COMPLETADO", numero_paso=13, detalle="Ok")
         svc._guardar(s)
-        s2 = svc.crear_solicitud("hermes-test-dupe3")
+        s2 = _solicitud(svc, "hermes-test-dupe3")
         assert s2 is not None
 
 # ============================================================
@@ -155,15 +171,15 @@ class TestB07Duplicado:
 
 class TestB08DeploymentId:
     def test_no_vacio(self, svc):
-        s = svc.crear_solicitud("hermes-test-did1")
+        s = _solicitud(svc, "hermes-test-did1")
         assert s.deployment_id and len(s.deployment_id) > 0
     def test_unico(self, svc):
         ids = set()
         for i in range(10):
-            ids.add(svc.crear_solicitud(f"hermes-test-uid-{i:03d}").deployment_id)
+            ids.add(_solicitud(svc, f"hermes-test-uid-{i:03d}").deployment_id)
         assert len(ids) == 10
     def test_estable(self, svc):
-        s = svc.crear_solicitud("hermes-test-est")
+        s = _solicitud(svc, "hermes-test-est")
         did = s.deployment_id
         svc._guardar(s)
         s2 = svc.obtener_solicitud(did)
@@ -175,10 +191,10 @@ class TestB08DeploymentId:
 
 class TestB09CorrelationId:
     def test_existe(self, svc):
-        s = svc.crear_solicitud("hermes-test-cid1")
+        s = _solicitud(svc, "hermes-test-cid1")
         assert s.correlation_id and len(s.correlation_id) > 0
     def test_persiste(self, svc):
-        s = svc.crear_solicitud("hermes-test-cid2")
+        s = _solicitud(svc, "hermes-test-cid2")
         cid = s.correlation_id
         s2 = svc.obtener_solicitud(s.deployment_id)
         assert s2 and s2.correlation_id == cid
@@ -189,7 +205,7 @@ class TestB09CorrelationId:
 
 class TestB10EstadoInicial:
     def test_estado_inicial(self, svc):
-        s = svc.crear_solicitud("hermes-test-ei1")
+        s = _solicitud(svc, "hermes-test-ei1")
         assert s.estado == "SOLICITADO"
 
 # ============================================================
@@ -198,7 +214,7 @@ class TestB10EstadoInicial:
 
 class TestB11PasoInicial:
     def test_paso_inicial(self, svc):
-        s = svc.crear_solicitud("hermes-test-pi1")
+        s = _solicitud(svc, "hermes-test-pi1")
         assert len(s.pasos) == 13
         assert s.pasos[0]["numero"] == 1
         assert s.pasos[0]["nombre"] == "SOLICITUD"
@@ -209,12 +225,12 @@ class TestB11PasoInicial:
 
 class TestB12Persistencia:
     def test_basica(self, svc):
-        s = svc.crear_solicitud("hermes-test-persist")
+        s = _solicitud(svc, "hermes-test-persist")
         svc._guardar(s)
         s2 = svc.obtener_solicitud(s.deployment_id)
         assert s2 and s2.nombre_proyecto == "hermes-test-persist"
     def test_campos(self, svc):
-        s = svc.crear_solicitud("hermes-test-campos", descripcion="Test campos")
+        s = _solicitud(svc, "hermes-test-campos", descripcion="Test campos")
         s.estado = "CREANDO"
         s.repositorio = "FREDYASARMIENTOT/hermes-test-campos"
         s.web_app = "as-hermes-test-campos"
@@ -230,7 +246,7 @@ class TestB13GetSolicitud:
         s = svc.obtener_solicitud(solicitud_valida.deployment_id)
         assert s and s.nombre_proyecto == "hermes-test-01"
     def test_get_con_datos(self, svc):
-        s = svc.crear_solicitud("hermes-test-get1", descripcion="GET test")
+        s = _solicitud(svc, "hermes-test-get1", descripcion="GET test")
         s2 = svc.obtener_solicitud(s.deployment_id)
         assert s2
         data = s2.a_dict()
@@ -403,17 +419,17 @@ class TestConcurrencia:
     def test_5_solicitudes(self, svc):
         ids = set()
         for i in range(5):
-            ids.add(svc.crear_solicitud(f"hermes-concur-{i:03d}").deployment_id)
+            ids.add(_solicitud(svc, f"hermes-concur-{i:03d}").deployment_id)
         assert len(ids) == 5
     def test_no_mezcla_estados(self, svc):
-        s1 = svc.crear_solicitud("hermes-concur-a")
-        s2 = svc.crear_solicitud("hermes-concur-b")
+        s1 = _solicitud(svc, "hermes-concur-a")
+        s2 = _solicitud(svc, "hermes-concur-b")
         svc.actualizar_estado(s1, "CREANDO", numero_paso=2)
         assert svc.obtener_solicitud(s1.deployment_id).estado == "CREANDO"
         assert svc.obtener_solicitud(s2.deployment_id).estado == "SOLICITADO"
     def test_no_mezcla_correlation_ids(self, svc):
-        s1 = svc.crear_solicitud("hermes-concur-c")
-        s2 = svc.crear_solicitud("hermes-concur-d")
+        s1 = _solicitud(svc, "hermes-concur-c")
+        s2 = _solicitud(svc, "hermes-concur-d")
         assert s1.correlation_id != s2.correlation_id
 
 # ============================================================
@@ -425,14 +441,14 @@ class TestListado:
         assert len(svc.listar_solicitudes()) == 0
     def test_con_datos(self, svc):
         for i in range(3):
-            svc.crear_solicitud(f"hermes-list-{i}")
+            _solicitud(svc, f"hermes-list-{i}")
         assert len(svc.listar_solicitudes(limite=100)) == 3
     def test_limite(self, svc):
         for i in range(5):
-            svc.crear_solicitud(f"hermes-limit-{i}")
+            _solicitud(svc, f"hermes-limit-{i}")
         assert len(svc.listar_solicitudes(limite=3)) == 3
     def test_por_estado(self, svc):
-        s = svc.crear_solicitud("hermes-filter")
+        s = _solicitud(svc, "hermes-filter")
         svc.actualizar_estado(s, "CREANDO", numero_paso=2)
         sol = svc.listar_solicitudes(estado="SOLICITADO", limite=100)
         cre = svc.listar_solicitudes(estado="CREANDO", limite=100)
@@ -451,7 +467,7 @@ class TestGeneracionIDs:
             ids.add(_generar_id())
         assert len(ids) == 100
     def test_deployment_vs_correlation(self, svc):
-        s = svc.crear_solicitud("hermes-test-id-dist")
+        s = _solicitud(svc, "hermes-test-id-dist")
         assert s.deployment_id != s.correlation_id
 
 # ============================================================
@@ -460,10 +476,10 @@ class TestGeneracionIDs:
 
 class TestSolicitudProyectoModel:
     def test_a_dict(self, svc):
-        s = svc.crear_solicitud("hermes-dict-test")
+        s = _solicitud(svc, "hermes-dict-test")
         json.dumps(s.a_dict())
     def test_desde_dict(self, svc):
-        s = svc.crear_solicitud("hermes-restore", descripcion="Restore")
+        s = _solicitud(svc, "hermes-restore", descripcion="Restore")
         s.estado = "CREANDO"
         s2 = SolicitudProyecto.desde_dict(s.a_dict())
         assert s2.nombre_proyecto == "hermes-restore"
@@ -490,6 +506,9 @@ class TestAPIContract:
         _instancia_servicio = None
         app.state.servicio_fabrica = ServicioFabrica()
         self.client = TestClient(app)
+    @property
+    def _json_ok(self):
+        return {"nombre_proyecto": "hermes-api-test", "app_service_plan_id": _ASP_VALIDO}
     def test_get_root(self):
         r = self.client.get("/"); assert r.status_code == 200
     def test_get_health(self):
@@ -504,7 +523,7 @@ class TestAPIContract:
     def test_get_proyectos(self):
         r = self.client.get("/proyectos"); assert r.status_code == 200
     def test_post_crear_valido(self):
-        r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-api-test"})
+        r = self.client.post("/api/fabrica/proyectos", json=self._json_ok)
         assert r.status_code == 202
         d = r.json(); assert d["nombre_proyecto"] == "hermes-api-test"
         assert d["estado"] == "SOLICITADO"
@@ -519,7 +538,7 @@ class TestAPIContract:
         r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "h" * 41})
         assert r.status_code == 422
     def test_get_proyecto_existente(self):
-        r1 = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-get-test"})
+        r1 = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-get-test", "app_service_plan_id": _ASP_VALIDO})
         did = r1.json()["deployment_id"]
         r2 = self.client.get(f"/api/fabrica/proyectos/{did}")
         assert r2.status_code == 200
@@ -527,11 +546,11 @@ class TestAPIContract:
         r = self.client.get("/api/fabrica/proyectos/ID_NO_EXISTE")
         assert r.status_code == 404
     def test_get_listado(self):
-        self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-list-test"})
+        self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-list-test", "app_service_plan_id": _ASP_VALIDO})
         r = self.client.get("/api/fabrica/proyectos")
         assert r.status_code == 200 and r.json()["total"] >= 1
     def test_post_disparar_mock(self):
-        r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-dispatch"})
+        r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-dispatch", "app_service_plan_id": _ASP_VALIDO})
         assert r.status_code == 202
         did = r.json()["deployment_id"]
         svc_ = self.client.app.state.servicio_fabrica
@@ -548,13 +567,13 @@ class TestAPIContract:
         r = self.client.post("/api/fabrica/proyectos/ID_X/disparar")
         assert r.status_code == 404
     def test_post_paso(self):
-        r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-paso-test"})
+        r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-paso-test", "app_service_plan_id": _ASP_VALIDO})
         did = r.json()["deployment_id"]
         r2 = self.client.post(f"/api/fabrica/proyectos/{did}/paso",
                               json={"numero_paso": 2, "estado_paso": "EN_PROCESO"})
         assert r2.status_code == 200
     def test_post_finalizar(self):
-        r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-final-test"})
+        r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-final-test", "app_service_plan_id": _ASP_VALIDO})
         did = r.json()["deployment_id"]
         r2 = self.client.post(f"/api/fabrica/proyectos/{did}/finalizar",
                               json={"resultado": "PASS"})
@@ -597,7 +616,7 @@ class TestSeguridad:
         _instancia_servicio = None
         app.state.servicio_fabrica = ServicioFabrica()
         client = TestClient(app)
-        r1 = client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-sec-test"})
+        r1 = client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-sec-test", "app_service_plan_id": _ASP_VALIDO})
         t = json.dumps(r1.json()).lower()
         for s in ["token", "bearer", "authorization", "ghp_"]:
             assert s not in t
@@ -644,7 +663,7 @@ class TestHistorialEndpoint:
 
     def test_historial_con_proyectos(self):
         for i in range(3):
-            self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": f"test-hist-{i}"})
+            self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": f"test-hist-{i}", "app_service_plan_id": _ASP_VALIDO})
         r = self.client.get("/api/fabrica/proyectos/historial?limit=5")
         assert r.status_code == 200
         data = r.json()
@@ -654,7 +673,7 @@ class TestHistorialEndpoint:
 
     def test_historial_limit(self):
         for i in range(5):
-            self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": f"test-hist-limit-{i}"})
+            self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": f"test-hist-limit-{i}", "app_service_plan_id": _ASP_VALIDO})
         r = self.client.get("/api/fabrica/proyectos/historial?limit=3")
         assert r.status_code == 200
         data = r.json()
@@ -662,7 +681,7 @@ class TestHistorialEndpoint:
 
     def test_historial_no_expone_secretos(self):
         import json
-        self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "test-hist-sec"})
+        self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "test-hist-sec", "app_service_plan_id": _ASP_VALIDO})
         r = self.client.get("/api/fabrica/proyectos/historial?limit=5")
         t = json.dumps(r.json()).lower()
         for s in ["ghp_", "gho_", "token", "bearer", "authorization"]:
@@ -696,3 +715,4 @@ class TestFrontendFeatures:
         c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read().lower()
         for s in ["ghp_", "gho_", "pat_", "authorization"]:
             assert s not in c
+

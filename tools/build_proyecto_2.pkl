@@ -1,0 +1,31 @@
+<nav class="navbar navbar-expand-lg navbar-dark border-bottom border-light border-opacity-10"><div class="container">
+<a class="navbar-brand" href="/"><i class="bi bi-shield-fill-check me-2"></i>Hermes Enterprise</a>
+<div class="d-flex align-items-center gap-2"><span class="badge bg-primary bg-opacity-25 text-primary status-badge" id="estado-badge">SOLICITADO</span></div>
+</div></nav>
+<div class="container py-4">
+<div id="loading-state" class="text-center py-5"><div class="spinner-border text-primary mb-3" role="status"></div><h5 class="text-muted">Cargando informaci&oacute;n del proyecto...</h5></div>
+<div id="error-state" class="text-center py-5 d-none"><i class="bi bi-exclamation-triangle text-danger" style="font-size:3rem"></i><h4 class="text-danger mt-3">Error al cargar proyecto</h4>
+<p class="text-muted" id="error-message">No se pudo obtener la informaci&oacute;n del proyecto.</p>
+<button class="btn btn-outline-primary mt-2" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</button></div>
+<div id="project-content" class="d-none">
+<div id="global-status-card" class="card mb-4 global-progress"><div class="card-body"><div class="row align-items-center">
+<div class="col-md-3 text-center"><div class="big-number" id="global-estado">&mdash;</div><div class="step-counter">ESTADO GLOBAL</div></div>
+<div class="col-md-6"><div class="row text-center">
+<div class="col-4"><div class="big-number" id="steps-completed">0</div><div class="step-counter">/ 13 PASOS</div></div>
+<div class="col-4"><div class="big-number" id="substeps-completed">0</div><div class="step-counter" id="substeps-label">SUBPASOS</div></div>
+<div class="col-4"><div class="big-number" id="events-count">0</div><div class="step-counter">EVENTOS</div></div>
+</div></div>
+<div class="col-md-3 text-center"><div id="total-duration-display" class="big-number text-info">&mdash;</div><div class="step-counter">DURACI&Oacute;N</div></div>
+</div>
+<div class="row mt-2 text-center" id="current-step-info"><div class="col-12 text-muted small">
+<span id="current-step-text">Paso actual: &mdash;</span><span class="mx-2">|</span>
+<span id="current-substep-text">Subpaso actual: &mdash;</span><span class="mx-2">|</span>
+<span id="elapsed-time-text">Tiempo transcurrido: &mdash;</span>
+</div></div></div></div>
+<div class="d-flex flex-wrap gap-2 mb-3">
+<button class="btn btn-sm btn-outline-info" onclick="verJSON()"><i class="bi bi-filetype-json me-1"></i>Ver JSON</button>
+<button class="btn btn-sm btn-outline-info" onclick="verMarkdown()"><i class="bi bi-markdown me-1"></i>Ver Markdown</button>
+<button class="btn btn-sm btn-outline-success" onclick="descargarJSON()"><i class="bi bi-download me-1"></i>Descargar JSON</button>
+<button class="btn btn-sm btn-outline-success" onclick="descargarMarkdown()"><i class="bi bi-download me-1"></i>Descargar Markdown</button>
+<button class="btn btn-sm vscode-btn" onclick="abrirVSCode()"><i class="bi bi-microsoft me-1"></i>VS Code Clone</button>
+</div>

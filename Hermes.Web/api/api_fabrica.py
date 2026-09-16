@@ -17,7 +17,7 @@ Endpoints:
 
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Response
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 
@@ -262,18 +262,41 @@ async def actualizar_paso(request: Request, deployment_id: str, paso: Actualizar
 
 @router.post("/fabrica/proyectos/{deployment_id}/finalizar", summary="Finalizar solicitud")
 async def finalizar_proyecto(request: Request, deployment_id: str, final: FinalizarRequest):
-    """Finaliza una solicitud con resultado PASS o FAIL."""
+    """Finaliza una solicitud con resultado PASS o FAIL.
+
+    Validación adversarial (FASE 20):
+    - Si resultado=PASS, todos los 13 pasos deben estar COMPLETADOS.
+    - Si hay pasos pendientes HTTP 409 Conflict.
+    """
     try:
         servicio = request.app.state.servicio_fabrica
+
+        # Validación adversarial: PASS require todos los pasos COMPLETADOS
+        if final.resultado == "PASS":
+            consistencia = servicio.validar_consistencia(deployment_id)
+            if not consistencia["consistente"]:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "resultado": "FAIL",
+                        "error": "No se puede finalizar con PASS: pasos pendientes",
+                        "pasos_pendientes": consistencia["pasos_pendientes"],
+                        "errores": consistencia["errores"]
+                    }
+                )
+
         resultado = servicio.finalizar_solicitud(
             deployment_id=deployment_id, resultado=final.resultado, error=final.error
         )
         if not resultado:
             raise HTTPException(status_code=404, detail=f"Solicitud no encontrada: {deployment_id}")
+        logger.info(f"Solicitud finalizada: {deployment_id} -> {final.resultado}")
         return {"mensaje": f"Solicitud finalizada: {final.resultado}",
                 "deployment_id": deployment_id, "estado": resultado.estado, "resultado": resultado.resultado}
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail={"resultado": "FAIL", "error": str(e)})
     except Exception as e:
         logger.error(f"Error finalizando solicitud: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
@@ -294,16 +317,16 @@ async def actualizar_metadata(request: Request, deployment_id: str, metadata: Di
         solicitud = servicio.obtener_solicitud(deployment_id)
         if not solicitud:
             raise HTTPException(status_code=404, detail=f"Solicitud no encontrada: {deployment_id}")
-        
+
         updated = False
         for key, value in metadata.items():
             if hasattr(solicitud, key) and key not in ("id", "nombre_proyecto", "estado", "pasos"):
                 setattr(solicitud, key, value)
                 updated = True
-        
+
         if not updated:
             return {"mensaje": "Sin cambios", "deployment_id": deployment_id}
-        
+
         solicitud.fecha_actualizacion = datetime.now(timezone.utc).isoformat()
         servicio._guardar(solicitud)
         logger.info(f"Metadatos actualizados para {deployment_id}: {list(metadata.keys())}")
@@ -348,4 +371,173 @@ async def listar_app_service_planes(request: Request):
         logger.error(f"Error en listar_app_service_planes: {e}")
         return {"exito": False, "planes": [], "error": f"Error interno: {str(e)}"}
 
+@router.get("/fabrica/proyectos/{deployment_id}/eventos",
+            summary="Obtener event log del proyecto",
+            description="Obtiene el log cronológico de eventos del proyecto desde el Event Store")
+async def obtener_eventos(request: Request, deployment_id: str):
+    """Obtiene el event log completo de un deployment."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        eventos = servicio.obtener_eventos(deployment_id)
+        solicitud = servicio.obtener_solicitud(deployment_id)
+        return {
+            "deployment_id": deployment_id,
+            "project": solicitud.nombre_proyecto if solicitud else "",
+            "total_eventos": len(eventos),
+            "eventos": eventos
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo eventos: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get("/fabrica/proyectos/{deployment_id}/trace/json",
+            summary="Obtener deployment-trace.json",
+            description="Genera deployment-trace.json desde la fuente persistente")
+async def obtener_trace_json(request: Request, deployment_id: str):
+    """Genera deployment-trace.json en tiempo real desde DB."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        solicitud = servicio.obtener_solicitud(deployment_id)
+        if not solicitud:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+        from datetime import datetime
+        def calc_dur(inicio, fin):
+            if not inicio or not fin: return 0.0
+            try:
+                i = datetime.fromisoformat(inicio.replace("Z", "+00:00"))
+                f = datetime.fromisoformat(fin.replace("Z", "+00:00"))
+                return round((f - i).total_seconds(), 2)
+            except: return 0.0
+
+        steps = []
+        for p in solicitud.pasos:
+            steps.append({
+                "numero": p["numero"], "nombre": p["nombre"],
+                "estado": p["estado"], "detalle": p.get("detalle", ""),
+                "evidencia": p.get("evidencia", ""),
+                "fecha_inicio": p.get("fecha_inicio") or "",
+                "fecha_fin": p.get("fecha_fin") or "",
+                "duracion_segundos": p.get("duracion_segundos") or calc_dur(p.get("fecha_inicio"), p.get("fecha_fin")),
+                "subpasos": p.get("subpasos", [])
+            })
+
+        eventos = servicio.obtener_eventos(deployment_id)
+        dur = solicitud.duracion_total_segundos or calc_dur(solicitud.fecha_solicitud, solicitud.fecha_fin)
+        asp_link = f"https://portal.azure.com/#resource/{solicitud.app_service_plan_id}" if solicitud.app_service_plan_id else ""
+
+        trace = {
+            "project": solicitud.nombre_proyecto,
+            "deployment_id": solicitud.deployment_id,
+            "correlation_id": solicitud.correlation_id,
+            "status": solicitud.estado,
+            "result": solicitud.resultado,
+            "started_at": solicitud.fecha_solicitud,
+            "finished_at": solicitud.fecha_fin or "",
+            "duration_seconds": dur,
+            "steps": steps,
+            "events": eventos,
+            "links": {
+                "repository": solicitud.repository_url or "",
+                "commit": solicitud.commit_url or "",
+                "factory_run": solicitud.factory_run_url or "",
+                "control_plane_run": solicitud.control_plane_run_url or "",
+                "web_app": solicitud.web_app_url or "",
+                "azure_portal": asp_link
+            }
+        }
+        return trace
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando trace JSON: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+@router.get("/fabrica/proyectos/{deployment_id}/trace/md",
+            summary="Obtener deployment-trace.md",
+            description="Genera Markdown de trazabilidad desde DB")
+async def obtener_trace_md(request: Request, deployment_id: str):
+    """Genera deployment-trace.md en tiempo real desde DB."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        solicitud = servicio.obtener_solicitud(deployment_id)
+        if not solicitud:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+        from datetime import datetime
+        def calc_dur(inicio, fin):
+            if not inicio or not fin: return 0.0
+            try:
+                i = datetime.fromisoformat(inicio.replace("Z", "+00:00"))
+                f = datetime.fromisoformat(fin.replace("Z", "+00:00"))
+                return round((f - i).total_seconds(), 2)
+            except: return 0.0
+
+        def dur_hum(seg):
+            if not seg or seg <= 0: return "-"
+            m, s = divmod(int(seg), 60)
+            return f"{m}m {s}s" if m else f"{s}s"
+
+        did = solicitud.deployment_id
+        cid = solicitud.correlation_id
+        nombre = solicitud.nombre_proyecto
+        eventos = servicio.obtener_eventos(deployment_id)
+        dur = calc_dur(solicitud.fecha_solicitud, solicitud.fecha_fin)
+
+        lines = []
+        lines.append(f"# Deployment Trace: {nombre}")
+        lines.append("")
+        lines.append(f"**Deployment ID**: `{did}`")
+        lines.append(f"**Correlation ID**: `{cid}`")
+        lines.append(f"**Estado**: {solicitud.estado}")
+        lines.append(f"**Resultado**: {solicitud.resultado or '-'}")
+        lines.append(f"**Inicio**: {solicitud.fecha_solicitud}")
+        lines.append(f"**Fin**: {solicitud.fecha_fin or '-'}")
+        lines.append(f"**Duración**: {dur_hum(dur)}")
+        lines.append("")
+        lines.append("---")
+        lines.append("## Timeline")
+        lines.append("")
+        lines.append("| # | Paso | Estado | Inicio | Fin | Duración |")
+        lines.append("|---|---|---|---|---|---|")
+        for p in solicitud.pasos:
+            pdur = p.get("duracion_segundos") or calc_dur(p.get("fecha_inicio"), p.get("fecha_fin"))
+            lines.append(
+                f"| {p['numero']} | {p['nombre']} | {p['estado']} | "
+                f"{(p.get('fecha_inicio') or '-')[:19]} | "
+                f"{(p.get('fecha_fin') or '-')[:19]} | "
+                f"{dur_hum(pdur)} |"
+            )
+        lines.append("")
+        lines.append("---")
+        lines.append("## Event Log")
+        lines.append("")
+        lines.append(f"Total eventos: {len(eventos)}")
+        lines.append("")
+        lines.append("| Timestamp | Tipo | Paso | Mensaje |")
+        lines.append("|---|---|---|---|")
+        for ev in eventos:
+            ts = (ev.get("timestamp") or "")[:23]
+            lines.append(f"| {ts} | {ev.get('tipo','')} | {ev.get('paso_numero','')} | {ev.get('mensaje','')} |")
+        lines.append("")
+        lines.append("---")
+        lines.append("## Links")
+        lines.append("")
+        lines.append(f"- **Repository**: [{solicitud.repository_url}]({solicitud.repository_url})")
+        lines.append(f"- **Commit**: [{solicitud.commit_sha or '-'}]({solicitud.commit_url or '#'})")
+        lines.append(f"- **Web App**: [{solicitud.web_app_url}]({solicitud.web_app_url})")
+        lines.append(f"- **Factory Run**: [{solicitud.factory_run_id or '-'}]({solicitud.factory_run_url or '#'})")
+        if solicitud.app_service_plan_id:
+            asp_link = f"https://portal.azure.com/#resource/{solicitud.app_service_plan_id}"
+            lines.append(f"- **Azure Portal**: [{solicitud.app_service_plan_name or 'Plan'}]({asp_link})")
+        lines.append("")
+
+        md = "\n".join(lines)
+        return Response(content=md, media_type="text/markdown",
+                        headers={"Content-Disposition": f"attachment; filename=deployment-trace-{did}.md"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando trace MD: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 

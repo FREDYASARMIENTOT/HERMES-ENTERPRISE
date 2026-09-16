@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+P = []
+P.append('<nav class="navbar navbar-expand-lg navbar-dark border-bottom border-light border-opacity-10"><div class="container">\n')
+P.append('<a class="navbar-brand" href="/"><i class="bi bi-shield-fill-check me-2"></i>Hermes Enterprise</a>\n')
+P.append('<div class="d-flex align-items-center gap-2"><span class="badge bg-primary bg-opacity-25 text-primary status-badge" id="estado-badge">SOLICITADO</span></div>\n')
+P.append('</div></nav>\n')
+P.append('<div class="container py-4">\n')
+P.append('<div id="loading-state" class="text-center py-5"><div class="spinner-border text-primary mb-3" role="status"></div><h5 class="text-muted">Cargando informaci&oacute;n del proyecto...</h5></div>\n')
+P.append('<div id="error-state" class="text-center py-5 d-none"><i class="bi bi-exclamation-triangle text-danger" style="font-size:3rem"></i><h4 class="text-danger mt-3">Error al cargar proyecto</h4>\n')
+P.append('<p class="text-muted" id="error-message">No se pudo obtener la informaci&oacute;n del proyecto.</p>\n')
+P.append('<button class="btn btn-outline-primary mt-2" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</button></div>\n')
+P.append('<div id="project-content" class="d-none">\n')
+# Global status
+P.append('<div id="global-status-card" class="card mb-4 global-progress"><div class="card-body"><div class="row align-items-center">\n')
+P.append('<div class="col-md-3 text-center"><div class="big-number" id="global-estado">&mdash;</div><div class="step-counter">ESTADO GLOBAL</div></div>\n')
+P.append('<div class="col-md-6"><div class="row text-center">\n')
+P.append('<div class="col-4"><div class="big-number" id="steps-completed">0</div><div class="step-counter">/ 13 PASOS</div></div>\n')
+P.append('<div class="col-4"><div class="big-number" id="substeps-completed">0</div><div class="step-counter" id="substeps-label">SUBPASOS</div></div>\n')
+P.append('<div class="col-4"><div class="big-number" id="events-count">0</div><div class="step-counter">EVENTOS</div></div>\n')
+P.append('</div></div>\n')
+P.append('<div class="col-md-3 text-center"><div id="total-duration-display" class="big-number text-info">&mdash;</div><div class="step-counter">DURACI&Oacute;N</div></div>\n')
+P.append('</div>\n')
+P.append('<div class="row mt-2 text-center" id="current-step-info"><div class="col-12 text-muted small">\n')
+P.append('<span id="current-step-text">Paso actual: &mdash;</span><span class="mx-2">|</span>\n')
+P.append('<span id="current-substep-text">Subpaso actual: &mdash;</span><span class="mx-2">|</span>\n')
+P.append('<span id="elapsed-time-text">Tiempo transcurrido: &mdash;</span>\n')
+P.append('</div></div></div></div>\n')
+# Buttons
+P.append('<div class="d-flex flex-wrap gap-2 mb-3">\n')
+P.append('<button class="btn btn-sm btn-outline-info" onclick="verJSON()"><i class="bi bi-filetype-json me-1"></i>Ver JSON</button>\n')
+P.append('<button class="btn btn-sm btn-outline-info" onclick="verMarkdown()"><i class="bi bi-markdown me-1"></i>Ver Markdown</button>\n')
+P.append('<button class="btn btn-sm btn-outline-success" onclick="descargarJSON()"><i class="bi bi-download me-1"></i>Descargar JSON</button>\n')
+P.append('<button class="btn btn-sm btn-outline-success" onclick="descargarMarkdown()"><i class="bi bi-download me-1"></i>Descargar Markdown</button>\n')
+P.append('<button class="btn btn-sm vscode-btn" onclick="abrirVSCode()"><i class="bi bi-microsoft me-1"></i>VS Code Clone</button>\n')
+P.append('</div>\n')
+
+with open('tools/build_proyecto_2.pkl', 'w', encoding='utf-8') as f:
+    for p in P:
+        f.write(p)
+print("Part 2 written")

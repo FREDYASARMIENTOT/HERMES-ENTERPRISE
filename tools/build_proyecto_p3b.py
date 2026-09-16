@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+P = []
+P.append('<div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-list-check"></i></span>Timeline &mdash; 13 Pasos Can&oacute;nicos</div>\n')
+P.append('<div class="card-body" id="timeline-container"><div class="text-center text-muted py-3">Cargando timeline...</div></div></div>\n')
+P.append('<div class="card mb-4"><div class="card-header d-flex flex-wrap align-items-center justify-content-between">\n')
+P.append('<span><span class="section-icon bg-dark me-2"><i class="bi bi-journal-text"></i></span>LOG DEL PROCESO</span>\n')
+P.append('<span class="badge bg-secondary" id="event-count-badge">0 eventos</span></div>\n')
+P.append('<div class="card-body">\n')
+P.append('<div class="row g-2 mb-3">\n')
+P.append('<div class="col-md-3"><label class="text-muted small">Tipo</label>\n')
+P.append('<div class="d-flex flex-wrap gap-1" id="filtro-tipo">\n')
+P.append('<button class="btn btn-sm btn-outline-secondary filter-btn active" data-filter="todos" onclick="setFilter(\'tipo\',\'todos\')">Todos</button>\n')
+P.append('<button class="btn btn-sm btn-outline-info filter-btn" data-filter="INFO" onclick="setFilter(\'tipo\',\'INFO\')">INFO</button>\n')
+P.append('<button class="btn btn-sm btn-outline-success filter-btn" data-filter="PASS" onclick="setFilter(\'tipo\',\'PASS\')">PASS</button>\n')
+P.append('<button class="btn btn-sm btn-outline-warning filter-btn" data-filter="WARN" onclick="setFilter(\'tipo\',\'WARN\')">WARN</button>\n')
+P.append('<button class="btn btn-sm btn-outline-danger filter-btn" data-filter="ERROR" onclick="setFilter(\'tipo\',\'ERROR\')">ERROR</button>\n')
+P.append('<button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="FAIL" onclick="setFilter(\'tipo\',\'FAIL\')">FAIL</button>\n')
+P.append('</div></div>\n')
+P.append('<div class="col-md-3"><label class="text-muted small">Paso</label>\n')
+P.append('<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-paso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>\n')
+P.append('<div class="col-md-3"><label class="text-muted small">Componente</label>\n')
+P.append('<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-componente" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>\n')
+P.append('<div class="col-md-3"><label class="text-muted small">Subpaso</label>\n')
+P.append('<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-subpaso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>\n')
+P.append('</div>\n')
+P.append('<div id="event-log-container"><div class="text-center text-muted py-3">Cargando eventos...</div></div>\n')
+P.append('</div></div>\n')
+
+with open('tools/build_proyecto_3b.pkl', 'w', encoding='utf-8') as f:
+    for p in P:
+        f.write(p)
+print("Part 3b written")

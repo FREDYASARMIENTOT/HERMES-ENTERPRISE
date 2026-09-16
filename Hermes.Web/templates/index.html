@@ -974,5 +974,25 @@
 
         loadAll();
     </script>
+
+    <div class="row mb-4" id="traceability-summary">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3 me-2 text-info"></i>Trazabilidad</h5>
+                    <a href="/proyecto" class="btn btn-outline-info btn-sm"><i class="bi bi-eye me-1"></i>Panel</a>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">13 pasos canónicos. Event Store captura estado/evidencia.</p>
+                    <div class="row g-2">
+                        <div class="col-3"><div class="text-center p-2 rounded" style="background:rgba(13,110,253,0.1);"><div class="small text-primary fw-bold">PASOS</div><div class="h5 mb-0">13</div></div></div>
+                        <div class="col-3"><div class="text-center p-2 rounded" style="background:rgba(25,135,84,0.1);"><div class="small text-success fw-bold">EVENTOS</div><div class="h5 mb-0" id="trace-events">--</div></div></div>
+                        <div class="col-3"><div class="text-center p-2 rounded" style="background:rgba(255,193,7,0.1);"><div class="small text-warning fw-bold">ACTIVOS</div><div class="h5 mb-0" id="trace-active">--</div></div></div>
+                        <div class="col-3"><div class="text-center p-2 rounded" style="background:rgba(25,135,84,0.1);"><div class="small text-success fw-bold">COMPLETADOS</div><div class="h5 mb-0" id="trace-done">--</div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

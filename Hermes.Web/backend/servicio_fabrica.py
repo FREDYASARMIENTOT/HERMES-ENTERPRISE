@@ -169,14 +169,15 @@ class SolicitudProyecto:
         self._inicializar_pasos()
 
     def _inicializar_pasos(self) -> None:
-        """Inicializa los 13 pasos canónicos con estado PENDIENTE."""
+        """Inicializa los 13 pasos canónicos con estado PENDIENTE y subpasos vacíos."""
         self.pasos = []
         for paso in PASOS_CANONICOS:
             self.pasos.append({
                 "numero": paso["numero"], "nombre": paso["nombre"],
                 "descripcion": paso["descripcion"], "estado": "PENDIENTE",
                 "fecha_inicio": None, "fecha_fin": None,
-                "duracion_segundos": None, "detalle": "", "evidencia": ""
+                "duracion_segundos": None, "detalle": "", "evidencia": "",
+                "subpasos": []
             })
 
     def iniciar_paso(self, numero_paso: int, detalle: str = "") -> None:
@@ -416,6 +417,42 @@ class ServicioFabrica:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes_proyecto(estado)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_nombre ON solicitudes_proyecto(nombre_proyecto)")
 
+            # ── Event Log table: immutable audit trail ──
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS event_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    deployment_id TEXT NOT NULL,
+                    correlation_id TEXT DEFAULT '',
+                    event_id TEXT NOT NULL UNIQUE,
+                    timestamp TEXT NOT NULL,
+                    fase TEXT DEFAULT '',
+                    paso_numero INTEGER DEFAULT 0,
+                    paso_nombre TEXT DEFAULT '',
+                    subpaso_numero INTEGER,
+                    subpaso_nombre TEXT DEFAULT '',
+                    componente TEXT DEFAULT '',
+                    actor TEXT DEFAULT '',
+                    estado_anterior TEXT DEFAULT '',
+                    estado_nuevo TEXT DEFAULT '',
+                    tipo TEXT DEFAULT 'INFO',
+                    mensaje TEXT DEFAULT '',
+                    detalle TEXT DEFAULT '',
+                    evidencia TEXT DEFAULT '',
+                    http_method TEXT DEFAULT '',
+                    http_url TEXT DEFAULT '',
+                    http_status INTEGER,
+                    error_code TEXT DEFAULT '',
+                    error_message TEXT DEFAULT '',
+                    run_id TEXT DEFAULT '',
+                    run_url TEXT DEFAULT '',
+                    duracion_segundos REAL,
+                    created_at TEXT DEFAULT ''
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_event_logs_did ON event_logs(deployment_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_event_logs_ts ON event_logs(timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_event_logs_tipo ON event_logs(tipo)")
+
             # ── Schema migration: add missing columns (existing DB without columns) ──
             for col_name, col_type in [
                 ("app_service_plan_id", "TEXT DEFAULT ''"),
@@ -504,6 +541,14 @@ class ServicioFabrica:
         )
         solicitud.iniciar_paso(1, f"Solicitud registrada para {nombre_proyecto}")
         self._guardar(solicitud)
+        self._registrar_evento(
+            deployment_id=solicitud.deployment_id,
+            correlation_id=solicitud.correlation_id,
+            fase="SOLICITUD", paso_numero=1, paso_nombre="SOLICITUD",
+            estado_anterior="PENDIENTE", estado_nuevo="EN_PROCESO",
+            tipo="INFO", mensaje=f"Solicitud creada para {nombre_proyecto}",
+            detalle=f"app_service_plan_id={app_service_plan_id}"
+        )
         logger.info(f"Solicitud creada: {solicitud.id} / {solicitud.nombre_proyecto} "
                      f"(correlation: {solicitud.correlation_id}, "
                      f"deployment: {solicitud.deployment_id})")
@@ -579,6 +624,26 @@ class ServicioFabrica:
 
     def _guardar(self, solicitud: SolicitudProyecto) -> None:
         """Guarda o actualiza una solicitud en SQLite."""
+        # FASE 24 — Recalcular estado global desde pasos antes de guardar
+        # Esto garantiza que NUNCA persista un estado inconsistente.
+        estado_calculado = self._calcular_estado_global(solicitud)
+        if estado_calculado != solicitud.estado:
+            logger.warning(
+                f"FASE-24: Corrigiendo estado inconsistente: {solicitud.estado} -> {estado_calculado} "
+                f"para deployment {solicitud.deployment_id}"
+            )
+            solicitud.estado = estado_calculado
+        # FASE 24 — Verificar resultado SIEMPRE, no solo cuando cambia estado
+        # Esto cubre el escenario donde alguien fuerza resultado=PASS
+        # en una solicitud con estado correcto (EN_PROCESO) pero pasos pendientes.
+        pasos_pend = self._pasos_pendientes(solicitud)
+        if pasos_pend and solicitud.resultado == "PASS":
+            logger.warning(
+                f"FASE-24: Corrigiendo resultado inconsistente: PASS -> '' "
+                f"para deployment {solicitud.deployment_id} "
+                f"({len(pasos_pend)} paso(s) pendiente(s))"
+            )
+            solicitud.resultado = ""
         try:
             conn = sqlite3.connect(self.ruta_db)
             cursor = conn.cursor()
@@ -645,27 +710,164 @@ class ServicioFabrica:
             raise
 
     # ──────────────────────────────────────────────────────────
+    # Event Log (Event Store inmutable)
+    # ──────────────────────────────────────────────────────────
+
+    def _registrar_evento(
+        self, deployment_id: str, correlation_id: str = "",
+        fase: str = "", paso_numero: int = 0, paso_nombre: str = "",
+        subpaso_numero: int = None, subpaso_nombre: str = "",
+        componente: str = "", actor: str = "",
+        estado_anterior: str = "", estado_nuevo: str = "",
+        tipo: str = "INFO", mensaje: str = "", detalle: str = "",
+        evidencia: str = "",
+        http_method: str = "", http_url: str = "", http_status: int = None,
+        error_code: str = "", error_message: str = "",
+        run_id: str = "", run_url: str = "",
+        duracion_segundos: float = None
+    ) -> Optional[str]:
+        """Registra un evento inmutable en el Event Store."""
+        import uuid
+        event_id = f"evt-{uuid.uuid4().hex[:12]}"
+        ts = _ahora()
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO event_logs
+                (deployment_id, correlation_id, event_id, timestamp,
+                 fase, paso_numero, paso_nombre,
+                 subpaso_numero, subpaso_nombre,
+                 componente, actor,
+                 estado_anterior, estado_nuevo, tipo,
+                 mensaje, detalle, evidencia,
+                 http_method, http_url, http_status,
+                 error_code, error_message,
+                 run_id, run_url,
+                 duracion_segundos, created_at)
+                VALUES (?, ?, ?, ?,
+                        ?, ?, ?,
+                        ?, ?,
+                        ?, ?,
+                        ?, ?, ?,
+                        ?, ?, ?,
+                        ?, ?, ?,
+                        ?, ?,
+                        ?, ?,
+                        ?, ?)
+            """, (
+                deployment_id, correlation_id, event_id, ts,
+                fase, paso_numero, paso_nombre,
+                subpaso_numero, subpaso_nombre,
+                componente, actor,
+                estado_anterior, estado_nuevo, tipo,
+                mensaje, detalle, evidencia,
+                http_method, http_url, http_status,
+                error_code, error_message,
+                run_id, run_url,
+                duracion_segundos, ts
+            ))
+            conn.commit()
+            conn.close()
+            logger.debug(f"Evento registrado: {event_id} [{tipo}] {mensaje}")
+            return event_id
+        except Exception as e:
+            logger.error(f"Error registrando evento: {e}")
+            return None
+
+    def obtener_eventos(self, deployment_id: str) -> list:
+        """Obtiene todos los eventos de un deployment ordenados cronológicamente."""
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM event_logs WHERE deployment_id=? ORDER BY id ASC",
+                (deployment_id,)
+            )
+            rows = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+            return rows
+        except Exception as e:
+            logger.error(f"Error obteniendo eventos: {e}")
+            return []
+
+    # ──────────────────────────────────────────────────────────
     # Actualización de estado
     # ──────────────────────────────────────────────────────────
 
     def actualizar_estado(
         self, solicitud: SolicitudProyecto, nuevo_estado: str,
-        numero_paso: Optional[int] = None, detalle: str = "", evidencia: str = ""
+        numero_paso: Optional[int] = None, detalle: str = "", evidencia: str = "",
+        subpasos: Optional[list] = None,
+        componente: str = "", actor: str = "",
+        run_id: str = "", run_url: str = ""
     ) -> SolicitudProyecto:
-        """Actualiza el estado de una solicitud y opcionalmente un paso."""
+        """Actualiza el estado de una solicitud y opcionalmente un paso.
+
+        Args:
+            subpasos: Lista opcional de dicts con subpasos.
+                      Ej: [{"numero": 1, "nombre": "Inicio", "fecha_inicio": "...", "fecha_fin": "...", "duracion_segundos": 1.5, "estado": "COMPLETADO", "detalle": "...", "evidencia": "..."}]
+        """
+        estado_anterior = solicitud.estado
         solicitud.estado = nuevo_estado
         solicitud.fecha_actualizacion = _ahora()
+
+        paso_nombre = ""
         if numero_paso:
+            paso_info = next((p for p in solicitud.pasos if p["numero"] == numero_paso), None)
+            paso_nombre = paso_info["nombre"] if paso_info else ""
+
+            # Registrar subpasos si se proporcionan
+            if subpasos:
+                if paso_info:
+                    paso_info["subpasos"] = subpasos
+
             if nuevo_estado == "FALLIDO":
                 solicitud.finalizar_paso(numero_paso, "FALLIDO", detalle, evidencia)
+                self._registrar_evento(
+                    deployment_id=solicitud.deployment_id,
+                    correlation_id=solicitud.correlation_id,
+                    fase=paso_nombre, paso_numero=numero_paso, paso_nombre=paso_nombre,
+                    componente=componente, actor=actor,
+                    estado_anterior="EN_PROCESO", estado_nuevo="FALLIDO",
+                    tipo="ERROR", mensaje=f"Paso {numero_paso} FALLIDO: {detalle}",
+                    detalle=detalle, evidencia=evidencia,
+                    run_id=run_id, run_url=run_url
+                )
             else:
                 solicitud.finalizar_paso(numero_paso, "COMPLETADO", detalle, evidencia)
+                # Registrar evento de finalización de paso
+                paso = next((p for p in solicitud.pasos if p["numero"] == numero_paso), None)
+                self._registrar_evento(
+                    deployment_id=solicitud.deployment_id,
+                    correlation_id=solicitud.correlation_id,
+                    fase=paso_nombre, paso_numero=numero_paso, paso_nombre=paso_nombre,
+                    componente=componente, actor=actor,
+                    estado_anterior="EN_PROCESO", estado_nuevo="COMPLETADO",
+                    tipo="PASS", mensaje=f"Paso {numero_paso} COMPLETADO: {detalle}",
+                    detalle=detalle, evidencia=evidencia,
+                    duracion_segundos=paso["duracion_segundos"] if paso else None,
+                    run_id=run_id, run_url=run_url
+                )
+
             siguiente = numero_paso + 1
             if siguiente <= 13 and nuevo_estado != "FALLIDO":
                 solicitud.iniciar_paso(siguiente, f"Iniciando paso {siguiente}")
-        if nuevo_estado == "COMPLETADO":
-            solicitud.resultado = "PASS"
-        elif nuevo_estado == "FALLIDO":
+                self._registrar_evento(
+                    deployment_id=solicitud.deployment_id,
+                    correlation_id=solicitud.correlation_id,
+                    fase="", paso_numero=siguiente,
+                    paso_nombre=next((p["nombre"] for p in solicitud.pasos if p["numero"] == siguiente), ""),
+                    componente=componente, actor=actor,
+                    estado_anterior="PENDIENTE", estado_nuevo="EN_PROCESO",
+                    tipo="INFO", mensaje=f"Iniciando paso {siguiente}"
+                )
+        # NOTA: NO establecer resultado = "PASS" aquí.
+        # El resultado solo debe establecerse por finalizar_solicitud(),
+        # que verifica que TODOS los 13 pasos estén COMPLETADOS antes de permitir PASS.
+        # (FASE 24 — anti-false-PASS)
+        if nuevo_estado == "FALLIDO":
             solicitud.resultado = "FAIL"
             solicitud.error = detalle
         self._guardar(solicitud)
@@ -822,38 +1024,312 @@ class ServicioFabrica:
 
     def actualizar_desde_control_plane(
         self, deployment_id: str, numero_paso: int,
-        estado_paso: str, detalle: str = "", evidencia: str = ""
+        estado_paso: str, detalle: str = "", evidencia: str = "",
+        http_status: int = None, http_method: str = "POST",
+        http_url: str = "",
+        run_id: str = "", run_url: str = "",
+        componente: str = "control_plane", actor: str = "github_actions",
+        subpasos: Optional[list] = None,
+        error_code: str = "", error_message: str = ""
     ) -> Optional[SolicitudProyecto]:
-        """Actualiza el estado desde el Control Plane."""
+        """Actualiza el estado desde el Control Plane.
+
+        Registra eventos de callback incluyendo fallos de comunicación.
+        Si la solicitud no existe, registra evento de CALLBACK FAILED.
+        """
         solicitud = self.obtener_solicitud(deployment_id)
         if not solicitud:
-            logger.warning(f"Solicitud no encontrada: {deployment_id}")
+            logger.warning(f"SOLICITUD NO ENCONTRADA (callback fallido): {deployment_id}")
+            self._registrar_evento(
+                deployment_id=deployment_id,
+                paso_numero=numero_paso, componente=componente, actor=actor,
+                estado_nuevo="CALLBACK_FAILED", tipo="ERROR",
+                mensaje=f"CALLBACK FALLIDO: deployment_id={deployment_id} no encontrado",
+                detalle=detalle,
+                http_method=http_method, http_url=http_url, http_status=http_status,
+                error_code="NOT_FOUND", error_message=f"Solicitud {deployment_id} no existe",
+                run_id=run_id, run_url=run_url
+            )
             return None
+
+        paso_nombre = next((p["nombre"] for p in solicitud.pasos if p["numero"] == numero_paso), "")
+        if subpasos:
+            paso_info = next((p for p in solicitud.pasos if p["numero"] == numero_paso), None)
+            if paso_info:
+                paso_info["subpasos"] = subpasos
+
         if estado_paso == "EN_PROCESO":
             solicitud.iniciar_paso(numero_paso, detalle)
+            self._registrar_evento(
+                deployment_id=solicitud.deployment_id,
+                correlation_id=solicitud.correlation_id,
+                fase=paso_nombre, paso_numero=numero_paso, paso_nombre=paso_nombre,
+                componente=componente, actor=actor,
+                estado_anterior="PENDIENTE", estado_nuevo="EN_PROCESO",
+                tipo="INFO", mensaje=f"Callback: Paso {numero_paso} EN_PROCESO: {detalle}",
+                detalle=detalle, evidencia=evidencia,
+                http_method=http_method, http_url=http_url, http_status=http_status,
+                run_id=run_id, run_url=run_url
+            )
+        elif estado_paso == "FALLIDO":
+            solicitud.finalizar_paso(numero_paso, "FALLIDO", detalle, evidencia)
+            self._registrar_evento(
+                deployment_id=solicitud.deployment_id,
+                correlation_id=solicitud.correlation_id,
+                fase=paso_nombre, paso_numero=numero_paso, paso_nombre=paso_nombre,
+                componente=componente, actor=actor,
+                estado_anterior="EN_PROCESO", estado_nuevo="FALLIDO",
+                tipo="ERROR", mensaje=f"Callback: Paso {numero_paso} FALLIDO: {detalle}",
+                detalle=detalle, evidencia=evidencia,
+                http_method=http_method, http_url=http_url, http_status=http_status,
+                error_code=error_code, error_message=error_message,
+                run_id=run_id, run_url=run_url
+            )
         else:
-            if estado_paso == "FALLIDO":
-                return self.actualizar_estado(
-                    solicitud, "FALLIDO", numero_paso=numero_paso,
-                    detalle=detalle, evidencia=evidencia
-                )
             solicitud.finalizar_paso(numero_paso, estado_paso, detalle, evidencia)
+            paso = next((p for p in solicitud.pasos if p["numero"] == numero_paso), None)
+            self._registrar_evento(
+                deployment_id=solicitud.deployment_id,
+                correlation_id=solicitud.correlation_id,
+                fase=paso_nombre, paso_numero=numero_paso, paso_nombre=paso_nombre,
+                componente=componente, actor=actor,
+                estado_anterior="EN_PROCESO", estado_nuevo="COMPLETADO",
+                tipo="PASS", mensaje=f"Callback: Paso {numero_paso} COMPLETADO: {detalle}",
+                detalle=detalle, evidencia=evidencia,
+                http_method=http_method, http_url=http_url, http_status=http_status,
+                duracion_segundos=paso["duracion_segundos"] if paso else None,
+                run_id=run_id, run_url=run_url
+            )
             if numero_paso == 13 and estado_paso == "COMPLETADO":
-                solicitud.estado = "COMPLETADO"
-                solicitud.resultado = "PASS"
-            solicitud.fecha_actualizacion = _ahora()
+                # FASE 24 — anti-false-PASS: NO declarar COMPLETADO/PASS sin verificar
+                # que TODOS los 13 pasos estén COMPLETADOS.
+                pasos_pend = self._pasos_pendientes(solicitud)
+                if not pasos_pend:
+                    solicitud.estado = "COMPLETADO"
+                    solicitud.resultado = "PASS"
+                else:
+                    # Hay pasos pendientes → NO establecer PASS
+                    # El estado se recalculará desde _calcular_estado_global
+                    logger.warning(
+                        f"FASE-24: Callback paso 13 COMPLETADO pero {len(pasos_pend)} paso(s) "
+                        f"pendiente(s): {[p['nombre'] for p in pasos_pend]}. "
+                        f"NO se establece COMPLETADO/PASS."
+                    )
+            # Auto-iniciar siguiente paso tras callback exitoso
+            if estado_paso == "COMPLETADO":
+                siguiente = numero_paso + 1
+                if siguiente <= 13:
+                    sig_nombre = next((p["nombre"] for p in solicitud.pasos if p["numero"] == siguiente), "")
+                    solicitud.iniciar_paso(siguiente, f"Callback auto-inicia paso {siguiente}")
+                    self._registrar_evento(
+                        deployment_id=solicitud.deployment_id,
+                        correlation_id=solicitud.correlation_id,
+                        paso_numero=siguiente, paso_nombre=sig_nombre,
+                        componente=componente, actor=actor,
+                        estado_anterior="PENDIENTE", estado_nuevo="EN_PROCESO",
+                        tipo="INFO", mensaje=f"Auto-inicio paso {siguiente} tras callback paso {numero_paso}"
+                    )
+        solicitud.fecha_actualizacion = _ahora()
         self._guardar(solicitud)
         return solicitud
 
+    def _calcular_estado_global(self, solicitud: SolicitudProyecto) -> str:
+        """Calcula el estado global a partir de los 13 pasos canónicos.
+
+        Reglas:
+        - Si algún paso = FALLIDO  → FALLIDO
+        - Si algún paso = EN_PROCESO → EN_PROCESO (o CREANDO)
+        - Si algún paso = PENDIENTE  → PENDIENTE (o CREANDO)
+        - Si todos = COMPLETADO → COMPLETADO
+        """
+        pendientes = 0
+        en_proceso = 0
+        fallidos = 0
+        omitidos = 0
+        completados = 0
+
+        for paso in solicitud.pasos:
+            estado = paso.get("estado", "PENDIENTE")
+            if estado == "FALLIDO":
+                fallidos += 1
+            elif estado == "EN_PROCESO":
+                en_proceso += 1
+            elif estado == "PENDIENTE":
+                pendientes += 1
+            elif estado == "OMITIDO":
+                omitidos += 1
+            elif estado == "COMPLETADO":
+                completados += 1
+
+        if fallidos > 0:
+            return "FALLIDO"
+        if en_proceso > 0:
+            return "EN_PROCESO"
+        if pendientes > 0:
+            return "CREANDO"
+        if completados == len(solicitud.pasos):
+            return "COMPLETADO"
+        return solicitud.estado
+
+    def _pasos_pendientes(self, solicitud: SolicitudProyecto) -> list:
+        """Devuelve lista de pasos pendientes o en proceso."""
+        return [
+            {"numero": p["numero"], "nombre": p["nombre"], "estado": p["estado"]}
+            for p in solicitud.pasos
+            if p.get("estado") not in ("COMPLETADO", "FALLIDO", "OMITIDO")
+        ]
+
+    def validar_consistencia(self, deployment_id: str) -> dict:
+        """Valida consistencia entre estado global y pasos.
+
+        FASE 24 — Validación adversarial exhaustiva:
+        - PASS no puede coexistir con pasos pendientes
+        - COMPLETADO requiere todos los pasos COMPLETADOS
+        - PASS requiere Control Plane existente y SUCCESS/COMPLETADO
+        - PASS requiere readiness PASS
+        - PASS requiere functional PASS
+        - PASS requiere SHA no vacío
+        - PASS requiere app_service_plan_id no vacío
+
+        Returns:
+            dict con: consistente (bool), estado_global,
+                     pasos_pendientes, errores
+        """
+        solicitud = self.obtener_solicitud(deployment_id)
+        if not solicitud:
+            return {"consistente": False, "error": "Solicitud no encontrada"}
+
+        estado_calculado = self._calcular_estado_global(solicitud)
+        estado_actual = solicitud.estado
+        resultado_actual = solicitud.resultado
+
+        errores = []
+        pasos_pend = self._pasos_pendientes(solicitud)
+
+        # ════════════════════════════════════════════════════════════
+        # REGLA 1: PASS no puede coexistir con pasos pendientes
+        # ════════════════════════════════════════════════════════════
+        if resultado_actual == "PASS" and pasos_pend:
+            errores.append(
+                f"INCONSISTENCIA: resultado=PASS pero {len(pasos_pend)} paso(s) pendiente(s): "
+                f"{[p['nombre'] for p in pasos_pend]}"
+            )
+
+        # ════════════════════════════════════════════════════════════
+        # REGLA 2: estado derivado debe coincidir con estado actual
+        # ════════════════════════════════════════════════════════════
+        if estado_calculado != estado_actual:
+            if estado_actual == "COMPLETADO" and estado_calculado != "COMPLETADO":
+                errores.append(
+                    f"INCONSISTENCIA: estado={estado_actual} pero estado_calculado={estado_calculado}. "
+                    f"Pasos pendientes: {[p['nombre'] for p in pasos_pend]}"
+                )
+
+        # ════════════════════════════════════════════════════════════
+        # REGLA 3: Control Plane requerido para PASS (FASE 24)
+        # ════════════════════════════════════════════════════════════
+        if resultado_actual == "PASS":
+            cp_id = solicitud.control_plane_run_id
+            cp_status = solicitud.control_plane_status
+            if not cp_id:
+                errores.append(
+                    "INCONSISTENCIA: resultado=PASS pero control_plane_run_id está vacío. "
+                    "El Control Plane debe haberse ejecutado para declarar PASS."
+                )
+            elif cp_status not in ("COMPLETADO", "SUCCESS"):
+                errores.append(
+                    f"INCONSISTENCIA: resultado=PASS pero control_plane_status='{cp_status}' "
+                    f"(se esperaba COMPLETADO o SUCCESS)."
+                )
+
+        # ════════════════════════════════════════════════════════════
+        # REGLA 4: Readiness requerido para PASS (FASE 24)
+        # ════════════════════════════════════════════════════════════
+        if resultado_actual == "PASS":
+            rdy = solicitud.readiness_result
+            if not rdy:
+                errores.append(
+                    "INCONSISTENCIA: resultado=PASS pero readiness_result está vacío. "
+                    "Readiness check debe haberse ejecutado y pasado."
+                )
+
+        # ════════════════════════════════════════════════════════════
+        # REGLA 5: Functional requerido para PASS (FASE 24)
+        # ════════════════════════════════════════════════════════════
+        if resultado_actual == "PASS":
+            func = solicitud.functional_result
+            if not func:
+                errores.append(
+                    "INCONSISTENCIA: resultado=PASS pero functional_result está vacío. "
+                    "Pruebas funcionales deben haberse ejecutado."
+                )
+
+        # ════════════════════════════════════════════════════════════
+        # REGLA 6: SHA contract requerido (FASE 24)
+        # ════════════════════════════════════════════════════════════
+        if resultado_actual == "PASS" and not solicitud.commit_sha:
+            errores.append(
+                "INCONSISTENCIA: resultado=PASS pero commit_sha está vacío. "
+                "SHA chain debe estar completa."
+            )
+
+        # ════════════════════════════════════════════════════════════
+        # REGLA 7: App Service Plan requerido (FASE 24)
+        # ════════════════════════════════════════════════════════════
+        if resultado_actual == "PASS" and not solicitud.app_service_plan_id:
+            errores.append(
+                "INCONSISTENCIA: resultado=PASS pero app_service_plan_id está vacío. "
+                "Plan contract debe estar completo."
+            )
+
+        return {
+            "consistente": len(errores) == 0,
+            "estado_global": estado_calculado,
+            "estado_actual": estado_actual,
+            "resultado": resultado_actual,
+            "pasos_pendientes": pasos_pend,
+            "errores": errores
+        }
+
     def finalizar_solicitud(self, deployment_id: str, resultado: str = "PASS", error: str = "") -> Optional[SolicitudProyecto]:
-        """Finaliza una solicitud con resultado PASS o FAIL."""
+        """Finaliza una solicitud con resultado PASS o FAIL.
+
+        Validación adversarial:
+        - Si resultado=PASS, TODOS los 13 pasos deben estar COMPLETADOS.
+        - Si hay pasos pendientes → FAIL con HTTP 409 (raise ValueError).
+        - Registra evento de finalización en Event Store.
+        """
         solicitud = self.obtener_solicitud(deployment_id)
         if not solicitud:
             return None
+
+        # Validación adversarial: PASS require todos los pasos COMPLETADOS
+        if resultado == "PASS":
+            pasos_pend = self._pasos_pendientes(solicitud)
+            if pasos_pend:
+                nombres_pend = [p["nombre"] for p in pasos_pend]
+                raise ValueError(
+                    f"No se puede finalizar con PASS: {len(pasos_pend)} paso(s) pendiente(s): "
+                    f"{', '.join(nombres_pend)}. "
+                    f"Finalice o complete todos los pasos antes de declarar PASS."
+                )
+
+        estado_anterior = solicitud.estado
         solicitud.estado = "COMPLETADO" if resultado == "PASS" else "FALLIDO"
         solicitud.resultado = resultado
         solicitud.error = error
-        solicitud.fecha_actualizacion = _ahora()
+        solicitud.fecha_fin = _ahora()
+        solicitud.fecha_actualizacion = solicitud.fecha_fin
+
+        # Calcular duración total
+        try:
+            from datetime import datetime
+            inicio = datetime.fromisoformat(solicitud.fecha_solicitud.replace('Z', '+00:00'))
+            fin = datetime.fromisoformat(solicitud.fecha_fin.replace('Z', '+00:00'))
+            solicitud.duracion_total_segundos = int((fin - inicio).total_seconds())
+        except Exception:
+            pass
+
         for paso in solicitud.pasos:
             if paso["numero"] == 13 and paso["estado"] in ("PENDIENTE", "EN_PROCESO"):
                 solicitud.finalizar_paso(
@@ -861,7 +1337,21 @@ class ServicioFabrica:
                     error or "Implementación completada", resultado
                 )
                 break
+
         self._guardar(solicitud)
+
+        # Registrar evento de finalización
+        self._registrar_evento(
+            deployment_id=solicitud.deployment_id,
+            correlation_id=solicitud.correlation_id,
+            estado_anterior=estado_anterior,
+            estado_nuevo=solicitud.estado,
+            tipo="PASS" if resultado == "PASS" else "FAIL",
+            mensaje=f"Proyecto finalizado: resultado={resultado}, duración={solicitud.duracion_total_segundos}s",
+            detalle=error or "Finalización exitosa",
+            duracion_segundos=float(solicitud.duracion_total_segundos or 0)
+        )
+
         return solicitud
 
 

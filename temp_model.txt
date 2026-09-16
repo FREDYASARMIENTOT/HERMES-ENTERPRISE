@@ -1,0 +1,211 @@
+
+class SolicitudProyecto:
+    """
+    Representa una solicitud de creación de proyecto Child.
+
+    Atributos:
+        id, nombre_proyecto, descripcion, repositorio, web_app
+        estado, correlation_id, deployment_id, commit_sha
+        repo_url, web_app_url, pasos (13 pasos canónicos)
+        fecha_solicitud, fecha_actualizacion, resultado, error
+        app_service_plan_id, app_service_plan_name, app_service_plan_resource_group
+        repository_url, commit_url, visibility (GitHub)
+        factory_run_id, factory_run_url, factory_status, factory_duration
+        control_plane_run_id, control_plane_run_url, control_plane_status, control_plane_duration
+        readiness_result, functional_result, user_facing_result, evidence_result
+        fecha_fin, duracion_total_segundos
+    """
+
+    def __init__(
+        self,
+        nombre_proyecto: str,
+        descripcion: str = "",
+        repositorio: str = "",
+        web_app: str = "",
+        correlation_id: str = "",
+        deployment_id: str = "",
+        estado: str = "SOLICITADO",
+        app_service_plan_id: str = ""
+    ):
+        self.id: str = _generar_id()
+        self.nombre_proyecto: str = nombre_proyecto
+        self.descripcion: str = descripcion
+        self.repositorio: str = repositorio or f"FREDYASARMIENTOT/hermes-{nombre_proyecto.replace('_', '-')}"
+        self.web_app: str = web_app or f"as-{nombre_proyecto.replace('_', '-')}"
+        self.estado: str = estado
+        self.correlation_id: str = correlation_id or _generar_id()
+        self.deployment_id: str = deployment_id or _generar_id()
+        self.commit_sha: str = ""
+        self.repo_url: str = ""
+        self.web_app_url: str = ""
+        self.pasos: List[Dict[str, Any]] = []
+        self.fecha_solicitud: str = _ahora()
+        self.fecha_actualizacion: str = self.fecha_solicitud
+        self.resultado: str = ""
+        self.error: str = ""
+        self.app_service_plan_id: str = app_service_plan_id
+        self.app_service_plan_name: str = ""
+        self.app_service_plan_resource_group: str = ""
+        self.app_service_plan_subscription: str = "01bfad48-c092-4712-bc72-f141eb01a8d4"
+        self.web_app_resource_group: str = ""
+        self.web_app_resource_id: str = ""
+        # GitHub traceability
+        self.repository_url: str = ""
+        self.commit_url: str = ""
+        self.visibility: str = ""
+        # Factory traceability
+        self.factory_run_id: str = ""
+        self.factory_run_url: str = ""
+        self.factory_status: str = ""
+        self.factory_started_at: str = ""
+        self.factory_finished_at: str = ""
+        self.factory_duration: str = ""
+        # Control Plane traceability
+        self.control_plane_run_id: str = ""
+        self.control_plane_run_url: str = ""
+        self.control_plane_status: str = ""
+        self.control_plane_started_at: str = ""
+        self.control_plane_finished_at: str = ""
+        self.control_plane_duration: str = ""
+        # Validation results
+        self.readiness_result: str = ""
+        self.functional_result: str = ""
+        self.functional_pass_count: int = 0
+        self.functional_fail_count: int = 0
+        self.user_facing_result: str = ""
+        self.evidence_result: str = ""
+        # Timing
+        self.fecha_fin: str = ""
+        self.duracion_total_segundos: int = 0
+        self._inicializar_pasos()
+
+    def _inicializar_pasos(self) -> None:
+        """Inicializa los 13 pasos canónicos con estado PENDIENTE."""
+        self.pasos = []
+        for paso in PASOS_CANONICOS:
+            self.pasos.append({
+                "numero": paso["numero"], "nombre": paso["nombre"],
+                "descripcion": paso["descripcion"], "estado": "PENDIENTE",
+                "fecha_inicio": None, "fecha_fin": None,
+                "duracion_segundos": None, "detalle": "", "evidencia": ""
+            })
+
+    def iniciar_paso(self, numero_paso: int, detalle: str = "") -> None:
+        """Marca un paso como EN_PROCESO."""
+        for paso in self.pasos:
+            if paso["numero"] == numero_paso:
+                paso["estado"] = "EN_PROCESO"
+                paso["fecha_inicio"] = _ahora()
+                paso["detalle"] = detalle or f"Iniciando paso {numero_paso}"
+                self.fecha_actualizacion = _ahora()
+                return
+        logger.warning(f"Paso {numero_paso} no encontrado")
+
+    def finalizar_paso(
+        self, numero_paso: int, estado: str = "COMPLETADO",
+        detalle: str = "", evidencia: str = ""
+    ) -> None:
+        """Finaliza un paso con un estado."""
+        for paso in self.pasos:
+            if paso["numero"] == numero_paso:
+                paso["estado"] = estado
+                paso["fecha_fin"] = _ahora()
+                paso["detalle"] = detalle or paso["detalle"]
+                paso["evidencia"] = evidencia
+                if paso["fecha_inicio"]:
+                    try:
+                        inicio = datetime.fromisoformat(paso["fecha_inicio"])
+                        fin = datetime.fromisoformat(paso["fecha_fin"])
+                        paso["duracion_segundos"] = round((fin - inicio).total_seconds(), 2)
+                    except (ValueError, TypeError):
+                        paso["duracion_segundos"] = None
+                self.fecha_actualizacion = _ahora()
+                return
+        logger.warning(f"Paso {numero_paso} no encontrado")
+
+    def a_dict(self) -> Dict[str, Any]:
+        """Convierte la solicitud a diccionario serializable."""
+        # Compute total duration from solicitud->actualizacion if not set
+        duracion = self.duracion_total_segundos
+        if not duracion and self.fecha_solicitud and self.fecha_actualizacion:
+            try:
+                inicio = datetime.fromisoformat(self.fecha_solicitud)
+                fin = datetime.fromisoformat(self.fecha_actualizacion)
+                duracion = round((fin - inicio).total_seconds(), 2)
+            except (ValueError, TypeError):
+                duracion = 0
+
+        return {
+            "id": self.id, "nombre_proyecto": self.nombre_proyecto,
+            "descripcion": self.descripcion, "repositorio": self.repositorio,
+            "web_app": self.web_app, "web_app_url": self.web_app_url,
+            "repo_url": self.repo_url, "estado": self.estado,
+            "correlation_id": self.correlation_id,
+            "deployment_id": self.deployment_id,
+            "commit_sha": self.commit_sha, "pasos": self.pasos,
+            "fecha_solicitud": self.fecha_solicitud,
+            "fecha_actualizacion": self.fecha_actualizacion,
+            "resultado": self.resultado, "error": self.error,
+            "app_service_plan_id": self.app_service_plan_id,
+            "app_service_plan_name": self.app_service_plan_name,
+            "app_service_plan_resource_group": self.app_service_plan_resource_group,
+            "app_service_plan_subscription": self.app_service_plan_subscription,
+            "web_app_resource_group": self.web_app_resource_group,
+            "web_app_resource_id": self.web_app_resource_id,
+            "server_farm_id": self.app_service_plan_id,
+            # GitHub traceability
+            "repository_url": self.repository_url,
+            "commit_url": self.commit_url,
+            "visibility": self.visibility,
+            # Factory traceability
+            "factory_run_id": self.factory_run_id,
+            "factory_run_url": self.factory_run_url,
+            "factory_status": self.factory_status,
+            "factory_started_at": self.factory_started_at,
+            "factory_finished_at": self.factory_finished_at,
+            "factory_duration": self.factory_duration,
+            # Control Plane traceability
+            "control_plane_run_id": self.control_plane_run_id,
+            "control_plane_run_url": self.control_plane_run_url,
+            "control_plane_status": self.control_plane_status,
+            "control_plane_started_at": self.control_plane_started_at,
+            "control_plane_finished_at": self.control_plane_finished_at,
+            "control_plane_duration": self.control_plane_duration,
+            # Validation results
+            "readiness_result": self.readiness_result,
+            "functional_result": self.functional_result,
+            "functional_pass_count": self.functional_pass_count,
+            "functional_fail_count": self.functional_fail_count,
+            "user_facing_result": self.user_facing_result,
+            "evidence_result": self.evidence_result,
+            # Timing
+            "fecha_fin": self.fecha_fin,
+            "duracion_total_segundos": duracion
+        }
+
+    @classmethod
+    def desde_dict(cls, datos: Dict[str, Any]) -> "SolicitudProyecto":
+        """Crea una instancia desde un diccionario."""
+        s = cls(
+            nombre_proyecto=datos.get("nombre_proyecto", ""),
+            descripcion=datos.get("descripcion", ""),
+            repositorio=datos.get("repositorio", ""),
+            web_app=datos.get("web_app", ""),
+            correlation_id=datos.get("correlation_id", ""),
+            deployment_id=datos.get("deployment_id", ""),
+            estado=datos.get("estado", "SOLICITADO"),
+            app_service_plan_id=datos.get("app_service_plan_id", "")
+        )
+        s.id = datos.get("id", s.id)
+        s.commit_sha = datos.get("commit_sha", "")
+        s.repo_url = datos.get("repo_url", "")
+        s.web_app_url = datos.get("web_app_url", "")
+        s.fecha_solicitud = datos.get("fecha_solicitud", s.fecha_solicitud)
+        s.fecha_actualizacion = datos.get("fecha_actualizacion", s.fecha_solicitud)
+        s.resultado = datos.get("resultado", "")
+        s.error = datos.get("error", "")
+        s.app_service_plan_name = datos.get("app_service_plan_name", "")
+        s.app_service_plan_resource_group = datos.get("app_service_plan_resource_group", "")
+        s.app_service_plan_subscription = datos.get("app_service_plan_subscription", "01bfad48-c092-4712-bc72-f141eb01a8d4")
+        s.web_app_resource_group = datos.get("web_app_resource_group", "")
+        s.web_app_resource_id = datos.get("web_app_resource_id", "")

@@ -290,8 +290,13 @@ class TestB17ResultadoInvalido:
 
 class TestB18Finalizacion:
     def test_finalizar_pass(self, svc, solicitud_valida):
+        # Completar los 13 pasos canónicos antes de finalizar PASS (FASE 20 contrato)
+        for paso in solicitud_valida.pasos:
+            svc.actualizar_estado(solicitud_valida, "COMPLETADO", numero_paso=paso["numero"],
+                                  detalle="ok", evidencia="test")
         s = svc.finalizar_solicitud(solicitud_valida.deployment_id, resultado="PASS")
         assert s and s.estado == "COMPLETADO" and s.resultado == "PASS"
+        assert s.duracion_total_segundos is not None and s.duracion_total_segundos >= 0
     def test_finalizar_fail(self, svc, solicitud_valida):
         s = svc.finalizar_solicitud(solicitud_valida.deployment_id, resultado="FAIL", error="Error")
         assert s and s.estado == "FALLIDO" and s.resultado == "FAIL"
@@ -575,6 +580,11 @@ class TestAPIContract:
     def test_post_finalizar(self):
         r = self.client.post("/api/fabrica/proyectos", json={"nombre_proyecto": "hermes-final-test", "app_service_plan_id": _ASP_VALIDO})
         did = r.json()["deployment_id"]
+        # Completar los 13 pasos canónicos via API antes de finalizar PASS
+        for num in range(1, 14):
+            self.client.post(f"/api/fabrica/proyectos/{did}/paso",
+                             json={"numero_paso": num, "estado_paso": "COMPLETADO",
+                                   "detalle": "ok", "evidencia": "test"})
         r2 = self.client.post(f"/api/fabrica/proyectos/{did}/finalizar",
                               json={"resultado": "PASS"})
         assert r2.status_code == 200 and r2.json()["resultado"] == "PASS"

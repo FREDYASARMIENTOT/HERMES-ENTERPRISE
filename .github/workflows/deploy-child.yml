@@ -942,6 +942,14 @@ jobs:
           # Registrar Evidencia (paso 11)
           register_paso 11 "EVIDENCIA" "COMPLETADO" "deployment-report.json generado" "PASS"
 
+          # Step 12: PUBLICACION
+          register_paso 12 "PUBLICACIÓN" "COMPLETADO" "WebApp publicada" "PASS"
+          # Step 13: NAVEGADOR
+          UF_RESULT="${{ needs.user-facing-validation.outputs.user_facing_result }}"
+          UF_ESTADO="COMPLETADO"
+          if [ "${UF_RESULT}" != "PASS" ]; then UF_ESTADO="FALLIDO"; fi
+          register_paso 13 "NAVEGADOR" "${UF_ESTADO}" "Validacion navegador: ${UF_RESULT}" "${UF_RESULT}"
+
           # Finalizar implementacion — call Portal finalizar (with error capture)
           FINAL_STATUS="COMPLETADO"
           FINAL_RESULT="PASS"

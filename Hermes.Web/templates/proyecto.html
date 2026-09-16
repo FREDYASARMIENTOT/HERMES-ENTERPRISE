@@ -1,438 +1,251 @@
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hermes Enterprise — Implementación del Proyecto</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        :root { --hermes-primary: #0d6efd; --hermes-accent: #6f42c1; --hermes-success: #198754; --hermes-warning: #ffc107; --hermes-danger: #dc3545; }
-        body { background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%); min-height: 100vh; }
-        .navbar-brand { font-weight: 700; font-size: 1.5rem; background: linear-gradient(135deg, var(--hermes-primary), var(--hermes-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .card { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); }
-        .card-header { border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
-        .step-pass { border-left: 4px solid var(--hermes-success); }
-        .step-fail { border-left: 4px solid var(--hermes-danger); }
-        .step-progress { border-left: 4px solid var(--hermes-warning); }
-        .step-pending { border-left: 4px solid rgba(255,255,255,0.2); }
-        .status-badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
-        .pipeline-line { position: relative; padding-left: 30px; }
-        .pipeline-line::before { content: ''; position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.1); }
-        .pipeline-dot { position: absolute; left: 8px; width: 16px; height: 16px; border-radius: 50%; z-index: 1; }
-        .pipeline-dot.pass { background: var(--hermes-success); box-shadow: 0 0 10px rgba(25,135,84,0.5); }
-        .pipeline-dot.fail { background: var(--hermes-danger); box-shadow: 0 0 10px rgba(220,53,69,0.5); }
-        .pipeline-dot.progress { background: var(--hermes-warning); animation: pulse 1.5s infinite; }
-        .pipeline-dot.pending { background: rgba(255,255,255,0.2); }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .duration-text { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-family: monospace; }
-        .detail-text { font-size: 0.85rem; color: rgba(255,255,255,0.7); }
-        .auto-refresh-badge { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-        .project-title { font-size: 1.8rem; font-weight: 700; background: linear-gradient(135deg, #0d6efd, #6f42c1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .section-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
-        .trace-table td { padding: 0.3rem 0.5rem; }
-        .trace-table tr:hover { background: rgba(255,255,255,0.03); }
-        .vscode-btn { background: #007acc; color: white; border: none; }
-        .vscode-btn:hover { background: #005a9e; color: white; }
-        .copy-btn { cursor: pointer; }
-        .copy-btn:hover { color: var(--hermes-primary) !important; }
-        .result-pass { color: var(--hermes-success); }
-        .result-fail { color: var(--hermes-danger); }
-        .result-pending { color: var(--hermes-warning); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hermes Enterprise &mdash; Implementaci&oacute;n del Proyecto</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--hermes-primary:#0d6efd;--hermes-accent:#6f42c1;--hermes-success:#198754;--hermes-warning:#ffc107;--hermes-danger:#dc3545}
+body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.navbar-brand{font-weight:700;font-size:1.5rem;background:linear-gradient(135deg,var(--hermes-primary),var(--hermes-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.card{border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);backdrop-filter:blur(10px)}
+.card-header{border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05)}
+.step-pass{border-left:4px solid var(--hermes-success)}
+.step-fail{border-left:4px solid var(--hermes-danger)}
+.step-progress{border-left:4px solid var(--hermes-warning)}
+.step-pending{border-left:4px solid rgba(255,255,255,0.2)}
+.status-badge{font-size:.7rem;padding:.2rem .5rem}
+.pipeline-line{position:relative;padding-left:30px}
+.pipeline-line::before{content:'';position:absolute;left:15px;top:0;bottom:0;width:2px;background:rgba(255,255,255,0.1)}
+.pipeline-dot{position:absolute;left:8px;width:16px;height:16px;border-radius:50%;z-index:1}
+.pipeline-dot.pass{background:var(--hermes-success);box-shadow:0 0 10px rgba(25,135,84,0.5)}
+.pipeline-dot.fail{background:var(--hermes-danger);box-shadow:0 0 10px rgba(220,53,69,0.5)}
+.pipeline-dot.progress{background:var(--hermes-warning);animation:pulse 1.5s infinite}
+.pipeline-dot.pending{background:rgba(255,255,255,0.2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease-out}
+.duration-text{font-size:.8rem;color:rgba(255,255,255,0.5);font-family:monospace}
+.auto-refresh-badge{position:fixed;bottom:20px;right:20px;z-index:1000}
+.section-icon{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
+.trace-table td{padding:.3rem .5rem}
+.trace-table tr:hover{background:rgba(255,255,255,0.03)}
+.vscode-btn{background:#007acc;color:#fff;border:none}
+.vscode-btn:hover{background:#005a9e;color:#fff}
+.result-pass{color:var(--hermes-success)}
+.result-fail{color:var(--hermes-danger)}
+.result-pending{color:var(--hermes-warning)}
+.event-info{background:rgba(13,110,253,0.08)}
+.event-pass{background:rgba(25,135,84,0.08)}
+.event-warn{background:rgba(255,193,7,0.08)}
+.event-error{background:rgba(220,53,69,0.08)}
+.global-success{background:linear-gradient(135deg,rgba(25,135,84,0.2),rgba(25,135,84,0.05));border:1px solid rgba(25,135,84,0.3)}
+.global-fail{background:linear-gradient(135deg,rgba(220,53,69,0.2),rgba(220,53,69,0.05));border:1px solid rgba(220,53,69,0.3)}
+.global-progress{background:linear-gradient(135deg,rgba(255,193,7,0.2),rgba(255,193,7,0.05));border:1px solid rgba(255,193,7,0.3)}
+.substep-row{background:rgba(255,255,255,0.02)}
+.substep-row:hover{background:rgba(255,255,255,0.05)}
+.filter-btn.active{border-color:var(--hermes-primary)!important}
+.event-detail-panel{background:rgba(0,0,0,0.3);border-radius:8px}
+.clickable{cursor:pointer}
+.clickable:hover{background:rgba(255,255,255,0.05)}
+.big-number{font-size:2.2rem;font-weight:800;line-height:1}
+.step-counter{font-size:.9rem;opacity:.8}
+.badge-info{background:rgba(13,110,253,0.2);color:#6ea8fe}
+.badge-pass{background:rgba(25,135,84,0.2);color:#75b798}
+.badge-warn{background:rgba(255,193,7,0.2);color:#ffda6a}
+.badge-error{background:rgba(220,53,69,0.2);color:#ea868f}
+</style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark border-bottom border-light border-opacity-10">
-        <div class="container">
-            <a class="navbar-brand" href="/"><i class="bi bi-shield-fill-check me-2"></i>Hermes Enterprise</a>
-            <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-primary bg-opacity-25 text-primary status-badge" id="estado-badge">SOLICITADO</span>
-                <a href="/swagger" class="btn btn-outline-primary btn-sm" target="_blank"><i class="bi bi-file-earmark-code me-1"></i>Swagger</a>
-                <a href="/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-house me-1"></i>Portal</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container py-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h5 class="text-muted mb-1">HERMES ENTERPRISE</h5>
-                                <h1 class="project-title" id="nombre-proyecto">Cargando...</h1>
-                                <p class="text-muted mb-0" id="descripcion-proyecto"></p>
-                            </div>
-                            <div class="text-end">
-                                <div id="resultado-badge"></div>
-                                <small class="text-muted d-block mt-1" id="correlation-id"></small>
-                                <small class="text-muted d-block" id="deployment-id"></small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Info Cards -->
-        <!-- Métricas rápidas -->
-        <div class="row mb-4 g-3">
-            <div class="col-md-3">
-                <div class="card text-center h-100"><div class="card-body"><div class="metric-value" id="total-pasos">0</div><div class="metric-label">Pasos Totales</div></div></div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center h-100"><div class="card-body"><div class="metric-value text-success" id="pasos-pass">0</div><div class="metric-label">PASS</div></div></div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center h-100"><div class="card-body"><div class="metric-value text-danger" id="pasos-fail">0</div><div class="metric-label">FAIL</div></div></div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center h-100"><div class="card-body"><div class="metric-value" id="duracion-total">0s</div><div class="metric-label">Duración</div></div></div>
-            </div>
-        </div>
-
-        <!-- Pipeline -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-diagram-3 me-2"></i>Pipeline</span>
-                        <div>
-                            <span class="badge bg-info me-2" id="refresh-badge">Auto-refresh: 5s</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="cargarDatos()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div id="pipeline-container">
-                            <div class="text-center py-5">
-                                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>
-                                <p class="mt-2 text-muted">Cargando información de implementación...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Trazabilidad: GitHub + Factory + Control Plane -->
-        <div class="row mt-4 g-3">
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-github"></i></span>GitHub</div>
-                    <div class="card-body">
-                        <table class="table table-borderless trace-table mb-0 small">
-                            <tr><td class="text-muted">Repositorio</td><td id="gh-repo-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
-                            <tr><td class="text-muted">Commit</td><td id="gh-commit-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
-                            <tr><td class="text-muted">Visibilidad</td><td id="gh-visibility" class="text-end"></td></tr>
-                        </table>
-                        <button class="btn btn-sm vscode-btn w-100 mt-2" id="vscode-clone-btn" onclick="abrirVSCode()"><i class="bi bi-terminal-plus me-1"></i>Abrir en VS Code</button>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-gear"></i></span>Factory Runner</div>
-                    <div class="card-body">
-                        <table class="table table-borderless trace-table mb-0 small">
-                            <tr><td class="text-muted">Run ID</td><td id="factory-run-id" class="text-end" style="font-family:monospace;font-size:0.8rem"></td></tr>
-                            <tr><td class="text-muted">Run URL</td><td id="factory-run-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
-                            <tr><td class="text-muted">Estado</td><td id="factory-status" class="text-end"></td></tr>
-                            <tr><td class="text-muted">Inicio</td><td id="factory-started" class="text-end text-muted small"></td></tr>
-                            <tr><td class="text-muted">Duración</td><td id="factory-duration" class="text-end text-muted small"></td></tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-cloud-arrow-up"></i></span>Control Plane</div>
-                    <div class="card-body">
-                        <table class="table table-borderless trace-table mb-0 small">
-                            <tr><td class="text-muted">Run ID</td><td id="cp-run-id" class="text-end" style="font-family:monospace;font-size:0.8rem"></td></tr>
-                            <tr><td class="text-muted">Run URL</td><td id="cp-run-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
-                            <tr><td class="text-muted">Estado</td><td id="cp-status" class="text-end"></td></tr>
-                            <tr><td class="text-muted">Inicio</td><td id="cp-started" class="text-end text-muted small"></td></tr>
-                            <tr><td class="text-muted">Duración</td><td id="cp-duration" class="text-end text-muted small"></td></tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    <!-- Validación + Azure -->
-        <div class="row mt-4 g-3">
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-check2-square"></i></span>Validación E2E</div>
-                    <div class="card-body">
-                        <table class="table table-borderless trace-table mb-0 small">
-                            <tr><td class="text-muted">Readiness</td><td id="val-readiness" class="text-end"></td></tr>
-                            <tr><td class="text-muted">Functional</td><td id="val-functional" class="text-end"></td></tr>
-                            <tr><td class="text-muted">Pass / Fail</td><td id="val-functional-counts" class="text-end small"></td></tr>
-                            <tr><td class="text-muted">User-Facing</td><td id="val-user-facing" class="text-end"></td></tr>
-                            <tr><td class="text-muted">Evidence</td><td id="val-evidence" class="text-end"></td></tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-microsoft"></i></span>Azure</div>
-                    <div class="card-body">
-                        <table class="table table-borderless trace-table mb-0 small">
-                            <tr><td class="text-muted">Web App</td><td id="az-webapp" class="text-end"></td></tr>
-                            <tr><td class="text-muted">URL</td><td id="az-webapp-url" class="text-end text-truncate" style="max-width:250px"></td></tr>
-                            <tr><td class="text-muted">Resource Group</td><td id="az-rg" class="text-end small"></td></tr>
-                            <tr><td class="text-muted">App Service Plan</td><td id="az-asp" class="text-end small"></td></tr>
-                            <tr><td class="text-muted">Subscripción</td><td id="az-sub" class="text-end text-muted small" style="font-family:monospace"></td></tr>
-                            <tr><td class="text-muted">Server Farm ID</td><td id="az-serverfarm" class="text-end text-muted small" style="font-family:monospace;font-size:0.7rem"></td></tr>
-                        </table>
-                        <div class="mt-2 d-flex gap-2" id="az-links">
-                            <a id="azure-plan-link" href="#" target="_blank" class="btn btn-sm btn-outline-info d-none"><i class="bi bi-box-arrow-up-right me-1"></i>Plan</a>
-                            <a id="azure-webapp-link" href="#" target="_blank" class="btn btn-sm btn-outline-info d-none"><i class="bi bi-box-arrow-up-right me-1"></i>Web App</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tiempos -->
-        <div class="row mt-4 g-3">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-clock"></i></span>Tiempos</div>
-                    <div class="card-body">
-                        <div class="row text-center">
-                            <div class="col-3"><div class="text-muted small">Inicio</div><strong id="timing-start" class="small">—</strong></div>
-                            <div class="col-3"><div class="text-muted small">Fin</div><strong id="timing-end" class="small">—</strong></div>
-                            <div class="col-3"><div class="text-muted small">Duración</div><strong id="timing-duration" class="small">—</strong></div>
-                            <div class="col-3"><div class="text-muted small">Actualización</div><strong id="timing-updated" class="small">—</strong></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    <div class="auto-refresh-badge"><span class="badge bg-dark bg-opacity-75" id="auto-refresh-status">Activo</span></div>
-
-    <footer class="footer border-top border-light border-opacity-10 mt-5 py-3">
-        <div class="container text-center"><small>Hermes Enterprise — Portal de Implementación</small></div>
-    </footer>    <script>
-        const deploymentId = window.location.pathname.split('/').pop();
-        let refreshInterval = null;
-
-        async function fetchAPI(url) {
-            try { const resp = await fetch(url); if (!resp.ok) throw new Error(`HTTP ${resp.status}`); return await resp.json(); }
-            catch (e) { console.error(`Error fetching ${url}:`, e); return null; }
-        }
-
-        function getEstadoClase(estado) {
-            if (estado === 'COMPLETADO') return 'pass';
-            if (estado === 'FALLIDO') return 'fail';
-            if (estado === 'EN_PROCESO') return 'progress';
-            return 'pending';
-        }
-
-        function getEstadoIcono(estado) {
-            if (estado === 'COMPLETADO') return '<i class="bi bi-check-circle-fill text-success"></i>';
-            if (estado === 'FALLIDO') return '<i class="bi bi-x-circle-fill text-danger"></i>';
-            if (estado === 'EN_PROCESO') return '<i class="bi bi-arrow-repeat text-warning"></i>';
-            return '<i class="bi bi-circle text-secondary"></i>';
-        }
-
-        function getEstadoTexto(estado) {
-            const m = { 'COMPLETADO': 'PASS', 'FALLIDO': 'FAIL', 'EN_PROCESO': 'EN PROCESO', 'PENDIENTE': 'PENDIENTE' };
-            return m[estado] || estado;
-        }
-
-        function getEstadoBadge(estado) {
-            const cls = { 'COMPLETADO': 'bg-success', 'FALLIDO': 'bg-danger', 'EN_PROCESO': 'bg-warning text-dark', 'PENDIENTE': 'bg-secondary' };
-            return `<span class="badge ${cls[estado] || 'bg-secondary'} status-badge">${getEstadoTexto(estado)}</span>`;
-        }
-
-        function getDuracionFormateada(segundos) {
-            if (!segundos && segundos !== 0) return '—';
-            if (segundos < 60) return `${segundos}s`;
-            const min = Math.floor(segundos / 60);
-            const sec = Math.round(segundos % 60);
-            return `${min}m ${sec}s`;
-        }
-
-        function getResultadoBadge(resultado) {
-            if (resultado === 'PASS') return '<span class="badge bg-success fs-6">PASS</span>';
-            if (resultado === 'FAIL') return '<span class="badge bg-danger fs-6">FAIL</span>';
-            return '';
-        }
-
-        async function cargarDatos() {
-            const data = await fetchAPI(`/api/fabrica/proyectos/${deploymentId}`);
-            if (!data) {
-                document.getElementById('pipeline-container').innerHTML = '<div class="alert alert-danger">Error cargando datos de implementación</div>';
-                return;
-            }
-
-            document.getElementById('nombre-proyecto').textContent = data.nombre_proyecto || '—';
-            document.getElementById('descripcion-proyecto').textContent = data.descripcion || '';
-            document.getElementById('correlation-id').textContent = `Correlation: ${data.correlation_id || '—'}`;
-            document.getElementById('deployment-id').textContent = `Deployment: ${data.deployment_id || '—'}`;
-            document.getElementById('estado-badge').textContent = data.estado || '—';
-            document.getElementById('resultado-badge').innerHTML = getResultadoBadge(data.resultado);
-
-            if (data.pasos && data.pasos.length > 0) {
-                const total = data.pasos.length;
-                const pass = data.pasos.filter(p => p.estado === 'COMPLETADO').length;
-                const fail = data.pasos.filter(p => p.estado === 'FALLIDO').length;
-                const totalDur = data.pasos.reduce((acc, p) => acc + (p.duracion_segundos || 0), 0);
-                document.getElementById('total-pasos').textContent = total;
-                document.getElementById('pasos-pass').textContent = pass;
-                document.getElementById('pasos-fail').textContent = fail;
-                document.getElementById('duracion-total').textContent = getDuracionFormateada(totalDur);
-            }
-
-            let html = '<div class="pipeline-line">';
-            if (data.pasos) {
-                data.pasos.forEach((paso, idx) => {
-                    const cls = getEstadoClase(paso.estado);
-                    const icono = getEstadoIcono(paso.estado);
-                    const badge = getEstadoBadge(paso.estado);
-                    const dur = getDuracionFormateada(paso.duracion_segundos);
-                    const ultimo = idx === data.pasos.length - 1;
-                    const detalle = paso.detalle ? `<small class="detail-text d-block mt-1">${paso.detalle}</small>` : '';
-                    const evidencia = paso.evidencia ? `<small class="text-muted d-block">${paso.evidencia.substring(0, 100)}${paso.evidencia.length > 100 ? '...' : ''}</small>` : '';
-                    html += `
-                        <div class="position-relative mb-3 ps-4 step-card">
-                            <div class="pipeline-dot ${cls}"></div>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <strong>PASO ${paso.numero}: ${paso.nombre}</strong>
-                                    <br><small class="text-muted">${paso.descripcion || ''}</small>
-                                    ${detalle} ${evidencia}
-                                </div>
-                                <div class="text-end">${badge}<div class="duration-text mt-1">${dur}</div></div>
-                            </div>
-                        </div>
-                        ${!ultimo ? '<div class="ms-4 mb-1" style="border-left:1px solid rgba(255,255,255,0.05);height:10px;margin-left:23px"></div>' : ''}
-                    `;
-                });
-            }
-            html += '</div>';
-            document.getElementById('pipeline-container').innerHTML = html;
-
-            // ── GitHub ──
-            var repoUrl = data.repository_url || '';
-            var commitUrl = data.commit_url || '';
-            var commitSha = data.commit_sha || '';
-            document.getElementById('gh-repo-url').innerHTML = repoUrl
-                ? '<a href="' + repoUrl + '" target="_blank" class="text-primary small">' + repoUrl.split('/').slice(-2).join('/') + '</a>'
-                : '—';
-            document.getElementById('gh-commit-url').innerHTML = commitUrl
-                ? '<a href="' + commitUrl + '" target="_blank" class="text-primary small">' + (commitSha ? commitSha.substring(0, 12) : 'ver commit') + '</a>'
-                : (commitSha ? '<span class="text-muted">' + commitSha.substring(0, 12) + '</span>' : '—');
-            document.getElementById('gh-visibility').textContent = data.visibility || '—';
-            window._repoCloneUrl = repoUrl.replace('https://github.com/', 'https://github.com/').replace('/tree/', '/') || ('https://github.com/' + (data.repositorio || '') + '.git');
-
-            // ── Factory Runner ──
-            document.getElementById('factory-run-id').textContent = data.factory_run_id || '—';
-            document.getElementById('factory-run-url').innerHTML = data.factory_run_url
-                ? '<a href="' + data.factory_run_url + '" target="_blank" class="text-primary small">Ver ejecución</a>'
-                : '—';
-            document.getElementById('factory-status').innerHTML = data.factory_status
-                ? (data.factory_status === 'completed' ? '<span class="text-success">Completado</span>'
-                    : data.factory_status === 'failure' ? '<span class="text-danger">Fallido</span>'
-                    : '<span class="text-warning">' + data.factory_status + '</span>')
-                : '—';
-            document.getElementById('factory-started').textContent = data.factory_started_at || '—';
-            document.getElementById('factory-duration').textContent = data.factory_duration || '—';
-
-            // ── Control Plane ──
-            document.getElementById('cp-run-id').textContent = data.control_plane_run_id || '—';
-            document.getElementById('cp-run-url').innerHTML = data.control_plane_run_url
-                ? '<a href="' + data.control_plane_run_url + '" target="_blank" class="text-primary small">Ver ejecución</a>'
-                : '—';
-            document.getElementById('cp-status').innerHTML = data.control_plane_status
-                ? (data.control_plane_status === 'completed' ? '<span class="text-success">Completado</span>'
-                    : data.control_plane_status === 'failure' ? '<span class="text-danger">Fallido</span>'
-                    : '<span class="text-warning">' + data.control_plane_status + '</span>')
-                : '—';
-            document.getElementById('cp-started').textContent = data.control_plane_started_at || '—';
-            document.getElementById('cp-duration').textContent = data.control_plane_duration || '—';
-
-            // ── Validación E2E ──
-            function valBadge(v) {
-                if (!v) return '<span class="text-muted">—</span>';
-                if (v === 'PASS') return '<span class="badge bg-success">PASS</span>';
-                if (v === 'FAIL') return '<span class="badge bg-danger">FAIL</span>';
-                return '<span class="text-warning">' + v + '</span>';
-            }
-            document.getElementById('val-readiness').innerHTML = valBadge(data.readiness_result);
-            document.getElementById('val-functional').innerHTML = valBadge(data.functional_result);
-            var fpc = data.functional_pass_count || 0;
-            var ffc = data.functional_fail_count || 0;
-            document.getElementById('val-functional-counts').innerHTML = '<span class="text-success">' + fpc + ' pass</span> / <span class="text-danger">' + ffc + ' fail</span>';
-            document.getElementById('val-user-facing').innerHTML = valBadge(data.user_facing_result);
-            document.getElementById('val-evidence').innerHTML = valBadge(data.evidence_result);
-
-            // ── Azure ──
-            document.getElementById('az-webapp').textContent = data.web_app || '—';
-            document.getElementById('az-webapp-url').innerHTML = data.web_app_url
-                ? '<a href="' + data.web_app_url + '" target="_blank" class="text-primary small">' + data.web_app_url + '</a>'
-                : '—';
-            document.getElementById('az-rg').textContent = data.web_app_resource_group || data.app_service_plan_resource_group || '—';
-            document.getElementById('az-asp').textContent = data.app_service_plan_name || '—';
-            document.getElementById('az-sub').textContent = data.app_service_plan_subscription || '—';
-            document.getElementById('az-serverfarm').textContent = data.server_farm_id || data.app_service_plan_id || '—';
-            if (data.app_service_plan_id) {
-                document.getElementById('azure-plan-link').href = 'https://portal.azure.com/#resource' + data.app_service_plan_id;
-                document.getElementById('azure-plan-link').classList.remove('d-none');
-            }
-            if (data.web_app_resource_id) {
-                document.getElementById('azure-webapp-link').href = 'https://portal.azure.com/#resource' + data.web_app_resource_id;
-                document.getElementById('azure-webapp-link').classList.remove('d-none');
-            }
-
-            // ── Tiempos ──
-            document.getElementById('timing-start').textContent = data.fecha_solicitud || '—';
-            document.getElementById('timing-end').textContent = data.fecha_fin || '—';
-            document.getElementById('timing-duration').textContent = data.duracion_total_segundos ? getDuracionFormateada(data.duracion_total_segundos) : '—';
-            document.getElementById('timing-updated').textContent = data.fecha_actualizacion || '—';
-
-            // ── Auto-refresh ──
-            if (data.estado && ['SOLICITADO','CREANDO','PUBLICANDO','CI_EN_PROGRESO','DESPLEGANDO','VALIDANDO'].includes(data.estado)) {
-                document.getElementById('auto-refresh-status').textContent = 'Actualizando...';
-                if (!refreshInterval) refreshInterval = setInterval(cargarDatos, 5000);
-            } else {
-                document.getElementById('auto-refresh-status').textContent = 'Completado';
-                if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
-            }
-        }
-
-        function abrirVSCode() {
-            var repoUrl = window._repoCloneUrl || '';
-            if (!repoUrl || repoUrl === 'https://github.com/.git') {
-                alert('URL de repositorio no disponible. Clone manualmente.');
-                return;
-            }
-            var encoded = encodeURIComponent(repoUrl);
-            var vscodeUrl = 'vscode://vscode.git/clone?url=' + encoded;
-            var opened = window.open(vscodeUrl);
-            if (!opened || opened.closed) {
-                var textarea = document.createElement('textarea');
-                textarea.value = 'git clone ' + repoUrl;
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    alert('VS Code no se abrió automáticamente.\n\nComando copiado al portapapeles:\ngit clone ' + repoUrl);
-                } catch (e) {
-                    alert('Para clonar:\n1. Abra VS Code\n2. Ctrl+Shift+P\n3. "Git: Clone"\n4. Pegue: ' + repoUrl);
-                }
-                document.body.removeChild(textarea);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', cargarDatos);
-    </script>
+<nav class="navbar navbar-expand-lg navbar-dark border-bottom border-light border-opacity-10"><div class="container">
+<a class="navbar-brand" href="/"><i class="bi bi-shield-fill-check me-2"></i>Hermes Enterprise</a>
+<div class="d-flex align-items-center gap-2"><span class="badge bg-primary bg-opacity-25 text-primary status-badge" id="estado-badge">SOLICITADO</span></div>
+</div></nav>
+<div class="container py-4">
+<div id="loading-state" class="text-center py-5"><div class="spinner-border text-primary mb-3" role="status"></div><h5 class="text-muted">Cargando informaci&oacute;n del proyecto...</h5></div>
+<div id="error-state" class="text-center py-5 d-none"><i class="bi bi-exclamation-triangle text-danger" style="font-size:3rem"></i><h4 class="text-danger mt-3">Error al cargar proyecto</h4>
+<p class="text-muted" id="error-message">No se pudo obtener la informaci&oacute;n del proyecto.</p>
+<button class="btn btn-outline-primary mt-2" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</button></div>
+<div id="project-content" class="d-none">
+<div id="global-status-card" class="card mb-4 global-progress"><div class="card-body"><div class="row align-items-center">
+<div class="col-md-3 text-center"><div class="big-number" id="global-estado">&mdash;</div><div class="step-counter">ESTADO GLOBAL</div></div>
+<div class="col-md-6"><div class="row text-center">
+<div class="col-4"><div class="big-number" id="steps-completed">0</div><div class="step-counter">/ 13 PASOS</div></div>
+<div class="col-4"><div class="big-number" id="substeps-completed">0</div><div class="step-counter" id="substeps-label">SUBPASOS</div></div>
+<div class="col-4"><div class="big-number" id="events-count">0</div><div class="step-counter">EVENTOS</div></div>
+</div></div>
+<div class="col-md-3 text-center"><div id="total-duration-display" class="big-number text-info">&mdash;</div><div class="step-counter">DURACI&Oacute;N</div></div>
+</div>
+<div class="row mt-2 text-center" id="current-step-info"><div class="col-12 text-muted small">
+<span id="current-step-text">Paso actual: &mdash;</span><span class="mx-2">|</span>
+<span id="current-substep-text">Subpaso actual: &mdash;</span><span class="mx-2">|</span>
+<span id="elapsed-time-text">Tiempo transcurrido: &mdash;</span>
+</div></div></div></div>
+<div class="d-flex flex-wrap gap-2 mb-3">
+<button class="btn btn-sm btn-outline-info" onclick="verJSON()"><i class="bi bi-filetype-json me-1"></i>Ver JSON</button>
+<button class="btn btn-sm btn-outline-info" onclick="verMarkdown()"><i class="bi bi-markdown me-1"></i>Ver Markdown</button>
+<button class="btn btn-sm btn-outline-success" onclick="descargarJSON()"><i class="bi bi-download me-1"></i>Descargar JSON</button>
+<button class="btn btn-sm btn-outline-success" onclick="descargarMarkdown()"><i class="bi bi-download me-1"></i>Descargar Markdown</button>
+<button class="btn btn-sm vscode-btn" onclick="abrirVSCode()"><i class="bi bi-microsoft me-1"></i>VS Code Clone</button>
+</div>
+<div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-info-circle"></i></span>Proyecto</div><div class="card-body"><div class="row">
+<div class="col-md-6"><table class="table table-borderless trace-table mb-0 small">
+<tr><td class="text-muted">Nombre</td><td class="text-end" id="proj-name">&mdash;</td></tr>
+<tr><td class="text-muted">Deployment ID</td><td class="text-end" id="proj-did" style="font-family:monospace">&mdash;</td></tr>
+<tr><td class="text-muted">Correlation ID</td><td class="text-end" id="proj-cid" style="font-family:monospace">&mdash;</td></tr>
+<tr><td class="text-muted">Resultado</td><td class="text-end" id="proj-resultado">&mdash;</td></tr>
+</table></div>
+<div class="col-md-6"><table class="table table-borderless trace-table mb-0 small">
+<tr><td class="text-muted">Inicio</td><td class="text-end" id="proj-inicio">&mdash;</td></tr>
+<tr><td class="text-muted">Fin</td><td class="text-end" id="proj-fin">&mdash;</td></tr>
+<tr><td class="text-muted">Duraci&oacute;n total</td><td class="text-end" id="proj-duracion">&mdash;</td></tr>
+<tr><td class="text-muted">Actualizaci&oacute;n</td><td class="text-end" id="proj-actualizacion">&mdash;</td></tr>
+</table></div>
+</div></div></div>
+<div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-list-check"></i></span>Timeline &mdash; 13 Pasos Can&oacute;nicos</div>
+<div class="card-body" id="timeline-container"><div class="text-center text-muted py-3">Cargando timeline...</div></div></div>
+<div class="card mb-4"><div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+<span><span class="section-icon bg-dark me-2"><i class="bi bi-journal-text"></i></span>LOG DEL PROCESO</span>
+<span class="badge bg-secondary" id="event-count-badge">0 eventos</span></div>
+<div class="card-body">
+<div class="row g-2 mb-3">
+<div class="col-md-3"><label class="text-muted small">Tipo</label>
+<div class="d-flex flex-wrap gap-1" id="filtro-tipo">
+<button class="btn btn-sm btn-outline-secondary filter-btn active" data-filter="todos" onclick="setFilter('tipo','todos')">Todos</button>
+<button class="btn btn-sm btn-outline-info filter-btn" data-filter="INFO" onclick="setFilter('tipo','INFO')">INFO</button>
+<button class="btn btn-sm btn-outline-success filter-btn" data-filter="PASS" onclick="setFilter('tipo','PASS')">PASS</button>
+<button class="btn btn-sm btn-outline-warning filter-btn" data-filter="WARN" onclick="setFilter('tipo','WARN')">WARN</button>
+<button class="btn btn-sm btn-outline-danger filter-btn" data-filter="ERROR" onclick="setFilter('tipo','ERROR')">ERROR</button>
+<button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="FAIL" onclick="setFilter('tipo','FAIL')">FAIL</button>
+</div></div>
+<div class="col-md-3"><label class="text-muted small">Paso</label>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-paso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
+<div class="col-md-3"><label class="text-muted small">Componente</label>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-componente" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
+<div class="col-md-3"><label class="text-muted small">Subpaso</label>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-subpaso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
+</div>
+<div id="event-log-container"><div class="text-center text-muted py-3">Cargando eventos...</div></div>
+</div></div>
+<div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-link-45deg"></i></span>Links Operacionales</div>
+<div class="card-body"><div class="row g-2" id="links-container">
+<div class="col-md-4 col-6"><a id="link-repo" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-github me-1"></i>GitHub Repository</a></div>
+<div class="col-md-4 col-6"><a id="link-commit" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-git-commit me-1"></i>Commit</a></div>
+<div class="col-md-4 col-6"><a id="link-factory-run" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-gear me-1"></i>Factory Run</a></div>
+<div class="col-md-4 col-6"><a id="link-child-ci" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-github me-1"></i>Child CI</a></div>
+<div class="col-md-4 col-6"><a id="link-control-plane" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-diagram-3 me-1"></i>Control Plane</a></div>
+<div class="col-md-4 col-6"><a id="link-azure-plan" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-microsoft me-1"></i>Azure Portal</a></div>
+<div class="col-md-4 col-6"><a id="link-webapp" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-globe me-1"></i>Azure Web App</a></div>
+<div class="col-md-4 col-6"><a id="link-health" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-heart-pulse me-1"></i>Health</a></div>
+<div class="col-md-4 col-6"><a id="link-openapi" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-file-earmark-code me-1"></i>OpenAPI</a></div>
+<div class="col-md-4 col-6"><a id="link-docs" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-book me-1"></i>Docs</a></div>
+</div></div></div>
+</div></div>
+<div class="auto-refresh-badge"><span class="badge bg-dark bg-opacity-75 p-2" id="auto-refresh-status"><i class="bi bi-arrow-clockwise me-1"></i><span id="polling-text">5s</span></span></div>
+<script>
+var deploymentId=window.location.pathname.split('/').pop();
+var refreshInterval=null,allEvents=[],projectData=null;
+var currentFilters={tipo:'todos',paso:'todos',componente:'todos',subpaso:'todos'};
+async function cargarDatos(){try{
+var r=await fetch('/api/fabrica/proyectos/'+deploymentId);
+if(!r.ok)throw new Error('HTTP '+r.status);
+projectData=await r.json();
+renderDatos(projectData);await cargarEventos();
+document.getElementById('loading-state').classList.add('d-none');
+document.getElementById('error-state').classList.add('d-none');
+document.getElementById('project-content').classList.remove('d-none');
+var est=projectData.estado||'';
+if(['COMPLETADO','FALLIDO'].indexOf(est)>=0)detenerPolling();else iniciarPolling();
+}catch(e){console.error(e);
+document.getElementById('loading-state').classList.add('d-none');
+document.getElementById('error-state').classList.remove('d-none');
+document.getElementById('error-message').textContent=e.message||'Error desconocido';}}
+function renderDatos(data){if(!data)return;
+var est=data.estado||'PENDIENTE';
+var b=document.getElementById('estado-badge');b.textContent=est;b.className='badge status-badge';
+if(est==='COMPLETADO')b.classList.add('bg-success');
+else if(est==='FALLIDO')b.classList.add('bg-danger');
+else if(['CREANDO','EN_PROCESO','SOLICITADO'].indexOf(est)>=0)b.classList.add('bg-warning','text-dark');
+else b.classList.add('bg-secondary');
+var c=document.getElementById('global-status-card');c.className='card mb-4';
+if(est==='COMPLETADO')c.classList.add('global-success');
+else if(est==='FALLIDO')c.classList.add('global-fail');
+else c.classList.add('global-progress');
+var el=document.getElementById('global-estado');el.textContent=est;el.className='big-number '+(est==='COMPLETADO'?'result-pass':est==='FALLIDO'?'result-fail':'result-pending');
+var pasos=data.pasos||[];
+var comp=0;for(var i=0;i<pasos.length;i++){if(pasos[i].estado==='COMPLETADO')comp++}
+document.getElementById('steps-completed').textContent=comp+' / '+pasos.length;
+var tSub=0,cSub=0;for(var i2=0;i2<pasos.length;i2++){var ss=pasos[i2].subpasos||[];for(var j=0;j<ss.length;j++){tSub++;if(ss[j].estado==='COMPLETADO'||ss[j].estado==='PASS')cSub++}}
+document.getElementById('substeps-completed').textContent=tSub>0?cSub+' / '+tSub:'---';
+document.getElementById('substeps-label').textContent=tSub>0?'SUBPASOS':'SIN SUBPASOS';
+var cur=null;for(var i3=0;i3<pasos.length;i3++){if(pasos[i3].estado==='EN_PROCESO'){cur=pasos[i3];break}}
+if(!cur){for(var i4=0;i4<pasos.length;i4++){if(pasos[i4].estado==='PENDIENTE'){cur=pasos[i4];break}}}
+if(cur){document.getElementById('current-step-text').textContent='Paso actual: '+(cur.nombre||'Paso '+cur.numero);
+var curSub=null;var css=cur.subpasos||[];for(var k=0;k<css.length;k++){if(css[k].estado==='EN_PROCESO'){curSub=css[k];break}}
+document.getElementById('current-substep-text').textContent='Subpaso actual: '+(curSub?(curSub.nombre||'Subpaso'):'---');
+}else{document.getElementById('current-step-text').textContent='Paso actual: ---';document.getElementById('current-substep-text').textContent='Subpaso actual: ---';}
+document.getElementById('proj-name').textContent=data.nombre_proyecto||'---';
+document.getElementById('proj-did').textContent=data.deployment_id||'---';
+document.getElementById('proj-cid').textContent=data.correlation_id||'---';
+document.getElementById('proj-resultado').textContent=data.resultado||'---';
+document.getElementById('proj-inicio').textContent=formatTS(data.fecha_solicitud)||'---';
+document.getElementById('proj-fin').textContent=formatTS(data.fecha_fin)||'---';
+document.getElementById('proj-duracion').textContent=data.duracion_total_segundos?formatDuration(data.duracion_total_segundos):'---';
+document.getElementById('proj-actualizacion').textContent=formatTS(data.fecha_actualizacion)||'---';
+document.getElementById('total-duration-display').textContent=data.duracion_total_segundos?formatDuration(data.duracion_total_segundos):'---';
+if(data.fecha_solicitud&&['COMPLETADO','FALLIDO'].indexOf(est)<0){var st=new Date(data.fecha_solicitud);var elp=Math.floor((Date.now()-st.getTime())/1000);document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: '+formatDuration(elp)}
+else{document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: ---';}
+renderTimeline(pasos);renderLinks(data);actualizarFiltros();}
+function renderTimeline(pasos){var con=document.getElementById('timeline-container');con.innerHTML='';
+if(!pasos||pasos.length===0){con.innerHTML='<div class="text-center text-muted py-3">No hay pasos registrados.</div>';return;}
+var pn={1:'SOLICITUD',2:'FACTORY',3:'GITHUB',4:'CI CHILD',5:'CONTROL PLANE',6:'AUTENTICACI\u00d3N',7:'AZURE',8:'DEPLOY',9:'READINESS',10:'PRUEBAS FUNC.',11:'EVIDENCIA',12:'PUBLICACI\u00d3N',13:'NAVEGADOR'};
+for(var i=0;i<13;i++){var paso=null;for(var p=0;p<pasos.length;p++){if(pasos[p].numero===i+1){paso=pasos[p];break}}
+var est=paso?paso.estado||'PENDIENTE':'PENDIENTE';var nom=pn[i+1]||(paso?paso.nombre:'PASO '+(i+1));
+var div=document.createElement('div');div.className='pipeline-line mb-2 fade-in';div.dataset.stepNum=i+1;
+var dc='pending',bc='bg-secondary';if(est==='COMPLETADO'){dc='pass';bc='bg-success'}else if(est==='FALLIDO'){dc='fail';bc='bg-danger'}else if(est==='EN_PROCESO'){dc='progress';bc='bg-warning text-dark'}
+var ini=paso?formatTSshort(paso.fecha_inicio):'';var fin=paso?formatTSshort(paso.fecha_fin):'';
+var dur=paso&&paso.duracion_segundos?formatDuration(paso.duracion_segundos):'';
+var subs=(paso&&paso.subpasos)?paso.subpasos:[];var hs=subs.length>0;
+var th='';if(ini)th+='<span class="duration-text"><i class="bi bi-play-fill"></i>'+ini+'</span>';if(fin)th+=' <span class="duration-text ms-1"><i class="bi bi-stop-fill"></i>'+fin+'</span>';if(dur)th+=' <span class="duration-text ms-1"><i class="bi bi-clock"></i>'+dur+'</span>';
+var bc2=dc==='pass'?'var(--hermes-success)':dc==='fail'?'var(--hermes-danger)':dc==='progress'?'var(--hermes-warning)':'rgba(255,255,255,0.2)';
+div.innerHTML='<div class="pipeline-dot '+dc+'"></div><div class="d-flex justify-content-between align-items-start clickable" onclick="toggleSubsteps(this)" style="border-left:4px solid '+bc2+';padding-left:12px"><div><strong class="step-name">'+pad2(i+1)+' '+nom+'</strong><div class="timing-info">'+th+'</div></div><div class="text-end"><span class="badge step-badge '+bc+' status-badge">'+est+'</span>'+(hs?'<i class="bi bi-chevron-down ms-1 substep-arrow" style="font-size:0.7rem"></i>':'')+'</div></div>';
+var sc=document.createElement('div');sc.className='substeps-container d-none ms-3 mt-1';
+if(hs){for(var si=0;si<subs.length;si++){var sb=subs[si];var se=sb.estado||'PENDIENTE';var sbc='bg-secondary';if(se==='COMPLETADO'||se==='PASS')sbc='bg-success';else if(se==='FALLIDO')sbc='bg-danger';else if(se==='EN_PROCESO')sbc='bg-warning text-dark';var sd=document.createElement('div');sd.className='substep-row py-1 px-2 rounded small mb-1 d-flex justify-content-between align-items-center';var sdu=sb.duracion_segundos?formatDuration(sb.duracion_segundos):'';var sn=sb.numero||sb.subpaso_numero||(si+1);sd.innerHTML='<div><span class="substep-num text-muted">'+(i+1)+'.'+sn+'</span><span class="substep-name ms-1">'+(sb.nombre||'Subpaso')+'</span></div><div class="text-end"><span class="substep-state badge '+sbc+' me-1" style="font-size:0.65rem">'+se+'</span>'+(sdu?'<span class="substep-dur duration-text">'+sdu+'</span>':'')+'</div>';sc.appendChild(sd)}}
+div.appendChild(sc);con.appendChild(div)}}
+function toggleSubsteps(el){var c=el.parentElement.querySelector('.substeps-container');if(!c)return;var a=el.querySelector('.substep-arrow');var w=c.classList.contains('d-none');c.classList.toggle('d-none');if(a)a.className='bi ms-1 substep-arrow'+(w?' bi-chevron-up':' bi-chevron-down')}
+async function cargarEventos(){try{var r=await fetch('/api/fabrica/proyectos/'+deploymentId+'/eventos');if(!r.ok)return;allEvents=await r.json();document.getElementById('event-count-badge').textContent=allEvents.length+' eventos';document.getElementById('events-count').textContent=allEvents.length;aplicarFiltros()}catch(e){console.error(e)}}
+function setFilter(t,v){currentFilters[t]=v;if(t==='tipo'){var bs=document.querySelectorAll('#filtro-tipo .filter-btn');for(var i=0;i<bs.length;i++)bs[i].classList.toggle('active',bs[i].dataset.filter===v)}aplicarFiltros()}
+function actualizarFiltros(){if(!allEvents||allEvents.length===0)return;var ps={},cs={},ss={};for(var i=0;i<allEvents.length;i++){var e=allEvents[i];if(e.paso_numero)ps[e.paso_numero]=true;if(e.componente)cs[e.componente]=true;if(e.subpaso_nombre)ss[e.subpaso_nombre]=true}
+llenarSelect('filtro-paso',Object.keys(ps));llenarSelect('filtro-componente',Object.keys(cs));llenarSelect('filtro-subpaso',Object.keys(ss))}
+function llenarSelect(id,vals){var sel=document.getElementById(id);if(!sel)return;var cur=sel.value;sel.innerHTML='<option value="todos">Todos</option>';vals.sort();for(var i=0;i<vals.length;i++)sel.innerHTML+='<option value="'+vals[i]+'">'+vals[i]+'</option>';sel.value=cur}
+function aplicarFiltros(){var t=currentFilters.tipo||'todos',p=document.getElementById('filtro-paso').value||'todos',cEl=document.getElementById('filtro-componente').value||'todos',sEl=document.getElementById('filtro-subpaso').value||'todos';
+var f=allEvents;if(t!=='todos')f=f.filter(function(e){return(e.tipo||'').toUpperCase()===t});if(p!=='todos')f=f.filter(function(e){return String(e.paso_numero)===p});if(cEl!=='todos')f=f.filter(function(e){return(e.componente||'')===cEl});if(sEl!=='todos')f=f.filter(function(e){return(e.subpaso_nombre||'')===sEl});renderEventLog(f)}
+function renderEventLog(events){var con=document.getElementById('event-log-container');con.innerHTML='';if(!events||events.length===0){con.innerHTML='<div class="text-center text-muted py-3">No hay eventos que coincidan con los filtros.</div>';return}
+for(var i=0;i<events.length;i++){var ev=events[i];var t=(ev.tipo||'INFO').toUpperCase();var ec='event-info',bc='badge-info';if(t==='PASS'){ec='event-pass';bc='badge-pass'}else if(t==='WARN'){ec='event-warn';bc='badge-warn'}else if(t==='ERROR'||t==='FAIL'){ec='event-error';bc='badge-error'}
+var div=document.createElement('div');div.className=ec+' rounded p-2 mb-1 clickable fade-in';var ts=formatTSshort(ev.timestamp)||'---';var pas=ev.paso_numero?'PASO '+ev.paso_numero:'';var pn=ev.paso_nombre||'';
+div.innerHTML='<div class="d-flex justify-content-between align-items-center" onclick="toggleEventDetail(this)"><div class="small"><span class="text-muted">['+ts+']</span> <span class="badge '+bc+' me-1" style="font-size:0.65rem">'+t+'</span>'+(pas?'<span class="badge bg-dark me-1" style="font-size:0.65rem">'+pas+'</span>':'')+(pn?'<span class="badge bg-dark me-1" style="font-size:0.65rem">'+pn+'</span>':'')+'<span class="text-light">'+(ev.mensaje||'')+'</span></div><i class="bi bi-chevron-down text-muted" style="font-size:0.7rem"></i></div>';
+var det=document.createElement('div');det.className='event-detail-panel p-3 mt-1 mb-2 d-none small';
+var hi=(ev.http_method||'')+' '+(ev.http_url||'');if(ev.http_status)hi+=' ['+ev.http_status+']';
+var ru=ev.run_url?'<a href="'+ev.run_url+'" target="_blank" class="text-info">'+ev.run_url+'</a>':'---';
+det.innerHTML='<div class="row"><div class="col-md-6 mb-1"><span class="text-muted">Timestamp:</span> <span class="text-light">'+(ev.timestamp||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Paso:</span> <span class="text-light">'+(ev.paso_numero?ev.paso_numero+' - '+(ev.paso_nombre||''):'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Subpaso:</span> <span class="text-light">'+(ev.subpaso_nombre||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Componente:</span> <span class="text-light">'+(ev.componente||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Actor:</span> <span class="text-light">'+(ev.actor||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Estado anterior:</span> <span class="text-light">'+(ev.estado_anterior||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Estado nuevo:</span> <span class="text-light">'+(ev.estado_nuevo||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Mensaje:</span> <span class="text-light">'+(ev.mensaje||'---')+'</span></div><div class="col-12 mb-1"><span class="text-muted">Detalle:</span> <span class="text-light">'+(ev.detalle||'---')+'</span></div><div class="col-12 mb-1"><span class="text-muted">Evidencia:</span> <span class="text-light">'+(ev.evidencia||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">HTTP:</span> <span class="text-light">'+hi+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Run ID:</span> <span class="text-light">'+(ev.run_id||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Run URL:</span> <span class="text-light">'+ru+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Error:</span> <span class="text-danger">'+(ev.error_message||'---')+'</span></div><div class="col-12 mt-1"><span class="text-muted">Fase:</span> <span class="text-light">'+(ev.fase||'---')+'</span></div></div>';
+div.appendChild(det);con.appendChild(div)}}
+function toggleEventDetail(el){var d=el.parentElement.querySelector('.event-detail-panel');if(!d)return;var a=el.querySelector('.bi-chevron-down,.bi-chevron-up');d.classList.toggle('d-none');if(a)a.className=d.classList.contains('d-none')?'bi bi-chevron-down text-muted':'bi bi-chevron-up text-muted'}
+function iniciarPolling(){if(refreshInterval)return;var c=0;refreshInterval=setInterval(function(){c++;document.getElementById('polling-text').textContent=(c*5)+'s';cargarDatos()},5000)}
+function detenerPolling(){if(refreshInterval){clearInterval(refreshInterval);refreshInterval=null}document.getElementById('polling-text').textContent='Completado';document.getElementById('auto-refresh-status').innerHTML='<i class="bi bi-check-circle me-1 text-success"></i>Completado'}
+function renderLinks(data){var cfgs=[{id:'link-repo',url:data.repository_url},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:data.web_app_url},{id:'link-health',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=data.repository_url||''}
+function verJSON(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/json','_blank')}
+function verMarkdown(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/md','_blank')}
+function descargarJSON(){var a=document.createElement('a');a.href='/api/fabrica/proyectos/'+deploymentId+'/trace/json';a.download='deployment-trace-'+deploymentId+'.json';a.click()}
+function descargarMarkdown(){var a=document.createElement('a');a.href='/api/fabrica/proyectos/'+deploymentId+'/trace/md';a.download='deployment-trace-'+deploymentId+'.md';a.click()}
+function abrirVSCode(){var u=window._repoCloneUrl||'';if(!u||u==='https://github.com/.git'||u===''){alert('URL de repositorio no disponible. Clone manualmente.');return}
+var enc=encodeURIComponent(u);var vu='vscode://vscode.git/clone?url='+enc;var op=window.open(vu);if(!op||op.closed){var ta=document.createElement('textarea');ta.value='git clone '+u;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');alert('VS Code no se abri\u00f3 autom\u00e1ticamente.\n\nComando copiado al portapapeles:\ngit clone '+u)}catch(e){alert('Para clonar:\n1. Abra VS Code\n2. Ctrl+Shift+P\n3. "Git: Clone"\n4. Pegue: '+u)}document.body.removeChild(ta)}}
+function formatTS(ts){if(!ts)return '';try{return new Date(ts).toLocaleString('es-CO')}catch(e){return ts}}
+function formatTSshort(ts){if(!ts)return '';try{return new Date(ts).toLocaleTimeString('es-CO')}catch(e){return ts}}
+function formatDuration(s){if(!s||s<=0)return '---';s=Math.round(s);var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),se=s%60;if(h>0)return h+'h '+m+'m '+se+'s';if(m>0)return m+'m '+se+'s';return se+'s'}
+function pad2(n){return n<10?'0'+n:''+n}
+document.addEventListener('DOMContentLoaded',cargarDatos);
+</script>
 </body>
 </html>

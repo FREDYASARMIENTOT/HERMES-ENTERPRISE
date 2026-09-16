@@ -1,0 +1,18 @@
+<script>
+var deploymentId=window.location.pathname.split('/').pop();
+var refreshInterval=null,allEvents=[],projectData=null;
+var currentFilters={tipo:'todos',paso:'todos',componente:'todos',subpaso:'todos'};
+async function cargarDatos(){try{
+var r=await fetch('/api/fabrica/proyectos/'+deploymentId);
+if(!r.ok)throw new Error('HTTP '+r.status);
+projectData=await r.json();
+renderDatos(projectData);await cargarEventos();
+document.getElementById('loading-state').classList.add('d-none');
+document.getElementById('error-state').classList.add('d-none');
+document.getElementById('project-content').classList.remove('d-none');
+var est=projectData.estado||'';
+if(['COMPLETADO','FALLIDO'].indexOf(est)>=0)detenerPolling();else iniciarPolling();
+}catch(e){console.error(e);
+document.getElementById('loading-state').classList.add('d-none');
+document.getElementById('error-state').classList.remove('d-none');
+document.getElementById('error-message').textContent=e.message||'Error desconocido';}}

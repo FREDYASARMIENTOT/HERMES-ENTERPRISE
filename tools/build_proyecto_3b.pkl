@@ -1,0 +1,25 @@
+<div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-list-check"></i></span>Timeline &mdash; 13 Pasos Can&oacute;nicos</div>
+<div class="card-body" id="timeline-container"><div class="text-center text-muted py-3">Cargando timeline...</div></div></div>
+<div class="card mb-4"><div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+<span><span class="section-icon bg-dark me-2"><i class="bi bi-journal-text"></i></span>LOG DEL PROCESO</span>
+<span class="badge bg-secondary" id="event-count-badge">0 eventos</span></div>
+<div class="card-body">
+<div class="row g-2 mb-3">
+<div class="col-md-3"><label class="text-muted small">Tipo</label>
+<div class="d-flex flex-wrap gap-1" id="filtro-tipo">
+<button class="btn btn-sm btn-outline-secondary filter-btn active" data-filter="todos" onclick="setFilter('tipo','todos')">Todos</button>
+<button class="btn btn-sm btn-outline-info filter-btn" data-filter="INFO" onclick="setFilter('tipo','INFO')">INFO</button>
+<button class="btn btn-sm btn-outline-success filter-btn" data-filter="PASS" onclick="setFilter('tipo','PASS')">PASS</button>
+<button class="btn btn-sm btn-outline-warning filter-btn" data-filter="WARN" onclick="setFilter('tipo','WARN')">WARN</button>
+<button class="btn btn-sm btn-outline-danger filter-btn" data-filter="ERROR" onclick="setFilter('tipo','ERROR')">ERROR</button>
+<button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="FAIL" onclick="setFilter('tipo','FAIL')">FAIL</button>
+</div></div>
+<div class="col-md-3"><label class="text-muted small">Paso</label>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-paso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
+<div class="col-md-3"><label class="text-muted small">Componente</label>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-componente" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
+<div class="col-md-3"><label class="text-muted small">Subpaso</label>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-subpaso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
+</div>
+<div id="event-log-container"><div class="text-center text-muted py-3">Cargando eventos...</div></div>
+</div></div>

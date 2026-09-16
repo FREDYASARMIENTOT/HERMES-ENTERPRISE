@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+# JS Part 3 - renderTimeline + toggleSubsteps + cargarEventos + filters
+J = r"""function renderTimeline(pasos){var con=document.getElementById('timeline-container');con.innerHTML='';
+if(!pasos||pasos.length===0){con.innerHTML='<div class="text-center text-muted py-3">No hay pasos registrados.</div>';return;}
+var pn={1:'SOLICITUD',2:'FACTORY',3:'GITHUB',4:'CI CHILD',5:'CONTROL PLANE',6:'AUTENTICACI\u00d3N',7:'AZURE',8:'DEPLOY',9:'READINESS',10:'PRUEBAS FUNC.',11:'EVIDENCIA',12:'PUBLICACI\u00d3N',13:'NAVEGADOR'};
+for(var i=0;i<13;i++){var paso=null;for(var p=0;p<pasos.length;p++){if(pasos[p].numero===i+1){paso=pasos[p];break}}
+var est=paso?paso.estado||'PENDIENTE':'PENDIENTE';var nom=pn[i+1]||(paso?paso.nombre:'PASO '+(i+1));
+var div=document.createElement('div');div.className='pipeline-line mb-2 fade-in';div.dataset.stepNum=i+1;
+var dc='pending',bc='bg-secondary';if(est==='COMPLETADO'){dc='pass';bc='bg-success'}else if(est==='FALLIDO'){dc='fail';bc='bg-danger'}else if(est==='EN_PROCESO'){dc='progress';bc='bg-warning text-dark'}
+var ini=paso?formatTSshort(paso.fecha_inicio):'';var fin=paso?formatTSshort(paso.fecha_fin):'';
+var dur=paso&&paso.duracion_segundos?formatDuration(paso.duracion_segundos):'';
+var subs=(paso&&paso.subpasos)?paso.subpasos:[];var hs=subs.length>0;
+var th='';if(ini)th+='<span class="duration-text"><i class="bi bi-play-fill"></i>'+ini+'</span>';if(fin)th+=' <span class="duration-text ms-1"><i class="bi bi-stop-fill"></i>'+fin+'</span>';if(dur)th+=' <span class="duration-text ms-1"><i class="bi bi-clock"></i>'+dur+'</span>';
+var bc2=dc==='pass'?'var(--hermes-success)':dc==='fail'?'var(--hermes-danger)':dc==='progress'?'var(--hermes-warning)':'rgba(255,255,255,0.2)';
+div.innerHTML='<div class="pipeline-dot '+dc+'"></div><div class="d-flex justify-content-between align-items-start clickable" onclick="toggleSubsteps(this)" style="border-left:4px solid '+bc2+';padding-left:12px"><div><strong class="step-name">'+pad2(i+1)+' '+nom+'</strong><div class="timing-info">'+th+'</div></div><div class="text-end"><span class="badge step-badge '+bc+' status-badge">'+est+'</span>'+(hs?'<i class="bi bi-chevron-down ms-1 substep-arrow" style="font-size:0.7rem"></i>':'')+'</div></div>';
+var sc=document.createElement('div');sc.className='substeps-container d-none ms-3 mt-1';
+if(hs){for(var si=0;si<subs.length;si++){var sb=subs[si];var se=sb.estado||'PENDIENTE';var sbc='bg-secondary';if(se==='COMPLETADO'||se==='PASS')sbc='bg-success';else if(se==='FALLIDO')sbc='bg-danger';else if(se==='EN_PROCESO')sbc='bg-warning text-dark';var sd=document.createElement('div');sd.className='substep-row py-1 px-2 rounded small mb-1 d-flex justify-content-between align-items-center';var sdu=sb.duracion_segundos?formatDuration(sb.duracion_segundos):'';var sn=sb.numero||sb.subpaso_numero||(si+1);sd.innerHTML='<div><span class="substep-num text-muted">'+(i+1)+'.'+sn+'</span><span class="substep-name ms-1">'+(sb.nombre||'Subpaso')+'</span></div><div class="text-end"><span class="substep-state badge '+sbc+' me-1" style="font-size:0.65rem">'+se+'</span>'+(sdu?'<span class="substep-dur duration-text">'+sdu+'</span>':'')+'</div>';sc.appendChild(sd)}}
+div.appendChild(sc);con.appendChild(div)}}
+function toggleSubsteps(el){var c=el.parentElement.querySelector('.substeps-container');if(!c)return;var a=el.querySelector('.substep-arrow');var w=c.classList.contains('d-none');c.classList.toggle('d-none');if(a)a.className='bi ms-1 substep-arrow'+(w?' bi-chevron-up':' bi-chevron-down')}
+async function cargarEventos(){try{var r=await fetch('/api/fabrica/proyectos/'+deploymentId+'/eventos');if(!r.ok)return;allEvents=await r.json();document.getElementById('event-count-badge').textContent=allEvents.length+' eventos';document.getElementById('events-count').textContent=allEvents.length;aplicarFiltros()}catch(e){console.error(e)}}
+function setFilter(t,v){currentFilters[t]=v;if(t==='tipo'){var bs=document.querySelectorAll('#filtro-tipo .filter-btn');for(var i=0;i<bs.length;i++)bs[i].classList.toggle('active',bs[i].dataset.filter===v)}aplicarFiltros()}
+function actualizarFiltros(){if(!allEvents||allEvents.length===0)return;var ps={},cs={},ss={};for(var i=0;i<allEvents.length;i++){var e=allEvents[i];if(e.paso_numero)ps[e.paso_numero]=true;if(e.componente)cs[e.componente]=true;if(e.subpaso_nombre)ss[e.subpaso_nombre]=true}
+llenarSelect('filtro-paso',Object.keys(ps));llenarSelect('filtro-componente',Object.keys(cs));llenarSelect('filtro-subpaso',Object.keys(ss))}
+function llenarSelect(id,vals){var sel=document.getElementById(id);if(!sel)return;var cur=sel.value;sel.innerHTML='<option value="todos">Todos</option>';vals.sort();for(var i=0;i<vals.length;i++)sel.innerHTML+='<option value="'+vals[i]+'">'+vals[i]+'</option>';sel.value=cur}
+function aplicarFiltros(){var t=currentFilters.tipo||'todos',p=document.getElementById('filtro-paso').value||'todos',cEl=document.getElementById('filtro-componente').value||'todos',sEl=document.getElementById('filtro-subpaso').value||'todos';
+var f=allEvents;if(t!=='todos')f=f.filter(function(e){return(e.tipo||'').toUpperCase()===t});if(p!=='todos')f=f.filter(function(e){return String(e.paso_numero)===p});if(cEl!=='todos')f=f.filter(function(e){return(e.componente||'')===cEl});if(sEl!=='todos')f=f.filter(function(e){return(e.subpaso_nombre||'')===sEl});renderEventLog(f)}
+"""
+
+with open('tools/build_js3.pkl', 'w', encoding='utf-8') as f:
+    f.write(J)
+print("JS3 written, %d chars" % len(J))

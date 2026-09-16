@@ -439,6 +439,30 @@ jobs:
 
           echo ""
           echo "═══════════════════════════════════════════════════"
+          echo ""
+          # --- TRACE: Registrar pasos en Portal ---
+          echo ""
+          echo "--- TRACE: Registrando trazabilidad en Portal ---"
+          register_paso() {
+            local NUM=$1 NAME=$2 ESTADO=$3 DETALLE=$4 RESULT=$5
+            local RESPONSE HTTP_CODE
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/paso" \
+              -H "Content-Type: application/json" \
+              -d "{\"numero_paso\":${NUM},\"estado_paso\":\"${ESTADO}\",\"detalle\":\"${DETALLE}\",\"evidencia\":\"${RESULT}\"}" 2>&1)
+            HTTP_CODE=$(echo "${RESPONSE}" | tail -1)
+            if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
+              echo "  OK: Paso ${NUM} ${NAME} -> ${ESTADO} (HTTP ${HTTP_CODE})"
+            else
+              echo "  WARN: Paso ${NUM} ${NAME} -> HTTP ${HTTP_CODE}"
+            fi
+          }
+          register_paso 2 "FACTORY" "COMPLETADO" "Factory Runner ejecutado" "PASS"
+          register_paso 3 "GITHUB" "COMPLETADO" "Repo hijo creado SHA ${SHA}" "PASS"
+          if [ -n "${ASP_ID}" ]; then
+            register_paso 7 "AZURE" "COMPLETADO" "Plan asignado: ${ASP_ID}" "PASS"
+          fi
+
+          echo ""
           echo "  RESUMEN EJECUTIVO — FACTORY RUNNER E2E"
           echo "═══════════════════════════════════════════════════"
           echo "  Factory run_id     : ${{ github.run_id }}"

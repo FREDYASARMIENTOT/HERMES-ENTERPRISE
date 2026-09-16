@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+# JS Part 4b - renderLinks + download + vscode + utilities + closing
+J = r"""function renderLinks(data){var cfgs=[{id:'link-repo',url:data.repository_url},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:data.web_app_url},{id:'link-health',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=data.repository_url||''}
+function verJSON(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/json','_blank')}
+function verMarkdown(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/md','_blank')}
+function descargarJSON(){var a=document.createElement('a');a.href='/api/fabrica/proyectos/'+deploymentId+'/trace/json';a.download='deployment-trace-'+deploymentId+'.json';a.click()}
+function descargarMarkdown(){var a=document.createElement('a');a.href='/api/fabrica/proyectos/'+deploymentId+'/trace/md';a.download='deployment-trace-'+deploymentId+'.md';a.click()}
+function abrirVSCode(){var u=window._repoCloneUrl||'';if(!u||u==='https://github.com/.git'||u===''){alert('URL de repositorio no disponible. Clone manualmente.');return}
+var enc=encodeURIComponent(u);var vu='vscode://vscode.git/clone?url='+enc;var op=window.open(vu);if(!op||op.closed){var ta=document.createElement('textarea');ta.value='git clone '+u;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');alert('VS Code no se abri\u00f3 autom\u00e1ticamente.\n\nComando copiado al portapapeles:\ngit clone '+u)}catch(e){alert('Para clonar:\n1. Abra VS Code\n2. Ctrl+Shift+P\n3. "Git: Clone"\n4. Pegue: '+u)}document.body.removeChild(ta)}}
+function formatTS(ts){if(!ts)return '';try{return new Date(ts).toLocaleString('es-CO')}catch(e){return ts}}
+function formatTSshort(ts){if(!ts)return '';try{return new Date(ts).toLocaleTimeString('es-CO')}catch(e){return ts}}
+function formatDuration(s){if(!s||s<=0)return '---';s=Math.round(s);var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),se=s%60;if(h>0)return h+'h '+m+'m '+se+'s';if(m>0)return m+'m '+se+'s';return se+'s'}
+function pad2(n){return n<10?'0'+n:''+n}
+document.addEventListener('DOMContentLoaded',cargarDatos);
+</script>
+</body>
+</html>
+"""
+
+with open('tools/build_js4b.pkl', 'w', encoding='utf-8') as f:
+    f.write(J)
+print("JS4b written, %d chars" % len(J))

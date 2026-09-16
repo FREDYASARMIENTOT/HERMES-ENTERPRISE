@@ -450,7 +450,8 @@ try {
             '--ref', 'main',
             '--field', "project_name=$NombreProyecto",
             '--field', "repository=$repoName",
-            '--field', "commit_sha=$commitSha"
+            '--field', "commit_sha=$commitSha",
+            '--field', "deployment_id=$CorrelationId"
         )
         if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) {
             $triggerArgs += '--field'
@@ -463,13 +464,15 @@ try {
         } else {
             Write-Step "ControlPlane" "WARN" "Trigger failed: $triggerResult"
             $manualField = if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) { " --field app_service_plan_id=$AppServicePlanId" } else { "" }
-            Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$manualField"
+            $deployIdField = " --field deployment_id=$CorrelationId"
+            Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$deployIdField$manualField"
         }
     } else {
         Write-Step "ControlPlane" "SKIP" "Use -TriggerControlPlane to auto-deploy via Control Plane"
         $manualField = if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) { " --field app_service_plan_id=$AppServicePlanId" } else { "" }
+        $deployIdField = " --field deployment_id=$CorrelationId"
         Write-Step "ControlPlane" "INFO" "Manual trigger command:"
-        Write-Host "    gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$manualField" -ForegroundColor Yellow
+        Write-Host "    gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$deployIdField$manualField" -ForegroundColor Yellow
     }
 
     # RC87: Persistir registro de implementacion

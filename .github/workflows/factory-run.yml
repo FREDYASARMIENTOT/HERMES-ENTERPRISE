@@ -273,6 +273,15 @@ jobs:
             exit 1
           fi
 
+          # --- SHA_CHAIN summary ---
+          echo ""
+          echo "=== SHA_CHAIN ==="
+          echo "LOCAL_SHA=${SHA_LOCAL}"
+          echo "REMOTE_SHA=${SHA_REMOTE}"
+          echo "SHA_MATCH=$(if [ "${SHA_LOCAL}" = "${SHA_REMOTE}" ]; then echo 'PASS'; else echo 'FAIL'; fi)"
+          echo "REPOSITORY=${REPO}"
+          echo "================="
+
           # --- Registrar outputs ---
           echo "commit_sha=${SHA_LOCAL}" >> "$GITHUB_OUTPUT"
           echo "remote_sha=${SHA_REMOTE}" >> "$GITHUB_OUTPUT"
@@ -370,6 +379,28 @@ jobs:
           echo "factory_run_id=${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           echo "factory_run_number=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
           echo "factory_conclusion=${FR}" >> "$GITHUB_OUTPUT"
+
+          # --- METADATA: Actualizar Portal Hermes con trazabilidad ---
+          echo ""
+          echo "--- METADATA: Actualizando trazabilidad en Portal ---"
+          PORTAL_URL="https://as-hermesportal.azurewebsites.net"
+          METADATA_PAYLOAD=$(cat <<ENDJSON
+{
+  "commit_sha": "${SHA}",
+  "repository_url": "https://github.com/${REPO}",
+  "commit_url": "https://github.com/${REPO}/commit/${SHA}",
+  "visibility": "private",
+  "factory_run_id": "${{ github.run_id }}",
+  "factory_run_url": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}",
+  "factory_status": "${FR}",
+  "factory_finished_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+ENDJSON
+)
+          curl -s -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
+            -H "Content-Type: application/json" \
+            -d "${METADATA_PAYLOAD}" \
+            > /dev/null 2>&1 && echo "[PASS] Portal metadata updated (factory)" || echo "[WARN] Portal metadata update failed (non-blocking)"
 
           echo ""
           echo "═══════════════════════════════════════════════════"

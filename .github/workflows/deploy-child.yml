@@ -34,6 +34,11 @@ on:
         description: 'SHA del commit a desplegar (40 caracteres hex)'
         required: true
         type: string
+      deployment_id:
+        description: 'Deployment ID para trazabilidad en Portal'
+        required: false
+        default: ''
+        type: string
       app_service_plan_id:
         description: 'Resource ID del App Service Plan en RG-Hermes-Proyectos (REQUIRED)'
         required: true
@@ -64,6 +69,7 @@ jobs:
       commit_sha: ${{ steps.validate.outputs.commit_sha }}
       app_service_name: ${{ steps.validate.outputs.app_service_name }}
       app_service_plan_id: ${{ steps.validate.outputs.app_service_plan_id }}
+      deployment_id: ${{ steps.validate.outputs.deployment_id }}
       validation_result: ${{ steps.validate.outputs.validation_result }}
     steps:
       - name: Validate Inputs (Security)
@@ -123,6 +129,9 @@ jobs:
           echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
           echo "app_service_name=${APP_NAME}" >> $GITHUB_OUTPUT
           echo "app_service_plan_id=${ASP_ID}" >> $GITHUB_OUTPUT
+          DID="${{ inputs.deployment_id }}"
+          if [ -z "${DID}" ]; then DID="${PROJ}"; fi
+          echo "deployment_id=${DID}" >> $GITHUB_OUTPUT
           echo "validation_result=PASS" >> $GITHUB_OUTPUT
 
           echo ""
@@ -146,8 +155,36 @@ jobs:
     outputs:
       checkout_result: ${{ steps.checkout.outputs.checkout_result }}
       deployed_sha: ${{ steps.verify.outputs.deployed_sha }}
+      remote_sha: ${{ steps.verify.outputs.remote_sha }}
+      sha_chain: ${{ steps.verify.outputs.sha_chain }}
     steps:
-      - name: Checkout Child Repository (with retry)
+      - name: Pre-checkout SHA Verification
+        id: pre-verify
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_PORTAL_HERMES_REPO_WRITE_TOKEN }}
+        run: |
+          REPO="${{ needs.validate-inputs.outputs.repository }}"
+          SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          echo "=== PRE-CHECKOUT SHA VERIFICATION ==="
+          echo "Repository: ${REPO}"
+          echo "Requested SHA: ${SHA}"
+          REMOTE_SHA=$(gh api "/repos/${REPO}/git/commits/${SHA}" --jq '.sha' 2>&1) || true
+          if ! echo "${REMOTE_SHA}" | grep -qP '^[0-9a-f]{40}$'; then
+            echo "::error::SHA_NOT_IN_REPOSITORY — SHA ${SHA} no encontrado en ${REPO}"
+            echo "  El commit solicitado NO EXISTE en el repositorio child."
+            echo "  Causa probable: se envió un SHA de otro repositorio (ej: HERMES-ENTERPRISE)."
+            exit 1
+          fi
+          if [ "${REMOTE_SHA}" != "${SHA}" ]; then
+            echo "::error::SHA_MISMATCH — API SHA (${REMOTE_SHA}) != requested (${SHA})"
+            exit 1
+          fi
+          echo "PRE-CHECKOUT SHA VERIFICATION: PASS"
+          echo "  SHA ${SHA} confirmado en ${REPO}"
+          echo "remote_sha=${REMOTE_SHA}" >> $GITHUB_OUTPUT
+          echo "=== END PRE-CHECKOUT ==="
+      - name: Checkout Child Repository (SHA exacto, sin fallback)
         id: checkout
         shell: bash
         env:
@@ -155,15 +192,18 @@ jobs:
         run: |
           REPO="${{ needs.validate-inputs.outputs.repository }}"
           SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          REMOTE_SHA="${{ steps.pre-verify.outputs.remote_sha }}"
           TARGET="child-project"
           RETRIES=5
           BACKOFF_DELAYS=(5 10 20 30 60)
           RC=1
 
+          echo "=== CHECKOUT CHILD REPOSITORY ==="
+          echo "Repository: ${REPO}"
+          echo "Requested SHA: ${SHA}"
+
           for i in $(seq 1 ${RETRIES}); do
             echo "--- Checkout attempt ${i}/${RETRIES} ---"
-            echo "Repository: ${REPO}"
-            echo "SHA: ${SHA}"
 
             rm -rf "${TARGET}" 2>/dev/null || true
 
@@ -180,10 +220,10 @@ jobs:
                 RC=0
                 break
               fi
-              # SHA mismatch — try multiple strategies for GitHub propagation delay
+              # SHA mismatch — try strategies for GitHub propagation delay
               echo "Cloned SHA (${CLONED_SHA}) != requested (${SHA}), trying wider fetch..."
 
-              # Strategy 1: Fetch all refs to update default branch
+              # Strategy 1: Fetch all to get updated refs
               git fetch origin 2>&1
               git checkout "${SHA}" 2>&1
               CHECKOUT_RC=$?
@@ -196,8 +236,8 @@ jobs:
                 fi
               fi
 
-              # Strategy 2: Direct SHA fetch (handles "not our ref" propagation delay)
-              echo "Trying direct SHA fetch (backup)..."
+              # Strategy 2: Direct SHA fetch (handles propagation delay)
+              echo "Trying direct SHA fetch..."
               git fetch --depth 50 origin "${SHA}" 2>&1
               git checkout "${SHA}" 2>&1
               CHECKOUT_RC=$?
@@ -214,12 +254,15 @@ jobs:
             if [ ${i} -lt ${RETRIES} ]; then
               DELAY=${BACKOFF_DELAYS[$((i-1))]}
               echo "Checkout attempt ${i} failed. Waiting ${DELAY}s before retry..."
+              echo "WARNING: NO fallback — siguiente intento usara EXACTAMENTE el mismo SHA"
               sleep ${DELAY}
             fi
           done
 
           if [ ${RC} -ne 0 ]; then
-            echo "::error::CHECKOUT_FAILED after ${RETRIES} retries — ref ${SHA} not accessible on ${REPO}"
+            echo "::error::CHECKOUT_FAILED after ${RETRIES} retries — SHA ${SHA} inaccesible en ${REPO}"
+            echo "  SHA pre-verificado remotamente: ${REMOTE_SHA}"
+            echo "  Posible causa: el commit fue eliminado o el token no tiene acceso"
             exit 1
           fi
 
@@ -232,6 +275,8 @@ jobs:
         run: |
           ACTUAL_SHA=$(git rev-parse HEAD)
           REQUESTED_SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
+          REMOTE_SHA="${{ steps.pre-verify.outputs.remote_sha }}"
+          INPUT_REPO="${{ needs.validate-inputs.outputs.repository }}"
           echo "Actual SHA   : ${ACTUAL_SHA}"
           echo "Requested SHA: ${REQUESTED_SHA}"
           if [ "${ACTUAL_SHA}" != "${REQUESTED_SHA}" ]; then
@@ -240,6 +285,25 @@ jobs:
           fi
           echo "OK: SHA verified — ${ACTUAL_SHA}"
           echo "deployed_sha=${ACTUAL_SHA}" >> $GITHUB_OUTPUT
+
+          # SHA_CHAIN summary
+          echo ""
+          echo "=== SHA_CHAIN ==="
+          echo "INPUT_SHA=${REQUESTED_SHA}"
+          echo "REMOTE_SHA=${REMOTE_SHA}"
+          echo "CHECKOUT_SHA=${ACTUAL_SHA}"
+          CHAIN_RESULT="PASS"
+          if [ "${REQUESTED_SHA}" != "${REMOTE_SHA}" ]; then CHAIN_RESULT="FAIL"; fi
+          if [ "${ACTUAL_SHA}" != "${REQUESTED_SHA}" ]; then CHAIN_RESULT="FAIL"; fi
+          echo "SHA_CHAIN_RESULT=${CHAIN_RESULT}"
+          echo "REPOSITORY=${INPUT_REPO}"
+          echo "================="
+          echo "sha_chain=${CHAIN_RESULT}" >> $GITHUB_OUTPUT
+          echo "remote_sha=${REMOTE_SHA}" >> $GITHUB_OUTPUT
+          if [ "${CHAIN_RESULT}" != "PASS" ]; then
+            echo "::error::SHA_CHAIN_FAIL — INPUT_SHA=${REQUESTED_SHA} REMOTE_SHA=${REMOTE_SHA} CHECKOUT_SHA=${ACTUAL_SHA}"
+            exit 1
+          fi
           echo "checkout_result=PASS" >> $GITHUB_OUTPUT
 
   # ==================================================================
@@ -879,6 +943,36 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"estado\":\"${FINAL_STATUS}\",\"detalle\":\"Control Plane deployment completed\"}" \
             > /dev/null 2>&1 && echo "  OK: Implementacion finalizada: ${FINAL_STATUS}" || echo "  WARN: Fallo al finalizar implementacion"
+
+          # --- METADATA: Actualizar Portal Hermes con trazabilidad ---
+          PORTAL_URL="https://as-hermesportal.azurewebsites.net"
+          DID="${{ needs.validate-inputs.outputs.deployment_id }}"
+          DEP_RES="${{ needs.deploy.outputs.deploy_result }}"
+          RDY_RES="${{ needs.readiness.outputs.readiness_result }}"
+          FUNC_RES="${{ needs.functional-tests.outputs.functional_result }}"
+          UF_RES="${{ needs.user-facing-validation.outputs.validation_result }}"
+          CP_METADATA=$(cat <<ENDJSON
+{
+  "control_plane_run_id": "${{ github.run_id }}",
+  "control_plane_run_url": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}",
+  "control_plane_status": "${FINAL_STATUS}",
+  "commit_sha": "${SHA}",
+  "web_app_url": "${URL}",
+  "deploy_result": "${DEP_RES}",
+  "readiness_result": "${RDY_RES}",
+  "functional_result": "${FUNC_RES}",
+  "user_facing_result": "${UF_RES}",
+  "sha_chain_result": "${{ needs.checkout-child.outputs.sha_chain }}",
+  "checkout_sha": "${{ needs.checkout-child.outputs.deployed_sha }}",
+  "control_plane_finished_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+ENDJSON
+)
+          curl -s -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
+            -H "Content-Type: application/json" \
+            -d "${CP_METADATA}" \
+            > /dev/null 2>&1 && echo "  OK: Portal metadata updated (control-plane)" || echo "  WARN: Portal metadata update failed (non-blocking)"
+
           echo "=== Registry Steps Registered ==="
 
       - name: Upload Evidence Artifact

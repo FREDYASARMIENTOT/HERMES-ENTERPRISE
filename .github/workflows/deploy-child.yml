@@ -890,18 +890,27 @@ jobs:
         shell: bash
         run: |
           URL="${{ needs.provision-webapp.outputs.app_service_url }}"
+          PORTAL_URL="https://as-hermesportal.azurewebsites.net"
+          DID="${{ needs.validate-inputs.outputs.deployment_id }}"
           PROJ="${{ needs.validate-inputs.outputs.project_name }}"
           REPO="${{ needs.validate-inputs.outputs.repository }}"
           SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
           VERIFIED_SHA="${{ needs.checkout-child.outputs.deployed_sha }}"
 
-          # Helper function
+          # Helper function — register paso in Portal (with error capture)
           register_paso() {
             local NUM=$1 NAME=$2 ESTADO=$3 DETALLE=$4 RESULT=$5
-            curl -s -X POST "${URL}/api/implementacion/paso" \
+            local RESPONSE HTTP_CODE
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/paso" \
               -H "Content-Type: application/json" \
-              -d "{\"numero_paso\":${NUM},\"nombre_paso\":\"${NAME}\",\"estado\":\"${ESTADO}\",\"detalle\":\"${DETALLE}\",\"resultado\":\"${RESULT}\"}" \
-              > /dev/null 2>&1 && echo "  OK: Paso ${NUM} ${NAME} -> ${ESTADO}" || echo "  WARN: Paso ${NUM} ${NAME} -> fallo al registrar"
+              -d "{\"numero_paso\":${NUM},\"estado_paso\":\"${ESTADO}\",\"detalle\":\"${DETALLE}\",\"evidencia\":\"${RESULT}\"}" 2>&1)
+            HTTP_CODE=$(echo "${RESPONSE}" | tail -1)
+            BODY=$(echo "${RESPONSE}" | sed '$d')
+            if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
+              echo "  OK: Paso ${NUM} ${NAME} -> ${ESTADO} (HTTP ${HTTP_CODE})"
+            else
+              echo "  ERROR: Paso ${NUM} ${NAME} -> HTTP ${HTTP_CODE}, body: ${BODY}"
+            fi
           }
 
           # Registrar CI Child (paso 4)
@@ -916,8 +925,7 @@ jobs:
 
           # Registrar Azure (paso 7)
           ASP_ID="${{ needs.validate-inputs.outputs.app_service_plan_id }}"
-          ASP_RES="COMPLETADO"
-          register_paso 7 "AZURE" "${ASP_RES}" "WebApp aprovisionada en plan: ${ASP_ID}" "PASS"
+          register_paso 7 "AZURE" "COMPLETADO" "WebApp aprovisionada en plan: ${ASP_ID}" "PASS"
 
           # Registrar Deploy (paso 8)
           DEP_RES="${{ needs.deploy.outputs.deploy_result }}"
@@ -934,15 +942,23 @@ jobs:
           # Registrar Evidencia (paso 11)
           register_paso 11 "EVIDENCIA" "COMPLETADO" "deployment-report.json generado" "PASS"
 
-          # Finalizar implementacion
+          # Finalizar implementacion — call Portal finalizar (with error capture)
           FINAL_STATUS="COMPLETADO"
+          FINAL_RESULT="PASS"
           if [ "${OIDC_RES}" = "FAIL" ] || [ "${DEP_RES}" = "FAIL" ] || [ "${RDY_RES}" = "FAIL" ] || [ "${FUNC_RES}" = "FAIL" ]; then
             FINAL_STATUS="FALLIDO"
+            FINAL_RESULT="FAIL"
           fi
-          curl -s -X POST "${URL}/api/implementacion/finalizar" \
+          FINAL_RESP=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/finalizar" \
             -H "Content-Type: application/json" \
-            -d "{\"estado\":\"${FINAL_STATUS}\",\"detalle\":\"Control Plane deployment completed\"}" \
-            > /dev/null 2>&1 && echo "  OK: Implementacion finalizada: ${FINAL_STATUS}" || echo "  WARN: Fallo al finalizar implementacion"
+            -d "{\"resultado\":\"${FINAL_RESULT}\",\"error\":\"\"}" 2>&1)
+          FINAL_HTTP=$(echo "${FINAL_RESP}" | tail -1)
+          FINAL_BODY=$(echo "${FINAL_RESP}" | sed '$d')
+          if [ "${FINAL_HTTP}" -ge 200 ] && [ "${FINAL_HTTP}" -lt 300 ]; then
+            echo "  OK: Portal proyecto finalizado: ${FINAL_STATUS} (HTTP ${FINAL_HTTP})"
+          else
+            echo "  ERROR: Portal finalizar fallo — HTTP ${FINAL_HTTP}, body: ${FINAL_BODY}"
+          fi
 
           # --- METADATA: Actualizar Portal Hermes con trazabilidad ---
           PORTAL_URL="https://as-hermesportal.azurewebsites.net"
@@ -964,10 +980,16 @@ jobs:
              "${{ needs.checkout-child.outputs.sha_chain }}" \
              "${{ needs.checkout-child.outputs.deployed_sha }}" \
              "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
-          curl -s -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
+          METADATA_RESP=$(curl -s -w "\n%{http_code}" -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
             -H "Content-Type: application/json" \
-            -d "${CP_METADATA}" \
-            > /dev/null 2>&1 && echo "  OK: Portal metadata updated (control-plane)" || echo "  WARN: Portal metadata update failed (non-blocking)"
+            -d "${CP_METADATA}" 2>&1)
+          METADATA_HTTP=$(echo "${METADATA_RESP}" | tail -1)
+          METADATA_BODY=$(echo "${METADATA_RESP}" | sed '$d')
+          if [ "${METADATA_HTTP}" -ge 200 ] && [ "${METADATA_HTTP}" -lt 300 ]; then
+            echo "  OK: Portal metadata updated (control-plane) — HTTP ${METADATA_HTTP}"
+          else
+            echo "  ERROR: Portal metadata update failed — HTTP ${METADATA_HTTP}, body: ${METADATA_BODY}"
+          fi
 
           echo "=== Registry Steps Registered ==="
 

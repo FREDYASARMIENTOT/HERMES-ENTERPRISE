@@ -29,7 +29,9 @@ param(
     [int]$MaxDeployRetries = 3,
     [switch]$TriggerControlPlane = $false,
     [switch]$SkipAzure = $false,
-    [string]$AppServicePlanId = ""
+    [string]$AppServicePlanId = "",
+    [string]$DeploymentId = "",
+    [string]$CorrelationId = ""
 )
 
 Set-StrictMode -Version Latest
@@ -42,7 +44,8 @@ $modulePath = Join-Path $HermesRoot "tools\Modules\HermesProjectFactory.psm1"
 Import-Module $modulePath -Force -ErrorAction Stop
 $ProjRoot = Join-Path $WorkspaceRoot $NombreProyecto
 $WebAppName = "as-" + ($NombreProyecto.ToLower() -replace '[-_\s]','')
-$CorrelationId = [Guid]::NewGuid().ToString("N").Substring(0,16).ToUpper()
+$DeploymentId = if ($DeploymentId) { $DeploymentId } else { [Guid]::NewGuid().ToString("N").Substring(0,16).ToUpper() }
+if (-not $CorrelationId) { $CorrelationId = $DeploymentId }
 $DbPath = Join-Path (Join-Path $ProjRoot "data") "proyecto.db"
 $StartTime = Get-Date
 $TotalCommits = 0; $TotalDeploys = 0; $TotalCorrections = 0
@@ -451,7 +454,7 @@ try {
             '--field', "project_name=$NombreProyecto",
             '--field', "repository=$repoName",
             '--field', "commit_sha=$commitSha",
-            '--field', "deployment_id=$CorrelationId"
+            '--field', "deployment_id=$DeploymentId"
         )
         if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) {
             $triggerArgs += '--field'
@@ -464,13 +467,13 @@ try {
         } else {
             Write-Step "ControlPlane" "WARN" "Trigger failed: $triggerResult"
             $manualField = if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) { " --field app_service_plan_id=$AppServicePlanId" } else { "" }
-            $deployIdField = " --field deployment_id=$CorrelationId"
+            $deployIdField = " --field deployment_id=$DeploymentId"
             Write-Step "ControlPlane" "WARN" "Manual trigger: gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$deployIdField$manualField"
         }
     } else {
         Write-Step "ControlPlane" "SKIP" "Use -TriggerControlPlane to auto-deploy via Control Plane"
         $manualField = if (![string]::IsNullOrWhiteSpace($AppServicePlanId)) { " --field app_service_plan_id=$AppServicePlanId" } else { "" }
-        $deployIdField = " --field deployment_id=$CorrelationId"
+        $deployIdField = " --field deployment_id=$DeploymentId"
         Write-Step "ControlPlane" "INFO" "Manual trigger command:"
         Write-Host "    gh workflow run deploy-child.yml --repo $GitHubUser/HERMES-ENTERPRISE --ref main --field project_name=$NombreProyecto --field repository=$repoName --field commit_sha=$commitSha$deployIdField$manualField" -ForegroundColor Yellow
     }

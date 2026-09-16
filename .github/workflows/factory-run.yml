@@ -185,7 +185,11 @@ jobs:
           $g = "${{ env.FACTORY_GITHUB_USER }}"
           $aspId = "${{ inputs.app_service_plan_id }}"
           if ([string]::IsNullOrEmpty($aspId)) { $aspId = "" }
-          & ".\tools\Crear-HermesProyecto.ps1" -NombreProyecto $p -WorkspaceRoot $w -GitHubUser $g -TriggerControlPlane -SkipAzure -AppServicePlanId $aspId
+          $did = "${{ inputs.deployment_id }}"
+          if ([string]::IsNullOrEmpty($did)) { $did = "" }
+          $cid = "${{ inputs.correlation_id }}"
+          if ([string]::IsNullOrEmpty($cid)) { $cid = "" }
+          & ".\tools\Crear-HermesProyecto.ps1" -NombreProyecto $p -WorkspaceRoot $w -GitHubUser $g -TriggerControlPlane -SkipAzure -AppServicePlanId $aspId -DeploymentId $did -CorrelationId $cid
           if ($LASTEXITCODE -ne 0) { throw "Factory fallo" }
           "factory_result=PASS" | Out-File $env:GITHUB_OUTPUT -Append
 
@@ -282,6 +286,35 @@ jobs:
           echo "REPOSITORY=${REPO}"
           echo "================="
 
+           # --- Registrar PASO 3 (Factory/GitHub) en Portal ---
+           echo ""
+           echo "--- Registrando PASO 3 (Factory) en Portal ---"
+           PORTAL_URL="https://as-hermesportal.azurewebsites.net"
+           DID="${{ needs.validate.outputs.deployment_id }}"
+           PASO3_RESP=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/paso" \
+             -H "Content-Type: application/json" \
+             -d "{\"numero_paso\":3,\"estado_paso\":\"COMPLETADO\",\"detalle\":\"SHA local=${SHA_LOCAL}, SHA remoto=${SHA_REMOTE}\",\"evidencia\":\"https://github.com/${REPO}\"}" 2>&1)
+           PASO3_HTTP=$(echo "${PASO3_RESP}" | tail -1)
+           PASO3_BODY=$(echo "${PASO3_RESP}" | sed '$d')
+           if [ "${PASO3_HTTP}" -ge 200 ] && [ "${PASO3_HTTP}" -lt 300 ]; then
+             echo "[PASS] PASO 3 registrado en Portal — HTTP ${PASO3_HTTP}"
+           else
+             echo "[ERROR] PASO 3 fallo en Portal — HTTP ${PASO3_HTTP}, body: ${PASO3_BODY}"
+           fi
+
+           # --- Registrar PASO 4 (CI Child) como EN_PROCESO ---
+           echo ""
+           echo "--- Registrando PASO 4 (CI Child) como EN_PROCESO en Portal ---"
+           PASO4_RESP=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/paso" \
+             -H "Content-Type: application/json" \
+             -d "{\"numero_paso\":4,\"estado_paso\":\"EN_PROCESO\",\"detalle\":\"Control Plane disparado\",\"evidencia\":\"${REPO}\"}" 2>&1)
+           PASO4_HTTP=$(echo "${PASO4_RESP}" | tail -1)
+           PASO4_BODY=$(echo "${PASO4_RESP}" | sed '$d')
+           if [ "${PASO4_HTTP}" -ge 200 ] && [ "${PASO4_HTTP}" -lt 300 ]; then
+             echo "[PASS] PASO 4 (EN_PROCESO) registrado en Portal — HTTP ${PASO4_HTTP}"
+           else
+             echo "[ERROR] PASO 4 fallo en Portal — HTTP ${PASO4_HTTP}, body: ${PASO4_BODY}"
+           fi
           # --- Registrar outputs ---
           echo "commit_sha=${SHA_LOCAL}" >> "$GITHUB_OUTPUT"
           echo "remote_sha=${SHA_REMOTE}" >> "$GITHUB_OUTPUT"
@@ -393,10 +426,16 @@ jobs:
             "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}" \
             "${FR}" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
-          curl -s -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
+          METADATA_RESP=$(curl -s -w "\n%{http_code}" -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
             -H "Content-Type: application/json" \
-            -d "${METADATA_PAYLOAD}" \
-            > /dev/null 2>&1 && echo "[PASS] Portal metadata updated (factory)" || echo "[WARN] Portal metadata update failed (non-blocking)"
+            -d "${METADATA_PAYLOAD}" 2>&1)
+          METADATA_HTTP=$(echo "${METADATA_RESP}" | tail -1)
+          METADATA_BODY=$(echo "${METADATA_RESP}" | sed '$d')
+          if [ "${METADATA_HTTP}" -ge 200 ] && [ "${METADATA_HTTP}" -lt 300 ]; then
+            echo "[PASS] Portal metadata updated (factory) — HTTP ${METADATA_HTTP}"
+          else
+            echo "[ERROR] Portal metadata update failed — HTTP ${METADATA_HTTP}, body: ${METADATA_BODY}"
+          fi
 
           echo ""
           echo "═══════════════════════════════════════════════════"

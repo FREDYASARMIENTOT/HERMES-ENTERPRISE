@@ -384,19 +384,15 @@ jobs:
           echo ""
           echo "--- METADATA: Actualizando trazabilidad en Portal ---"
           PORTAL_URL="https://as-hermesportal.azurewebsites.net"
-          METADATA_PAYLOAD=$(cat <<ENDJSON
-{
-  "commit_sha": "${SHA}",
-  "repository_url": "https://github.com/${REPO}",
-  "commit_url": "https://github.com/${REPO}/commit/${SHA}",
-  "visibility": "private",
-  "factory_run_id": "${{ github.run_id }}",
-  "factory_run_url": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}",
-  "factory_status": "${FR}",
-  "factory_finished_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-ENDJSON
-)
+          METADATA_PAYLOAD=$(printf '{"commit_sha":"%s","repository_url":"%s","commit_url":"%s","visibility":"%s","factory_run_id":"%s","factory_run_url":"%s","factory_status":"%s","factory_finished_at":"%s"}' \
+            "${SHA}" \
+            "https://github.com/${REPO}" \
+            "https://github.com/${REPO}/commit/${SHA}" \
+            "private" \
+            "${{ github.run_id }}" \
+            "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}" \
+            "${FR}" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
           curl -s -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
             -H "Content-Type: application/json" \
             -d "${METADATA_PAYLOAD}" \

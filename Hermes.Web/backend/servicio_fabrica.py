@@ -98,6 +98,11 @@ class SolicitudProyecto:
         repo_url, web_app_url, pasos (13 pasos canónicos)
         fecha_solicitud, fecha_actualizacion, resultado, error
         app_service_plan_id, app_service_plan_name, app_service_plan_resource_group
+        repository_url, commit_url, visibility (GitHub)
+        factory_run_id, factory_run_url, factory_status, factory_duration
+        control_plane_run_id, control_plane_run_url, control_plane_status, control_plane_duration
+        readiness_result, functional_result, user_facing_result, evidence_result
+        fecha_fin, duracion_total_segundos
     """
 
     def __init__(
@@ -133,6 +138,34 @@ class SolicitudProyecto:
         self.app_service_plan_subscription: str = "01bfad48-c092-4712-bc72-f141eb01a8d4"
         self.web_app_resource_group: str = ""
         self.web_app_resource_id: str = ""
+        # GitHub traceability
+        self.repository_url: str = ""
+        self.commit_url: str = ""
+        self.visibility: str = ""
+        # Factory traceability
+        self.factory_run_id: str = ""
+        self.factory_run_url: str = ""
+        self.factory_status: str = ""
+        self.factory_started_at: str = ""
+        self.factory_finished_at: str = ""
+        self.factory_duration: str = ""
+        # Control Plane traceability
+        self.control_plane_run_id: str = ""
+        self.control_plane_run_url: str = ""
+        self.control_plane_status: str = ""
+        self.control_plane_started_at: str = ""
+        self.control_plane_finished_at: str = ""
+        self.control_plane_duration: str = ""
+        # Validation results
+        self.readiness_result: str = ""
+        self.functional_result: str = ""
+        self.functional_pass_count: int = 0
+        self.functional_fail_count: int = 0
+        self.user_facing_result: str = ""
+        self.evidence_result: str = ""
+        # Timing
+        self.fecha_fin: str = ""
+        self.duracion_total_segundos: int = 0
         self._inicializar_pasos()
 
     def _inicializar_pasos(self) -> None:
@@ -181,6 +214,16 @@ class SolicitudProyecto:
 
     def a_dict(self) -> Dict[str, Any]:
         """Convierte la solicitud a diccionario serializable."""
+        # Compute total duration from solicitud->actualizacion if not set
+        duracion = self.duracion_total_segundos
+        if not duracion and self.fecha_solicitud and self.fecha_actualizacion:
+            try:
+                inicio = datetime.fromisoformat(self.fecha_solicitud)
+                fin = datetime.fromisoformat(self.fecha_actualizacion)
+                duracion = round((fin - inicio).total_seconds(), 2)
+            except (ValueError, TypeError):
+                duracion = 0
+
         return {
             "id": self.id, "nombre_proyecto": self.nombre_proyecto,
             "descripcion": self.descripcion, "repositorio": self.repositorio,
@@ -198,7 +241,35 @@ class SolicitudProyecto:
             "app_service_plan_subscription": self.app_service_plan_subscription,
             "web_app_resource_group": self.web_app_resource_group,
             "web_app_resource_id": self.web_app_resource_id,
-            "server_farm_id": self.app_service_plan_id
+            "server_farm_id": self.app_service_plan_id,
+            # GitHub traceability
+            "repository_url": self.repository_url,
+            "commit_url": self.commit_url,
+            "visibility": self.visibility,
+            # Factory traceability
+            "factory_run_id": self.factory_run_id,
+            "factory_run_url": self.factory_run_url,
+            "factory_status": self.factory_status,
+            "factory_started_at": self.factory_started_at,
+            "factory_finished_at": self.factory_finished_at,
+            "factory_duration": self.factory_duration,
+            # Control Plane traceability
+            "control_plane_run_id": self.control_plane_run_id,
+            "control_plane_run_url": self.control_plane_run_url,
+            "control_plane_status": self.control_plane_status,
+            "control_plane_started_at": self.control_plane_started_at,
+            "control_plane_finished_at": self.control_plane_finished_at,
+            "control_plane_duration": self.control_plane_duration,
+            # Validation results
+            "readiness_result": self.readiness_result,
+            "functional_result": self.functional_result,
+            "functional_pass_count": self.functional_pass_count,
+            "functional_fail_count": self.functional_fail_count,
+            "user_facing_result": self.user_facing_result,
+            "evidence_result": self.evidence_result,
+            # Timing
+            "fecha_fin": self.fecha_fin,
+            "duracion_total_segundos": duracion
         }
 
     @classmethod
@@ -227,6 +298,34 @@ class SolicitudProyecto:
         s.app_service_plan_subscription = datos.get("app_service_plan_subscription", "01bfad48-c092-4712-bc72-f141eb01a8d4")
         s.web_app_resource_group = datos.get("web_app_resource_group", "")
         s.web_app_resource_id = datos.get("web_app_resource_id", "")
+        # GitHub traceability
+        s.repository_url = datos.get("repository_url", "")
+        s.commit_url = datos.get("commit_url", "")
+        s.visibility = datos.get("visibility", "")
+        # Factory traceability
+        s.factory_run_id = datos.get("factory_run_id", "")
+        s.factory_run_url = datos.get("factory_run_url", "")
+        s.factory_status = datos.get("factory_status", "")
+        s.factory_started_at = datos.get("factory_started_at", "")
+        s.factory_finished_at = datos.get("factory_finished_at", "")
+        s.factory_duration = datos.get("factory_duration", "")
+        # Control Plane traceability
+        s.control_plane_run_id = datos.get("control_plane_run_id", "")
+        s.control_plane_run_url = datos.get("control_plane_run_url", "")
+        s.control_plane_status = datos.get("control_plane_status", "")
+        s.control_plane_started_at = datos.get("control_plane_started_at", "")
+        s.control_plane_finished_at = datos.get("control_plane_finished_at", "")
+        s.control_plane_duration = datos.get("control_plane_duration", "")
+        # Validation results
+        s.readiness_result = datos.get("readiness_result", "")
+        s.functional_result = datos.get("functional_result", "")
+        s.functional_pass_count = datos.get("functional_pass_count", 0)
+        s.functional_fail_count = datos.get("functional_fail_count", 0)
+        s.user_facing_result = datos.get("user_facing_result", "")
+        s.evidence_result = datos.get("evidence_result", "")
+        # Timing
+        s.fecha_fin = datos.get("fecha_fin", "")
+        s.duracion_total_segundos = datos.get("duracion_total_segundos", 0)
         pasos_json = datos.get("pasos_json")
         if pasos_json:
             try:
@@ -285,7 +384,33 @@ class ServicioFabrica:
                     error TEXT DEFAULT '',
                     app_service_plan_id TEXT DEFAULT '',
                     app_service_plan_name TEXT DEFAULT '',
-                    app_service_plan_resource_group TEXT DEFAULT ''
+                    app_service_plan_resource_group TEXT DEFAULT '',
+                    app_service_plan_subscription TEXT DEFAULT '01bfad48-c092-4712-bc72-f141eb01a8d4',
+                    web_app_resource_group TEXT DEFAULT '',
+                    web_app_resource_id TEXT DEFAULT '',
+                    repository_url TEXT DEFAULT '',
+                    commit_url TEXT DEFAULT '',
+                    visibility TEXT DEFAULT '',
+                    factory_run_id TEXT DEFAULT '',
+                    factory_run_url TEXT DEFAULT '',
+                    factory_status TEXT DEFAULT '',
+                    factory_started_at TEXT DEFAULT '',
+                    factory_finished_at TEXT DEFAULT '',
+                    factory_duration TEXT DEFAULT '',
+                    control_plane_run_id TEXT DEFAULT '',
+                    control_plane_run_url TEXT DEFAULT '',
+                    control_plane_status TEXT DEFAULT '',
+                    control_plane_started_at TEXT DEFAULT '',
+                    control_plane_finished_at TEXT DEFAULT '',
+                    control_plane_duration TEXT DEFAULT '',
+                    readiness_result TEXT DEFAULT '',
+                    functional_result TEXT DEFAULT '',
+                    functional_pass_count INTEGER DEFAULT 0,
+                    functional_fail_count INTEGER DEFAULT 0,
+                    user_facing_result TEXT DEFAULT '',
+                    evidence_result TEXT DEFAULT '',
+                    fecha_fin TEXT DEFAULT '',
+                    duracion_total_segundos INTEGER DEFAULT 0
                 )
             """)
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes_proyecto(estado)")
@@ -299,6 +424,29 @@ class ServicioFabrica:
                 ("app_service_plan_subscription", "TEXT DEFAULT '01bfad48-c092-4712-bc72-f141eb01a8d4'"),
                 ("web_app_resource_group", "TEXT DEFAULT ''"),
                 ("web_app_resource_id", "TEXT DEFAULT ''"),
+                ("repository_url", "TEXT DEFAULT ''"),
+                ("commit_url", "TEXT DEFAULT ''"),
+                ("visibility", "TEXT DEFAULT ''"),
+                ("factory_run_id", "TEXT DEFAULT ''"),
+                ("factory_run_url", "TEXT DEFAULT ''"),
+                ("factory_status", "TEXT DEFAULT ''"),
+                ("factory_started_at", "TEXT DEFAULT ''"),
+                ("factory_finished_at", "TEXT DEFAULT ''"),
+                ("factory_duration", "TEXT DEFAULT ''"),
+                ("control_plane_run_id", "TEXT DEFAULT ''"),
+                ("control_plane_run_url", "TEXT DEFAULT ''"),
+                ("control_plane_status", "TEXT DEFAULT ''"),
+                ("control_plane_started_at", "TEXT DEFAULT ''"),
+                ("control_plane_finished_at", "TEXT DEFAULT ''"),
+                ("control_plane_duration", "TEXT DEFAULT ''"),
+                ("readiness_result", "TEXT DEFAULT ''"),
+                ("functional_result", "TEXT DEFAULT ''"),
+                ("functional_pass_count", "INTEGER DEFAULT 0"),
+                ("functional_fail_count", "INTEGER DEFAULT 0"),
+                ("user_facing_result", "TEXT DEFAULT ''"),
+                ("evidence_result", "TEXT DEFAULT ''"),
+                ("fecha_fin", "TEXT DEFAULT ''"),
+                ("duracion_total_segundos", "INTEGER DEFAULT 0"),
             ]:
                 try:
                     cursor.execute(f"ALTER TABLE solicitudes_proyecto ADD COLUMN {col_name} {col_type}")
@@ -443,8 +591,17 @@ class ServicioFabrica:
                  commit_sha, pasos_json, fecha_solicitud, fecha_actualizacion,
                  resultado, error, app_service_plan_id, app_service_plan_name,
                  app_service_plan_resource_group, app_service_plan_subscription,
-                 web_app_resource_group, web_app_resource_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 web_app_resource_group, web_app_resource_id,
+                 repository_url, commit_url, visibility,
+                 factory_run_id, factory_run_url, factory_status,
+                 factory_started_at, factory_finished_at, factory_duration,
+                 control_plane_run_id, control_plane_run_url, control_plane_status,
+                 control_plane_started_at, control_plane_finished_at, control_plane_duration,
+                 readiness_result, functional_result, functional_pass_count,
+                 functional_fail_count, user_facing_result, evidence_result,
+                 fecha_fin, duracion_total_segundos)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 datos["id"], datos["nombre_proyecto"], datos["descripcion"],
                 datos["repositorio"], datos["web_app"], datos["web_app_url"],
@@ -456,7 +613,30 @@ class ServicioFabrica:
                 datos["app_service_plan_resource_group"],
                 datos["app_service_plan_subscription"],
                 datos["web_app_resource_group"],
-                datos["web_app_resource_id"]
+                datos["web_app_resource_id"],
+                datos.get("repository_url", ""),
+                datos.get("commit_url", ""),
+                datos.get("visibility", ""),
+                datos.get("factory_run_id", ""),
+                datos.get("factory_run_url", ""),
+                datos.get("factory_status", ""),
+                datos.get("factory_started_at", ""),
+                datos.get("factory_finished_at", ""),
+                datos.get("factory_duration", ""),
+                datos.get("control_plane_run_id", ""),
+                datos.get("control_plane_run_url", ""),
+                datos.get("control_plane_status", ""),
+                datos.get("control_plane_started_at", ""),
+                datos.get("control_plane_finished_at", ""),
+                datos.get("control_plane_duration", ""),
+                datos.get("readiness_result", ""),
+                datos.get("functional_result", ""),
+                datos.get("functional_pass_count", 0),
+                datos.get("functional_fail_count", 0),
+                datos.get("user_facing_result", ""),
+                datos.get("evidence_result", ""),
+                datos.get("fecha_fin", ""),
+                datos.get("duracion_total_segundos", 0)
             ))
             conn.commit()
             conn.close()

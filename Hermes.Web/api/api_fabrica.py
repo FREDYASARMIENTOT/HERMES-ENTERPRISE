@@ -16,6 +16,7 @@ Endpoints:
 """
 
 import logging
+from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
@@ -276,6 +277,44 @@ async def finalizar_proyecto(request: Request, deployment_id: str, final: Finali
     except Exception as e:
         logger.error(f"Error finalizando solicitud: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.put("/fabrica/proyectos/{deployment_id}/metadata", summary="Actualizar metadatos del proyecto (Factory/Control Plane)")
+async def actualizar_metadata(request: Request, deployment_id: str, metadata: Dict[str, Any]):
+    """
+    Actualiza metadatos de trazabilidad del proyecto.
+    Usado por Factory Runner y Control Plane para registrar:
+    - repository_url, commit_url, visibility
+    - factory_run_id, factory_run_url, factory_status
+    - control_plane_run_id, control_plane_run_url, control_plane_status
+    - validation results, timing
+    """
+    try:
+        servicio = request.app.state.servicio_fabrica
+        solicitud = servicio.obtener_solicitud(deployment_id)
+        if not solicitud:
+            raise HTTPException(status_code=404, detail=f"Solicitud no encontrada: {deployment_id}")
+        
+        updated = False
+        for key, value in metadata.items():
+            if hasattr(solicitud, key) and key not in ("id", "nombre_proyecto", "estado", "pasos"):
+                setattr(solicitud, key, value)
+                updated = True
+        
+        if not updated:
+            return {"mensaje": "Sin cambios", "deployment_id": deployment_id}
+        
+        solicitud.fecha_actualizacion = datetime.now(timezone.utc).isoformat()
+        servicio._guardar(solicitud)
+        logger.info(f"Metadatos actualizados para {deployment_id}: {list(metadata.keys())}")
+        return {"mensaje": "Metadatos actualizados", "deployment_id": deployment_id, "actualizado": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error actualizando metadatos {deployment_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
 # ──────────────────────────────────────────────────────────────
 # Endpoint: Listar App Service Plans
 # ──────────────────────────────────────────────────────────────

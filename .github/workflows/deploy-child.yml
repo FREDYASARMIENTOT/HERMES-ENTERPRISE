@@ -720,6 +720,14 @@ jobs:
       error_page_detected: ${{ steps.validate.outputs.error_page_detected }}
       url: ${{ steps.validate.outputs.url }}
     steps:
+      # FIX (FASE 1): Checkout HERMES-ENTERPRISE (Control Plane) to access tools/validate_user_facing.py
+      # The tool belongs to the Control Plane, NOT to the child repo.
+      - name: Checkout HERMES-ENTERPRISE (Control Plane)
+        uses: actions/checkout@v7
+        with:
+          path: control-plane
+          fetch-depth: 1
+
       - name: Validate User-Facing Page
         id: validate
         shell: bash
@@ -737,8 +745,9 @@ jobs:
             -o /tmp/user-facing.html -w '%{http_code}' "${URL}/" 2>/dev/null || echo "000")
           echo "status_code=${HTTP_CODE}" >> $GITHUB_OUTPUT
 
-          # Run Python-based validation (robust against false positives)
-          python tools/validate_user_facing.py --html-file /tmp/user-facing.html "${PROJ}" 2>&1 | tee /tmp/validation-result.json
+          # Run Python-based validation from Control Plane checkout path (OPTION B)
+          # The validator lives in HERMES-ENTERPRISE/tools/, accessed via control-plane/tools/
+          python control-plane/tools/validate_user_facing.py --html-file /tmp/user-facing.html "${PROJ}" 2>&1 | tee /tmp/validation-result.json
           VALID_EXIT=$?
 
           # Parse JSON result for GITHUB_OUTPUT

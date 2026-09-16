@@ -29,6 +29,16 @@
         .detail-text { font-size: 0.85rem; color: rgba(255,255,255,0.7); }
         .auto-refresh-badge { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
         .project-title { font-size: 1.8rem; font-weight: 700; background: linear-gradient(135deg, #0d6efd, #6f42c1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .section-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+        .trace-table td { padding: 0.3rem 0.5rem; }
+        .trace-table tr:hover { background: rgba(255,255,255,0.03); }
+        .vscode-btn { background: #007acc; color: white; border: none; }
+        .vscode-btn:hover { background: #005a9e; color: white; }
+        .copy-btn { cursor: pointer; }
+        .copy-btn:hover { color: var(--hermes-primary) !important; }
+        .result-pass { color: var(--hermes-success); }
+        .result-fail { color: var(--hermes-danger); }
+        .result-pending { color: var(--hermes-warning); }
     </style>
 </head>
 <body>
@@ -67,6 +77,7 @@
         </div>
 
         <!-- Info Cards -->
+        <!-- Métricas rápidas -->
         <div class="row mb-4 g-3">
             <div class="col-md-3">
                 <div class="card text-center h-100"><div class="card-body"><div class="metric-value" id="total-pasos">0</div><div class="metric-label">Pasos Totales</div></div></div>
@@ -78,16 +89,16 @@
                 <div class="card text-center h-100"><div class="card-body"><div class="metric-value text-danger" id="pasos-fail">0</div><div class="metric-label">FAIL</div></div></div>
             </div>
             <div class="col-md-3">
-                <div class="card text-center h-100"><div class="card-body"><div class="metric-value" id="duracion-total">0s</div><div class="metric-label">Duración Total</div></div></div>
+                <div class="card text-center h-100"><div class="card-body"><div class="metric-value" id="duracion-total">0s</div><div class="metric-label">Duración</div></div></div>
             </div>
         </div>
 
-        <!-- Pipeline Visualization -->
+        <!-- Pipeline -->
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-diagram-3 me-2"></i>Línea de Implementación</span>
+                        <span><i class="bi bi-diagram-3 me-2"></i>Pipeline</span>
                         <div>
                             <span class="badge bg-info me-2" id="refresh-badge">Auto-refresh: 5s</span>
                             <button class="btn btn-sm btn-outline-primary" onclick="cargarDatos()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
@@ -105,104 +116,104 @@
             </div>
         </div>
 
-        <!-- Repositorio y Web App -->
+        <!-- Trazabilidad: GitHub + Factory + Control Plane -->
+        <div class="row mt-4 g-3">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-github"></i></span>GitHub</div>
+                    <div class="card-body">
+                        <table class="table table-borderless trace-table mb-0 small">
+                            <tr><td class="text-muted">Repositorio</td><td id="gh-repo-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
+                            <tr><td class="text-muted">Commit</td><td id="gh-commit-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
+                            <tr><td class="text-muted">Visibilidad</td><td id="gh-visibility" class="text-end"></td></tr>
+                        </table>
+                        <button class="btn btn-sm vscode-btn w-100 mt-2" id="vscode-clone-btn" onclick="abrirVSCode()"><i class="bi bi-terminal-plus me-1"></i>Abrir en VS Code</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-gear"></i></span>Factory Runner</div>
+                    <div class="card-body">
+                        <table class="table table-borderless trace-table mb-0 small">
+                            <tr><td class="text-muted">Run ID</td><td id="factory-run-id" class="text-end" style="font-family:monospace;font-size:0.8rem"></td></tr>
+                            <tr><td class="text-muted">Run URL</td><td id="factory-run-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
+                            <tr><td class="text-muted">Estado</td><td id="factory-status" class="text-end"></td></tr>
+                            <tr><td class="text-muted">Inicio</td><td id="factory-started" class="text-end text-muted small"></td></tr>
+                            <tr><td class="text-muted">Duración</td><td id="factory-duration" class="text-end text-muted small"></td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-cloud-arrow-up"></i></span>Control Plane</div>
+                    <div class="card-body">
+                        <table class="table table-borderless trace-table mb-0 small">
+                            <tr><td class="text-muted">Run ID</td><td id="cp-run-id" class="text-end" style="font-family:monospace;font-size:0.8rem"></td></tr>
+                            <tr><td class="text-muted">Run URL</td><td id="cp-run-url" class="text-end text-truncate" style="max-width:200px"></td></tr>
+                            <tr><td class="text-muted">Estado</td><td id="cp-status" class="text-end"></td></tr>
+                            <tr><td class="text-muted">Inicio</td><td id="cp-started" class="text-end text-muted small"></td></tr>
+                            <tr><td class="text-muted">Duración</td><td id="cp-duration" class="text-end text-muted small"></td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Validación + Azure -->
         <div class="row mt-4 g-3">
             <div class="col-md-6">
-                <div class="card"><div class="card-header"><i class="bi bi-github me-2"></i>Repositorio</div>
+                <div class="card h-100">
+                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-check2-square"></i></span>Validación E2E</div>
                     <div class="card-body">
-                        <p class="mb-1" id="repo-info">No disponible</p>
-                        <p class="mb-0 text-muted small" id="commit-info"></p>
+                        <table class="table table-borderless trace-table mb-0 small">
+                            <tr><td class="text-muted">Readiness</td><td id="val-readiness" class="text-end"></td></tr>
+                            <tr><td class="text-muted">Functional</td><td id="val-functional" class="text-end"></td></tr>
+                            <tr><td class="text-muted">Pass / Fail</td><td id="val-functional-counts" class="text-end small"></td></tr>
+                            <tr><td class="text-muted">User-Facing</td><td id="val-user-facing" class="text-end"></td></tr>
+                            <tr><td class="text-muted">Evidence</td><td id="val-evidence" class="text-end"></td></tr>
+                        </table>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card"><div class="card-header"><i class="bi bi-cloud me-2"></i>Web App</div>
+                <div class="card h-100">
+                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-microsoft"></i></span>Azure</div>
                     <div class="card-body">
-                        <p class="mb-1" id="webapp-info">No disponible</p>
-                        <p class="mb-0 text-muted small" id="webapp-url"></p>
-                        <hr class="border-secondary">
-                        <small class="text-muted d-block"><strong>Resource Group:</strong> <span id="webapp-rg">—</span></small>
-                        <small class="text-muted d-block"><strong>App Service Plan:</strong> <span id="webapp-asp">—</span></small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Azure Resources -->
-    <div class="row mt-4 g-3">
-        <div class="col-md-6">
-            <div class="card"><div class="card-header"><i class="bi bi-server me-2"></i>Azure &mdash; App Service Plan</div>
-                <div class="card-body">
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr><td class="text-muted ps-0" style="width:130px;">Nombre:</td><td class="fw-bold" id="azure-plan-name">&mdash;</td></tr>
-                        <tr><td class="text-muted ps-0">Resource Group:</td><td id="azure-plan-rg">&mdash;</td></tr>
-                        <tr><td class="text-muted ps-0">Subscription:</td><td><code id="azure-plan-sub" style="font-size:0.75rem;">&mdash;</code></td></tr>
-                        <tr><td class="text-muted ps-0" colspan="2">
-                            <a href="#" id="azure-plan-link" target="_blank" class="btn btn-sm btn-outline-primary mt-1" style="display:none;">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Ver App Service Plan
-                            </a>
-                        </td></tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card"><div class="card-header"><i class="bi bi-window-stack me-2"></i>Azure &mdash; Web App Hijo</div>
-                <div class="card-body">
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr><td class="text-muted ps-0" style="width:130px;">Nombre:</td><td class="fw-bold" id="azure-webapp-name">&mdash;</td></tr>
-                        <tr><td class="text-muted ps-0">Resource Group:</td><td id="azure-webapp-rg">&mdash;</td></tr>
-                        <tr><td class="text-muted ps-0">App Service Plan:</td><td id="azure-webapp-asp">&mdash;</td></tr>
-                        <tr><td class="text-muted ps-0">serverFarmId:</td><td><code id="azure-serverfarm-id" style="font-size:0.7rem;">&mdash;</code></td></tr>
-                        <tr><td class="text-muted ps-0">URL:</td><td><a href="#" id="azure-webapp-url-link" target="_blank" class="text-primary">&mdash;</a></td></tr>
-                        <tr><td class="text-muted ps-0" colspan="2">
-                            <a href="#" id="azure-webapp-link" target="_blank" class="btn btn-sm btn-outline-primary mt-1" style="display:none;">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Ver Web App
-                            </a>
-                        </td></tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Consistency Validation -->
-    <div class="row mt-4 g-3">
-        <div class="col-12">
-            <div class="card border-success border-opacity-25">
-                <div class="card-header text-success"><i class="bi bi-check2-square me-2"></i>Validaci&oacute;n de Consistencia Azure</div>
-                <div class="card-body">
-                    <div class="row g-2" id="consistency-validation">
-                        <div class="col-md-4">
-                            <div class="p-2 rounded bg-success bg-opacity-10 text-center">
-                                <small class="text-muted d-block">App Service Plan</small>
-                                <span class="fw-bold" id="cons-plan-name">&mdash;</span>
-                                <small class="text-muted d-block">&darr;</small>
-                                <small class="text-muted">RG: <span id="cons-plan-rg">&mdash;</span></small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-2 rounded bg-info bg-opacity-10 text-center">
-                                <small class="text-muted d-block">Web App</small>
-                                <span class="fw-bold" id="cons-webapp-name">&mdash;</span>
-                                <small class="text-muted d-block">&darr;</small>
-                                <small class="text-muted">RG: <span id="cons-webapp-rg">&mdash;</span></small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-2 rounded bg-primary bg-opacity-10 text-center">
-                                <small class="text-muted d-block">serverFarmId</small>
-                                <span id="cons-serverfarm" style="font-size:0.65rem;word-break:break-all;">&mdash;</span>
-                                <br>
-                                <small class="text-success" id="cons-result"><i class="bi bi-check-circle-fill"></i> Coincide con ASP-HERMES-PORTAL</small>
-                            </div>
+                        <table class="table table-borderless trace-table mb-0 small">
+                            <tr><td class="text-muted">Web App</td><td id="az-webapp" class="text-end"></td></tr>
+                            <tr><td class="text-muted">URL</td><td id="az-webapp-url" class="text-end text-truncate" style="max-width:250px"></td></tr>
+                            <tr><td class="text-muted">Resource Group</td><td id="az-rg" class="text-end small"></td></tr>
+                            <tr><td class="text-muted">App Service Plan</td><td id="az-asp" class="text-end small"></td></tr>
+                            <tr><td class="text-muted">Subscripción</td><td id="az-sub" class="text-end text-muted small" style="font-family:monospace"></td></tr>
+                            <tr><td class="text-muted">Server Farm ID</td><td id="az-serverfarm" class="text-end text-muted small" style="font-family:monospace;font-size:0.7rem"></td></tr>
+                        </table>
+                        <div class="mt-2 d-flex gap-2" id="az-links">
+                            <a id="azure-plan-link" href="#" target="_blank" class="btn btn-sm btn-outline-info d-none"><i class="bi bi-box-arrow-up-right me-1"></i>Plan</a>
+                            <a id="azure-webapp-link" href="#" target="_blank" class="btn btn-sm btn-outline-info d-none"><i class="bi bi-box-arrow-up-right me-1"></i>Web App</a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Tiempos -->
+        <div class="row mt-4 g-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-clock"></i></span>Tiempos</div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-3"><div class="text-muted small">Inicio</div><strong id="timing-start" class="small">—</strong></div>
+                            <div class="col-3"><div class="text-muted small">Fin</div><strong id="timing-end" class="small">—</strong></div>
+                            <div class="col-3"><div class="text-muted small">Duración</div><strong id="timing-duration" class="small">—</strong></div>
+                            <div class="col-3"><div class="text-muted small">Actualización</div><strong id="timing-updated" class="small">—</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     <div class="auto-refresh-badge"><span class="badge bg-dark bg-opacity-75" id="auto-refresh-status">Activo</span></div>
 
@@ -309,60 +320,115 @@
             html += '</div>';
             document.getElementById('pipeline-container').innerHTML = html;
 
-            document.getElementById('repo-info').innerHTML = data.repositorio
-                ? `<a href="https://github.com/${data.repositorio}" target="_blank" class="text-primary">${data.repositorio}</a>`
-                : 'No disponible';
-            document.getElementById('commit-info').textContent = data.commit_sha ? `Commit: ${data.commit_sha.substring(0, 12)}...` : '';
-            document.getElementById('webapp-info').textContent = data.web_app || 'No disponible';
-            document.getElementById('webapp-url').innerHTML = data.web_app_url
-                ? `<a href="${data.web_app_url}" target="_blank" class="text-primary">${data.web_app_url}</a>`
-                : '';
-            document.getElementById('webapp-rg').textContent = data.web_app_resource_group || '—';
-            document.getElementById('webapp-asp').textContent = data.app_service_plan_name || '—';
+            // ── GitHub ──
+            var repoUrl = data.repository_url || '';
+            var commitUrl = data.commit_url || '';
+            var commitSha = data.commit_sha || '';
+            document.getElementById('gh-repo-url').innerHTML = repoUrl
+                ? '<a href="' + repoUrl + '" target="_blank" class="text-primary small">' + repoUrl.split('/').slice(-2).join('/') + '</a>'
+                : '—';
+            document.getElementById('gh-commit-url').innerHTML = commitUrl
+                ? '<a href="' + commitUrl + '" target="_blank" class="text-primary small">' + (commitSha ? commitSha.substring(0, 12) : 'ver commit') + '</a>'
+                : (commitSha ? '<span class="text-muted">' + commitSha.substring(0, 12) + '</span>' : '—');
+            document.getElementById('gh-visibility').textContent = data.visibility || '—';
+            window._repoCloneUrl = repoUrl.replace('https://github.com/', 'https://github.com/').replace('/tree/', '/') || ('https://github.com/' + (data.repositorio || '') + '.git');
 
-            // Azure Resource sections
-            document.getElementById('azure-plan-name').textContent = data.app_service_plan_name || '—';
-            document.getElementById('azure-plan-rg').textContent = data.app_service_plan_resource_group || '—';
-            document.getElementById('azure-plan-sub').textContent = data.app_service_plan_subscription || '—';
-            if (data.app_service_plan_id) {
-                var pl = document.getElementById('azure-plan-link');
-                pl.href = 'https://portal.azure.com/#resource' + data.app_service_plan_id;
-                pl.style.display = 'inline-block';
+            // ── Factory Runner ──
+            document.getElementById('factory-run-id').textContent = data.factory_run_id || '—';
+            document.getElementById('factory-run-url').innerHTML = data.factory_run_url
+                ? '<a href="' + data.factory_run_url + '" target="_blank" class="text-primary small">Ver ejecución</a>'
+                : '—';
+            document.getElementById('factory-status').innerHTML = data.factory_status
+                ? (data.factory_status === 'completed' ? '<span class="text-success">Completado</span>'
+                    : data.factory_status === 'failure' ? '<span class="text-danger">Fallido</span>'
+                    : '<span class="text-warning">' + data.factory_status + '</span>')
+                : '—';
+            document.getElementById('factory-started').textContent = data.factory_started_at || '—';
+            document.getElementById('factory-duration').textContent = data.factory_duration || '—';
+
+            // ── Control Plane ──
+            document.getElementById('cp-run-id').textContent = data.control_plane_run_id || '—';
+            document.getElementById('cp-run-url').innerHTML = data.control_plane_run_url
+                ? '<a href="' + data.control_plane_run_url + '" target="_blank" class="text-primary small">Ver ejecución</a>'
+                : '—';
+            document.getElementById('cp-status').innerHTML = data.control_plane_status
+                ? (data.control_plane_status === 'completed' ? '<span class="text-success">Completado</span>'
+                    : data.control_plane_status === 'failure' ? '<span class="text-danger">Fallido</span>'
+                    : '<span class="text-warning">' + data.control_plane_status + '</span>')
+                : '—';
+            document.getElementById('cp-started').textContent = data.control_plane_started_at || '—';
+            document.getElementById('cp-duration').textContent = data.control_plane_duration || '—';
+
+            // ── Validación E2E ──
+            function valBadge(v) {
+                if (!v) return '<span class="text-muted">—</span>';
+                if (v === 'PASS') return '<span class="badge bg-success">PASS</span>';
+                if (v === 'FAIL') return '<span class="badge bg-danger">FAIL</span>';
+                return '<span class="text-warning">' + v + '</span>';
             }
-            document.getElementById('azure-webapp-name').textContent = data.web_app || '—';
-            document.getElementById('azure-webapp-rg').textContent = data.web_app_resource_group || '—';
-            document.getElementById('azure-webapp-asp').textContent = data.app_service_plan_name || '—';
-            document.getElementById('azure-serverfarm-id').textContent = data.server_farm_id || data.app_service_plan_id || '—';
-            if (data.web_app_url) {
-                document.getElementById('azure-webapp-url-link').href = data.web_app_url;
-                document.getElementById('azure-webapp-url-link').textContent = data.web_app_url;
+            document.getElementById('val-readiness').innerHTML = valBadge(data.readiness_result);
+            document.getElementById('val-functional').innerHTML = valBadge(data.functional_result);
+            var fpc = data.functional_pass_count || 0;
+            var ffc = data.functional_fail_count || 0;
+            document.getElementById('val-functional-counts').innerHTML = '<span class="text-success">' + fpc + ' pass</span> / <span class="text-danger">' + ffc + ' fail</span>';
+            document.getElementById('val-user-facing').innerHTML = valBadge(data.user_facing_result);
+            document.getElementById('val-evidence').innerHTML = valBadge(data.evidence_result);
+
+            // ── Azure ──
+            document.getElementById('az-webapp').textContent = data.web_app || '—';
+            document.getElementById('az-webapp-url').innerHTML = data.web_app_url
+                ? '<a href="' + data.web_app_url + '" target="_blank" class="text-primary small">' + data.web_app_url + '</a>'
+                : '—';
+            document.getElementById('az-rg').textContent = data.web_app_resource_group || data.app_service_plan_resource_group || '—';
+            document.getElementById('az-asp').textContent = data.app_service_plan_name || '—';
+            document.getElementById('az-sub').textContent = data.app_service_plan_subscription || '—';
+            document.getElementById('az-serverfarm').textContent = data.server_farm_id || data.app_service_plan_id || '—';
+            if (data.app_service_plan_id) {
+                document.getElementById('azure-plan-link').href = 'https://portal.azure.com/#resource' + data.app_service_plan_id;
+                document.getElementById('azure-plan-link').classList.remove('d-none');
             }
             if (data.web_app_resource_id) {
-                var wl = document.getElementById('azure-webapp-link');
-                wl.href = 'https://portal.azure.com/#resource' + data.web_app_resource_id;
-                wl.style.display = 'inline-block';
+                document.getElementById('azure-webapp-link').href = 'https://portal.azure.com/#resource' + data.web_app_resource_id;
+                document.getElementById('azure-webapp-link').classList.remove('d-none');
             }
 
-            // Consistency Validation
-            document.getElementById('cons-plan-name').textContent = data.app_service_plan_name || '—';
-            document.getElementById('cons-plan-rg').textContent = data.app_service_plan_resource_group || '—';
-            document.getElementById('cons-webapp-name').textContent = data.web_app || '—';
-            document.getElementById('cons-webapp-rg').textContent = data.web_app_resource_group || '—';
-            document.getElementById('cons-serverfarm').textContent = data.server_farm_id || data.app_service_plan_id || '—';
-            var prg = data.app_service_plan_resource_group || '';
-            var wrg = data.web_app_resource_group || '';
-            if (prg && wrg && prg === wrg) {
-                document.getElementById('cons-result').innerHTML = '<i class="bi bi-check-circle-fill"></i> Coincide: Ambos en ' + prg;
-            } else if (prg) {
-                document.getElementById('cons-result').innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning"></i> Diferente RG';
-            }
+            // ── Tiempos ──
+            document.getElementById('timing-start').textContent = data.fecha_solicitud || '—';
+            document.getElementById('timing-end').textContent = data.fecha_fin || '—';
+            document.getElementById('timing-duration').textContent = data.duracion_total_segundos ? getDuracionFormateada(data.duracion_total_segundos) : '—';
+            document.getElementById('timing-updated').textContent = data.fecha_actualizacion || '—';
 
+            // ── Auto-refresh ──
             if (data.estado && ['SOLICITADO','CREANDO','PUBLICANDO','CI_EN_PROGRESO','DESPLEGANDO','VALIDANDO'].includes(data.estado)) {
                 document.getElementById('auto-refresh-status').textContent = 'Actualizando...';
                 if (!refreshInterval) refreshInterval = setInterval(cargarDatos, 5000);
             } else {
                 document.getElementById('auto-refresh-status').textContent = 'Completado';
                 if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
+            }
+        }
+
+        function abrirVSCode() {
+            var repoUrl = window._repoCloneUrl || '';
+            if (!repoUrl || repoUrl === 'https://github.com/.git') {
+                alert('URL de repositorio no disponible. Clone manualmente.');
+                return;
+            }
+            var encoded = encodeURIComponent(repoUrl);
+            var vscodeUrl = 'vscode://vscode.git/clone?url=' + encoded;
+            var opened = window.open(vscodeUrl);
+            if (!opened || opened.closed) {
+                var textarea = document.createElement('textarea');
+                textarea.value = 'git clone ' + repoUrl;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('VS Code no se abrió automáticamente.\n\nComando copiado al portapapeles:\ngit clone ' + repoUrl);
+                } catch (e) {
+                    alert('Para clonar:\n1. Abra VS Code\n2. Ctrl+Shift+P\n3. "Git: Clone"\n4. Pegue: ' + repoUrl);
+                }
+                document.body.removeChild(textarea);
             }
         }
 

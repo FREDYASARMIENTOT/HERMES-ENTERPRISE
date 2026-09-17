@@ -33,6 +33,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Union
 
+from Hermes.Web.backend.event_broker import obtener_broker
+
 logger = logging.getLogger("Hermes.Web.ServicioFabrica")
 
 # ──────────────────────────────────────────────────────────────
@@ -770,6 +772,44 @@ class ServicioFabrica:
             conn.commit()
             conn.close()
             logger.debug(f"Evento registrado: {event_id} [{tipo}] {mensaje}")
+
+            # ── FASE 25: Publicar evento en EventBroker DESPUÉS de persistir ──
+            # Regla: persistencia ANTES de SSE
+            evento_dict = {
+                "event_id": event_id,
+                "deployment_id": deployment_id,
+                "correlation_id": correlation_id,
+                "timestamp": ts,
+                "fase": fase,
+                "paso_numero": paso_numero,
+                "paso_nombre": paso_nombre,
+                "subpaso_numero": subpaso_numero,
+                "subpaso_nombre": subpaso_nombre,
+                "componente": componente,
+                "actor": actor,
+                "estado_anterior": estado_anterior,
+                "estado_nuevo": estado_nuevo,
+                "tipo": tipo,
+                "mensaje": mensaje,
+                "detalle": detalle,
+                "evidencia": evidencia,
+                "http_method": http_method,
+                "http_url": http_url,
+                "http_status": http_status,
+                "error_code": error_code,
+                "error_message": error_message,
+                "run_id": run_id,
+                "run_url": run_url,
+                "duracion_segundos": duracion_segundos,
+            }
+            try:
+                broker = obtener_broker()
+                broker.publish(deployment_id, evento_dict)
+            except Exception as pub_err:
+                # Si publish falla, el evento YA ESTÁ PERSISTIDO
+                logger.warning(
+                    f"Evento {event_id} persistido pero publicación SSE falló: {pub_err}"
+                )
             return event_id
         except Exception as e:
             logger.error(f"Error registrando evento: {e}")
@@ -790,6 +830,34 @@ class ServicioFabrica:
             return rows
         except Exception as e:
             logger.error(f"Error obteniendo eventos: {e}")
+            return []
+
+    def obtener_eventos_desde(self, deployment_id: str, last_event_id: str) -> list:
+        """Obtiene eventos desde un event_id específico (para replay SSE / Last-Event-ID).
+
+        Args:
+            deployment_id: ID del deployment
+            last_event_id: event_id exclusivo desde el cual recuperar
+
+        Returns:
+            Lista de eventos posteriores a last_event_id, ordenados por id ASC
+        """
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT * FROM event_logs
+                   WHERE deployment_id=?
+                     AND event_id > ?
+                   ORDER BY id ASC""",
+                (deployment_id, last_event_id)
+            )
+            rows = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+            return rows
+        except Exception as e:
+            logger.error(f"Error obteniendo eventos desde {last_event_id}: {e}")
             return []
 
     # ──────────────────────────────────────────────────────────

@@ -138,6 +138,7 @@ logger_init.info(f"Raiz del proyecto en sys.path: {_PROJECT_ROOT}")
 
 # Importar módulos locales de Hermes.Web (el finder ya está activo)
 from Hermes.Web.backend.servicio_fabrica import obtener_servicio_fabrica
+from Hermes.Web.backend.event_broker import obtener_broker
 
 # ──────────────────────────────────────────────────────────────
 # Configuracion de logging global para la aplicacion
@@ -604,6 +605,17 @@ async def evento_inicio_aplicacion():
         servicio_fabrica = obtener_servicio_fabrica()
         app.state.servicio_fabrica = servicio_fabrica
         logger.info(f"ServicioFabrica inicializado. DB: {servicio_fabrica.ruta_db}")
+
+        # Inicializar EventBroker para SSE
+        try:
+            import asyncio
+            broker = obtener_broker()
+            broker.set_loop(asyncio.get_running_loop())
+            app.state.event_broker = broker
+            logger.info("EventBroker inicializado para SSE en tiempo real")
+        except Exception as e:
+            logger.warning(f"Error inicializando EventBroker: {e}")
+            app.state.event_broker = None
     except Exception as e:
         logger.error(f"Error inicializando ServicioFabrica: {e}")
         app.state.servicio_fabrica = None

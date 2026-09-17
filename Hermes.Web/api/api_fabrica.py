@@ -15,11 +15,17 @@ Endpoints:
 ====================================================================
 """
 
+import json
+import asyncio
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
+
+from Hermes.Web.backend.event_broker import obtener_broker
+from Hermes.Web.backend.servicio_fabrica import _ahora
 
 logger = logging.getLogger("Hermes.Web.API.Fabrica")
 router = APIRouter()
@@ -540,4 +546,124 @@ async def obtener_trace_md(request: Request, deployment_id: str):
     except Exception as e:
         logger.error(f"Error generando trace MD: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+# ──────────────────────────────────────────────────────────────
+# Endpoint SSE — Eventos en tiempo real
+# ──────────────────────────────────────────────────────────────
+
+@router.get(
+    "/fabrica/proyectos/{deployment_id}/eventos/stream",
+    summary="Stream de eventos en tiempo real (SSE)",
+    response_class=StreamingResponse,
+)
+async def stream_eventos(request: Request, deployment_id: str):
+    """Endpoint SSE para eventos de un deployment en tiempo real.
+
+    Formatos SSE:
+        id: <event_id>
+        event: deployment_event
+        data: <JSON>
+
+    Heartbeat cada 30 segundos.
+    Soporta Last-Event-ID para reconexión.
+    Al finalizar el deployment, envía evento final y cierra.
+    """
+    servicio = request.app.state.servicio_fabrica
+    if not servicio:
+        raise HTTPException(status_code=503, detail="Servicio no disponible")
+
+    # Verificar que el deployment existe
+    solicitud = servicio.obtener_solicitud(deployment_id)
+    if not solicitud:
+        raise HTTPException(status_code=404, detail="Deployment no encontrado")
+
+    # ── Replay: si el cliente envía Last-Event-ID, recuperar eventos faltantes ──
+    last_event_id = request.headers.get("Last-Event-ID", "")
+    eventos_replay = []
+    if last_event_id:
+        try:
+            eventos_replay = servicio.obtener_eventos_desde(
+                deployment_id, last_event_id
+            )
+            logger.info(
+                f"SSE replay: {len(eventos_replay)} eventos desde {last_event_id} "
+                f"para {deployment_id}"
+            )
+        except Exception as e:
+            logger.warning(f"SSE replay error: {e}")
+
+    broker = obtener_broker()
+    queue = broker.subscribe(deployment_id)
+    terminated = False
+
+    async def _generar_eventos():
+        nonlocal terminated
+        try:
+            # ── Enviar eventos de replay primero ──
+            for ev in eventos_replay:
+                yield _formato_sse(ev)
+                await asyncio.sleep(0)
+
+            # ── Enviar último evento conocido si no hay replay ──
+            # (para que el cliente tenga al menos el estado actual)
+            if not last_event_id:
+                evts = servicio.obtener_eventos(deployment_id)
+                for ev in evts:
+                    yield _formato_sse(ev)
+                    await asyncio.sleep(0)
+
+            # ── Bucle principal: esperar eventos nuevos + heartbeat ──
+            heartbeat_interval = 30  # segundos
+            while not terminated:
+                try:
+                    # Esperar evento con timeout para heartbeat
+                    evento = await asyncio.wait_for(
+                        queue.get(), timeout=heartbeat_interval
+                    )
+                    if evento is None:
+                        # Señal de terminación
+                        terminated = True
+                        break
+                    yield _formato_sse(evento)
+
+                    # Si es evento final, cerrar después de enviarlo
+                    if evento.get("tipo") in ("TERMINACION", "FIN"):
+                        yield _formato_sse_final(evento)
+                        terminated = True
+                        break
+
+                except asyncio.TimeoutError:
+                    # Heartbeat
+                    yield f"event: heartbeat\ndata: {json.dumps({'timestamp': _ahora()})}\n\n"
+
+        except asyncio.CancelledError:
+            logger.debug(f"SSE conexión cancelada para {deployment_id}")
+        except Exception as e:
+            logger.error(f"SSE error en stream para {deployment_id}: {e}")
+        finally:
+            broker.unsubscribe(deployment_id, queue)
+
+    return StreamingResponse(
+        _generar_eventos(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+def _formato_sse(evento: dict) -> str:
+    """Formatea un evento como mensaje SSE."""
+    event_id = evento.get("event_id", "")
+    data = json.dumps(evento, ensure_ascii=False, default=str)
+    return f"id: {event_id}\nevent: deployment_event\ndata: {data}\n\n"
+
+
+def _formato_sse_final(evento: dict) -> str:
+    """Formatea el evento final de terminación."""
+    data = json.dumps(evento, ensure_ascii=False, default=str)
+    return f"event: deployment_finished\ndata: {data}\n\n"
 

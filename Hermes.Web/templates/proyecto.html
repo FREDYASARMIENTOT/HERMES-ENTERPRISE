@@ -56,6 +56,36 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 .badge-pass{background:rgba(25,135,84,0.2);color:#75b798}
 .badge-warn{background:rgba(255,193,7,0.2);color:#ffda6a}
 .badge-error{background:rgba(220,53,69,0.2);color:#ea868f}
+/* ── Consola operacional ── */
+.console-container{background:#0d1117;border:1px solid #30363d;border-radius:8px;font-family:'Consolas','Courier New',monospace;font-size:.85rem;line-height:1.5;max-height:600px;overflow-y:auto;padding:.5rem 0}
+.console-container .console-line{padding:2px 12px;border-bottom:1px solid rgba(48,54,61,.3);display:flex;align-items:flex-start;gap:6px;animation:consoleFadeIn .15s ease-out}
+.console-container .console-line:last-child{border-bottom:none}
+.console-container .console-line:hover{background:rgba(255,255,255,0.03)}
+.console-container .console-ts{color:#8b949e;white-space:nowrap;min-width:90px;flex-shrink:0}
+.console-container .console-tag{white-space:nowrap;min-width:100px;flex-shrink:0;font-weight:600;padding:0 4px;border-radius:3px;text-align:center;font-size:.8rem}
+.console-container .console-tag.pass{color:#3fb950;background:rgba(63,185,80,0.15)}
+.console-container .console-tag.fail{color:#f85149;background:rgba(248,81,73,0.15)}
+.console-container .console-tag.progress{color:#d29922;background:rgba(210,153,34,0.15);animation:consolePulse 1.5s infinite}
+.console-container .console-tag.pending{color:#8b949e;background:rgba(139,148,158,0.15)}
+.console-container .console-tag.info{color:#58a6ff;background:rgba(88,166,255,0.15)}
+.console-container .console-msg{color:#c9d1d9;flex:1;word-break:break-word}
+.console-container .console-dur{color:#8b949e;white-space:nowrap;min-width:50px;flex-shrink:0;font-size:.75rem}
+.console-container .console-component{color:#8b949e;white-space:nowrap;min-width:80px;flex-shrink:0;font-size:.8rem}
+@keyframes consoleFadeIn{from{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:translateY(0)}}
+@keyframes consolePulse{0%,100%{opacity:1}50%{opacity:.5}}
+.sse-status{font-size:.8rem;padding:4px 10px;border-radius:12px;display:inline-flex;align-items:center;gap:6px}
+.sse-status.connected{background:rgba(63,185,80,0.15);color:#3fb950}
+.sse-status.reconnecting{background:rgba(210,153,34,0.15);color:#d29922;animation:consolePulse 1s infinite}
+.sse-status.disconnected{background:rgba(139,148,158,0.15);color:#8b949e}
+.sse-status.finished{background:rgba(88,166,255,0.15);color:#58a6ff}
+.console-filter-btn{font-size:.75rem;padding:2px 8px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;transition:all .15s}
+.console-filter-btn:hover{border-color:var(--hermes-primary);color:#fff}
+.console-filter-btn.active{background:var(--hermes-primary);border-color:var(--hermes-primary);color:#fff}
+.console-new-events-badge{position:sticky;bottom:0;left:0;right:0;text-align:center;padding:4px;background:rgba(13,110,253,0.2);color:#6ea8fe;font-size:.75rem;cursor:pointer;display:none}
+.console-new-events-badge:hover{background:rgba(13,110,253,0.3)}
+.counter-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px;text-align:center}
+.counter-card .counter-value{font-size:1.5rem;font-weight:700;line-height:1.2}
+.counter-card .counter-label{font-size:.7rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.5px}
 </style>
 </head>
 <body>
@@ -107,29 +137,46 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 <div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-list-check"></i></span>Timeline &mdash; 13 Pasos Can&oacute;nicos</div>
 <div class="card-body" id="timeline-container"><div class="text-center text-muted py-3">Cargando timeline...</div></div></div>
 <div class="card mb-4"><div class="card-header d-flex flex-wrap align-items-center justify-content-between">
-<span><span class="section-icon bg-dark me-2"><i class="bi bi-journal-text"></i></span>LOG DEL PROCESO</span>
-<span class="badge bg-secondary" id="event-count-badge">0 eventos</span></div>
+<span><span class="section-icon bg-dark me-2"><i class="bi bi-terminal"></i></span>BIT&aacute;CORA OPERACIONAL &mdash; TIEMPO REAL</span>
+<div class="d-flex align-items-center gap-2">
+<span class="sse-status disconnected" id="sse-status"><span class="sse-dot">&#9679;</span> <span id="sse-status-text">DESCONECTADO</span></span>
+</div></div>
 <div class="card-body">
+<!-- Counters -->
 <div class="row g-2 mb-3">
-<div class="col-md-3"><label class="text-muted small">Tipo</label>
-<div class="d-flex flex-wrap gap-1" id="filtro-tipo">
-<button class="btn btn-sm btn-outline-secondary filter-btn active" data-filter="todos" onclick="setFilter('tipo','todos')">Todos</button>
-<button class="btn btn-sm btn-outline-info filter-btn" data-filter="INFO" onclick="setFilter('tipo','INFO')">INFO</button>
-<button class="btn btn-sm btn-outline-success filter-btn" data-filter="PASS" onclick="setFilter('tipo','PASS')">PASS</button>
-<button class="btn btn-sm btn-outline-warning filter-btn" data-filter="WARN" onclick="setFilter('tipo','WARN')">WARN</button>
-<button class="btn btn-sm btn-outline-danger filter-btn" data-filter="ERROR" onclick="setFilter('tipo','ERROR')">ERROR</button>
-<button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="FAIL" onclick="setFilter('tipo','FAIL')">FAIL</button>
-</div></div>
-<div class="col-md-3"><label class="text-muted small">Paso</label>
-<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-paso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
-<div class="col-md-3"><label class="text-muted small">Componente</label>
-<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-componente" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
-<div class="col-md-3"><label class="text-muted small">Subpaso</label>
-<select class="form-select form-select-sm bg-dark text-light border-secondary" id="filtro-subpaso" onchange="aplicarFiltros()"><option value="todos">Todos</option></select></div>
+<div class="col-2"><div class="counter-card"><div class="counter-value text-info" id="console-events-count">0</div><div class="counter-label">Eventos</div></div></div>
+<div class="col-2"><div class="counter-card"><div class="counter-value text-light" id="console-steps-count">0</div><div class="counter-label">Pasos</div></div></div>
+<div class="col-2"><div class="counter-card"><div class="counter-value text-success" id="console-pass-count">0</div><div class="counter-label">Completados</div></div></div>
+<div class="col-2"><div class="counter-card"><div class="counter-value text-warning" id="console-progress-count">0</div><div class="counter-label">En progreso</div></div></div>
+<div class="col-2"><div class="counter-card"><div class="counter-value text-danger" id="console-fail-count">0</div><div class="counter-label">Fallidos</div></div></div>
+<div class="col-2"><div class="counter-card"><div class="counter-value text-info" id="console-duration">--:--</div><div class="counter-label">Duraci&oacute;n</div></div></div>
 </div>
-<div id="event-log-container"><div class="text-center text-muted py-3">Cargando eventos...</div></div>
+<!-- Filters -->
+<div class="d-flex flex-wrap gap-1 mb-2 align-items-center">
+<button class="console-filter-btn active" data-filter="todos" onclick="consoleSetFilter('todos')">Todos</button>
+<button class="console-filter-btn" data-filter="PASS" onclick="consoleSetFilter('PASS')">PASS</button>
+<button class="console-filter-btn" data-filter="ERROR" onclick="consoleSetFilter('ERROR')">FAIL/ERROR</button>
+<button class="console-filter-btn" data-filter="PROGRESS" onclick="consoleSetFilter('PROGRESS')">EN PROGRESO</button>
+<button class="console-filter-btn" data-filter="INFO" onclick="consoleSetFilter('INFO')">INFO</button>
+<span class="text-muted mx-1" style="font-size:.75rem;">|</span>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="console-filter-paso" onchange="consoleSetFilter('paso')" style="width:auto;font-size:.75rem;">
+<option value="todos">Todos los pasos</option>
+</select>
+<select class="form-select form-select-sm bg-dark text-light border-secondary" id="console-filter-componente" onchange="consoleSetFilter('componente')" style="width:auto;font-size:.75rem;">
+<option value="todos">Todos los componentes</option>
+</select>
+</div>
+<!-- Console -->
+<div class="console-container" id="console-container">
+<div class="text-center text-muted py-3" id="console-loading">Conectando al stream de eventos...</div>
+</div>
+<div class="console-new-events-badge" id="console-new-events-badge" onclick="consoleScrollToBottom()">Nuevos eventos &darr;</div>
+<!-- Download Buttons -->
+<div class="mt-2 d-flex gap-2">
+<button class="btn btn-sm btn-outline-info" onclick="descargarJSON()"><i class="bi bi-download me-1"></i>Descargar JSON</button>
+<button class="btn btn-sm btn-outline-info" onclick="descargarMarkdown()"><i class="bi bi-download me-1"></i>Descargar Markdown</button>
+</div>
 </div></div>
-<div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-link-45deg"></i></span>Links Operacionales</div>
 <div class="card-body"><div class="row g-2" id="links-container">
 <div class="col-md-4 col-6"><a id="link-repo" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-github me-1"></i>GitHub Repository</a></div>
 <div class="col-md-4 col-6"><a id="link-commit" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-git-commit me-1"></i>Commit</a></div>
@@ -147,17 +194,26 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 <script>
 var deploymentId=window.location.pathname.split('/').pop();
 var refreshInterval=null,allEvents=[],projectData=null;
+var consoleFilter='todos';
+var sseSource=null;
+var lastEventId='';
+var isUserScrolledUp=false;
+var newEventCount=0;
+var consoleEventMap={};
+var currentStepFilter='todos';
+var currentComponentFilter='todos';
 var currentFilters={tipo:'todos',paso:'todos',componente:'todos',subpaso:'todos'};
 async function cargarDatos(){try{
 var r=await fetch('/api/fabrica/proyectos/'+deploymentId);
 if(!r.ok)throw new Error('HTTP '+r.status);
 projectData=await r.json();
-renderDatos(projectData);await cargarEventos();
+renderDatos(projectData);
+renderLinks(projectData);
 document.getElementById('loading-state').classList.add('d-none');
 document.getElementById('error-state').classList.add('d-none');
 document.getElementById('project-content').classList.remove('d-none');
 var est=projectData.estado||'';
-if(['COMPLETADO','FALLIDO'].indexOf(est)>=0)detenerPolling();else iniciarPolling();
+if(['COMPLETADO','FALLIDO'].indexOf(est)<0)conectarSSE();else setSSEStatus('finished','FINALIZADO');
 }catch(e){console.error(e);
 document.getElementById('loading-state').classList.add('d-none');
 document.getElementById('error-state').classList.remove('d-none');
@@ -215,26 +271,195 @@ var sc=document.createElement('div');sc.className='substeps-container d-none ms-
 if(hs){for(var si=0;si<subs.length;si++){var sb=subs[si];var se=sb.estado||'PENDIENTE';var sbc='bg-secondary';if(se==='COMPLETADO'||se==='PASS')sbc='bg-success';else if(se==='FALLIDO')sbc='bg-danger';else if(se==='EN_PROCESO')sbc='bg-warning text-dark';var sd=document.createElement('div');sd.className='substep-row py-1 px-2 rounded small mb-1 d-flex justify-content-between align-items-center';var sdu=sb.duracion_segundos?formatDuration(sb.duracion_segundos):'';var sn=sb.numero||sb.subpaso_numero||(si+1);sd.innerHTML='<div><span class="substep-num text-muted">'+(i+1)+'.'+sn+'</span><span class="substep-name ms-1">'+(sb.nombre||'Subpaso')+'</span></div><div class="text-end"><span class="substep-state badge '+sbc+' me-1" style="font-size:0.65rem">'+se+'</span>'+(sdu?'<span class="substep-dur duration-text">'+sdu+'</span>':'')+'</div>';sc.appendChild(sd)}}
 div.appendChild(sc);con.appendChild(div)}}
 function toggleSubsteps(el){var c=el.parentElement.querySelector('.substeps-container');if(!c)return;var a=el.querySelector('.substep-arrow');var w=c.classList.contains('d-none');c.classList.toggle('d-none');if(a)a.className='bi ms-1 substep-arrow'+(w?' bi-chevron-up':' bi-chevron-down')}
-async function cargarEventos(){try{var r=await fetch('/api/fabrica/proyectos/'+deploymentId+'/eventos');if(!r.ok)return;allEvents=await r.json();document.getElementById('event-count-badge').textContent=allEvents.length+' eventos';document.getElementById('events-count').textContent=allEvents.length;aplicarFiltros()}catch(e){console.error(e)}}
-function setFilter(t,v){currentFilters[t]=v;if(t==='tipo'){var bs=document.querySelectorAll('#filtro-tipo .filter-btn');for(var i=0;i<bs.length;i++)bs[i].classList.toggle('active',bs[i].dataset.filter===v)}aplicarFiltros()}
-function actualizarFiltros(){if(!allEvents||allEvents.length===0)return;var ps={},cs={},ss={};for(var i=0;i<allEvents.length;i++){var e=allEvents[i];if(e.paso_numero)ps[e.paso_numero]=true;if(e.componente)cs[e.componente]=true;if(e.subpaso_nombre)ss[e.subpaso_nombre]=true}
-llenarSelect('filtro-paso',Object.keys(ps));llenarSelect('filtro-componente',Object.keys(cs));llenarSelect('filtro-subpaso',Object.keys(ss))}
-function llenarSelect(id,vals){var sel=document.getElementById(id);if(!sel)return;var cur=sel.value;sel.innerHTML='<option value="todos">Todos</option>';vals.sort();for(var i=0;i<vals.length;i++)sel.innerHTML+='<option value="'+vals[i]+'">'+vals[i]+'</option>';sel.value=cur}
-function aplicarFiltros(){var t=currentFilters.tipo||'todos',p=document.getElementById('filtro-paso').value||'todos',cEl=document.getElementById('filtro-componente').value||'todos',sEl=document.getElementById('filtro-subpaso').value||'todos';
-var f=allEvents;if(t!=='todos')f=f.filter(function(e){return(e.tipo||'').toUpperCase()===t});if(p!=='todos')f=f.filter(function(e){return String(e.paso_numero)===p});if(cEl!=='todos')f=f.filter(function(e){return(e.componente||'')===cEl});if(sEl!=='todos')f=f.filter(function(e){return(e.subpaso_nombre||'')===sEl});renderEventLog(f)}
-function renderEventLog(events){var con=document.getElementById('event-log-container');con.innerHTML='';if(!events||events.length===0){con.innerHTML='<div class="text-center text-muted py-3">No hay eventos que coincidan con los filtros.</div>';return}
-for(var i=0;i<events.length;i++){var ev=events[i];var t=(ev.tipo||'INFO').toUpperCase();var ec='event-info',bc='badge-info';if(t==='PASS'){ec='event-pass';bc='badge-pass'}else if(t==='WARN'){ec='event-warn';bc='badge-warn'}else if(t==='ERROR'||t==='FAIL'){ec='event-error';bc='badge-error'}
-var div=document.createElement('div');div.className=ec+' rounded p-2 mb-1 clickable fade-in';var ts=formatTSshort(ev.timestamp)||'---';var pas=ev.paso_numero?'PASO '+ev.paso_numero:'';var pn=ev.paso_nombre||'';
-div.innerHTML='<div class="d-flex justify-content-between align-items-center" onclick="toggleEventDetail(this)"><div class="small"><span class="text-muted">['+ts+']</span> <span class="badge '+bc+' me-1" style="font-size:0.65rem">'+t+'</span>'+(pas?'<span class="badge bg-dark me-1" style="font-size:0.65rem">'+pas+'</span>':'')+(pn?'<span class="badge bg-dark me-1" style="font-size:0.65rem">'+pn+'</span>':'')+'<span class="text-light">'+(ev.mensaje||'')+'</span></div><i class="bi bi-chevron-down text-muted" style="font-size:0.7rem"></i></div>';
-var det=document.createElement('div');det.className='event-detail-panel p-3 mt-1 mb-2 d-none small';
-var hi=(ev.http_method||'')+' '+(ev.http_url||'');if(ev.http_status)hi+=' ['+ev.http_status+']';
-var ru=ev.run_url?'<a href="'+ev.run_url+'" target="_blank" class="text-info">'+ev.run_url+'</a>':'---';
-det.innerHTML='<div class="row"><div class="col-md-6 mb-1"><span class="text-muted">Timestamp:</span> <span class="text-light">'+(ev.timestamp||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Paso:</span> <span class="text-light">'+(ev.paso_numero?ev.paso_numero+' - '+(ev.paso_nombre||''):'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Subpaso:</span> <span class="text-light">'+(ev.subpaso_nombre||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Componente:</span> <span class="text-light">'+(ev.componente||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Actor:</span> <span class="text-light">'+(ev.actor||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Estado anterior:</span> <span class="text-light">'+(ev.estado_anterior||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Estado nuevo:</span> <span class="text-light">'+(ev.estado_nuevo||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Mensaje:</span> <span class="text-light">'+(ev.mensaje||'---')+'</span></div><div class="col-12 mb-1"><span class="text-muted">Detalle:</span> <span class="text-light">'+(ev.detalle||'---')+'</span></div><div class="col-12 mb-1"><span class="text-muted">Evidencia:</span> <span class="text-light">'+(ev.evidencia||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">HTTP:</span> <span class="text-light">'+hi+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Run ID:</span> <span class="text-light">'+(ev.run_id||'---')+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Run URL:</span> <span class="text-light">'+ru+'</span></div><div class="col-md-6 mb-1"><span class="text-muted">Error:</span> <span class="text-danger">'+(ev.error_message||'---')+'</span></div><div class="col-12 mt-1"><span class="text-muted">Fase:</span> <span class="text-light">'+(ev.fase||'---')+'</span></div></div>';
-div.appendChild(det);con.appendChild(div)}}
-function toggleEventDetail(el){var d=el.parentElement.querySelector('.event-detail-panel');if(!d)return;var a=el.querySelector('.bi-chevron-down,.bi-chevron-up');d.classList.toggle('d-none');if(a)a.className=d.classList.contains('d-none')?'bi bi-chevron-down text-muted':'bi bi-chevron-up text-muted'}
-function iniciarPolling(){if(refreshInterval)return;var c=0;refreshInterval=setInterval(function(){c++;document.getElementById('polling-text').textContent=(c*5)+'s';cargarDatos()},5000)}
-function detenerPolling(){if(refreshInterval){clearInterval(refreshInterval);refreshInterval=null}document.getElementById('polling-text').textContent='Completado';document.getElementById('auto-refresh-status').innerHTML='<i class="bi bi-check-circle me-1 text-success"></i>Completado'}
-function renderLinks(data){var cfgs=[{id:'link-repo',url:data.repository_url},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:data.web_app_url},{id:'link-health',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=data.repository_url||''}
+function consoleRenderLine(ev){
+var con=document.getElementById('console-container');
+var ts=ev.timestamp||'';
+var tsShort='';
+if(ts){try{var d=new Date(ts);var h=pad2(d.getHours()),m=pad2(d.getMinutes()),s=pad2(d.getSeconds()),ms=String(d.getMilliseconds()).padStart(3,'0');tsShort=h+':'+m+':'+s+'.'+ms;}catch(e){tsShort=ts.slice(11,19);}}
+var tipo=(ev.tipo||'INFO').toUpperCase();
+var tagCls='info';if(tipo==='PASS')tagCls='pass';else if(tipo==='FAIL'||tipo==='ERROR')tagCls='fail';else if(tipo==='EN_PROCESO'||ev.estado_nuevo==='EN_PROCESO')tagCls='progress';
+var tagText=tipo;
+if(tipo==='PASS')tagText='PASS';
+else if(tipo==='FAIL'||tipo==='ERROR')tagText='FAIL';
+else if(tipo==='EN_PROCESO'||ev.estado_nuevo==='EN_PROCESO')tagText='EN PROGRESO';
+else if(tipo==='INFO')tagText='INFO';
+var pasoNombre=(ev.paso_nombre||ev.fase||'');
+var componente=(ev.componente||'');
+var mensaje=ev.mensaje||ev.detalle||'';
+var duracion=ev.duracion_segundos;
+var durText='';
+if(duracion&&duracion>0){if(duracion<60)durText=Math.round(duracion)+'s';else{durText=Math.floor(duracion/60)+'m '+(duracion%60).toFixed(0)+'s';}}
+var div=document.createElement('div');
+div.className='console-line';
+div.setAttribute('data-tipo',tipo);
+div.setAttribute('data-paso',ev.paso_numero||'');
+div.setAttribute('data-componente',componente);
+div.style.display=consoleFiltrado(ev)?'':'none';
+div.innerHTML='<span class="console-ts">'+tsShort+'</span><span class="console-component">'+(pasoNombre?'['+pasoNombre+']':'')+'</span><span class="console-tag '+tagCls+'">'+tagText+'</span><span class="console-msg">'+(mensaje||'')+'</span>'+(durText?'<span class="console-dur">'+durText+'</span>':'');
+div.onclick=function(){consoleShowDetail(ev,this);};
+con.appendChild(div);
+consoleScrollCheck();}
+function consoleFiltrado(ev){
+if(consoleFilter==='todos'&&currentStepFilter==='todos'&&currentComponentFilter==='todos')return true;
+var tipo=(ev.tipo||'INFO').toUpperCase();
+if(consoleFilter==='PASS'&&tipo!=='PASS')return false;
+if(consoleFilter==='ERROR'&&tipo!=='FAIL'&&tipo!=='ERROR')return false;
+if(consoleFilter==='PROGRESS'&&tipo!=='EN_PROCESO'&&ev.estado_nuevo!=='EN_PROCESO')return false;
+if(consoleFilter==='INFO'&&tipo!=='INFO')return false;
+if(currentStepFilter!=='todos'&&String(ev.paso_numero)!==currentStepFilter)return false;
+if(currentComponentFilter!=='todos'&&(ev.componente||'')!==currentComponentFilter)return false;
+return true;}
+function consoleApplyFilter(){
+var lines=document.querySelectorAll('.console-container .console-line');
+for(var i=0;i<lines.length;i++){
+var tipo=lines[i].getAttribute('data-tipo')||'';
+var paso=lines[i].getAttribute('data-paso')||'';
+var comp=lines[i].getAttribute('data-componente')||'';
+var show=(consoleFilter==='todos'||tipo===consoleFilter)&&(currentStepFilter==='todos'||paso===currentStepFilter)&&(currentComponentFilter==='todos'||comp===currentComponentFilter);
+lines[i].style.display=show?'': 'none';}}
+function consoleSetFilter(filter){
+if(filter==='todos'||filter==='PASS'||filter==='ERROR'||filter==='PROGRESS'||filter==='INFO'){
+consoleFilter=filter;
+var btns=document.querySelectorAll('.console-filter-btn');
+for(var i=0;i<btns.length;i++){btns[i].classList.toggle('active',btns[i].getAttribute('data-filter')===filter);}
+consoleApplyFilter();}else if(filter==='paso'){
+currentStepFilter=document.getElementById('console-filter-paso').value;
+consoleApplyFilter();}else if(filter==='componente'){
+currentComponentFilter=document.getElementById('console-filter-componente').value;
+consoleApplyFilter();}}
+function consoleScrollCheck(){
+var con=document.getElementById('console-container');
+if(!isUserScrolledUp){con.scrollTop=con.scrollHeight;newEventCount=0;
+document.getElementById('console-new-events-badge').style.display='none';}else{
+newEventCount++;
+document.getElementById('console-new-events-badge').innerHTML=newEventCount+' nuevos eventos \\u2193';
+document.getElementById('console-new-events-badge').style.display='block';}}
+// SSE
+function conectarSSE(){
+if(sseSource){sseSource.close();}
+setSSEStatus('reconnecting','RECONECTANDO...');
+var url='/api/fabrica/proyectos/'+deploymentId+'/eventos/stream';
+if(lastEventId){url+='?last_event_id='+encodeURIComponent(lastEventId);}
+sseSource=new EventSource(url);
+sseSource.onopen=function(){setSSEStatus('connected','CONECTADO');
+document.getElementById('console-loading').style.display='none';};
+sseSource.onmessage=function(e){
+try{var ev=JSON.parse(e.data);
+var eventId=e.lastEventId||ev.event_id||'';
+if(eventId)lastEventId=eventId;
+consoleAddEvent(ev);}catch(err){console.error('SSE error:',err);}};
+sseSource.addEventListener('deployment_event',function(e){
+try{var ev=JSON.parse(e.data);
+var eventId=e.lastEventId||ev.event_id||'';
+if(eventId)lastEventId=eventId;
+consoleAddEvent(ev);}catch(err){console.error('SSE event error:',err);}});
+sseSource.addEventListener('deployment_finished',function(e){
+try{var ev=JSON.parse(e.data);
+setSSEStatus('finished','FINALIZADO');
+consoleAddFinalMessage(ev);}catch(err){console.error('SSE finish error:',err);}});
+sseSource.addEventListener('heartbeat',function(e){});
+sseSource.onerror=function(){
+if(sseSource.readyState===EventSource.CLOSED){setSSEStatus('disconnected','DESCONECTADO');
+}else{setSSEStatus('reconnecting','RECONECTANDO...');
+setTimeout(function(){if(sseSource.readyState!==EventSource.OPEN)conectarSSE();},3000);}};}
+function setSSEStatus(status,text){
+document.getElementById('sse-status').className='sse-status '+status;
+document.getElementById('sse-status-text').textContent=text;}
+function consoleAddEvent(ev){
+if(!ev||!ev.event_id)return;
+if(consoleEventMap[ev.event_id])return;
+consoleEventMap[ev.event_id]=true;
+allEvents.push(ev);
+consoleRenderLine(ev);
+consoleUpdateCounters();
+consoleUpdateFilters();}
+function consoleAddFinalMessage(ev){
+var con=document.getElementById('console-container');
+var div=document.createElement('div');
+var esExito=ev.estado_nuevo==='COMPLETADO'||ev.resultado==='PASS';
+div.className='console-line';
+div.innerHTML='<span class="console-ts"></span><span class="console-tag '+(esExito?'pass':'fail')+'">'+(esExito?'EXITO':'FALLO')+'</span><span class="console-msg"><strong>'+(esExito?'EJECUCION FINALIZADA \\u2014 PASS':'EJECUCION FINALIZADA \\u2014 FAIL')+'</strong></span>';
+con.appendChild(div);
+consoleScrollCheck();}
+function consoleScrollToBottom(){
+isUserScrolledUp=false;
+document.getElementById('console-new-events-badge').style.display='none';
+var con=document.getElementById('console-container');
+con.scrollTop=con.scrollHeight;}
+function consoleUpdateCounters(){
+var total=allEvents.length;
+document.getElementById('console-events-count').textContent=total;
+var pasosMap={};var pass=0,fail=0,progress=0;
+for(var i=0;i<allEvents.length;i++){
+var e=allEvents[i];
+if(e.paso_numero)pasosMap[e.paso_numero]=true;
+var t=(e.tipo||'').toUpperCase();
+if(t==='PASS')pass++;else if(t==='FAIL'||t==='ERROR')fail++;else if(t==='EN_PROCESO'||e.estado_nuevo==='EN_PROCESO')progress++;}
+document.getElementById('console-steps-count').textContent=Object.keys(pasosMap).length;
+document.getElementById('console-pass-count').textContent=pass;
+document.getElementById('console-progress-count').textContent=progress;
+document.getElementById('console-fail-count').textContent=fail;
+consoleUpdateDuration();}
+function consoleUpdateDuration(){
+if(projectData&&projectData.fecha_solicitud){
+try{var inicio=new Date(projectData.fecha_solicitud);
+var ahora=new Date();
+var diff=Math.floor((ahora-inicio)/1000);
+if(diff<0)diff=0;
+var m=Math.floor(diff/60),s=diff%60;
+document.getElementById('console-duration').textContent=pad2(m)+':'+pad2(s);}catch(e){}}}
+function consoleUpdateFilters(){
+var pasos={},componentes={};
+for(var i=0;i<allEvents.length;i++){
+var e=allEvents[i];
+if(e.paso_numero)pasos[e.paso_numero]=true;
+if(e.componente)componentes[e.componente]=true;}
+var selPaso=document.getElementById('console-filter-paso');
+var curPaso=selPaso.value;
+selPaso.innerHTML='<option value="todos">Todos los pasos</option>';
+Object.keys(pasos).sort(function(a,b){return parseInt(a)-parseInt(b);}).forEach(function(p){
+selPaso.innerHTML+='<option value="'+p+'">Paso '+p+'</option>';});
+selPaso.value=curPaso;
+var selComp=document.getElementById('console-filter-componente');
+var curComp=selComp.value;
+selComp.innerHTML='<option value="todos">Todos los componentes</option>';
+Object.keys(componentes).sort().forEach(function(c){
+selComp.innerHTML+='<option value="'+c+'">'+c+'</option>';});
+selComp.value=curComp;}
+function consoleShowDetail(ev,el){
+var existing=el.querySelector('.console-detail');
+if(existing){existing.classList.toggle('d-none');return;}
+var div=document.createElement('div');
+div.className='console-detail small p-2 mt-1 mb-1 rounded';
+div.style.cssText='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);';
+var html='<div class="row g-1">';
+html+='<div class="col-md-6"><span class="text-muted">Event ID:</span> <span class="text-light">'+(ev.event_id||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Deployment:</span> <span class="text-light">'+(ev.deployment_id||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Correlation:</span> <span class="text-light">'+(ev.correlation_id||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Timestamp:</span> <span class="text-light">'+(ev.timestamp||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Fase:</span> <span class="text-light">'+(ev.fase||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Paso:</span> <span class="text-light">'+(ev.paso_numero||'---')+'. '+(ev.paso_nombre||'')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Subpaso:</span> <span class="text-light">'+(ev.subpaso_nombre||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Componente:</span> <span class="text-light">'+(ev.componente||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Actor:</span> <span class="text-light">'+(ev.actor||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Estado anterior:</span> <span class="text-light">'+(ev.estado_anterior||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Estado nuevo:</span> <span class="text-light">'+(ev.estado_nuevo||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">Tipo:</span> <span class="text-light">'+(ev.tipo||'---')+'</span></div>';
+html+='<div class="col-12"><span class="text-muted">Mensaje:</span> <span class="text-light">'+(ev.mensaje||'---')+'</span></div>';
+html+='<div class="col-12"><span class="text-muted">Detalle:</span> <span class="text-light">'+(ev.detalle||'---')+'</span></div>';
+html+='<div class="col-md-6"><span class="text-muted">HTTP:</span> <span class="text-light">'+(ev.http_method||'')+' '+(ev.http_url||'')+(ev.http_status?' ['+ev.http_status+']':'')+'</span></div>';
+if(ev.run_id)html+='<div class="col-md-6"><span class="text-muted">Run ID:</span> <span class="text-light">'+(ev.run_id||'---')+'</span></div>';
+if(ev.run_url)html+='<div class="col-12"><span class="text-muted">Run URL:</span> <span class="text-light"><a href="'+ev.run_url+'" target="_blank" class="text-info">'+ev.run_url+'</a></span></div>';
+html+='</div>';
+div.innerHTML=html;
+el.appendChild(div);}
+document.addEventListener('DOMContentLoaded',function(){
+setTimeout(function(){
+var con=document.getElementById('console-container');
+if(con){con.addEventListener('scroll',function(){
+if(con.scrollTop<con.scrollHeight-con.clientHeight-50){isUserScrolledUp=true;}
+else{isUserScrolledUp=false;newEventCount=0;
+document.getElementById('console-new-events-badge').style.display='none';}});}},500);});function renderLinks(data){var cfgs=[{id:'link-repo',url:data.repository_url},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:data.web_app_url},{id:'link-health',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=data.repository_url||''}
 function verJSON(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/json','_blank')}
 function verMarkdown(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/md','_blank')}
 function descargarJSON(){var a=document.createElement('a');a.href='/api/fabrica/proyectos/'+deploymentId+'/trace/json';a.download='deployment-trace-'+deploymentId+'.json';a.click()}

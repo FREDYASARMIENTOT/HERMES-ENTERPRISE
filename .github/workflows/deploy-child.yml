@@ -897,6 +897,9 @@ jobs:
           SHA="${{ needs.validate-inputs.outputs.commit_sha }}"
           VERIFIED_SHA="${{ needs.checkout-child.outputs.deployed_sha }}"
 
+          # Helper: convertir PASS/FAIL a COMPLETADO/FALLIDO para Portal API
+          to_estado() { [ "$1" = "PASS" ] && echo "COMPLETADO" || echo "FALLIDO"; }
+
           # Helper function — register paso in Portal (with error capture)
           register_paso() {
             local NUM=$1 NAME=$2 ESTADO=$3 DETALLE=$4 RESULT=$5
@@ -921,7 +924,8 @@ jobs:
 
           # Registrar OIDC (paso 6)
           OIDC_RES="${{ needs.oidc-login.outputs.login_result }}"
-          register_paso 6 "AUTENTICACIÓN" "${OIDC_RES}" "GitHub OIDC -> Azure login" "${OIDC_RES}"
+          OIDC_EST=$(to_estado "${OIDC_RES}")
+          register_paso 6 "AUTENTICACIÓN" "${OIDC_EST}" "GitHub OIDC -> Azure login" "${OIDC_RES}"
 
           # Registrar Azure (paso 7)
           ASP_ID="${{ needs.validate-inputs.outputs.app_service_plan_id }}"
@@ -929,15 +933,18 @@ jobs:
 
           # Registrar Deploy (paso 8)
           DEP_RES="${{ needs.deploy.outputs.deploy_result }}"
-          register_paso 8 "DEPLOY" "${DEP_RES}" "ZIP Deploy a Azure WebApp" "${DEP_RES}"
+          DEP_EST=$(to_estado "${DEP_RES}")
+          register_paso 8 "DEPLOY" "${DEP_EST}" "ZIP Deploy a Azure WebApp" "${DEP_RES}"
 
           # Registrar Readiness (paso 9)
           RDY_RES="${{ needs.readiness.outputs.readiness_result }}"
-          register_paso 9 "READINESS" "${RDY_RES}" "Health endpoint verificado" "${RDY_RES}"
+          RDY_EST=$(to_estado "${RDY_RES}")
+          register_paso 9 "READINESS" "${RDY_EST}" "Health endpoint verificado" "${RDY_RES}"
 
           # Registrar Pruebas Funcionales (paso 10)
           FUNC_RES="${{ needs.functional-tests.outputs.functional_result }}"
-          register_paso 10 "PRUEBAS FUNCIONALES" "${FUNC_RES}" "Endpoints HTTP verificados" "${FUNC_RES}"
+          FUNC_EST=$(to_estado "${FUNC_RES}")
+          register_paso 10 "PRUEBAS FUNCIONALES" "${FUNC_EST}" "Endpoints HTTP verificados" "${FUNC_RES}"
 
           # Registrar Evidencia (paso 11)
           register_paso 11 "EVIDENCIA" "COMPLETADO" "deployment-report.json generado" "PASS"

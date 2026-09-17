@@ -1209,6 +1209,10 @@ class ServicioFabrica:
         - Si algún paso = EN_PROCESO → EN_PROCESO (o CREANDO)
         - Si algún paso = PENDIENTE  → PENDIENTE (o CREANDO)
         - Si todos = COMPLETADO → COMPLETADO
+
+        Excepción: SOLICITADO se conserva cuando solo paso 1 (SOLICITUD)
+        está EN_PROCESO y el resto están PENDIENTE, porque la solicitud
+        aún no ha sido despachada al Factory Runner.
         """
         pendientes = 0
         en_proceso = 0
@@ -1231,6 +1235,12 @@ class ServicioFabrica:
 
         if fallidos > 0:
             return "FALLIDO"
+        # Preservar SOLICITADO si solo paso 1 está EN_PROCESO y el resto PENDIENTE
+        if solicitud.estado == "SOLICITADO":
+            if en_proceso == 1 and pendientes == len(solicitud.pasos) - 1:
+                paso_uno = solicitud.pasos[0] if solicitud.pasos else {}
+                if paso_uno.get("numero") == 1 and paso_uno.get("estado") == "EN_PROCESO":
+                    return "SOLICITADO"
         if en_proceso > 0:
             return "EN_PROCESO"
         if pendientes > 0:

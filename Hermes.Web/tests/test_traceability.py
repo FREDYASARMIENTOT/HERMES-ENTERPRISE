@@ -103,7 +103,9 @@ class TestRegla2EstadoDerivado:
 
     def test_estado_coincide(self, svc, solicitud):
         c = svc.validar_consistencia(solicitud.deployment_id)
-        assert c["estado_global"] == "EN_PROCESO"  # Paso 1 se inicia automaticamente
+        # SOLICITADO se conserva porque solo paso 1 está EN_PROCESO,
+        # el resto están PENDIENTE (Factory no ha sido despachado aún)
+        assert c["estado_global"] == "SOLICITADO"
 
     def test_estado_fallido(self, svc, solicitud):
         svc.actualizar_estado(solicitud, "FALLIDO", numero_paso=2, detalle="Falló", evidencia="")
@@ -638,7 +640,9 @@ class TestFase24AntiFalsePass:
         e1 = svc._calcular_estado_global(s)
         e2 = svc._calcular_estado_global(s)
         assert e1 == e2
-        assert e1 == "EN_PROCESO", f"Esperaba EN_PROCESO, obtuvo {e1}"
+        # SOLICITADO se conserva porque solo paso 1 está EN_PROCESO
+        # y el resto están PENDIENTE (Factory no despachado)
+        assert e1 == "SOLICITADO", f"Esperaba SOLICITADO, obtuvo {e1}"
 
     def test_p19_calcular_estado_global_todos_completados(self, svc, solicitud):
         self._completar_todos_los_pasos(svc, solicitud)

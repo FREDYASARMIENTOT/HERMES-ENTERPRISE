@@ -12,6 +12,9 @@
 # Activamos PYTHONPATH para que Python encuentre los paquetes locales
 # SIN ejecutar pip install, SIN modificar el runtime del sistema.
 export PYTHONPATH="/home/site/wwwroot/__deps__:$PYTHONPATH"
+# RC95: __deps__/ ya no se incluye en el ZIP (22MB causaba Kudu 502).
+# Oryx instala dependencias durante el deploy via SCM_DO_BUILD_DURING_DEPLOYMENT=true.
+# PYTHONPATH harmless if __deps__/ doesn't exist — Python lo ignora.
 
 # ====================================================================
 # RC94.16-DIAG — INICIO BLOQUE DIAGNÓSTICO

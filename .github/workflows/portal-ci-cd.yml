@@ -123,12 +123,11 @@ jobs:
       - name: "Configure startup command and build BEFORE deploy (CRITICAL: order matters)"
         shell: bash
         run: |
-          echo "=== Setting SCM_DO_BUILD_DURING_DEPLOYMENT=false (self-contained package) ==="
-          echo "=== Dependencies pre-installed in __deps__/ during Build phase ==="
+          echo "=== Setting SCM_DO_BUILD_DURING_DEPLOYMENT=true (Oryx handles pip install) ==="
           az webapp config appsettings set \
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
-            --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false"
+            --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
           echo "=== Setting HERMES_DB_PATH to writable /home/data/proyecto.db ==="
           az webapp config appsettings set \
             --name "${{ env.APP_NAME }}" \
@@ -165,29 +164,19 @@ jobs:
         shell: bash
         run: |
           ZIP_FILE="/tmp/portal-deploy-${{ github.sha }}.zip"
-          echo "=== Pre-installing pip packages into __deps__/ ==="
+          echo "=== Creating lean deployment package (Oryx will install deps on server) ==="
           cd Hermes.Web
-          pip install -r requirements.txt --target ./__deps__ --no-compile -q 2>&1
-          echo "=== __deps__/ contents ==="
-          ls -la __deps__/ 2>&1 || true
-          echo "Total packages: $(ls __deps__/ | wc -l)"
-          echo "=== Creating deployment package (with __deps__/) ==="
-          # RC93: ZIP root = contenido de Hermes.Web/
-          #   backend/      ← Hermes.Web/backend/
-          #   api/          ← Hermes.Web/api/
-          #   middleware/   ← Hermes.Web/middleware/
-          #   templates/    ← Hermes.Web/templates/
-          #   data/         ← Hermes.Web/data/
-          #   __deps__/     ← pre-installed pip packages
-          #   requirements.txt  ← Hermes.Web/requirements.txt
-          #   deployment/startup.sh
+          # RC95: Paquete autocontenido SIN __deps__/ (22MB causaba Kudu HTTP 502 en B1)
+          # Oryx builder instala dependencias vía SCM_DO_BUILD_DURING_DEPLOYMENT=true
+          echo "=== Zipping Hermes.Web/ contents (excluding __deps__/, __pycache__/, .venv/, *.pyc) ==="
           zip -r "$ZIP_FILE" . \
-            -x '__pycache__/*' '.venv/*' '*.pyc'
+            -x '__pycache__/*' '.venv/*' '*.pyc' '__deps__/*'
           cd ..
           echo "Package contents:"
           unzip -l "$ZIP_FILE" 2>&1 || true
           echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
           echo "=== Deploying ${{ env.APP_NAME }} ==="
+          echo "=== Oryx will run 'pip install -r requirements.txt' on the server ==="
           az webapp deploy \
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \

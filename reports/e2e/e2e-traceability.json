@@ -1,0 +1,39 @@
+{
+  "report": "HERMES PORTAL E2E TRACEABILITY",
+  "date": "2026-09-20",
+  "commit_hash": "a49285b",
+  "portal_url": "https://as-hermesportal.azurewebsites.net/",
+  "schema_changes": {
+    "columns_added": [
+      "child_ci_run_id", "child_ci_run_url", "child_ci_status",
+      "child_ci_started_at", "child_ci_finished_at", "child_ci_duration",
+      "azure_hostname", "azure_state", "azure_location",
+      "azure_subscription_id", "azure_web_app_name",
+      "readiness_http_status", "readiness_url", "readiness_timestamp",
+      "evidence_status", "evidence_url",
+      "branch"
+    ],
+    "migration": "ALTER TABLE ADD COLUMN for existing DBs"
+  },
+  "apis_fixed": [
+    "/api/azure", "/api/git", "/api/github", "/api/workspace",
+    "/api/despliegue", "/api/telemetria", "/api/bootstrap", "/api/proyecto",
+    "/health"
+  ],
+  "startup_sh_fix": "removed pip install (SCM_DO_BUILD handles it)",
+  "factory_runner_fix": "added factory_started_at to metadata payload",
+  "tests": {
+    "traceability": "80/80 PASS",
+    "portal_canonico": "95/95 PASS",
+    "azure_reconciliation": "14/14 PASS",
+    "total": "189/189 PASS"
+  },
+  "pending_items": [
+    "Control Plane metadata: evidence_*, azure_hostname in deploy-child.yml",
+    "captura child_ci_* en workflow",
+    "refactor servicio_datos_proyecto.py _simular_resultado",
+    "UI templates: mostrar nuevos campos",
+    "E2E test from browser"
+  ],
+  "status": "EN_PROGRESO"
+}

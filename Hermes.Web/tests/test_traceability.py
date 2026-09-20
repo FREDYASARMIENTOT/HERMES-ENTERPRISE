@@ -708,8 +708,190 @@ class TestAdversarialConsistency:
         svc._guardar(solicitud)
         s = svc.obtener_solicitud(solicitud.deployment_id)
         assert s.resultado != "PASS"
+class TestReglaErrorEndpoint:
+    """Regla 14: PUT /error marca como FALLIDO sin validación adversarial."""
+
+    def test_reporte_error_marca_fallido(self, svc, solicitud):
+        """Reportar error debe marcar proyecto como FALLIDO inmediatamente."""
+        resultado = svc.reportar_error(
+            deployment_id=solicitud.deployment_id,
+            error="Error de prueba: Control Plane falló",
+            detalle="Test unitario"
+        )
+        assert resultado is not None
+        assert resultado.estado == "FALLIDO"
+        assert resultado.resultado == "FAIL"
+        assert "Error de prueba" in resultado.error
+
+    def test_reporte_error_sin_validacion_adversarial(self, svc, solicitud):
+        """Reportar error NO debe rechazar con 409 aunque haya pasos pendientes."""
+        resultado = svc.reportar_error(
+            deployment_id=solicitud.deployment_id,
+            error="Fallo temprano antes de completar pasos"
+        )
+        assert resultado is not None
+        assert resultado.estado == "FALLIDO"
+
+    def test_reporte_error_marca_pasos_pendientes(self, svc, solicitud):
+        """Los pasos PENDIENTE deben marcarse como FALLIDO automáticamente."""
+        svc.actualizar_estado(solicitud, "EN_PROCESO", numero_paso=1,
+                              detalle="Iniciando solicitud")
+        resultado = svc.reportar_error(
+            deployment_id=solicitud.deployment_id,
+            error="Error en despliegue"
+        )
+        assert resultado is not None
+        # Paso 1 es COMPLETADO (auto-completado al crear); pasos 2-13 eran PENDIENTE
+        for paso in resultado.pasos:
+            if paso["numero"] == 1:
+                assert paso["estado"] == "COMPLETADO", \
+                    f"Paso 1 debe seguir COMPLETADO, está {paso['estado']}"
+            else:
+                assert paso["estado"] == "FALLIDO", \
+                    f"Paso {paso['numero']} debería estar FALLIDO, está {paso['estado']}"
+
+    def test_reporte_error_proyecto_inexistente(self, svc):
+        """Reportar error con deployment_id inexistente debe retornar None."""
+        resultado = svc.reportar_error(
+            deployment_id="NOEXISTE12345",
+            error="Error de prueba"
+        )
+        assert resultado is None
+    def test_reporte_error_api_endpoint(self, svc, solicitud):
+        """PUT /error debe responder 200 y marcar FALLIDO vía API."""
+        from fastapi.testclient import TestClient
+        from Hermes.Web.backend.main import app
+        app.state.servicio_fabrica = svc
+        client = TestClient(app)
+
+        r = client.put(
+            f"/api/fabrica/proyectos/{solicitud.deployment_id}/error",
+            json={"error": "Error desde API test", "detalle": "Prueba unitaria"}
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["estado"] == "FALLIDO"
+        assert data["resultado"] == "FAIL"
+        assert "Error desde API test" in data["error"]
+
+    def test_reporte_error_api_404(self, svc):
+        """PUT /error con deployment_id inválido debe responder 404."""
+        from fastapi.testclient import TestClient
+        from Hermes.Web.backend.main import app
+        app.state.servicio_fabrica = svc
+        client = TestClient(app)
+
+        r = client.put(
+            "/api/fabrica/proyectos/NOEXISTE12345/error",
+            json={"error": "Error test"}
+        )
+        assert r.status_code == 404
+
+    def test_reporte_error_api_sin_body(self, svc, solicitud):
+        """PUT /error sin body debe responder 422."""
+        from fastapi.testclient import TestClient
+        from Hermes.Web.backend.main import app
+        app.state.servicio_fabrica = svc
+        client = TestClient(app)
+
+        r = client.put(
+            f"/api/fabrica/proyectos/{solicitud.deployment_id}/error",
+            json={}
+        )
+        assert r.status_code == 422
+
+    def test_reporte_error_finalizar_fail_tambien_funciona(self, svc, solicitud):
+        """POST /finalizar con FAIL debe funcionar incluso con pasos pendientes."""
+class TestReglaSweeper:
+    """Regla 15: Sweeper de despliegues atascados."""
+
+    def test_sweeper_no_encuentra_activos(self, svc, solicitud):
+        """Sweeper no debe limpiar proyectos recién creados."""
+        limpiados = svc.limpiar_despliegues_atascados(max_minutos=0)
+        assert isinstance(limpiados, list)
+
+    def test_sweeper_limpia_proyecto_estancado(self, svc):
+        """Sweeper debe limpiar proyectos con fecha antigua."""
+        from Hermes.Web.backend.servicio_fabrica import _ahora
+        from datetime import datetime, timedelta, timezone
+
+        solicitud = svc.crear_solicitud(
+            "test-stuck", descripcion="Test stuck",
+            app_service_plan_id=_ASP_VALIDO
+        )
+        did = solicitud.deployment_id
+
+        hora_vieja = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+        import sqlite3
+        conn = sqlite3.connect(svc.ruta_db)
+        conn.execute(
+            "UPDATE solicitudes_proyecto SET estado = 'EN_PROCESO', "
+            "fecha_actualizacion = ? WHERE deployment_id = ?",
+            (hora_vieja, did)
+        )
+        conn.commit()
+        conn.close()
+
+        limpiados = svc.limpiar_despliegues_atascados(max_minutos=0)
+        assert did in limpiados, f"Esperaba que {did} fuera limpiado"
+
+        s = svc.obtener_solicitud(did)
+        assert s.estado == "FALLIDO"
+        assert s.resultado == "FAIL"
+        assert "Timeout" in s.error
+
+    def test_sweeper_solo_limpia_en_proceso(self, svc):
+        """Sweeper solo debe limpiar proyectos EN_PROCESO."""
+        dids = []
+        for estado in ["SOLICITADO", "CREANDO", "COMPLETADO", "FALLIDO"]:
+            s = svc.crear_solicitud(f"test-{estado.lower()}", descripcion=f"Test {estado}",
+                                    app_service_plan_id=_ASP_VALIDO)
+            dids.append(s.deployment_id)
+            from datetime import datetime, timedelta, timezone
+            hora_vieja = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+            import sqlite3
+            conn = sqlite3.connect(svc.ruta_db)
+            conn.execute(
+                "UPDATE solicitudes_proyecto SET estado = ?, fecha_actualizacion = ? "
+                "WHERE deployment_id = ?",
+                (estado, hora_vieja, s.deployment_id)
+            )
+            conn.commit()
+            conn.close()
+
+        s = svc.crear_solicitud("test-enproceso", descripcion="Test EN_PROCESO",
+                                app_service_plan_id=_ASP_VALIDO)
+        from datetime import datetime, timedelta, timezone
+        hora_vieja = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+        import sqlite3
+        conn = sqlite3.connect(svc.ruta_db)
+        conn.execute(
+            "UPDATE solicitudes_proyecto SET estado = 'EN_PROCESO', fecha_actualizacion = ? "
+            "WHERE deployment_id = ?",
+            (hora_vieja, s.deployment_id)
+        )
+        conn.commit()
+        conn.close()
+
+        limpiados = svc.limpiar_despliegues_atascados(max_minutos=0)
+        assert s.deployment_id in limpiados
+        for did in dids:
+            assert did not in limpiados, f"{did} no debería estar en limpiados"
+        from fastapi.testclient import TestClient
+        from Hermes.Web.backend.main import app
+        app.state.servicio_fabrica = svc
+        client = TestClient(app)
+
+        r = client.post(
+            f"/api/fabrica/proyectos/{s.deployment_id}/finalizar",
+            json={"resultado": "FAIL", "error": "Fallo controlado"}
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["resultado"] == "FAIL"
+        assert data["estado"] == "FALLIDO"
         assert s.estado != "COMPLETADO"
-        c = svc.validar_consistencia(solicitud.deployment_id)
+        c = svc.validar_consistencia(s.deployment_id)
         assert c["consistente"]
     def test_db_event_store_misma_persistencia(self, svc, solicitud):
         import sqlite3

@@ -1,9 +1,10 @@
 {
   "reporte": "e2e-readiness-report",
   "version": "2.0.0",
-  "fecha": "2026-09-20T15:45:00Z",
-  "sesion": "autonoma-b4-b5",
-  "commit_base": "a4541e4b9e8170719cf82af55257c31378e968e3",
+  "fecha": "2026-09-20T22:10:00Z",
+  "sesion": "b4-1-production-verification",
+  "commit_desplegado": "850f8a241984a086f0c12e840fa358c282039b9c",
+  "workflow_run": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/35540334940",
   "aplicacion": "Fábrica de Proyectos UR — AS-HermesPortal",
   "resumen": {
     "b4_auditoria": {
@@ -19,55 +20,48 @@
       "unknown": 0
     },
     "e2e_ready": false,
-    "e2e_executed": false
+    "e2e_executed": false,
+    "b4_1_production_verified": true
+  },
+  "production_verification": {
+    "health": "PASS",
+    "version_api": "PASS",
+    "sha_match": "PASS",
+    "branding": "PASS",
+    "openapi": "PASS",
+    "factory_api": "PASS",
+    "app_service_plans": "PASS",
+    "swagger": "PASS",
+    "deploy_status": "SUCCESS",
+    "python_version": "3.12.13"
   },
   "correcciones": [
     {
       "id": 1,
       "descripcion": "Health check DB path",
-      "archivos": [
-        "Hermes.Web/backend/main.py",
-        "Hermes.Web/api/api_proyecto.py",
-        "Hermes.Web/api/api_bootstrap.py",
-        "Hermes.Web/api/api_sqlite.py",
-        "Hermes.Web/api/api_telemetria.py"
-      ],
+      "archivos": ["Hermes.Web/backend/main.py","Hermes.Web/api/api_proyecto.py","Hermes.Web/api/api_bootstrap.py","Hermes.Web/api/api_sqlite.py","Hermes.Web/api/api_telemetria.py"],
       "cambio": "fabrica.db → proyecto.db",
       "severidad": "BAJA"
     },
     {
       "id": 2,
       "descripcion": "Renombre de aplicación",
-      "archivos": [
-        "Hermes.Web/backend/main.py",
-        "Hermes.Web/api/api_version.py",
-        "Hermes.Web/api/api_despliegue.py",
-        "Hermes.Web/templates/index.html",
-        "Hermes.Web/templates/proyecto.html",
-        "Hermes.Web/templates/proyecto_listado.html",
-        ".github/workflows/portal-ci-cd.yml"
-      ],
+      "archivos": ["Hermes.Web/backend/main.py","Hermes.Web/api/api_version.py","Hermes.Web/api/api_despliegue.py","Hermes.Web/templates/index.html","Hermes.Web/templates/proyecto.html","Hermes.Web/templates/proyecto_listado.html",".github/workflows/portal-ci-cd.yml"],
       "cambio": "Hermes Enterprise → Fábrica de Proyectos UR",
       "severidad": "MEDIA"
     },
     {
       "id": 3,
       "descripcion": "UI Templates branding",
-      "archivos": [
-        "Hermes.Web/templates/index.html",
-        "Hermes.Web/templates/proyecto.html",
-        "Hermes.Web/templates/proyecto_listado.html"
-      ],
+      "archivos": ["Hermes.Web/templates/index.html","Hermes.Web/templates/proyecto.html","Hermes.Web/templates/proyecto_listado.html"],
       "cambio": "Branding actualizado",
       "severidad": "MEDIA"
     },
     {
       "id": 4,
-      "descripcion": "Workflow assertion",
-      "archivos": [
-        ".github/workflows/portal-ci-cd.yml"
-      ],
-      "cambio": "Assert de aplicación actualizado",
+      "descripcion": "Workflow assertion + docs",
+      "archivos": [".github/workflows/portal-ci-cd.yml","tools/portal_smoke.py"],
+      "cambio": "Assert de branding + docs actualizados",
       "severidad": "BAJA"
     }
   ],
@@ -83,18 +77,9 @@
     "20 proyectos históricos atascados en EN_PROCESO"
   ],
   "riesgos": [
-    {
-      "nivel": "ALTO",
-      "descripcion": "Si Factory Runner o Control Plane fallan durante E2E, el diagnóstico es complejo"
-    },
-    {
-      "nivel": "MEDIO",
-      "descripcion": "Posible drift entre Child CI template y repositorio hijo"
-    },
-    {
-      "nivel": "BAJO",
-      "descripcion": "Registros históricos con nombre 'Hermes Enterprise' no actualizados retroactivamente"
-    }
+    {"nivel": "ALTO", "descripcion": "Si Factory Runner o Control Plane fallan durante E2E, el diagnóstico es complejo"},
+    {"nivel": "MEDIO", "descripcion": "Posible drift entre Child CI template y repositorio hijo"},
+    {"nivel": "BAJO", "descripcion": "Registros históricos con nombre 'Hermes Enterprise' no actualizados retroactivamente"}
   ],
   "siguiente_accion": "Ejecutar creación de proyecto Child E2E real para validar pipeline completo"
 }

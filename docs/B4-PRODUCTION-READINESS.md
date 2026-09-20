@@ -1,7 +1,8 @@
 # B4 — PRODUCTION READINESS AUDIT
 
-> **Fecha**: 2026-09-20 (Revisado: 2026-09-20, sesión autónoma)
-> **Commit verificado**: `a4541e4b9e8170719cf82af55257c31378e968e3`
+> **Fecha**: 2026-09-20 (Actualizado: 2026-09-20, sesión B4.1)
+> **Commit verificado**: `850f8a241984a086f0c12e840fa358c282039b9c`
+> **Desplegado por**: Workflow Portal CI/CD [Run 35540334940](https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/35540334940)
 > **Portal**: https://as-hermesportal.azurewebsites.net/
 > **App Service**: AS-HermesPortal
 > **Resource Group**: RG-Hermes-Proyectos
@@ -14,10 +15,10 @@
 
 ### /health — 200 OK
 - estado: saludable
-- aplicacion: Fábrica de Proyectos UR — AS-HermesPortal (POST CORRECCIÓN)
-- commit: a4541e4b9e8170719cf82af55257c31378e968e3
+- aplicacion: Fábrica de Proyectos UR — AS-HermesPortal ✅ (VERIFICADO PRODUCCIÓN)
+- commit: 850f8a241984a086f0c12e840fa358c282039b9c ✅
 - environment: azure
-- event_store_disponible: **false** ⚠️ (ver corrección abajo)
+- event_store_disponible: **false** ⚠️ (no hay proyectos activos)
 - event_store_proyectos: 0
 - github_integration: true
 - azure_integration: true
@@ -25,10 +26,10 @@
 ### /api/version — 200 OK
 - aplicacion: Fábrica de Proyectos UR
 - version: 2.0.0
-- commit: a4541e4b9e8170719cf82af55257c31378e968e3
+- commit: 850f8a241984a086f0c12e840fa358c282039b9c
 - branch: main, environment: azure
 
-**SHA coincide: `a4541e4` ✅**
+**SHA coincide: `850f8a2` ✅ (VALIDA PRODUCCIÓN)**
 
 ---
 
@@ -178,13 +179,30 @@ E2E READY: NO
 1. **No existe Child Project desplegado** que complete el pipeline E2E (pasos 4-13).
 2. 20 proyectos históricos atascados en EN_PROCESO.
 
-### CORRECCIONES APLICADAS (SESIÓN AUTÓNOMA B4/B5)
+### CORRECCIONES APLICADAS (SESIONES B4/B5 + B4.1)
 
 1. ✅ **Health check DB path**: `fabrica.db` → `proyecto.db` (5 archivos)
 2. ✅ **Renombre de aplicación**: "Hermes Enterprise" → "Fábrica de Proyectos UR" (10+ archivos)
 3. ✅ **UI Templates**: Actualizados con el nuevo nombre (3 templates)
-4. ✅ **Workflow assertions**: Actualizados (portal-ci-cd.yml)
-5. ✅ **Tests**: 189/189 PASS después de correcciones
+4. ✅ **Workflow assertions**: Actualizados (portal-ci-cd.yml + tools/portal_smoke.py)
+5. ✅ **Documentación**: Test counts corregidos (201→189), reportes actualizados
+6. ✅ **Tests**: 189/189 PASS después de correcciones
+
+### B4.1 — PRODUCTION VERIFICATION (2026-09-20)
+
+| Aspecto | Resultado |
+|---------|-----------|
+| Commit desplegado | `850f8a2` |
+| Workflow run | [35540334940](https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/35540334940) ✅ SUCCESS |
+| /health | ✅ 200 — saludable |
+| /api/version | ✅ 200 — SHA coincide |
+| Branding | ✅ "Fábrica de Proyectos UR" en producción |
+| OpenAPI | ✅ 30+ endpoints registrados |
+| Factory API | ✅ /api/fabrica/proyectos responde |
+| App Service Plans | ✅ ASP-HERMES-PORTAL (Basic B1) |
+| DB path | ✅ proyecto.db en código (5 archivos verificados) |
+| Traceability schema | ✅ Campos child_ci_*, azure_*, readiness_*, evidence_* presentes |
+| Docker/Python | ✅ Python 3.12.13 |
 
 ### CAMBIOS NECESARIOS ANTES DE E2E
 

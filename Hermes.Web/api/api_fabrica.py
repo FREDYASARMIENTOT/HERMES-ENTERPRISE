@@ -216,7 +216,6 @@ async def reconcile_all(request: Request):
         logger.error(f"Error reconciliando Azure: {e}")
         return {"error": str(e), "total": 0, "existentes": 0, "eliminados": 0, "no_verificados": 0, "errores": 0, "detalles": []}
 
-@router.get("/fabrica/proyectos/{deployment_id}", summary="Obtener estado de un proyecto")
 @router.get("/fabrica/proyectos/{deployment_id}/resource-status", summary="Estado completo de recursos (Azure + GitHub + Runtime)")
 async def resource_status_proyecto(request: Request, deployment_id: str):
     """Obtiene el estado completo de los 3 recursos del proyecto."""

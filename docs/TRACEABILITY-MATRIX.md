@@ -109,16 +109,16 @@
 | Endpoint | Estado | Problema |
 |----------|--------|----------|
 | `GET /api/version` | ✅ **Bueno** | Obtiene commit real de git, branch, python version |
-| `GET /api/proyecto` | ❌ **Placeholder** | Devuelve `{"proyecto": "Hermes Enterprise", "estado": "activo"}` |
-| `GET /api/workspace` | ❌ **Placeholder** | Devuelve `workspace_no_configurado` |
-| `GET /api/git` | ❌ **Placeholder** | Devuelve branch `main`, 0 commits hardcoded |
-| `GET /api/github` | ❌ **Placeholder** | Devuelve URL hardcoded |
+| `GET /api/proyecto` | ✅ **Corregido** | Consulta DB real para estadísticas |
+| `GET /api/workspace` | ✅ **Corregido** | Muestra estructura real del workspace |
+| `GET /api/git` | ✅ **Corregido** | Consulta git local real (commit, branch, count) |
+| `GET /api/github` | ✅ **Corregido** | Verifica integración GitHub via API real |
 | `GET /api/entorno` | ✅ **Bueno** | Usa platform module |
-| `GET /api/azure` | ❌ **Placeholder** | Devuelve `no_configurado` |
-| `GET /api/sqlite` | ❌ **Placeholder** | Devuelve `no_verificado` |
-| `GET /api/despliegue` | ❌ **Placeholder** | Región y plataforma hardcoded |
-| `GET /api/telemetria` | ❌ **Placeholder** | Devuelve ceros |
-| `GET /api/bootstrap` | ❌ **Placeholder** | Devuelve `bootstrap_completado` |
+| `GET /api/azure` | ✅ **Corregido** | Consulta Azure ARM REST API via DefaultAzureCredential |
+| `GET /api/sqlite` | ✅ **Funcional** | Consulta DB real, muestra estado |
+| `GET /api/despliegue` | ✅ **Corregido** | Muestra información real del entorno y versión |
+| `GET /api/telemetria` | ✅ **Corregido** | Consulta DB real para métricas |
+| `GET /api/bootstrap` | ✅ **Corregido** | Muestra componentes reales del sistema |
 | `GET /api/fabrica/proyectos` | ✅ **Funcional** | Proyectos reales desde DB |
 | `GET /api/fabrica/proyectos/{id}` | ✅ **Funcional** | Datos reales de proyecto |
 | `POST /api/fabrica/proyectos` | ✅ **Funcional** | Creación real con persistencia |
@@ -126,7 +126,7 @@
 | `GET /api/fabrica/proyectos/{id}/eventos` | ✅ **Funcional** | Eventos desde DB |
 | `GET /api/fabrica/proyectos/{id}/trace/json` | ✅ **Funcional** | Trazabilidad desde DB |
 | `GET /api/fabrica/app-service-plans` | ✅ **Funcional** | Planes desde Azure ARM |
-| `GET /health` | ⚠️ **Parcial** | No expone todos los checks |
+| `GET /health` | ✅ **Corregido** | Muestra estado real de DB, GitHub, Azure |
 
 ## 11. HALLAZGOS CRÍTICOS
 
@@ -137,20 +137,32 @@ La migración de esquema crea la tabla `event_logs` solo cuando el servicio se i
 El workflow `factory-run.yml` envía metadata vía PUT, pero no envía `factory_started_at`.
 
 ### Hallazgo 3: Control Plane no reporta metadata completa al Portal
-El workflow `deploy-child.yml` registra pasos vía POST/paso, pero no envía metadata de `control_plane_run_id`, `readiness_result`, `functional_result`, `evidence_result`, `functional_pass_count`, `functional_fail_count`.
+El workflow `deploy-child.yml` registra pasos vía POST/paso, pero no envía metadata de `evidence_result`, `evidence_url`, `azure_hostname`, `azure_state`, `azure_location`.
 
-### Hallazgo 4: APIs placeholder en dashboard
-Múltiples endpoints del dashboard devuelven valores hardcoded en lugar de consultar fuentes reales.
+### Hallazgo 4: APIs placeholder en dashboard ✅ CORREGIDO
+Múltiples endpoints del dashboard devolvían valores hardcoded. **Ya corregidos**:
+- `/api/azure` → Consulta Azure ARM REST API
+- `/api/git` → Consulta git local
+- `/api/github` → Verifica integración GitHub real
+- `/api/workspace` → Muestra estructura real del workspace
+- `/api/despliegue` → Muestra información real del entorno
+- `/api/telemetria` → Consulta DB real
+- `/api/bootstrap` → Muestra componentes reales
+- `/api/proyecto` → Consulta DB real
+- `/health` → Muestra estado real de DB, GitHub, Azure
 
 ### Hallazgo 5: `servicio_datos_proyecto.py` simula resultados
-Usa `_simular_resultado()` que devuelve placeholders.
+Usa `_simular_resultado()` que devuelve placeholders. **Pendiente de refactorizar**.
 
-## 12. PLAN DE CORRECCIÓN
+## 12. ESTADO DE CORRECCIÓN (2026-09-20)
 
-1. **Migrar DB existente**: Agregar columnas faltantes y crear `event_logs` table
-2. **Actualizar APIs dashboard**: Consultar fuentes reales (DB, git, Azure, sistema)
-3. **Factory Runner metadata**: Agregar `factory_started_at` al payload
-4. **Control Plane metadata**: Agregar reporte completo (`control_plane_*`, `readiness_*`, `functional_*`, `evidence_*`)
-5. **Child CI tracking**: Agregar columna y captura de `child_ci_*` fields
-6. **`servicio_datos_proyecto.py`**: Reemplazar `_simular_resultado` con consultas reales
-7. **UI**: Corregir visualización de datos faltantes en templates
+| Item | Estado | Comentario |
+|------|--------|-----------|
+| 1. Migrar DB: columnas child_ci_*, azure_*, readiness_*, evidence_*, branch | ✅ CORREGIDO | Schema actualizado + migración ALTER TABLE |
+| 2. APIs dashboard | ✅ CORREGIDO | 8 endpoints corregidos |
+| 3. Factory Runner: factory_started_at | ✅ CORREGIDO | Agregado al payload |
+| 4. Control Plane metadata | ❌ PENDIENTE | Falta evidence_*, azure_hostname en deploy-child.yml |
+| 5. Child CI tracking | ✅ CORREGIDO | Columnas agregadas, falta captura en workflow |
+| 6. servicio_datos_proyecto.py | ❌ PENDIENTE | _simular_resultado aún presente |
+| 7. UI templates | ❌ PENDIENTE | Falta mostrar child_ci_* y azure_* campos nuevos |
+| 8. startup.sh pip install redundante | ✅ CORREGIDO | Eliminado (SCM_DO_BUILD asume) |

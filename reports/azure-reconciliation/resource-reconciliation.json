@@ -1,0 +1,111 @@
+{
+  "report_title": "RF-RECONCILIACION-002 — Resource Reconciliation Final Report",
+  "timestamp": "2026-09-20T02:31:37.966425+00:00",
+  "commits": [
+    {
+      "hash": "f8ecabe",
+      "message": "feat(reconciliacion): RF-RECONCILIACION-002 inventario real de 3 recursos"
+    },
+    {
+      "hash": "626401a",
+      "message": "feat(ui): agregar columnas RECURSOS (VENV, GitHub, App Service) en tabla y detalle"
+    }
+  ],
+  "portal_url": "https://as-hermesportal.azurewebsites.net/",
+  "git_branch": "main",
+  "pusheados": true,
+  "tests": {
+    "azure_reconciliation": "14/14 PASS",
+    "traceability": "pre-existing, not re-run",
+    "portal_canonical": "pre-existing 85/95 (10 pre-existing failures unrelated)"
+  },
+  "model": {
+    "solicitud_proyecto": {
+      "nuevos_campos_github": [
+        "github_resource_exists",
+        "github_resource_check_status",
+        "github_resource_checked_at",
+        "github_resource_check_error",
+        "github_repository"
+      ],
+      "nuevos_campos_runtime": [
+        "runtime_resource_exists",
+        "runtime_resource_check_status",
+        "runtime_resource_checked_at",
+        "runtime_resource_check_error"
+      ],
+      "columnas_bd_agregadas": 9,
+      "migracion": "ALTER TABLE con try/except (idempotente)"
+    }
+  },
+  "servicios_nuevos": [
+    "Hermes.Web/backend/servicio_github.py — ServicioGitHub.verificar_existencia_repositorio()",
+    "Hermes.Web/backend/servicio_runtime.py — ServicioRuntime.verificar_runtime()"
+  ],
+  "endpoints_api": [
+    {
+      "method": "GET",
+      "path": "/api/fabrica/proyectos/{id}/resource-status",
+      "desc": "Estado completo de 3 recursos"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fabrica/proyectos/{id}/github-check",
+      "desc": "Verificar GitHub ahora"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fabrica/proyectos/{id}/runtime-check",
+      "desc": "Verificar Runtime ahora"
+    },
+    {
+      "method": "GET",
+      "path": "/api/fabrica/proyectos/reconcile",
+      "desc": "Reconciliacion masiva (3 recursos)"
+    }
+  ],
+  "estados_recurso": [
+    "EXISTE",
+    "NO_EXISTE",
+    "ERROR_PERMISOS",
+    "ERROR_CONEXION",
+    "ERROR",
+    "NO_VERIFICADO"
+  ],
+  "separacion": {
+    "resultado_historico": "PASS/FAIL — NO MODIFICADO",
+    "estado_actual_recursos": "Independiente por cada recurso",
+    "activo": "App Service = EXISTE",
+    "historico": "App Service != EXISTE (datos preservados)"
+  },
+  "event_store": {
+    "eventos_nuevos": [
+      "AZURE_RESOURCE_CHECKED",
+      "GITHUB_RESOURCE_CHECKED",
+      "RUNTIME_RESOURCE_CHECKED",
+      "RECONCILIACION_COMPLETA",
+      "RECONCILIACION_MASIVA"
+    ]
+  },
+  "dashboard_contadores": [
+    "Proyectos totales",
+    "Activos (App Service EXISTE)",
+    "Historicos",
+    "Azure EXISTE",
+    "Azure NO_EXISTE",
+    "GitHub EXISTE",
+    "Runtime EXISTE"
+  ],
+  "pruebas_ejecutadas": [
+    "14 tests unitarios PASS",
+    "Compilacion Python: todos los archivos OK",
+    "Git commits pusheados: SI"
+  ],
+  "seguridad": {
+    "secrets_expuestos": "NO",
+    "infraestructura_eliminada": "NO",
+    "datos_historicos_eliminados": "NO",
+    "tokens_en_logs": "NO"
+  },
+  "resultado": "PASS"
+}

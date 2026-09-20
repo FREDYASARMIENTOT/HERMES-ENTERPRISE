@@ -123,26 +123,16 @@ jobs:
       - name: "Configure startup command and build BEFORE deploy (CRITICAL: order matters)"
         shell: bash
         run: |
-          echo "=== Setting SCM_DO_BUILD_DURING_DEPLOYMENT=true (Oryx handles pip install) ==="
+          echo "=== SCM_DO_BUILD_DURING_DEPLOYMENT=false (self-contained package includes deps) ==="
           az webapp config appsettings set \
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
-            --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
+            --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false"
           echo "=== Setting HERMES_DB_PATH to writable /home/data/proyecto.db ==="
           az webapp config appsettings set \
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --settings "HERMES_DB_PATH=/home/data/proyecto.db"
-          echo "=== Setting build metadata for /api/version ==="
-          echo "Commit: ${{ github.sha }} | Branch: ${{ github.ref_name }}"
-          az webapp config appsettings set \
-            --name "${{ env.APP_NAME }}" \
-            --resource-group "${{ env.RESOURCE_GROUP }}" \
-            --settings \
-              "HERMES_BUILD_COMMIT=${{ github.sha }}" \
-              "HERMES_BUILD_BRANCH=${{ github.ref_name }}" \
-              "HERMES_BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-              "HERMES_ENVIRONMENT=azure"
           echo "=== Setting HERMES_GITHUB_TOKEN for Factory Runner dispatch ==="
           echo "=== Source: GH_PORTAL_HERMES_REPO_WRITE_TOKEN (GitHub Secret) ==="
           echo "=== Security: value NEVER printed, NEVER stored in code ==="
@@ -164,25 +154,38 @@ jobs:
         shell: bash
         run: |
           ZIP_FILE="/tmp/portal-deploy-${{ github.sha }}.zip"
-          echo "=== Creating lean deployment package (Oryx will install deps on server) ==="
+          echo "=== Creating self-contained package (deps included via __deps__/) ==="
           cd Hermes.Web
-          # RC95: Paquete autocontenido SIN __deps__/ (22MB causaba Kudu HTTP 502 en B1)
-          # Oryx builder instala dependencias vía SCM_DO_BUILD_DURING_DEPLOYMENT=true
-          echo "=== Zipping Hermes.Web/ contents (excluding __deps__/, __pycache__/, .venv/, *.pyc) ==="
+          echo "=== Zipping Hermes.Web/ with __deps__/ (self-contained, no Oryx build needed) ==="
           zip -r "$ZIP_FILE" . \
-            -x '__pycache__/*' '.venv/*' '*.pyc' '__deps__/*'
+            -x '__pycache__/*' '.venv/*' '*.pyc'
           cd ..
           echo "Package contents:"
           unzip -l "$ZIP_FILE" 2>&1 || true
           echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
-          echo "=== Deploying ${{ env.APP_NAME }} ==="
-          echo "=== Oryx will run 'pip install -r requirements.txt' on the server ==="
-          az webapp deploy \
-            --name "${{ env.APP_NAME }}" \
-            --resource-group "${{ env.RESOURCE_GROUP }}" \
-            --src-path "$ZIP_FILE" \
-            --type zip
-          echo "=== Deploy submitted ==="
+          echo "=== Deploying ${{ env.APP_NAME }} with self-contained package ==="
+          echo "=== Oryx build disabled. Deps in __deps__/ resolved via PYTHONPATH ==="
+          MAX_RETRIES=3
+          RETRY_DELAY=30
+          DEPLOY_SUCCESS=false
+          for i in $(seq 1 ${MAX_RETRIES}); do
+            echo "--- Deploy attempt ${i}/${MAX_RETRIES} ---"
+            if az webapp deploy \
+              --name "${{ env.APP_NAME }}" \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --src-path "$ZIP_FILE" \
+              --type zip; then
+              echo "=== Deploy attempt ${i} SUCCEEDED ==="
+              DEPLOY_SUCCESS=true
+              break
+            fi
+            echo "=== Deploy attempt ${i} FAILED, waiting ${RETRY_DELAY}s ==="
+            sleep ${RETRY_DELAY}
+          done
+          if [ "${DEPLOY_SUCCESS}" != "true" ]; then
+            echo "All ${MAX_RETRIES} deploy attempts failed"
+            exit 1
+          fi
 
       - name: Verify startup command and build setting after deploy
         shell: bash
@@ -192,12 +195,6 @@ jobs:
           if [ "${CMD}" != "deployment/startup.sh" ]; then
             echo "ERROR: Startup command was reset! Re-setting..."
             az webapp config set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --startup-file "deployment/startup.sh"
-          fi
-          BUILD=$(az webapp config appsettings list --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "[?name=='SCM_DO_BUILD_DURING_DEPLOYMENT'].value" -o tsv)
-          echo "=== SCM_DO_BUILD_DURING_DEPLOYMENT after deploy: ${BUILD} ==="
-          if [ "${BUILD}" != "false" ]; then
-            echo "WARNING: SCM_DO_BUILD_DURING_DEPLOYMENT was reset! Re-setting..."
-            az webapp config appsettings set --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false"
           fi
           echo "=== Checking HERMES_GITHUB_TOKEN after deploy ==="
           TOKEN_SET=$(az webapp config appsettings list --name "${{ env.APP_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query "[?name=='HERMES_GITHUB_TOKEN'].value" -o tsv)
@@ -211,6 +208,21 @@ jobs:
           else
             echo "=== HERMES_GITHUB_TOKEN present after deploy ==="
           fi
+
+      - name: Set deployed commit metadata (AFTER successful deploy)
+        shell: bash
+        run: |
+          echo "=== Setting deployed commit metadata (only after deploy SUCCESS) ==="
+          echo "Commit: ${{ github.sha }} | Branch: ${{ github.ref_name }}"
+          az webapp config appsettings set \
+            --name "${{ env.APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --settings \
+              "HERMES_BUILD_COMMIT=${{ github.sha }}" \
+              "HERMES_BUILD_BRANCH=${{ github.ref_name }}" \
+              "HERMES_BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              "HERMES_ENVIRONMENT=azure"
+          echo "=== Deployed commit metadata set ==="
 
       - name: Enable System-Assigned Managed Identity for Portal
         continue-on-error: true

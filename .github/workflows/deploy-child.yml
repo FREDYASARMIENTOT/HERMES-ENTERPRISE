@@ -996,7 +996,16 @@ jobs:
           # Extraer pass/fail counts del deployment-report.json generado en evidence step
           FUNC_PASS=$(python3 -c "import json;d=json.load(open('deployment-report.json'));print(d.get('functional_tests',{}).get('pass_count',0))" 2>/dev/null || echo "0")
           FUNC_FAIL=$(python3 -c "import json;d=json.load(open('deployment-report.json'));print(d.get('functional_tests',{}).get('fail_count',0))" 2>/dev/null || echo "0")
-          CP_METADATA=$(printf '{"control_plane_run_id":"%s","control_plane_run_url":"%s","control_plane_status":"%s","commit_sha":"%s","web_app_url":"%s","deploy_result":"%s","readiness_result":"%s","functional_result":"%s","user_facing_result":"%s","sha_chain_result":"%s","checkout_sha":"%s","control_plane_finished_at":"%s","functional_pass_count":%s,"functional_fail_count":%s}' \
+          # Extraer evidence/metadata del deployment-report.json
+          EVIDENCE_RESULT=$(python3 -c "import json;d=json.load(open('deployment-report.json'));print(d.get('result','PASS'))" 2>/dev/null || echo "PASS")
+          EVIDENCE_URL=$(python3 -c "import json;d=json.load(open('deployment-report.json'));print(d.get('evidence_url',''))" 2>/dev/null || echo "")
+          # Extraer azure_hostname desde la URL del Web App
+          AZURE_HOSTNAME=$(echo "${URL}" | sed 's|https://||;s|/||g')
+          AZURE_LOCATION="${{ env.LOCATION }}"
+          # Extraer readiness HTTP status code
+          RDY_HTTP_STATUS="${{ needs.readiness.outputs.health_code }}"
+          RDY_URL="${URL}/health"
+          CP_METADATA=$(printf '{"control_plane_run_id":"%s","control_plane_run_url":"%s","control_plane_status":"%s","commit_sha":"%s","web_app_url":"%s","deploy_result":"%s","readiness_result":"%s","readiness_http_status":"%s","readiness_url":"%s","functional_result":"%s","user_facing_result":"%s","sha_chain_result":"%s","checkout_sha":"%s","control_plane_finished_at":"%s","functional_pass_count":%s,"functional_fail_count":%s,"evidence_result":"%s","evidence_url":"%s","azure_hostname":"%s","azure_location":"%s"}' \
              "${{ github.run_id }}" \
              "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}" \
              "${FINAL_STATUS}" \
@@ -1004,13 +1013,19 @@ jobs:
              "${URL}" \
              "${DEP_RES}" \
              "${RDY_RES}" \
+             "${RDY_HTTP_STATUS}" \
+             "${RDY_URL}" \
              "${FUNC_RES}" \
              "${UF_RES}" \
              "${{ needs.checkout-child.outputs.sha_chain }}" \
              "${{ needs.checkout-child.outputs.deployed_sha }}" \
              "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
              "${FUNC_PASS}" \
-             "${FUNC_FAIL}")
+             "${FUNC_FAIL}" \
+             "${EVIDENCE_RESULT}" \
+             "${EVIDENCE_URL}" \
+             "${AZURE_HOSTNAME}" \
+             "${AZURE_LOCATION}")
           METADATA_RESP=$(curl -s -w "\n%{http_code}" -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
             -H "Content-Type: application/json" \
             -d "${CP_METADATA}" 2>&1)

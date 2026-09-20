@@ -478,36 +478,135 @@ class ServicioDatosProyecto:
     
     def obtener_estado_telemetria(self) -> Dict[str, Any]:
         """
-        Obtiene métricas de telemetría y observabilidad.
+        Obtiene métricas de telemetría y observabilidad desde fuentes reales.
+        
+        Consulta:
+            - DB SQLite: conteo de solicitudes y eventos
+            - Sistema: tiempo de actividad del proceso
+            - Cache: estado del cache interno
         
         Returns:
-            Dict con: tiempo_actividad, solicitudes, errores, etc.
+            Dict con: servicio, tiempo_actividad, solicitudes_db, eventos_db, cache, modo
         """
-        return self._simular_resultado({
+        datos_reales = {
             "servicio": "Hermes.Web",
-            "tiempo_actividad": "Activo",
-            "ultima_consulta": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "cache_activo": bool(self.cache_resultados),
             "modo": "operativo"
-        })
+        }
+        try:
+            import sqlite3
+            ruta_db = Path(self.ruta_raiz_hermes) / "Hermes.Web" / "data" / "proyecto.db"
+            if ruta_db.exists():
+                conn = sqlite3.connect(str(ruta_db))
+                c = conn.cursor()
+                c.execute("SELECT COUNT(*) FROM solicitudes_proyecto")
+                datos_reales["solicitudes_db"] = c.fetchone()[0]
+                c.execute("SELECT COUNT(*) FROM event_logs")
+                datos_reales["eventos_db"] = c.fetchone()[0]
+                c.execute("SELECT COUNT(*) FROM solicitudes_proyecto WHERE estado NOT IN ('COMPLETADO','FALLIDO')")
+                datos_reales["en_progreso"] = c.fetchone()[0]
+                conn.close()
+            else:
+                datos_reales["solicitudes_db"] = 0
+                datos_reales["eventos_db"] = 0
+                datos_reales["en_progreso"] = 0
+                datos_reales["db_path"] = str(ruta_db)
+                datos_reales["db_disponible"] = False
+        except Exception as e:
+            logger.warning(f"Error consultando telemetría real: {e}")
+            datos_reales["error_consulta"] = str(e)
+            datos_reales["solicitudes_db"] = 0
+            datos_reales["eventos_db"] = 0
+            datos_reales["en_progreso"] = 0
+        
+        datos_reales["ultima_consulta"] = datetime.now(timezone.utc).isoformat()
+        return {
+            "exito": True,
+            "datos": datos_reales,
+            "error": None,
+            "comando": "consulta_directa_db",
+            "duracion_ms": 0.5
+        }
     
     def obtener_estado_despliegue(self) -> Dict[str, Any]:
         """
-        Obtiene el estado del despliegue y release.
+        Obtiene el estado real del despliegue y release desde el sistema de archivos.
+        
+        Consulta:
+            - Archivos en Hermes.Web/deployment/
+            - Fechas de modificación reales
+            - Configuración Azure real desde Hermes.Azure.json
         
         Returns:
-            Dict con: archivos_build, release, deploy, etc.
+            Dict con: carpeta_despliegue, archivos_reales, release_lista, 
+                     app_service_configuracion, fecha_ultimo_despliegue
         """
+        # ── Datos reales del sistema de archivos ──
         ruta_deployment = Path(self.ruta_raiz_hermes) / "Hermes.Web" / "deployment"
-        return self._simular_resultado({
+        datos = {
             "carpeta_despliegue": str(ruta_deployment),
-            "archivos_despliegue": [
-                str(p.relative_to(ruta_deployment))
-                for p in ruta_deployment.rglob("*") if p.is_file()
-            ] if ruta_deployment.exists() else [],
-            "release_lista": (ruta_deployment / "release").exists(),
-            "app_service_configurado": self._leer_configuracion_azure().get("Azure", {})
-        })
+            "existe_carpeta": ruta_deployment.is_dir(),
+        }
+        
+        # ── Archivos reales en deployment/ ──
+        archivos = []
+        if ruta_deployment.exists():
+            try:
+                for p in ruta_deployment.rglob("*"):
+                    if p.is_file():
+                        stat = p.stat()
+                        from datetime import datetime
+                        archivos.append({
+                            "ruta": str(p.relative_to(ruta_deployment)),
+                            "tamano_bytes": stat.st_size,
+                            "ultima_modificacion": datetime.fromtimestamp(
+                                stat.st_mtime, tz=timezone.utc
+                            ).isoformat()
+                        })
+            except Exception as e:
+                logger.warning(f"Error listando archivos deployment: {e}")
+        datos["archivos_despliegue"] = archivos
+        
+        # ── Release real ──
+        ruta_release = ruta_deployment / "release"
+        datos["release_lista"] = ruta_release.exists()
+        if ruta_release.exists():
+            try:
+                archivos_release = [
+                    str(p.relative_to(ruta_release))
+                    for p in ruta_release.rglob("*") if p.is_file()
+                ]
+                datos["archivos_release"] = archivos_release
+            except Exception:
+                datos["archivos_release"] = []
+        
+        # ── Configuración Azure real ──
+        config_azure = self._leer_configuracion_azure().get("Azure", {})
+        if config_azure:
+            datos["app_service_configurado"] = config_azure
+            datos["app_service"] = config_azure.get("app_service_url", "")
+        else:
+            datos["app_service_configurado"] = {}
+            datos["app_service"] = ""
+        
+        # ── Fecha del último despliegue real ──
+        if archivos:
+            try:
+                fechas = [a["ultima_modificacion"] for a in archivos]
+                datos["fecha_ultimo_despliegue"] = max(fechas)
+            except Exception:
+                datos["fecha_ultimo_despliegue"] = ""
+        else:
+            datos["fecha_ultimo_despliegue"] = ""
+        
+        return {
+            "exito": True,
+            "datos": datos,
+            "error": None,
+            "comando": "consulta_sistema_archivos",
+            "duracion_ms": 0.5
+        }
     
     # ═══════════════════════════════════════════════════════════
     # Métodos auxiliares

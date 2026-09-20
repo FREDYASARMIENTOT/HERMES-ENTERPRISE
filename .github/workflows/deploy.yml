@@ -17,8 +17,6 @@ permissions:
   id-token: write
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       projectName:
@@ -89,7 +87,7 @@ jobs:
           from Hermes.Web.backend.main import app
           print(f'FastAPI app: {app.title}')
           print(f'Routes: {len(app.routes)}')
-          assert 'Hermes' in app.title, f'Identity mismatch: {app.title}'
+          assert 'Fábrica de Proyectos UR' in app.title, f'Identity mismatch: {app.title}'
           print('Entrypoint Hermes.Web.backend.main:app validated')
           " 2>&1
 

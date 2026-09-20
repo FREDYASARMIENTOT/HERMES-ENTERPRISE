@@ -152,6 +152,10 @@ async def historial_proyectos(request: Request, limit: int = 5):
                 "correlation_id": d.get("correlation_id", ""),
                 "repositorio": d.get("repositorio", ""),
                 "web_app_url": d.get("web_app_url", ""),
+                "web_app": d.get("web_app", ""),
+                "azure_resource_exists": d.get("azure_resource_exists"),
+                "azure_resource_check_status": d.get("azure_resource_check_status", "NO_VERIFICADO"),
+                "azure_resource_checked_at": d.get("azure_resource_checked_at", ""),
                 "commit_sha": d.get("commit_sha", ""),
                 "paso_final": paso_final["nombre"] if paso_final else None,
                 "paso_estado": paso_final["estado"] if paso_final else None,
@@ -162,6 +166,89 @@ async def historial_proyectos(request: Request, limit: int = 5):
         logger.error(f"Error obteniendo historial: {e}")
         return {"proyectos": [], "total": 0, "error": str(e)}
 
+
+
+
+@router.get("/fabrica/proyectos/{deployment_id}/azure-status", summary="Obtener estado Azure del recurso")
+async def azure_status_proyecto(request: Request, deployment_id: str):
+    """Obtiene el estado de reconciliacion Azure para un deployment."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        solicitud = servicio.obtener_solicitud(deployment_id)
+        if not solicitud:
+            return {"error": "Deployment no encontrado"}
+        d = solicitud.a_dict()
+        return {
+            "deployment_id": deployment_id,
+            "project_name": d.get("nombre_proyecto", ""),
+            "web_app": d.get("web_app", ""),
+            "web_app_resource_group": d.get("web_app_resource_group", ""),
+            "web_app_resource_id": d.get("web_app_resource_id", ""),
+            "azure_resource_exists": d.get("azure_resource_exists"),
+            "azure_resource_check_status": d.get("azure_resource_check_status", "NO_VERIFICADO"),
+            "azure_resource_checked_at": d.get("azure_resource_checked_at", ""),
+            "azure_resource_check_error": d.get("azure_resource_check_error", ""),
+            "azure_hostname": d.get("azure_hostname", ""),
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo azure status: {e}")
+        return {"error": str(e)}
+
+@router.post("/fabrica/proyectos/{deployment_id}/azure-check", summary="Verificar existencia en Azure ahora")
+async def azure_check_proyecto(request: Request, deployment_id: str):
+    """Verifica si el App Service asociado al deployment existe en Azure."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.verificar_y_actualizar_estado_azure(deployment_id)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error verificando Azure: {e}")
+        return {"error": str(e)}
+
+@router.get("/fabrica/proyectos/reconcile", summary="Reconciliar todos los proyectos (Azure + GitHub + Runtime)")
+async def reconcile_all(request: Request):
+    """Recorre todos los deployments y verifica su existencia en Azure."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultados = servicio.reconciliar_todos_los_proyectos()
+        return resultados
+    except Exception as e:
+        logger.error(f"Error reconciliando Azure: {e}")
+        return {"error": str(e), "total": 0, "existentes": 0, "eliminados": 0, "no_verificados": 0, "errores": 0, "detalles": []}
+
+@router.get("/fabrica/proyectos/{deployment_id}", summary="Obtener estado de un proyecto")
+@router.get("/fabrica/proyectos/{deployment_id}/resource-status", summary="Estado completo de recursos (Azure + GitHub + Runtime)")
+async def resource_status_proyecto(request: Request, deployment_id: str):
+    """Obtiene el estado completo de los 3 recursos del proyecto."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.verificar_y_actualizar_estado_completo(deployment_id)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error obteniendo resource-status {deployment_id}: {e}")
+        return {"error": str(e), "deployment_id": deployment_id}
+
+@router.post("/fabrica/proyectos/{deployment_id}/github-check", summary="Verificar existencia en GitHub ahora")
+async def github_check_proyecto(request: Request, deployment_id: str):
+    """Verifica si el repositorio GitHub asociado al deployment existe."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.verificar_y_actualizar_estado_github(deployment_id)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error verificando GitHub: {e}")
+        return {"error": str(e)}
+
+@router.post("/fabrica/proyectos/{deployment_id}/runtime-check", summary="Verificar Runtime/VENV ahora")
+async def runtime_check_proyecto(request: Request, deployment_id: str):
+    """Verifica si el runtime/VENV del proyecto esta operativo."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.verificar_y_actualizar_estado_runtime(deployment_id)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error verificando Runtime: {e}")
+        return {"error": str(e)}
 
 @router.get("/fabrica/proyectos/{deployment_id}", summary="Obtener estado de un proyecto")
 async def obtener_proyecto(request: Request, deployment_id: str):

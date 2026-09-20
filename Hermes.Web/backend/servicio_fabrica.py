@@ -165,6 +165,23 @@ class SolicitudProyecto:
         self.functional_fail_count: int = 0
         self.user_facing_result: str = ""
         self.evidence_result: str = ""
+        # Azure resource reconciliation
+        self.azure_resource_exists: Optional[bool] = None
+        self.azure_resource_check_status: str = "NO_VERIFICADO"
+        self.azure_resource_checked_at: str = ""
+        self.azure_resource_check_error: str = ""
+        self.azure_hostname: str = ""
+        # GitHub resource reconciliation
+        self.github_resource_exists: Optional[bool] = None
+        self.github_resource_check_status: str = "NO_VERIFICADO"
+        self.github_resource_checked_at: str = ""
+        self.github_resource_check_error: str = ""
+        self.github_repository: str = ""
+        # Runtime/VENV resource reconciliation
+        self.runtime_resource_exists: Optional[bool] = None
+        self.runtime_resource_check_status: str = "NO_VERIFICADO"
+        self.runtime_resource_checked_at: str = ""
+        self.runtime_resource_check_error: str = ""
         # Timing
         self.fecha_fin: str = ""
         self.duracion_total_segundos: int = 0
@@ -270,6 +287,23 @@ class SolicitudProyecto:
             "functional_fail_count": self.functional_fail_count,
             "user_facing_result": self.user_facing_result,
             "evidence_result": self.evidence_result,
+            # Azure resource reconciliation
+            "azure_resource_exists": self.azure_resource_exists,
+            "azure_resource_check_status": self.azure_resource_check_status,
+            "azure_resource_checked_at": self.azure_resource_checked_at,
+            "azure_resource_check_error": self.azure_resource_check_error,
+            "azure_hostname": self.azure_hostname,
+            # GitHub resource reconciliation
+            "github_resource_exists": self.github_resource_exists,
+            "github_resource_check_status": self.github_resource_check_status,
+            "github_resource_checked_at": self.github_resource_checked_at,
+            "github_resource_check_error": self.github_resource_check_error,
+            "github_repository": self.github_repository,
+            # Runtime/VENV resource reconciliation
+            "runtime_resource_exists": self.runtime_resource_exists,
+            "runtime_resource_check_status": self.runtime_resource_check_status,
+            "runtime_resource_checked_at": self.runtime_resource_checked_at,
+            "runtime_resource_check_error": self.runtime_resource_check_error,
             # Timing
             "fecha_fin": self.fecha_fin,
             "duracion_total_segundos": duracion
@@ -326,6 +360,32 @@ class SolicitudProyecto:
         s.functional_fail_count = datos.get("functional_fail_count", 0)
         s.user_facing_result = datos.get("user_facing_result", "")
         s.evidence_result = datos.get("evidence_result", "")
+        # Azure resource reconciliation
+        s.azure_resource_exists = datos.get("azure_resource_exists")
+        if s.azure_resource_exists is not None:
+            if isinstance(s.azure_resource_exists, str):
+                s.azure_resource_exists = s.azure_resource_exists.lower() in ("true", "1", "yes")
+        s.azure_resource_check_status = datos.get("azure_resource_check_status", "NO_VERIFICADO")
+        s.azure_resource_checked_at = datos.get("azure_resource_checked_at", "")
+        s.azure_resource_check_error = datos.get("azure_resource_check_error", "")
+        s.azure_hostname = datos.get("azure_hostname", "")
+        # GitHub resource reconciliation
+        s.github_resource_exists = datos.get("github_resource_exists")
+        if s.github_resource_exists is not None:
+            if isinstance(s.github_resource_exists, str):
+                s.github_resource_exists = s.github_resource_exists.lower() in ("true", "1", "yes")
+        s.github_resource_check_status = datos.get("github_resource_check_status", "NO_VERIFICADO")
+        s.github_resource_checked_at = datos.get("github_resource_checked_at", "")
+        s.github_resource_check_error = datos.get("github_resource_check_error", "")
+        s.github_repository = datos.get("github_repository", "")
+        # Runtime/VENV resource reconciliation
+        s.runtime_resource_exists = datos.get("runtime_resource_exists")
+        if s.runtime_resource_exists is not None:
+            if isinstance(s.runtime_resource_exists, str):
+                s.runtime_resource_exists = s.runtime_resource_exists.lower() in ("true", "1", "yes")
+        s.runtime_resource_check_status = datos.get("runtime_resource_check_status", "NO_VERIFICADO")
+        s.runtime_resource_checked_at = datos.get("runtime_resource_checked_at", "")
+        s.runtime_resource_check_error = datos.get("runtime_resource_check_error", "")
         # Timing
         s.fecha_fin = datos.get("fecha_fin", "")
         s.duracion_total_segundos = datos.get("duracion_total_segundos", 0)
@@ -486,6 +546,20 @@ class ServicioFabrica:
                 ("evidence_result", "TEXT DEFAULT ''"),
                 ("fecha_fin", "TEXT DEFAULT ''"),
                 ("duracion_total_segundos", "INTEGER DEFAULT 0"),
+                ("azure_resource_exists", "INTEGER"),
+                ("azure_resource_check_status", "TEXT DEFAULT 'NO_VERIFICADO'"),
+                ("azure_resource_checked_at", "TEXT DEFAULT ''"),
+                ("azure_resource_check_error", "TEXT DEFAULT ''"),
+                ("azure_hostname", "TEXT DEFAULT ''"),
+                ("github_resource_exists", "INTEGER"),
+                ("github_resource_check_status", "TEXT DEFAULT 'NO_VERIFICADO'"),
+                ("github_resource_checked_at", "TEXT DEFAULT ''"),
+                ("github_resource_check_error", "TEXT DEFAULT ''"),
+                ("github_repository", "TEXT DEFAULT ''"),
+                ("runtime_resource_exists", "INTEGER"),
+                ("runtime_resource_check_status", "TEXT DEFAULT 'NO_VERIFICADO'"),
+                ("runtime_resource_checked_at", "TEXT DEFAULT ''"),
+                ("runtime_resource_check_error", "TEXT DEFAULT ''"),
             ]:
                 try:
                     cursor.execute(f"ALTER TABLE solicitudes_proyecto ADD COLUMN {col_name} {col_type}")
@@ -624,6 +698,405 @@ class ServicioFabrica:
             logger.error(f"Error listando solicitudes: {e}")
             return []
 
+    # ──────────────────────────────────────────────────────────
+    # Azure resource reconciliation
+    # ──────────────────────────────────────────────────────────
+
+    def _actualizar_estado_azure_en_bd(
+        self, deployment_id: str, resultado_azure: Dict[str, Any]
+    ) -> bool:
+        """Actualiza los campos de reconciliacion Azure en BD."""
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE solicitudes_proyecto SET
+                    azure_resource_exists = ?,
+                    azure_resource_check_status = ?,
+                    azure_resource_checked_at = ?,
+                    azure_resource_check_error = ?,
+                    azure_hostname = ?
+                WHERE deployment_id = ?
+            """, (
+                resultado_azure.get("exists"),
+                resultado_azure.get("status", "NO_VERIFICADO"),
+                resultado_azure.get("checked_at", ""),
+                resultado_azure.get("error", ""),
+                resultado_azure.get("hostname", ""),
+                deployment_id
+            ))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Error actualizando estado Azure en BD para {deployment_id}: {e}")
+            return False
+
+    def _actualizar_estado_github_en_bd(
+        self, deployment_id: str, resultado_github: Dict[str, Any]
+    ) -> bool:
+        """Actualiza los campos de reconciliacion GitHub en BD."""
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE solicitudes_proyecto SET
+                    github_resource_exists = ?,
+                    github_resource_check_status = ?,
+                    github_resource_checked_at = ?,
+                    github_resource_check_error = ?,
+                    github_repository = ?
+                WHERE deployment_id = ?
+            """, (
+                resultado_github.get("exists"),
+                resultado_github.get("status", "NO_VERIFICADO"),
+                resultado_github.get("checked_at", ""),
+                resultado_github.get("error", ""),
+                resultado_github.get("repository", ""),
+                deployment_id
+            ))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Error actualizando estado GitHub en BD para {deployment_id}: {e}")
+            return False
+
+    def _actualizar_estado_runtime_en_bd(
+        self, deployment_id: str, resultado_runtime: Dict[str, Any]
+    ) -> bool:
+        """Actualiza los campos de reconciliacion Runtime/VENV en BD."""
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE solicitudes_proyecto SET
+                    runtime_resource_exists = ?,
+                    runtime_resource_check_status = ?,
+                    runtime_resource_checked_at = ?,
+                    runtime_resource_check_error = ?
+                WHERE deployment_id = ?
+            """, (
+                resultado_runtime.get("exists"),
+                resultado_runtime.get("status", "NO_VERIFICADO"),
+                resultado_runtime.get("checked_at", ""),
+                resultado_runtime.get("error", ""),
+                deployment_id
+            ))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Error actualizando estado Runtime en BD para {deployment_id}: {e}")
+            return False
+
+    def verificar_y_actualizar_estado_azure(
+        self, deployment_id: str
+    ) -> Dict[str, Any]:
+        """
+        Verifica si el Web App asociado a un deployment existe en Azure
+        y actualiza los campos de reconciliacion.
+        """
+        solicitud = self.obtener_solicitud(deployment_id)
+        if not solicitud:
+            return {
+                "deployment_id": deployment_id,
+                "error": "Deployment no encontrado",
+                "status": "NO_VERIFICADO",
+            }
+
+        web_app_name = solicitud.web_app
+        resource_group = (
+            solicitud.web_app_resource_group
+            or "RG-Hermes-Proyectos"
+        )
+        subscription_id = (
+            solicitud.app_service_plan_subscription
+            or "01bfad48-c092-4712-bc72-f141eb01a8d4"
+        )
+
+        from Hermes.Web.backend.servicio_azure import obtener_servicio_azure
+        servicio_azure = obtener_servicio_azure()
+
+        resultado = servicio_azure.verificar_existencia_web_app(
+            web_app_name=web_app_name,
+            resource_group=resource_group,
+            subscription_id=subscription_id,
+        )
+
+        resultado["deployment_id"] = deployment_id
+        resultado["project_name"] = solicitud.nombre_proyecto
+        resultado["web_app_name"] = web_app_name
+
+        self._actualizar_estado_azure_en_bd(deployment_id, resultado)
+        self._registrar_evento(
+            deployment_id=deployment_id,
+            correlation_id=solicitud.correlation_id,
+            fase="RECONCILIACION",
+            componente="AZURE",
+            tipo="INFO",
+            mensaje=f"Azure reconciliation: {resultado.get('status', 'NO_VERIFICADO')}",
+            detalle=f"Web App: {web_app_name}, Status: {resultado.get('status', '?')}",
+            evidencia=json.dumps({"azure_status": resultado.get("status", "?"), "web_app": web_app_name}),
+        )
+
+        return resultado
+
+    def verificar_y_actualizar_estado_github(
+        self, deployment_id: str
+    ) -> Dict[str, Any]:
+        """Verifica si el repositorio GitHub asociado existe."""
+        solicitud = self.obtener_solicitud(deployment_id)
+        if not solicitud:
+            return {"deployment_id": deployment_id, "error": "Deployment no encontrado", "status": "NO_VERIFICADO"}
+
+        repositorio = solicitud.repositorio or ""
+        if "/" in repositorio:
+            partes = repositorio.split("/")
+            owner = partes[0]
+            repo = "/".join(partes[1:])
+        else:
+            owner = "FREDYASARMIENTOT"
+            repo = repositorio or solicitud.nombre_proyecto
+
+        from Hermes.Web.backend.servicio_github import obtener_servicio_github
+        servicio_github = obtener_servicio_github()
+        resultado = servicio_github.verificar_existencia_repositorio(owner=owner, repo=repo)
+        resultado["deployment_id"] = deployment_id
+        resultado["project_name"] = solicitud.nombre_proyecto
+
+        self._actualizar_estado_github_en_bd(deployment_id, resultado)
+        self._registrar_evento(
+            deployment_id=deployment_id, correlation_id=solicitud.correlation_id,
+            fase="RECONCILIACION", componente="GITHUB", tipo="INFO",
+            mensaje=f"GitHub reconciliation: {resultado.get('status', 'NO_VERIFICADO')}",
+            detalle=f"Repo: {owner}/{repo}, Status: {resultado.get('status', '?')}",
+            evidencia=json.dumps({"github_status": resultado.get("status", "?"), "repo": f"{owner}/{repo}"}),
+        )
+        return resultado
+
+    def verificar_y_actualizar_estado_runtime(
+        self, deployment_id: str
+    ) -> Dict[str, Any]:
+        """Verifica si el runtime/VENV esta operativo via health endpoint."""
+        solicitud = self.obtener_solicitud(deployment_id)
+        if not solicitud:
+            return {"deployment_id": deployment_id, "error": "Deployment no encontrado", "status": "NO_VERIFICADO"}
+
+        if solicitud.azure_resource_check_status != "EXISTE":
+            resultado = {"exists": False, "status": "NO_VERIFICADO",
+                "hostname": solicitud.azure_hostname or "",
+                "error": "App Service no existe o no verificado", "checked_at": _ahora()}
+            self._actualizar_estado_runtime_en_bd(deployment_id, resultado)
+            return resultado
+
+        hostname = solicitud.azure_hostname or f"{solicitud.web_app}.azurewebsites.net"
+        from Hermes.Web.backend.servicio_runtime import obtener_servicio_runtime
+        servicio_runtime = obtener_servicio_runtime()
+        resultado = servicio_runtime.verificar_runtime(hostname=hostname)
+        resultado["deployment_id"] = deployment_id
+        resultado["project_name"] = solicitud.nombre_proyecto
+
+        self._actualizar_estado_runtime_en_bd(deployment_id, resultado)
+        self._registrar_evento(
+            deployment_id=deployment_id, correlation_id=solicitud.correlation_id,
+            fase="RECONCILIACION", componente="RUNTIME", tipo="INFO",
+            mensaje=f"Runtime reconciliation: {resultado.get('status', 'NO_VERIFICADO')}",
+            detalle=f"Hostname: {hostname}, Status: {resultado.get('status', '?')}",
+            evidencia=json.dumps({"runtime_status": resultado.get("status", "?"), "hostname": hostname}),
+        )
+        return resultado
+
+    def verificar_y_actualizar_estado_completo(
+        self, deployment_id: str
+    ) -> Dict[str, Any]:
+        """Verifica estado completo de los 3 recursos: Azure + GitHub + Runtime."""
+        resultado = {
+            "deployment_id": deployment_id,
+            "runtime": {}, "github": {}, "azure": {},
+            "active": False, "checked_at": _ahora(),
+        }
+        solicitud = self.obtener_solicitud(deployment_id)
+        if solicitud:
+            resultado["project_name"] = solicitud.nombre_proyecto
+
+        try:
+            azure_res = self.verificar_y_actualizar_estado_azure(deployment_id)
+            resultado["azure"] = {
+                "status": azure_res.get("status", "NO_VERIFICADO"),
+                "resource_id": azure_res.get("resource_id", ""),
+                "web_app_name": azure_res.get("web_app_name", ""),
+                "hostname": azure_res.get("hostname", ""),
+                "checked_at": azure_res.get("checked_at", ""),
+                "error": azure_res.get("error", ""),
+            }
+        except Exception as e:
+            resultado["azure"] = {"status": "ERROR", "error": str(e)[:300]}
+
+        try:
+            github_res = self.verificar_y_actualizar_estado_github(deployment_id)
+            resultado["github"] = {
+                "status": github_res.get("status", "NO_VERIFICADO"),
+                "repository": github_res.get("repository", ""),
+                "html_url": github_res.get("html_url", ""),
+                "checked_at": github_res.get("checked_at", ""),
+                "error": github_res.get("error", ""),
+            }
+        except Exception as e:
+            resultado["github"] = {"status": "ERROR", "error": str(e)[:300]}
+
+        try:
+            runtime_res = self.verificar_y_actualizar_estado_runtime(deployment_id)
+            resultado["runtime"] = {
+                "status": runtime_res.get("status", "NO_VERIFICADO"),
+                "hostname": runtime_res.get("hostname", ""),
+                "checked_at": runtime_res.get("checked_at", ""),
+                "error": runtime_res.get("error", ""),
+            }
+        except Exception as e:
+            resultado["runtime"] = {"status": "ERROR", "error": str(e)[:300]}
+
+        resultado["active"] = resultado["azure"].get("status") == "EXISTE"
+
+        self._registrar_evento(
+            deployment_id=deployment_id, fase="RECONCILIACION",
+            componente="RECONCILIACION_COMPLETA", tipo="INFO",
+            mensaje="Reconciliacion completa ejecutada",
+            detalle=(f"Azure: {resultado['azure'].get('status')}, "
+                     f"GitHub: {resultado['github'].get('status')}, "
+                     f"Runtime: {resultado['runtime'].get('status')}, "
+                     f"Active: {resultado['active']}"),
+            evidencia=json.dumps(resultado, ensure_ascii=False, default=str),
+        )
+        return resultado
+
+    def reconciliar_todos_los_proyectos(self) -> Dict[str, Any]:
+        """
+        Revisa todos los deployments almacenados y verifica los 3 recursos:
+        Azure App Service, GitHub Repositorio y Runtime/VENV.
+        """
+        solicitudes = self.listar_solicitudes(limite=1000)
+        resultados = {
+            "total": len(solicitudes),
+            "azure_existentes": 0,
+            "azure_eliminados": 0,
+            "azure_errores": 0,
+            "azure_no_verificados": 0,
+            "github_existentes": 0,
+            "github_eliminados": 0,
+            "github_errores": 0,
+            "github_no_verificados": 0,
+            "runtime_existentes": 0,
+            "runtime_eliminados": 0,
+            "runtime_errores": 0,
+            "runtime_no_verificados": 0,
+            "activos": 0,
+            "historicos": 0,
+            "detalles": [],
+            "timestamp": _ahora(),
+        }
+
+        for sol in solicitudes:
+            detalle = {
+                "deployment_id": sol.deployment_id,
+                "project_name": sol.nombre_proyecto,
+                "web_app": sol.web_app,
+                "repositorio": sol.repositorio,
+                "resultado_historico": sol.resultado,
+                "azure": {"status": "NO_VERIFICADO", "error": ""},
+                "github": {"status": "NO_VERIFICADO", "error": ""},
+                "runtime": {"status": "NO_VERIFICADO", "error": ""},
+                "active": False,
+            }
+
+            # 1. Verificar Azure
+            try:
+                if not sol.web_app:
+                    resultados["azure_no_verificados"] += 1
+                    detalle["azure"]["error"] = "Sin web_app"
+                else:
+                    res = self.verificar_y_actualizar_estado_azure(sol.deployment_id)
+                    status = res.get("status", "ERROR")
+                    detalle["azure"]["status"] = status
+                    detalle["azure"]["error"] = res.get("error", "")
+                    if status == "EXISTE":
+                        resultados["azure_existentes"] += 1
+                        detalle["active"] = True
+                    elif status == "NO_EXISTE":
+                        resultados["azure_eliminados"] += 1
+                    elif "ERROR" in status:
+                        resultados["azure_errores"] += 1
+                    else:
+                        resultados["azure_no_verificados"] += 1
+            except Exception as e:
+                resultados["azure_errores"] += 1
+                detalle["azure"]["status"] = "ERROR"
+                detalle["azure"]["error"] = str(e)[:200]
+
+            # 2. Verificar GitHub
+            try:
+                github_res = self.verificar_y_actualizar_estado_github(sol.deployment_id)
+                gh_status = github_res.get("status", "NO_VERIFICADO")
+                detalle["github"]["status"] = gh_status
+                detalle["github"]["error"] = github_res.get("error", "")
+                if gh_status == "EXISTE":
+                    resultados["github_existentes"] += 1
+                elif gh_status == "NO_EXISTE":
+                    resultados["github_eliminados"] += 1
+                elif "ERROR" in gh_status:
+                    resultados["github_errores"] += 1
+                else:
+                    resultados["github_no_verificados"] += 1
+            except Exception as e:
+                resultados["github_errores"] += 1
+                detalle["github"]["status"] = "ERROR"
+                detalle["github"]["error"] = str(e)[:200]
+
+            # 3. Verificar Runtime
+            try:
+                runtime_res = self.verificar_y_actualizar_estado_runtime(sol.deployment_id)
+                rt_status = runtime_res.get("status", "NO_VERIFICADO")
+                detalle["runtime"]["status"] = rt_status
+                detalle["runtime"]["error"] = runtime_res.get("error", "")
+                if rt_status == "EXISTE":
+                    resultados["runtime_existentes"] += 1
+                elif rt_status == "NO_EXISTE":
+                    resultados["runtime_eliminados"] += 1
+                elif "ERROR" in rt_status:
+                    resultados["runtime_errores"] += 1
+                else:
+                    resultados["runtime_no_verificados"] += 1
+            except Exception as e:
+                resultados["runtime_errores"] += 1
+                detalle["runtime"]["status"] = "ERROR"
+                detalle["runtime"]["error"] = str(e)[:200]
+
+            # 4. Activo vs Histórico
+            if detalle["active"]:
+                resultados["activos"] += 1
+            else:
+                resultados["historicos"] += 1
+
+            resultados["detalles"].append(detalle)
+
+        self._registrar_evento(
+            deployment_id="MASS_RECONCILIATION",
+            fase="RECONCILIACION",
+            componente="RECONCILIACION_MASIVA",
+            tipo="INFO",
+            mensaje=f"Reconciliacion masiva completada: {resultados['total']} proyectos",
+            detalle=(
+                f"Azure EXISTE: {resultados['azure_existentes']}, "
+                f"NO_EXISTE: {resultados['azure_eliminados']}; "
+                f"GitHub EXISTE: {resultados['github_existentes']}, "
+                f"NO_EXISTE: {resultados['github_eliminados']}; "
+                f"Runtime EXISTE: {resultados['runtime_existentes']}; "
+                f"Activos: {resultados['activos']}, Historicos: {resultados['historicos']}"
+            ),
+        )
+
+        return resultados
+
     def _guardar(self, solicitud: SolicitudProyecto) -> None:
         """Guarda o actualiza una solicitud en SQLite."""
         # FASE 24 — Recalcular estado global desde pasos antes de guardar
@@ -666,9 +1139,18 @@ class ServicioFabrica:
                  control_plane_started_at, control_plane_finished_at, control_plane_duration,
                  readiness_result, functional_result, functional_pass_count,
                  functional_fail_count, user_facing_result, evidence_result,
-                 fecha_fin, duracion_total_segundos)
+                 fecha_fin, duracion_total_segundos,
+                 azure_resource_exists, azure_resource_check_status,
+                 azure_resource_checked_at, azure_resource_check_error,
+                 azure_hostname,
+                 github_resource_exists, github_resource_check_status,
+                 github_resource_checked_at, github_resource_check_error,
+                 github_repository,
+                 runtime_resource_exists, runtime_resource_check_status,
+                 runtime_resource_checked_at, runtime_resource_check_error)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 datos["id"], datos["nombre_proyecto"], datos["descripcion"],
                 datos["repositorio"], datos["web_app"], datos["web_app_url"],
@@ -703,7 +1185,21 @@ class ServicioFabrica:
                 datos.get("user_facing_result", ""),
                 datos.get("evidence_result", ""),
                 datos.get("fecha_fin", ""),
-                datos.get("duracion_total_segundos", 0)
+                datos.get("duracion_total_segundos", 0),
+                datos.get("azure_resource_exists"),
+                datos.get("azure_resource_check_status", "NO_VERIFICADO"),
+                datos.get("azure_resource_checked_at", ""),
+                datos.get("azure_resource_check_error", ""),
+                datos.get("azure_hostname", ""),
+                datos.get("github_resource_exists"),
+                datos.get("github_resource_check_status", "NO_VERIFICADO"),
+                datos.get("github_resource_checked_at", ""),
+                datos.get("github_resource_check_error", ""),
+                datos.get("github_repository", ""),
+                datos.get("runtime_resource_exists"),
+                datos.get("runtime_resource_check_status", "NO_VERIFICADO"),
+                datos.get("runtime_resource_checked_at", ""),
+                datos.get("runtime_resource_check_error", "")
             ))
             conn.commit()
             conn.close()

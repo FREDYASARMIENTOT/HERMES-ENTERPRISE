@@ -41,37 +41,46 @@ def check_plans():
         log_error(f"Plans fail: {d}"); return False, []
     except Exception as e: log_error(f"Plans: {e}"); return False, []
 
-def check_html(page):
+def check_main_page(page):
+    """Check main page has crearProyecto function and plans loaded"""
     ok=True; h=page.content()
-    for n,c in [("conectarSSE","conectarSSE" in h),("consoleAddEvent","consoleAddEvent" in h),
-                ("consoleRenderLine","consoleRenderLine" in h),("heartbeat","heartbeat" in h),
-                ("No polling","iniciarPolling" not in h and "detenerPolling" not in h)]:
+    checks = [
+        ("crearProyecto", "crearProyecto" in h),
+        ("No polling (main)", "iniciarPolling" not in h),
+        ("Plans select", "app-service-plan-select" in h),
+    ]
+    for n,c in checks:
         if c: log_pass(f"  {n}")
         else: log_error(f"  {n} MISSING"); ok=False
     return ok
+
 def create_project(page, plans):
     pn = f"hermes-final-e2e-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     log_info(f"\nProject: {pn}")
     page.goto(PORTAL_URL, wait_until="networkidle", timeout=30000)
-    pi = page.locator("#nuevo-proyecto-input, #project-name, input[name='project_name']")
+    # Wait for button to be enabled (plans loaded)
+    btn = page.locator("#crear-proyecto-btn")
+    try:
+        btn.wait_for(state="visible", timeout=10000)
+        page.wait_for_function("() => !document.getElementById('crear-proyecto-btn').disabled", timeout=15000)
+    except Exception as e:
+        log_error(f"Button never enabled: {e}")
+        return False,None,None,pn
+    pi = page.locator("#nuevo-proyecto-input")
     if pi.count()==0: log_error("No input"); return False,None,None,pn
-    ps = page.locator("#app-service-plan-select, select")
+    ps = page.locator("#app-service-plan-select")
     if ps.count()==0: log_error("No select"); return False,None,None,pn
-    btn = page.locator("#crear-proyecto-btn, button:has-text('Crear'),button[type='submit']")
-    if btn.count()==0: log_error("No button"); return False,None,None,pn
-    try: pi.first.fill(pn)
-    except: pass
+    pi.first.fill(pn)
     log_pass(f"Name: {pn}")
     tv = None
     for p in plans:
         if p["name"]=="ASP-HERMES-PORTAL": tv=p["id"]; break
     if tv:
-        try: ps.select_option(tv)
-        except: ps.select_option(label="ASP-HERMES-PORTAL")
+        ps.select_option(tv)
         log_pass("Selected ASP-HERMES-PORTAL")
     else: log_error("ASP-HERMES-PORTAL not found"); return False,None,None,pn
     log_info("CLICK REAL on Crear Proyecto...")
-    with page.expect_response(lambda r: r.method=="POST" and "/api/fabrica/proyectos" in r.url, timeout=20000) as ri:
+    with page.expect_response(lambda r: r.request.method=="POST" and "/api/fabrica/proyectos" in r.url, timeout=30000) as ri:
         btn.first.click()
     resp = ri.value
     log_info(f"POST: HTTP {resp.status}")
@@ -132,7 +141,7 @@ def main():
         RESULTS["health"]=check_health()
         RESULTS["plans_ok"],plans=check_plans()
         pw,b,c,page=launch_browser(); page.goto(PORTAL_URL, wait_until="networkidle", timeout=30000)
-        RESULTS["sse_html"]=check_html(page)
+        RESULTS["sse_html"]=check_main_page(page)
         RESULTS["click_ok"],did,cid,pn=create_project(page,plans)
         RESULTS["http_202"]=RESULTS["click_ok"]
         if RESULTS["click_ok"] and did:

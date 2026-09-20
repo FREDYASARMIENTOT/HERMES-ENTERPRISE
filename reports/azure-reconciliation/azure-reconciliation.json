@@ -1,0 +1,54 @@
+{
+  "report": "Azure Implementation Reconciliation",
+  "timestamp": "2026-09-20T01:33:00Z",
+  "portal": "https://as-hermesportal.azurewebsites.net/",
+  "subscription": "01bfad48-c092-4712-bc72-f141eb01a8d4",
+  "resource_group": "RG-Hermes-Proyectos",
+  "environments": {
+    "local_test": {
+      "total_deployments": 3,
+      "existentes": 0,
+      "eliminados": 1,
+      "no_verificados": 2,
+      "errores": 0,
+      "deployments": [
+        {
+          "deployment_id": "E4251E5C847F47E8",
+          "project_name": "hermes-e2e-b1-portal-20260915-073901",
+          "web_app": "as-hermese2eb1portal20260915073901",
+          "azure_status": "NO_EXISTE",
+          "historico_resultado": "PASS",
+          "checked_at": "2026-09-20T01:33:19.364898+00:00"
+        },
+        {
+          "deployment_id": "CD281EFB47DD4F08",
+          "project_name": "test",
+          "web_app": "as-test",
+          "azure_status": "NO_VERIFICADO",
+          "checked_at": ""
+        },
+        {
+          "deployment_id": "15ED1CEDF3304C64",
+          "project_name": "hermes-fabrica-04",
+          "web_app": "as-hermes-fabrica-04",
+          "azure_status": "NO_VERIFICADO",
+          "checked_at": ""
+        }
+      ]
+    }
+  },
+  "tests": {
+    "traceability": {"passed": 80, "failed": 0, "total": 80},
+    "portal_canonical": {"passed": 85, "failed": 10, "total": 95, "note": "10 pre-existing failures from state name changes"},
+    "azure_reconciliation": {"passed": 14, "failed": 0, "total": 14}
+  },
+  "conclusion": {
+    "historical_data_deleted": false,
+    "azure_infrastructure_modified": false,
+    "historical_results_altered": false,
+    "azure_404_distinguished_from_errors": true,
+    "azure_403_distinguished_from_404": true,
+    "azure_timeout_distinguished_from_404": true,
+    "verification": "PASS"
+  }
+}

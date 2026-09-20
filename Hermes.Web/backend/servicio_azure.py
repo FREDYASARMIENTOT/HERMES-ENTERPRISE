@@ -214,6 +214,142 @@ class ServicioAzure:
         return resultado
 
 
+# ─── Verificar existencia de Web App ───
+
+    def verificar_existencia_web_app(
+        self,
+        web_app_name: str,
+        resource_group: str = RESOURCE_GROUP_AUTORIZADO,
+        subscription_id: str = SUBSCRIPTION_AUTORIZADA
+    ) -> Dict[str, Any]:
+        """
+        Verifica si un Web App (App Service) existe actualmente en Azure.
+
+        Args:
+            web_app_name: Nombre del App Service (ej: as-hermes-fabrica-02)
+            resource_group: Resource Group (default: RG-Hermes-Proyectos)
+            subscription_id: Subscription ID
+
+        Returns:
+            Dict con:
+                - exists: bool
+                - status_code: int (HTTP status)
+                - status: str (EXISTE | NO_EXISTE | ERROR_PERMISOS |
+                           ERROR_CONEXION | ERROR_AZURE | NO_VERIFICADO)
+                - error: str
+                - resource_id: str (ARM resource ID)
+                - hostname: str (default hostname si existe)
+                - checked_at: str (timestamp ISO 8601)
+        """
+        resultado: Dict[str, Any] = {
+            "exists": False,
+            "status_code": 0,
+            "status": "NO_VERIFICADO",
+            "error": "",
+            "resource_id": "",
+            "hostname": "",
+            "checked_at": _ahora_azure(),
+        }
+
+        if not web_app_name:
+            resultado["error"] = "web_app_name vacio"
+            resultado["status"] = "NO_VERIFICADO"
+            return resultado
+
+        resource_id = (
+            f"/subscriptions/{subscription_id}"
+            f"/resourceGroups/{resource_group}"
+            f"/providers/Microsoft.Web/sites/{web_app_name}"
+        )
+        resultado["resource_id"] = resource_id
+
+        if not self._httpx_disponible:
+            resultado["error"] = "httpx no disponible"
+            return resultado
+
+        token = self._obtener_token()
+        if not token:
+            resultado["error"] = "No se pudo autenticar con Azure"
+            resultado["status"] = "ERROR"
+            return resultado
+
+        url = f"{ARM_ENDPOINT}{resource_id}?api-version={API_VERSION}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            respuesta = self._httpx.get(url, headers=headers, timeout=15.0)
+            resultado["status_code"] = respuesta.status_code
+
+            if respuesta.status_code == 200:
+                resultado["exists"] = True
+                resultado["status"] = "EXISTE"
+                data = respuesta.json()
+                props = data.get("properties", {})
+                resultado["hostname"] = props.get("defaultHostName", "")
+                logger.info(
+                    f"Web App {web_app_name} existe en Azure. "
+                    f"Hostname: {resultado['hostname']}"
+                )
+            elif respuesta.status_code == 404:
+                resultado["exists"] = False
+                resultado["status"] = "NO_EXISTE"
+                logger.info(f"Web App {web_app_name} NO existe en Azure (404)")
+            elif respuesta.status_code == 403:
+                resultado["exists"] = False
+                resultado["status"] = "ERROR_PERMISOS"
+                resultado["error"] = (
+                    f"Azure ARM respondio 403 (permisos insuficientes) "
+                    f"para {web_app_name}"
+                )
+                logger.warning(resultado["error"])
+            elif respuesta.status_code == 401:
+                resultado["exists"] = False
+                resultado["status"] = "ERROR_PERMISOS"
+                resultado["error"] = (
+                    f"Azure ARM respondio 401 (no autenticado) "
+                    f"para {web_app_name}"
+                )
+                logger.warning(resultado["error"])
+            else:
+                resultado["exists"] = False
+                resultado["status"] = "ERROR_AZURE"
+                resultado["error"] = (
+                    f"Azure ARM respondio {respuesta.status_code} "
+                    f"para {web_app_name}"
+                )
+                logger.error(resultado["error"])
+
+        except self._httpx.TimeoutException:
+            resultado["status"] = "ERROR_CONEXION"
+            resultado["error"] = f"Timeout consultando Web App {web_app_name} (15s)"
+            logger.error(resultado["error"])
+        except self._httpx.ConnectError as e:
+            resultado["status"] = "ERROR_CONEXION"
+            resultado["error"] = (
+                f"Error de conexion a Azure ARM para {web_app_name}: "
+                f"{str(e)[:200]}"
+            )
+            logger.error(resultado["error"])
+        except Exception as e:
+            resultado["status"] = "ERROR_AZURE"
+            resultado["error"] = (
+                f"Error interno consultando Web App {web_app_name}: "
+                f"{str(e)[:300]}"
+            )
+            logger.error(resultado["error"])
+
+        return resultado
+
+
+def _ahora_azure() -> str:
+    """Timestamp ISO 8601 para Azure checks."""
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
+
+
 # ─── Singleton ───
 
 _instancia_servicio_azure: Optional[ServicioAzure] = None

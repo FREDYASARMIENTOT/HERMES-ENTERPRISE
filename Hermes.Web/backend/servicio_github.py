@@ -39,6 +39,7 @@ RAMA_POR_DEFECTO = "main"
 # NOTA: No usar COMMIT_SHA_PLACEHOLDER. El SHA debe ser REAL.
 # deploy-child.yml valida estrictamente: ^[0-9a-f]{40}$
 URL_BASE_API = "https://api.github.com"
+GITHUB_API_VERSION = "2022-11-28"
 ENV_TOKEN_GITHUB = "HERMES_GITHUB_TOKEN"
 
 # UUID para cuando no se provee correlation_id / deployment_id
@@ -348,6 +349,124 @@ class ServicioGitHub:
             "mensaje": resultado.get("mensaje", ""),
             "payload_enviado": resultado.get("payload_enviado", {}),
         }
+
+    # ─── Reconciliacion: verificar existencia de repositorio ───
+
+    def verificar_existencia_repositorio(
+        self, owner: str, repo: str, timeout: float = 10.0
+    ) -> Dict[str, Any]:
+        """
+        Verifica si un repositorio existe en GitHub.
+
+        Args:
+            owner: Dueno del repositorio (usuario u organizacion)
+            repo: Nombre del repositorio
+            timeout: Timeout en segundos para la peticion HTTP
+
+        Returns:
+            Dict con:
+                - exists: bool (True si el repo existe)
+                - status: str (EXISTE|NO_EXISTE|ERROR_PERMISOS|ERROR_GITHUB|ERROR_CONEXION)
+                - status_code: int
+                - repository: str (owner/repo)
+                - html_url: str
+                - description: str
+                - visibility: str
+                - default_branch: str
+                - error: str
+                - checked_at: str (timestamp ISO 8601)
+        """
+        from datetime import datetime, timezone
+
+        def _ahora():
+            return datetime.now(timezone.utc).isoformat()
+
+        resultado: Dict[str, Any] = {
+            "exists": False,
+            "status": "NO_VERIFICADO",
+            "status_code": 0,
+            "repository": f"{owner}/{repo}",
+            "html_url": "",
+            "description": "",
+            "visibility": "",
+            "default_branch": "",
+            "error": "",
+            "checked_at": _ahora(),
+        }
+
+        if not owner or not repo:
+            resultado["error"] = "owner y repo son requeridos"
+            return resultado
+
+        if not self._httpx_disponible:
+            resultado["error"] = "httpx no disponible"
+            return resultado
+
+        token_valido = self.token or _obtener_token()
+        url = f"{URL_BASE_API}/repos/{owner}/{repo}"
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "Hermes-Enterprise-Portal/2.0",
+            "X-GitHub-Api-Version": GITHUB_API_VERSION,
+        }
+        if token_valido:
+            headers["Authorization"] = f"Bearer {token_valido}"
+
+        try:
+            respuesta = self._httpx.get(url, headers=headers, timeout=timeout)
+            resultado["status_code"] = respuesta.status_code
+
+            if respuesta.status_code == 200:
+                resultado["exists"] = True
+                resultado["status"] = "EXISTE"
+                data = respuesta.json()
+                resultado["html_url"] = data.get("html_url", "")
+                resultado["description"] = data.get("description", "") or ""
+                resultado["visibility"] = data.get("visibility", "")
+                resultado["default_branch"] = data.get("default_branch", "")
+                logger.info(
+                    f"Repo {owner}/{repo} EXISTE. "
+                    f"Visibilidad: {resultado['visibility']}"
+                )
+            elif respuesta.status_code == 404:
+                resultado["status"] = "NO_EXISTE"
+                logger.info(f"Repo {owner}/{repo} NO_EXISTE (404)")
+            elif respuesta.status_code in (401, 403):
+                resultado["status"] = "ERROR_PERMISOS"
+                resultado["error"] = (
+                    f"GitHub respondio {respuesta.status_code} "
+                    f"para {owner}/{repo}"
+                )
+                logger.warning(resultado["error"])
+            elif respuesta.status_code == 429:
+                resultado["status"] = "ERROR_LIMITE"
+                resultado["error"] = (
+                    f"GitHub respondio 429 (rate limit) para {owner}/{repo}"
+                )
+                logger.warning(resultado["error"])
+            else:
+                resultado["status"] = "ERROR_GITHUB"
+                resultado["error"] = (
+                    f"GitHub respondio {respuesta.status_code} "
+                    f"para {owner}/{repo}"
+                )
+                logger.error(resultado["error"])
+
+        except self._httpx.TimeoutException:
+            resultado["status"] = "ERROR_CONEXION"
+            resultado["error"] = f"Timeout consultando {owner}/{repo} ({timeout}s)"
+            logger.error(resultado["error"])
+        except self._httpx.ConnectError as e:
+            resultado["status"] = "ERROR_CONEXION"
+            resultado["error"] = f"Error conexion GitHub API: {str(e)[:200]}"
+            logger.error(resultado["error"])
+        except Exception as e:
+            resultado["status"] = "ERROR_GITHUB"
+            resultado["error"] = f"Error interno: {str(e)[:300]}"
+            logger.error(resultado["error"])
+
+        resultado["checked_at"] = _ahora()
+        return resultado
 
 
 # Singleton

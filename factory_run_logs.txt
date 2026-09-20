@@ -1,0 +1,816 @@
+Validar Entradas	Set up job	﻿2026-09-17T16:49:06.8457679Z Current runner version: '2.337.0'
+Validar Entradas	Set up job	2026-09-17T16:49:06.8484113Z ##[group]Runner Image Provisioner
+Validar Entradas	Set up job	2026-09-17T16:49:06.8485103Z Hosted Compute Agent
+Validar Entradas	Set up job	2026-09-17T16:49:06.8485721Z Version: 20260828.587
+Validar Entradas	Set up job	2026-09-17T16:49:06.8486420Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Validar Entradas	Set up job	2026-09-17T16:49:06.8487269Z Build Date: 2026-08-28T16:44:25Z
+Validar Entradas	Set up job	2026-09-17T16:49:06.8487990Z Worker ID: {62cba46d-3167-4171-bf22-447f133c5cd5}
+Validar Entradas	Set up job	2026-09-17T16:49:06.8488858Z Azure Region: northcentralus
+Validar Entradas	Set up job	2026-09-17T16:49:06.8489507Z ##[endgroup]
+Validar Entradas	Set up job	2026-09-17T16:49:06.8490959Z ##[group]Operating System
+Validar Entradas	Set up job	2026-09-17T16:49:06.8491941Z Ubuntu
+Validar Entradas	Set up job	2026-09-17T16:49:06.8492595Z 24.04.5
+Validar Entradas	Set up job	2026-09-17T16:49:06.8493276Z LTS
+Validar Entradas	Set up job	2026-09-17T16:49:06.8493831Z ##[endgroup]
+Validar Entradas	Set up job	2026-09-17T16:49:06.8494394Z ##[group]Runner Image
+Validar Entradas	Set up job	2026-09-17T16:49:06.8495120Z Image: ubuntu-24.04
+Validar Entradas	Set up job	2026-09-17T16:49:06.8495731Z Version: 20260907.300.1
+Validar Entradas	Set up job	2026-09-17T16:49:06.8496930Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+Validar Entradas	Set up job	2026-09-17T16:49:06.8498685Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+Validar Entradas	Set up job	2026-09-17T16:49:06.8499762Z ##[endgroup]
+Validar Entradas	Set up job	2026-09-17T16:49:06.8500905Z ##[group]GITHUB_TOKEN Permissions
+Validar Entradas	Set up job	2026-09-17T16:49:06.8503316Z Contents: write
+Validar Entradas	Set up job	2026-09-17T16:49:06.8504010Z Metadata: read
+Validar Entradas	Set up job	2026-09-17T16:49:06.8504680Z ##[endgroup]
+Validar Entradas	Set up job	2026-09-17T16:49:06.8506732Z Secret source: Actions
+Validar Entradas	Set up job	2026-09-17T16:49:06.8508158Z Cache mode: write
+Validar Entradas	Set up job	2026-09-17T16:49:06.8509118Z Prepare workflow directory
+Validar Entradas	Set up job	2026-09-17T16:49:06.8902760Z Prepare all required actions
+Validar Entradas	Set up job	2026-09-17T16:49:06.8965107Z Complete job name: Validar Entradas
+Validar Entradas	Validate Inputs	﻿2026-09-17T16:49:06.9731041Z ##[group]Run PROJ="hermes-fix-test-1789663736"
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9732150Z ^[[36;1mPROJ="hermes-fix-test-1789663736"^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9732939Z ^[[36;1mCID="646504C4A4B243DD"^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9733606Z ^[[36;1mDID="D33A289C0F334E69"^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9734535Z ^[[36;1mif ! echo "${PROJ}" | grep -qP '^[a-z0-9-]{3,40}$'; then exit 1; fi^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9735660Z ^[[36;1mif [ -z "${CID}" ]; then CID="gha-$(date +%s)-${PROJ}"; fi^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9736493Z ^[[36;1mif [ -z "${DID}" ]; then DID="${CID}"; fi^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9737334Z ^[[36;1mecho "project_name=${PROJ}" >> $GITHUB_OUTPUT^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9738215Z ^[[36;1mecho "correlation_id=${CID}" >> $GITHUB_OUTPUT^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9739018Z ^[[36;1mecho "deployment_id=${DID}" >> $GITHUB_OUTPUT^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:06.9739918Z ^[[36;1mecho "valid=true" >> $GITHUB_OUTPUT^[[0m
+Validar Entradas	Validate Inputs	2026-09-17T16:49:07.0103868Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Validar Entradas	Validate Inputs	2026-09-17T16:49:07.0105173Z env:
+Validar Entradas	Validate Inputs	2026-09-17T16:49:07.0105897Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Validar Entradas	Validate Inputs	2026-09-17T16:49:07.0106699Z   FACTORY_SKIP_AZURE: true
+Validar Entradas	Validate Inputs	2026-09-17T16:49:07.0107426Z ##[endgroup]
+Validar Entradas	Complete job	﻿2026-09-17T16:49:07.0510029Z Evaluate and set job outputs
+Validar Entradas	Complete job	2026-09-17T16:49:07.0524692Z Set output 'project_name'
+Validar Entradas	Complete job	2026-09-17T16:49:07.0527670Z Set output 'correlation_id'
+Validar Entradas	Complete job	2026-09-17T16:49:07.0529731Z Set output 'deployment_id'
+Validar Entradas	Complete job	2026-09-17T16:49:07.0531087Z Set output 'valid'
+Validar Entradas	Complete job	2026-09-17T16:49:07.0533361Z Cleaning up orphan processes
+Ejecutar Factory	Set up job	﻿2026-09-17T16:49:12.1815085Z Current runner version: '2.337.0'
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1841051Z ##[group]Runner Image Provisioner
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1842033Z Hosted Compute Agent
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1842639Z Version: 20260828.587
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1843694Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1844505Z Build Date: 2026-08-28T16:44:25Z
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1845200Z Worker ID: {54262fe1-4cab-4add-8b8b-2a16059535a0}
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1845966Z Azure Region: westus2
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1846536Z ##[endgroup]
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1848011Z ##[group]Operating System
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1848809Z Ubuntu
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1849713Z 24.04.5
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1850371Z LTS
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1850905Z ##[endgroup]
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1851487Z ##[group]Runner Image
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1852204Z Image: ubuntu-24.04
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1852784Z Version: 20260907.300.1
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1853964Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1855736Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1856835Z ##[endgroup]
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1857899Z ##[group]GITHUB_TOKEN Permissions
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1860363Z Contents: write
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1861043Z Metadata: read
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1861691Z ##[endgroup]
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1863715Z Secret source: Actions
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1864802Z Cache mode: write
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.1865754Z Prepare workflow directory
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.2316604Z Prepare all required actions
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.2365929Z Getting action download info
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.5834906Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Ejecutar Factory	Set up job	2026-09-17T16:49:12.7944275Z Complete job name: Ejecutar Factory
+Ejecutar Factory	Run actions/checkout@v7	﻿2026-09-17T16:49:12.8849988Z ##[group]Run actions/checkout@v7
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8851446Z with:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8851930Z   fetch-depth: 0
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8852398Z   path: hermes-enterprise
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8852995Z   repository: FREDYASARMIENTOT/HERMES-ENTERPRISE
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8857075Z   token: ***
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8857527Z   ssh-strict: true
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8857979Z   ssh-user: git
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8858432Z   persist-credentials: true
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8858927Z   clean: true
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8859710Z   sparse-checkout-cone-mode: true
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8860261Z   fetch-tags: false
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8860708Z   show-progress: true
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8861153Z   lfs: false
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8861572Z   submodules: false
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8862018Z   set-safe-directory: true
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8862518Z   allow-unsafe-pr-checkout: false
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8863350Z env:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8863802Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8864373Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.8864889Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.9909751Z Syncing repository: FREDYASARMIENTOT/HERMES-ENTERPRISE
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.9912459Z ##[group]Getting Git version info
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.9914234Z Working directory is '/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise'
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:12.9916352Z [command]/usr/bin/git version
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0006969Z git version 2.55.0
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0045919Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0054101Z Temporarily overriding HOME='/home/runner/work/_temp/da1fcdb4-8caf-4ba6-9819-7698a5cf8e1d' before making global git config changes
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0066868Z Adding repository directory to the temporary git global config as a safe directory
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0068701Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0107847Z ##[group]Determining repository object format
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0109742Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0110752Z ##[group]Initializing the repository
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0115030Z [command]/usr/bin/git init /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0205744Z hint: Using 'master' as the name for the initial branch. This default branch name
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0207545Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0209553Z hint: to use in all of your new repositories, which will suppress this warning,
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0210946Z hint: call:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0211682Z hint:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0212620Z hint: 	git config --global init.defaultBranch <name>
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0213797Z hint:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0214774Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0216046Z hint: 'development'. The just-created branch can be renamed via this command:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0217399Z hint:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0218130Z hint: 	git branch -m <name>
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0218748Z hint:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0219901Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0221277Z Initialized empty Git repository in /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git/
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0224275Z [command]/usr/bin/git remote add origin https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0274184Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0274999Z ##[group]Disabling automatic garbage collection
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0277713Z [command]/usr/bin/git config --local gc.auto 0
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0310439Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0311941Z ##[group]Setting up auth
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0312737Z Removing SSH command configuration
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0316823Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0350633Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0722133Z Removing HTTP extra header
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0724114Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0756822Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0990658Z Removing includeIf entries pointing to credentials config files
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.0996474Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1042115Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1272430Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1314412Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git.path /home/runner/work/_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1346705Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1382973Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/hermes-enterprise/.git.path /github/runner_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1417177Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/hermes-enterprise/.git/worktrees/*.path /github/runner_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1446930Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1447732Z ##[group]Fetching the repository
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.1453233Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9335977Z From https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9337187Z  * [new branch]      feature/sprint1-foundation -> origin/feature/sprint1-foundation
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9338079Z  * [new branch]      main       -> origin/main
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9338726Z  * [new tag]         v0.1.0     -> v0.1.0
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9339634Z  * [new tag]         v0.3.0     -> v0.3.0
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9340509Z  * [new tag]         v0.4.0     -> v0.4.0
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9346579Z [command]/usr/bin/git branch --list --remote origin/main
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9377699Z   origin/main
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9386674Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9415294Z c7363fb9db05492afaf8ab0c86df2f14cbd07bc9
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9420043Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9420992Z ##[group]Determining the checkout info
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9421873Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9426344Z [command]/usr/bin/git sparse-checkout disable
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9480509Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9515034Z ##[group]Checking out the ref
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:13.9518538Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:14.0247922Z Switched to a new branch 'main'
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:14.0252414Z branch 'main' set up to track 'origin/main'.
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:14.0263153Z ##[endgroup]
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:14.0311506Z [command]/usr/bin/git log -1 --format=%H
+Ejecutar Factory	Run actions/checkout@v7	2026-09-17T16:49:14.0340907Z c7363fb9db05492afaf8ab0c86df2f14cbd07bc9
+Ejecutar Factory	Setup Workspace	﻿2026-09-17T16:49:14.0610216Z ##[group]Run mkdir -p "/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace"
+Ejecutar Factory	Setup Workspace	2026-09-17T16:49:14.0613259Z ^[[36;1mmkdir -p "/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace"^[[0m
+Ejecutar Factory	Setup Workspace	2026-09-17T16:49:14.0656922Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Ejecutar Factory	Setup Workspace	2026-09-17T16:49:14.0658669Z env:
+Ejecutar Factory	Setup Workspace	2026-09-17T16:49:14.0659936Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Setup Workspace	2026-09-17T16:49:14.0661370Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Setup Workspace	2026-09-17T16:49:14.0662538Z ##[endgroup]
+Ejecutar Factory	Verify Tools	﻿2026-09-17T16:49:14.0854437Z ##[group]Run echo "pwsh: $(which pwsh || echo NOT-FOUND)"
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0856325Z ^[[36;1mecho "pwsh: $(which pwsh || echo NOT-FOUND)"^[[0m
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0857958Z ^[[36;1mecho "git: $(which git || echo NOT-FOUND)"^[[0m
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0859842Z ^[[36;1mecho "gh: $(which gh || echo NOT-FOUND)"^[[0m
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0897404Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0898932Z env:
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0900187Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0901515Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0902592Z ##[endgroup]
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.0986097Z pwsh: /usr/bin/pwsh
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.1000231Z git: /usr/bin/git
+Ejecutar Factory	Verify Tools	2026-09-17T16:49:14.1013971Z gh: /usr/bin/gh
+Ejecutar Factory	Install PowerShell 7	﻿2026-09-17T16:49:14.1161816Z ##[group]Run if ! which pwsh &>/dev/null; then
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1163441Z ^[[36;1mif ! which pwsh &>/dev/null; then^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1164818Z ^[[36;1m  apt-get update -qq^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1166586Z ^[[36;1m  apt-get install -y -qq wget apt-transport-https software-properties-common^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1170305Z ^[[36;1m  wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1172857Z ^[[36;1m  dpkg -i packages-microsoft-prod.deb^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1174253Z ^[[36;1m  apt-get update -qq^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1175494Z ^[[36;1m  apt-get install -y -qq powershell^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1176803Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1215587Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1217103Z env:
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1218043Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1219832Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Install PowerShell 7	2026-09-17T16:49:14.1221000Z ##[endgroup]
+Ejecutar Factory	Configure Git	﻿2026-09-17T16:49:14.1376287Z ##[group]Run git config --global user.name "Hermes Enterprise Factory"
+Ejecutar Factory	Configure Git	2026-09-17T16:49:14.1378428Z ^[[36;1mgit config --global user.name "Hermes Enterprise Factory"^[[0m
+Ejecutar Factory	Configure Git	2026-09-17T16:49:14.1380774Z ^[[36;1mgit config --global user.email "factory@hermes.enterprise"^[[0m
+Ejecutar Factory	Configure Git	2026-09-17T16:49:14.1417821Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Ejecutar Factory	Configure Git	2026-09-17T16:49:14.1419420Z env:
+Ejecutar Factory	Configure Git	2026-09-17T16:49:14.1420354Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Configure Git	2026-09-17T16:49:14.1421621Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Configure Git	2026-09-17T16:49:14.1422659Z ##[endgroup]
+Ejecutar Factory	Diagnóstico GitHub	﻿2026-09-17T16:49:14.1592424Z ##[group]Run echo "::group::=== GitHub Authentication Diagnosis ==="
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1594473Z ^[[36;1mecho "::group::=== GitHub Authentication Diagnosis ==="^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1595956Z ^[[36;1m^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1597158Z ^[[36;1m# --- FASE 2: Verificar que el token NO está vacío ---^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1598674Z ^[[36;1mif [ -z "${GH_TOKEN}" ]; then^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1601130Z ^[[36;1m  echo "::error::GH_TOKEN EMPTY — el secreto GH_PORTAL_HERMES_REPO_WRITE_TOKEN no está configurado o está vacío"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1603607Z ^[[36;1m  echo "token_present=false" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1605232Z ^[[36;1m  echo "authenticated=false" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1606657Z ^[[36;1m  echo "::endgroup::"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1607753Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1608661Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1609880Z ^[[36;1mecho "token_present=true" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1611599Z ^[[36;1mecho "[PASS] Token presente (longitud: ${#GH_TOKEN} chars)"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1613190Z ^[[36;1m^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1614263Z ^[[36;1m# --- FASE 2: Autenticar contra GitHub API ---^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1615783Z ^[[36;1mGH_USER=$(gh api /user --jq '.login' 2>&1)^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1617093Z ^[[36;1mRC=$?^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1617988Z ^[[36;1m^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1619022Z ^[[36;1mif [ "${RC}" = "0" ] && [ -n "${GH_USER}" ]; then^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1620808Z ^[[36;1m  echo "authenticated=true" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1622440Z ^[[36;1m  echo "github_user=${GH_USER}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1624034Z ^[[36;1m  echo "[PASS] GitHub API /user → HTTP 200"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1625545Z ^[[36;1m  echo "[INFO] Autenticado como: ${GH_USER}"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1627368Z ^[[36;1m  echo "::notice title=GitHub Auth::PASS — autenticado como ${GH_USER}"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1629054Z ^[[36;1melse^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1630297Z ^[[36;1m  echo "authenticated=false" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1631864Z ^[[36;1m  ERROR_LINE=$(echo "${GH_USER}" | head -1)^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1633512Z ^[[36;1m  if echo "${GH_USER}" | grep -qi "bad credentials\|401"; then^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1635811Z ^[[36;1m    echo "::error::GITHUB_AUTHENTICATION_FAILED — Token rechazado (HTTP 401 Bad credentials)"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1638325Z ^[[36;1m    echo "failure_reason=GITHUB_AUTHENTICATION_FAILED" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1640803Z ^[[36;1m  elif echo "${GH_USER}" | grep -qi "403\|resource not accessible\|must have admin"; then^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1643156Z ^[[36;1m    echo "::error::GITHUB_PERMISSION_FAILED — Token sin permisos (HTTP 403)"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1645355Z ^[[36;1m    echo "failure_reason=GITHUB_PERMISSION_FAILED" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1647005Z ^[[36;1m  else^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1648285Z ^[[36;1m    echo "::error::GITHUB_AUTHENTICATION_FAILED — ${ERROR_LINE}"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1650486Z ^[[36;1m    echo "failure_reason=GITHUB_AUTHENTICATION_FAILED" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1652221Z ^[[36;1m  fi^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1653169Z ^[[36;1m  echo "::endgroup::"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1654275Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1655231Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1656105Z ^[[36;1m^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1657528Z ^[[36;1m# --- FASE 3: Verificar acceso al repositorio padre (HERMES-ENTERPRISE) ---^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1659600Z ^[[36;1m# Necesario para: dispatch de deploy-child.yml^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1661817Z ^[[36;1mPARENT_REPO=$(gh api /repos/FREDYASARMIENTOT/HERMES-ENTERPRISE --jq '.full_name' 2>&1) || true^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1664135Z ^[[36;1mif [ -n "${PARENT_REPO}" ]; then^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1665595Z ^[[36;1m  echo "parent_repo_access=true" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1667349Z ^[[36;1m  echo "[PASS] Acceso a repositorio padre: ${PARENT_REPO}"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1668849Z ^[[36;1melse^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1670164Z ^[[36;1m  echo "parent_repo_access=false" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1672182Z ^[[36;1m  echo "[WARN] No se pudo verificar acceso al repositorio padre"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1674381Z ^[[36;1m  echo "::warning::No se pudo verificar acceso a FREDYASARMIENTOT/HERMES-ENTERPRISE"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1676199Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1677067Z ^[[36;1m^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1677967Z ^[[36;1mecho "::endgroup::"^[[0m
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1713625Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1715083Z env:
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1716006Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1717266Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1718792Z   GH_TOKEN: ***
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1719867Z ##[endgroup]
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1786265Z ##[group]=== GitHub Authentication Diagnosis ===
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.1787744Z [PASS] Token presente (longitud: 40 chars)
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.7323889Z [PASS] GitHub API /user → HTTP 200
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.7325437Z [INFO] Autenticado como: FREDYASARMIENTOT
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:14.7345151Z ##[notice]PASS — autenticado como FREDYASARMIENTOT
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:15.0909022Z [PASS] Acceso a repositorio padre: FREDYASARMIENTOT/HERMES-ENTERPRISE
+Ejecutar Factory	Diagnóstico GitHub	2026-09-17T16:49:15.0910558Z ##[endgroup]
+Ejecutar Factory	Run Factory (SkipAzure)	﻿2026-09-17T16:49:15.0997708Z ##[group]Run $ErrorActionPreference = "Stop"
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.0998164Z ^[[36;1m$ErrorActionPreference = "Stop"^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.0998536Z ^[[36;1m$p = "hermes-fix-test-1789663736"^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.0999035Z ^[[36;1m$w = "/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace"^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.0999858Z ^[[36;1m$g = "FREDYASARMIENTOT"^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1000646Z ^[[36;1m$aspId = "/subscriptions/01bfad48-c092-4712-bc72-f141eb01a8d4/resourceGroups/RG-Hermes-Proyectos/providers/Microsoft.Web/serverfarms/ASP-HERMES-PORTAL"^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1001462Z ^[[36;1mif ([string]::IsNullOrEmpty($aspId)) { $aspId = "" }^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1001859Z ^[[36;1m$did = "D33A289C0F334E69"^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1002236Z ^[[36;1mif ([string]::IsNullOrEmpty($did)) { $did = "" }^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1002603Z ^[[36;1m$cid = "646504C4A4B243DD"^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1002969Z ^[[36;1mif ([string]::IsNullOrEmpty($cid)) { $cid = "" }^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1003877Z ^[[36;1m& ".\tools\Crear-HermesProyecto.ps1" -NombreProyecto $p -WorkspaceRoot $w -GitHubUser $g -TriggerControlPlane -SkipAzure -AppServicePlanId $aspId -DeploymentId $did -CorrelationId $cid^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1004857Z ^[[36;1mif ($LASTEXITCODE -ne 0) { throw "Factory fallo" }^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1005347Z ^[[36;1m"factory_result=PASS" | Out-File $env:GITHUB_OUTPUT -Append^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1045937Z shell: /usr/bin/pwsh -command ". '{0}'"
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1046295Z env:
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1046564Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1046905Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1047446Z   GH_TOKEN: ***
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1047873Z   HermesRoot: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:15.1048356Z ##[endgroup]
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:18.8664503Z ^[[33;1mWARNING: The names of some imported commands from the module 'HermesProjectFactory' include unapproved verbs that might make them less discoverable. To find the commands with unapproved verbs, run the Import-Module command again with the Verbose parameter. For a list of approved verbs, type Get-Verb.^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.0841582Z [RI] Registry: hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.0852456Z 
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.0852927Z [RC74-C] Starting Autonomous Project Factory: hermes-fix-test-1789663736 (CID: 646504C4A4B243DD)
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.0853373Z 
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.0893083Z [16:49:19] [..] [Workspace] START :: Creating workspace
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1043671Z [Workspace] Creando espacio de trabajo para: hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1045396Z [Workspace] Directorio: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1099077Z [Workspace] Directorio creado: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1237115Z [Workspace] Espacio de trabajo inicializado en 0.01s
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1242987Z [16:49:19] [OK] [Workspace] OK :: Created at /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1245908Z [16:49:19] [..] [SQLite] START :: Initializing SQLite
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1285343Z [SQLite] Aplicando esquema desde: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/tools/Templates/database/schema.sql
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.1853318Z [SQLite] Base de datos inicializada: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736/data/proyecto.db
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.2385629Z [16:49:19] [OK] [SQLite] OK :: Database at /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736/data/proyecto.db
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.5168156Z [RI] Persisted
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.5180686Z True
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.5454341Z [Azure] Configuración cargada desde: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/config/Hermes.Azure.json
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.5464555Z [Azure] ResourceGroup: RG-Hermes-Proyectos
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.5477419Z [Azure] AppServicePlan: ASP-IAUR
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.5484989Z [16:49:19] [..] [Backend] START :: Creating project files
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.5897399Z [16:49:19] [OK] [Backend] OK :: Project files created
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6057152Z [16:49:19] [..] [Landing] START :: Creating landing page
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6100781Z [RenderEngine] Landing page created: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736/templates/index.html
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6110970Z [16:49:19] [OK] [Landing] OK :: Landing page created
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6115198Z [16:49:19] [..] [WorkspaceFile] START :: Creating workspace file
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6168297Z [Workspace] Archivo de espacio de trabajo creado: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736.code-workspace
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6172097Z [16:49:19] [OK] [WorkspaceFile] OK :: Workspace file created
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6176430Z [16:49:19] [..] [Git] START :: Initializing Git
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6404390Z [Git] Repositorio inicializado con rama: main
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6681994Z [16:49:19] [OK] [Git] OK :: Repository initialized
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.6803995Z [16:49:19] [..] [Commit] START :: Creating initial commit
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.7833668Z [Git] Commit creado: 77bd2cc197846bab6f570a12df02901422728c8f
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.7834438Z [Git] Archivos cambiados: 0
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.7854303Z [16:49:19] [OK] [Commit] OK :: Commit #1 created
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.7973325Z [16:49:19] [..] [GitHub] START :: Creating GitHub repository
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:19.8061391Z [GitHub] Creando repositorio: hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:22.4979911Z [GitHub] Repositorio creado: hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:22.7937420Z [GitHub] Remoto agregado: origin -> ***github.com/FREDYASARMIENTOT/hermes-fix-test-1789663736.git
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:22.8326600Z [16:49:22] [OK] [GitHub] OK :: Repository: hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:22.8333634Z [16:49:22] [..] [Push] START :: Pushing to GitHub
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:24.2315720Z [GitHub] Publicación completada en origin/main
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:24.2331688Z [16:49:24] [OK] [Push] OK :: Push completed
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:24.4007377Z [RI] Persisted
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:24.4008564Z True
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:24.4011673Z [16:49:24] [..] [OIDC] START :: Configuring Azure OIDC secrets for GitHub Actions
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.4350759Z [16:49:28] [..] [OIDC] WARN :: Could not configure OIDC secrets: Conversion from JSON failed with error: Unexpected character encountered while parsing value: E. Path '', line 0, position 0.
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.4498030Z ^[[33;1mWARNING: [OIDC] OIDC setup incomplete: Conversion from JSON failed with error: Unexpected character encountered while parsing value: E. Path '', line 0, position 0.^[[0m
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.4514427Z [16:49:28] [..] [SQLiteUpdate] START :: Updating SQLite with final state
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5116285Z [16:49:28] [OK] [SQLiteUpdate] OK :: SQLite updated
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5129487Z [16:49:28] [..] [LandingUpdate] START :: Updating landing page with live data
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5133895Z [RenderEngine] Landing page created: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736/templates/index.html
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5134947Z [16:49:28] [OK] [LandingUpdate] OK :: Landing updated
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5263220Z [16:49:28] [..] [Reports] START :: Generating reports
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5458579Z [Reporting] Informe Markdown generado: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/reports/RC74_E2E.md
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5460446Z /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/reports/RC74_E2E.md
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5488977Z [Reporting] Informe JSON generado: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/reports/RC74_E2E.json
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5490576Z /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/reports/RC74_E2E.json
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5517280Z [Reporting] Informe HTML generado: /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/reports/RC74_E2E.html
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5519090Z /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/reports/RC74_E2E.html
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5520393Z [16:49:28] [OK] [Reports] OK :: Reports saved to reports/
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5521119Z [16:49:28] [..] [DeployReport] START :: Generating deployment report
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5932009Z [16:49:28] [OK] [DeployReport] OK :: Saved to /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/workspace/hermes-fix-test-1789663736/deployment-report.json
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5933831Z [16:49:28] [..] [Azure] SKIP :: SkipAzure activo — Control Plane manejara deploy
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5934340Z [16:49:28] [..] [WebApp] SKIP :: No se crea WebApp en Factory
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5934909Z [16:49:28] [..] [Deploy] SKIP :: Control Plane hara ZIP Deploy
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5936435Z [16:49:28] [..] [SmokeTest] SKIP :: Control Plane ejecutara smoke tests
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.5960205Z [16:49:28] [..] [GitStatus] START :: Verifying Git status
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.6240266Z [16:49:28] [..] [GitStatus] WARN :: Uncommitted changes detected
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.6241200Z [16:49:28] [..] [CommitFinal] START :: Creating final commit
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.6684170Z [Git] Commit creado: a38a3b39603677dba1df132fccf24873e8c9725d
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.6684620Z [Git] Archivos cambiados: 0
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.6692397Z [16:49:28] [OK] [CommitFinal] OK :: Final commit #2 created
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:28.6693511Z [16:49:28] [..] [PushFinal] START :: Final push to GitHub
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:29.9917956Z [GitHub] Publicación completada en origin/main
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:29.9928287Z [16:49:29] [OK] [PushFinal] OK :: Final push completed
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:30.0227686Z [16:49:30] [OK] [GitFinal] OK :: Working tree clean - nothing to commit
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:30.0228489Z [16:49:30] [..] [SHA] START :: Capturing HEAD commit SHA
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:30.0323228Z [16:49:30] [OK] [SHA] OK :: SHA=a38a3b39603677dba1df132fccf24873e8c9725d Repo=FREDYASARMIENTOT/hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:30.0325801Z [16:49:30] [..] [SHA] START :: Verificando que SHA existe remotamente en FREDYASARMIENTOT/hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:30.3612919Z [16:49:30] [OK] [SHA] OK :: SHA verificado remotamente: a38a3b39603677dba1df132fccf24873e8c9725d
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:30.3614401Z [16:49:30] [..] [ControlPlane] START :: Triggering deploy-child.yml workflow (SHA remoto verificado)
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:31.9991390Z [16:49:31] [OK] [ControlPlane] OK :: Triggered! SHA remoto verificado + Control Plane disparado
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1596862Z [RI] Persisted
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1597876Z True
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1605844Z 
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1606189Z ============================================================
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1607170Z     FACTORY RUNNER — REPOSITORIO CREADO + SHA CAPTURADO
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1607798Z ============================================================
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1608359Z  Proyecto     : hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1609010Z  Repositorio  : FREDYASARMIENTOT/hermes-fix-test-1789663736
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1610097Z  SHA          : a38a3b39603677dba1df132fccf24873e8c9725d
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1610693Z ============================================================
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1611211Z  CID          : 646504C4A4B243DD
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1611901Z  Time         : 9.48s
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1612725Z  Commits      : 2
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1613338Z  Git          : Working tree clean
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1614208Z  SkipAzure    : true (Control Plane hara deploy)
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1614810Z  ControlPlane : DISPARADO
+Ejecutar Factory	Run Factory (SkipAzure)	2026-09-17T16:49:32.1615670Z ============================================================
+Ejecutar Factory	Capture SHA	﻿2026-09-17T16:49:32.2293224Z ##[group]Run PROJ="hermes-fix-test-1789663736"
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2293704Z ^[[36;1mPROJ="hermes-fix-test-1789663736"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2294015Z ^[[36;1mREPO="FREDYASARMIENTOT/${PROJ}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2294278Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2294546Z ^[[36;1mecho "::group::=== FASE 6-7: Validar Repositorio y SHA ==="^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2294877Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2295152Z ^[[36;1m# --- FASE 6: Validar que el repositorio existe en GitHub ---^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2295568Z ^[[36;1mecho "[FASE 6] Verificando repositorio en GitHub..."^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2296136Z ^[[36;1mGH_REPO=$(gh api "/repos/${REPO}" --jq '{name, full_name, visibility, private, default_branch}' 2>&1) || true^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2296645Z ^[[36;1mRC=$?^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2296892Z ^[[36;1mif [ "${RC}" -ne 0 ] || [ -z "${GH_REPO}" ]; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2297403Z ^[[36;1m  echo "::error::FACTORY_REPOSITORY_CREATION_FAILED — Repo ${REPO} no encontrado en GitHub"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2297917Z ^[[36;1m  echo "repo_exists=false" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2298260Z ^[[36;1m  echo "::endgroup::"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2298494Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2298684Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2298911Z ^[[36;1mecho "repo_exists=true" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2299859Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2300279Z ^[[36;1mREPO_NAME=$(echo "${GH_REPO}" | jq -r '.name')^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2300961Z ^[[36;1mREPO_VISIBILITY=$(echo "${GH_REPO}" | jq -r '.visibility // "unknown"')^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2301512Z ^[[36;1mREPO_PRIVATE=$(echo "${GH_REPO}" | jq -r '.private')^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2301944Z ^[[36;1mREPO_BRANCH=$(echo "${GH_REPO}" | jq -r '.default_branch // "unknown"')^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2302412Z ^[[36;1mecho "[PASS] Repositorio: ${REPO_NAME} (${REPO_VISIBILITY})"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2302821Z ^[[36;1mecho "[PASS] Rama por defecto: ${REPO_BRANCH}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2303114Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2303308Z ^[[36;1m# Registrar visibilidad^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2303652Z ^[[36;1mecho "repo_visibility=${REPO_VISIBILITY}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2304055Z ^[[36;1mecho "repo_name=${REPO_NAME}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2304430Z ^[[36;1mecho "repo_private=${REPO_PRIVATE}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2304849Z ^[[36;1mecho "default_branch=${REPO_BRANCH}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2305167Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2305473Z ^[[36;1mif [ "${REPO_VISIBILITY}" != "private" ] && [ "${REPO_PRIVATE}" != "true" ]; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2305993Z ^[[36;1m  echo "::error::El repositorio NO es privado (visibility=${REPO_VISIBILITY})"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2306386Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2306803Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2307024Z ^[[36;1mecho "[FASE 6] REPOSITORIO PRIVADO: OK"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2307302Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2307530Z ^[[36;1m# Verificar que el repositorio tiene contenido^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2307956Z ^[[36;1mREPO_CONTENT=$(gh api "/repos/${REPO}/contents" --jq 'length' 2>&1) || true^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2308486Z ^[[36;1mecho "[INFO] Archivos en raíz del repositorio: ${REPO_CONTENT:-0}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2308873Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2309103Z ^[[36;1m# --- FASE 7: Obtener SHA local y remoto ---^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2309637Z ^[[36;1mecho ""^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2309862Z ^[[36;1mecho "[FASE 7] Verificando SHA..."^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2310151Z ^[[36;1mSHA_LOCAL=$(git rev-parse HEAD)^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2310615Z ^[[36;1mSHA_REMOTE=$(gh api "/repos/${REPO}/git/refs/heads/${REPO_BRANCH}" --jq '.object.sha' 2>&1) || ""^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2311072Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2311325Z ^[[36;1mif ! echo "${SHA_LOCAL}" | grep -qP '^[0-9a-f]{40}$'; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2311814Z ^[[36;1m  echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA local inválido: ${SHA_LOCAL}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2312222Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2312412Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2312694Z ^[[36;1mif [ "${SHA_LOCAL}" = "0000000000000000000000000000000000000000" ]; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2313375Z ^[[36;1m  echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA local es placeholder"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2313755Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2313940Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2314112Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2314307Z ^[[36;1mif [ -z "${SHA_REMOTE}" ]; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2314702Z ^[[36;1m  echo "::error::FACTORY_SHA_VALIDATION_FAILED — No se pudo obtener SHA remoto"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2315091Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2315272Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2315520Z ^[[36;1mif ! echo "${SHA_REMOTE}" | grep -qP '^[0-9a-f]{40}$'; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2316004Z ^[[36;1m  echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA remoto inválido: ${SHA_REMOTE}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2316416Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2316600Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2316771Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2316974Z ^[[36;1mecho "[INFO] SHA local : ${SHA_LOCAL}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2336601Z ^[[36;1mecho "[INFO] SHA remoto: ${SHA_REMOTE}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2336981Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2337228Z ^[[36;1mif [ "${SHA_LOCAL}" = "${SHA_REMOTE}" ]; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2337582Z ^[[36;1m  echo "[FASE 7] SHA MATCH: OK — local == remoto"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2337940Z ^[[36;1m  echo "sha_match=true" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2338232Z ^[[36;1melse^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2338651Z ^[[36;1m  echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA local (${SHA_LOCAL}) != SHA remoto (${SHA_REMOTE})"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2339376Z ^[[36;1m  echo "sha_match=false" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2339877Z ^[[36;1m  echo "::endgroup::"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2340137Z ^[[36;1m  exit 1^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2340334Z ^[[36;1mfi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2340510Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2340702Z ^[[36;1m# --- SHA_CHAIN summary ---^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2340956Z ^[[36;1mecho ""^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2341158Z ^[[36;1mecho "=== SHA_CHAIN ==="^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2341419Z ^[[36;1mecho "LOCAL_SHA=${SHA_LOCAL}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2341691Z ^[[36;1mecho "REMOTE_SHA=${SHA_REMOTE}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2342138Z ^[[36;1mecho "SHA_MATCH=$(if [ "${SHA_LOCAL}" = "${SHA_REMOTE}" ]; then echo 'PASS'; else echo 'FAIL'; fi)"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2342589Z ^[[36;1mecho "REPOSITORY=${REPO}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2342843Z ^[[36;1mecho "================="^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2343079Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2343337Z ^[[36;1m # --- Registrar PASO 3 (Factory/GitHub) en Portal ---^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2343671Z ^[[36;1m echo ""^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2343937Z ^[[36;1m echo "--- Registrando PASO 3 (Factory) en Portal ---"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2344566Z ^[[36;1m PORTAL_URL="https://as-hermesportal.azurewebsites.net"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2344921Z ^[[36;1m DID="D33A289C0F334E69"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2345365Z ^[[36;1m PASO3_RESP=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/paso" \^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2345874Z ^[[36;1m   -H "Content-Type: application/json" \^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2346588Z ^[[36;1m   -d "{\"numero_paso\":3,\"estado_paso\":\"COMPLETADO\",\"detalle\":\"SHA local=${SHA_LOCAL}, SHA remoto=${SHA_REMOTE}\",\"evidencia\":\"https://github.com/${REPO}\"}" 2>&1)^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2347312Z ^[[36;1m PASO3_HTTP=$(echo "${PASO3_RESP}" | tail -1)^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2347649Z ^[[36;1m PASO3_BODY=$(echo "${PASO3_RESP}" | sed '$d')^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2348029Z ^[[36;1m if [ "${PASO3_HTTP}" -ge 200 ] && [ "${PASO3_HTTP}" -lt 300 ]; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2348481Z ^[[36;1m   echo "[PASS] PASO 3 registrado en Portal — HTTP ${PASO3_HTTP}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2348827Z ^[[36;1m else^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2349166Z ^[[36;1m   echo "[ERROR] PASO 3 fallo en Portal — HTTP ${PASO3_HTTP}, body: ${PASO3_BODY}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2349788Z ^[[36;1m fi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2349973Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2350218Z ^[[36;1m # --- Registrar PASO 4 (CI Child) como EN_PROCESO ---^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2350704Z ^[[36;1m echo ""^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2351022Z ^[[36;1m echo "--- Registrando PASO 4 (CI Child) como EN_PROCESO en Portal ---"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2351591Z ^[[36;1m PASO4_RESP=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/paso" \^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2352081Z ^[[36;1m   -H "Content-Type: application/json" \^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2352639Z ^[[36;1m   -d "{\"numero_paso\":4,\"estado_paso\":\"EN_PROCESO\",\"detalle\":\"Control Plane disparado\",\"evidencia\":\"${REPO}\"}" 2>&1)^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2353227Z ^[[36;1m PASO4_HTTP=$(echo "${PASO4_RESP}" | tail -1)^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2353558Z ^[[36;1m PASO4_BODY=$(echo "${PASO4_RESP}" | sed '$d')^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2353938Z ^[[36;1m if [ "${PASO4_HTTP}" -ge 200 ] && [ "${PASO4_HTTP}" -lt 300 ]; then^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2354403Z ^[[36;1m   echo "[PASS] PASO 4 (EN_PROCESO) registrado en Portal — HTTP ${PASO4_HTTP}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2354811Z ^[[36;1m else^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2355187Z ^[[36;1m   echo "[ERROR] PASO 4 fallo en Portal — HTTP ${PASO4_HTTP}, body: ${PASO4_BODY}"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2355575Z ^[[36;1m fi^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2355784Z ^[[36;1m# --- Registrar outputs ---^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2356103Z ^[[36;1mecho "commit_sha=${SHA_LOCAL}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2356476Z ^[[36;1mecho "remote_sha=${SHA_REMOTE}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2356827Z ^[[36;1mecho "repository=${REPO}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2357168Z ^[[36;1mecho "project_name=${PROJ}" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2357549Z ^[[36;1mecho "correlation_id=646504C4A4B243DD" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2357966Z ^[[36;1mecho "deployment_id=D33A289C0F334E69" >> "$GITHUB_OUTPUT"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2358295Z ^[[36;1m^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2358473Z ^[[36;1mecho ""^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2358688Z ^[[36;1mecho "=== FASE 6-7 COMPLETADO ==="^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2358962Z ^[[36;1mecho "::endgroup::"^[[0m
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2396092Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2396459Z env:
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2396669Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2396948Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2397388Z   GH_TOKEN: ***
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2397591Z ##[endgroup]
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2455284Z ##[group]=== FASE 6-7: Validar Repositorio y SHA ===
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.2455646Z [FASE 6] Verificando repositorio en GitHub...
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.7109890Z [PASS] Repositorio: hermes-fix-test-1789663736 (private)
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.7110561Z [PASS] Rama por defecto: main
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.7111002Z [FASE 6] REPOSITORIO PRIVADO: OK
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.9942449Z [INFO] Archivos en raíz del repositorio: 8
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.9943536Z 
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:32.9943704Z [FASE 7] Verificando SHA...
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2771521Z [INFO] SHA local : a38a3b39603677dba1df132fccf24873e8c9725d
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2772005Z [INFO] SHA remoto: a38a3b39603677dba1df132fccf24873e8c9725d
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2772598Z [FASE 7] SHA MATCH: OK — local == remoto
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2774089Z 
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2774254Z === SHA_CHAIN ===
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2774671Z LOCAL_SHA=a38a3b39603677dba1df132fccf24873e8c9725d
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2775220Z REMOTE_SHA=a38a3b39603677dba1df132fccf24873e8c9725d
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2777252Z SHA_MATCH=PASS
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2777711Z REPOSITORY=FREDYASARMIENTOT/hermes-fix-test-1789663736
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2778048Z =================
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2778174Z 
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:33.2778379Z --- Registrando PASO 3 (Factory) en Portal ---
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:34.0751469Z [PASS] PASO 3 registrado en Portal — HTTP 200
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:34.0751979Z 
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:34.0752290Z --- Registrando PASO 4 (CI Child) como EN_PROCESO en Portal ---
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:34.6835241Z [PASS] PASO 4 (EN_PROCESO) registrado en Portal — HTTP 200
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:34.6835750Z 
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:34.6836027Z === FASE 6-7 COMPLETADO ===
+Ejecutar Factory	Capture SHA	2026-09-17T16:49:34.6836949Z ##[endgroup]
+Ejecutar Factory	Verify SHA	﻿2026-09-17T16:49:34.6872192Z ##[group]Run SHA="a38a3b39603677dba1df132fccf24873e8c9725d"
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6872646Z ^[[36;1mSHA="a38a3b39603677dba1df132fccf24873e8c9725d"^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6872969Z ^[[36;1mSHA_MATCH="true"^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6873212Z ^[[36;1mREPO_EXISTS="true"^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6873457Z ^[[36;1mVISIBILITY="private"^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6873775Z ^[[36;1mif [ -z "${SHA}" ]; then echo "FAIL: SHA vacio"; exit 1; fi^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6874325Z ^[[36;1mif [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then echo "FAIL: SHA placeholder"; exit 1; fi^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6874950Z ^[[36;1mif [ "${REPO_EXISTS}" != "true" ]; then echo "FAIL: Repositorio no existe"; exit 1; fi^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6875519Z ^[[36;1mif [ "${VISIBILITY}" != "private" ]; then echo "FAIL: Repositorio no es privado"; exit 1; fi^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6876088Z ^[[36;1mif [ "${SHA_MATCH}" != "true" ]; then echo "FAIL: SHA local != SHA remoto"; exit 1; fi^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6876599Z ^[[36;1mecho "OK: Repositorio privado verificado, SHA local == SHA remoto"^[[0m
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6913839Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6914196Z env:
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6914404Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6914685Z   FACTORY_SKIP_AZURE: true
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6914911Z ##[endgroup]
+Ejecutar Factory	Verify SHA	2026-09-17T16:49:34.6967261Z OK: Repositorio privado verificado, SHA local == SHA remoto
+Ejecutar Factory	Post Run actions/checkout@v7	﻿2026-09-17T16:49:34.7071977Z Post job cleanup.
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.7903316Z [command]/usr/bin/git version
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.7946820Z git version 2.55.0
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.7976937Z Copying '/home/runner/.gitconfig' to '/home/runner/work/_temp/86605313-7d0e-48e7-ac1d-049728e687e4/.gitconfig'
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.7996079Z Temporarily overriding HOME='/home/runner/work/_temp/86605313-7d0e-48e7-ac1d-049728e687e4' before making global git config changes
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.7997498Z Adding repository directory to the temporary git global config as a safe directory
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8000851Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8033705Z Removing SSH command configuration
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8039968Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8076529Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8320510Z Removing HTTP extra header
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8326758Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8365507Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8621901Z Removing includeIf entries pointing to credentials config files
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8629515Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8664504Z includeif.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8665869Z includeif.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git/worktrees/*.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8667089Z includeif.gitdir:/github/workspace/hermes-enterprise/.git.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8668126Z includeif.gitdir:/github/workspace/hermes-enterprise/.git/worktrees/*.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8674401Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8708115Z /home/runner/work/_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8724295Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-56eeabf0\-1432\-4b7f\-8e19\-dcb2ae5ad2fa\.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8763675Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git/worktrees/*.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8789899Z /home/runner/work/_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8799571Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/HERMES-ENTERPRISE/HERMES-ENTERPRISE/hermes-enterprise/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-56eeabf0\-1432\-4b7f\-8e19\-dcb2ae5ad2fa\.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8843994Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/hermes-enterprise/.git.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8875505Z /github/runner_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8883721Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/hermes-enterprise/.git.path \/github\/runner_temp\/git\-credentials\-56eeabf0\-1432\-4b7f\-8e19\-dcb2ae5ad2fa\.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8925538Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/hermes-enterprise/.git/worktrees/*.path
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8953317Z /github/runner_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.8961031Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/hermes-enterprise/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-56eeabf0\-1432\-4b7f\-8e19\-dcb2ae5ad2fa\.config
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.9002814Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Ejecutar Factory	Post Run actions/checkout@v7	2026-09-17T16:49:34.9258606Z Removing credentials config '/home/runner/work/_temp/git-credentials-56eeabf0-1432-4b7f-8e19-dcb2ae5ad2fa.config'
+Ejecutar Factory	Complete job	﻿2026-09-17T16:49:34.9446845Z Evaluate and set job outputs
+Ejecutar Factory	Complete job	2026-09-17T16:49:34.9453172Z Set output 'commit_sha'
+Ejecutar Factory	Complete job	2026-09-17T16:49:34.9454849Z Set output 'repository'
+Ejecutar Factory	Complete job	2026-09-17T16:49:34.9455556Z Set output 'project_name'
+Ejecutar Factory	Complete job	2026-09-17T16:49:34.9455887Z Set output 'correlation_id'
+Ejecutar Factory	Complete job	2026-09-17T16:49:34.9456210Z Set output 'deployment_id'
+Ejecutar Factory	Complete job	2026-09-17T16:49:34.9456513Z Set output 'factory_result'
+Ejecutar Factory	Complete job	2026-09-17T16:49:34.9457417Z Cleaning up orphan processes
+Verificar Resultado	Set up job	﻿2026-09-17T16:49:40.3635268Z Current runner version: '2.337.0'
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3672140Z ##[group]Runner Image Provisioner
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3673571Z Hosted Compute Agent
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3674573Z Version: 20260828.587
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3675735Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3676984Z Build Date: 2026-08-28T16:44:25Z
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3678341Z Worker ID: {ae14ac38-8d4a-4b1f-8cad-fdc4c63d659b}
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3680006Z Azure Region: eastus
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3681016Z ##[endgroup]
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3683446Z ##[group]Operating System
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3684475Z Ubuntu
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3685569Z 24.04.5
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3686441Z LTS
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3687234Z ##[endgroup]
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3688235Z ##[group]Runner Image
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3689258Z Image: ubuntu-24.04
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3690650Z Version: 20260907.300.1
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3692559Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3695568Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3697234Z ##[endgroup]
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3699245Z ##[group]GITHUB_TOKEN Permissions
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3702941Z Contents: write
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3703982Z Metadata: read
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3704908Z ##[endgroup]
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3708141Z Secret source: Actions
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3710021Z Cache mode: write
+Verificar Resultado	Set up job	2026-09-17T16:49:40.3711561Z Prepare workflow directory
+Verificar Resultado	Set up job	2026-09-17T16:49:40.4232211Z Prepare all required actions
+Verificar Resultado	Set up job	2026-09-17T16:49:40.4294912Z Complete job name: Verificar Resultado
+Verificar Resultado	Collect Results	﻿2026-09-17T16:49:40.5311203Z ##[group]Run FR="PASS"
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5312858Z ^[[36;1mFR="PASS"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5314995Z ^[[36;1mSHA="a38a3b39603677dba1df132fccf24873e8c9725d"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5316763Z ^[[36;1mREPO="FREDYASARMIENTOT/hermes-fix-test-1789663736"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5318825Z ^[[36;1mPROJ="hermes-fix-test-1789663736"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5320499Z ^[[36;1mCID="646504C4A4B243DD"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5322248Z ^[[36;1mDID="D33A289C0F334E69"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5323135Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5324247Z ^[[36;1mecho "::group::=== FASE 8-11: FACTORY RUNNER REPORTE FINAL ==="^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5325820Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5326454Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5327151Z ^[[36;1mecho "╔══════════════════════════════════════════════════╗"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5328497Z ^[[36;1mecho "║   FACTORY RUNNER — REPORTE DE VERIFICACIÓN      ║"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5329708Z ^[[36;1mecho "╚══════════════════════════════════════════════════╝"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5330917Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5331981Z ^[[36;1m# Check if Factory PASSED^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5333557Z ^[[36;1mif [ "${FR}" != "PASS" ]; then^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5335101Z ^[[36;1m  echo "::error::FACTORY_RUNNER_FAILED — Factory result = ${FR}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5336358Z ^[[36;1m  echo "factory_conclusion=FAILED" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5337703Z ^[[36;1m  exit 1^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5338382Z ^[[36;1mfi^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5339095Z ^[[36;1mecho "factory_conclusion=PASS" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5340184Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5340730Z ^[[36;1m# Validate SHA^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5341593Z ^[[36;1mif [ -z "${SHA}" ] || [ "${SHA}" = "0000000000000000000000000000000000000000" ]; then^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5342721Z ^[[36;1m  echo "::error::FACTORY_SHA_VALIDATION_FAILED — SHA inválido: ${SHA}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5343678Z ^[[36;1m  echo "sha_valid=false" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5344466Z ^[[36;1m  exit 1^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5345000Z ^[[36;1mfi^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5345683Z ^[[36;1mecho "sha_valid=true" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5346385Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5347309Z ^[[36;1m# --- FASE 8: Detectar Control Plane dispatch real ---^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5348134Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5348885Z ^[[36;1mecho "--- FASE 8: CONTROL PLANE DISPATCH ---"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5350515Z ^[[36;1m# Buscar en los runs recientes de deploy-child.yml^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5351451Z ^[[36;1m# El dispatch se hace con el SHA real del proyecto creado^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5352965Z ^[[36;1mCP_RUNS=$(gh api "/repos/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/workflows/deploy-child.yml/runs?per_page=5&status=queued,completed" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5354727Z ^[[36;1m  --jq '.workflow_runs[] | select(.head_sha == "'"${SHA}"'") | {id, status, conclusion, run_number, head_sha, created_at}' 2>&1) || true^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5355815Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5356439Z ^[[36;1mif [ -n "${CP_RUNS}" ]; then^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5357284Z ^[[36;1m  CP_RUN_ID=$(echo "${CP_RUNS}" | jq -r '.id // empty' | head -1)^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5358344Z ^[[36;1m  CP_STATUS=$(echo "${CP_RUNS}" | jq -r '.status // "unknown"' | head -1)^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5359320Z ^[[36;1m  echo "control_plane_dispatched=true" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5360616Z ^[[36;1m  echo "control_plane_run_id=${CP_RUN_ID}" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5361850Z ^[[36;1m  echo "[PASS] Control Plane dispatcheado: run_id=${CP_RUN_ID}, status=${CP_STATUS}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5362872Z ^[[36;1m  echo "[PASS] SHA enviado: ${SHA}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5432702Z ^[[36;1melse^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5433407Z ^[[36;1m  echo "control_plane_dispatched=false" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5434362Z ^[[36;1m  echo "::warning::No se encontró run de deploy-child.yml con SHA ${SHA}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5435423Z ^[[36;1m  echo "[WARN] El Control Plane pudo no haberse disparado aún o SHA no coincide"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5436399Z ^[[36;1m  # No fallamos aquí porque el dispatch puede tomar tiempo^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5437375Z ^[[36;1mfi^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5437831Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5438289Z ^[[36;1m# --- FASE 11: EVIDENCIA ---^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5438861Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5439357Z ^[[36;1mecho "--- FASE 11: EVIDENCIA ---"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5440300Z ^[[36;1mecho "factory_run_id=35248909929" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5441076Z ^[[36;1mecho "factory_run_number=27" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5441845Z ^[[36;1mecho "factory_conclusion=${FR}" >> "$GITHUB_OUTPUT"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5442506Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5443099Z ^[[36;1m# --- METADATA: Actualizar Portal Hermes con trazabilidad ---^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5443817Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5444423Z ^[[36;1mecho "--- METADATA: Actualizando trazabilidad en Portal ---"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5445324Z ^[[36;1mPORTAL_URL="https://as-hermesportal.azurewebsites.net"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5446855Z ^[[36;1mMETADATA_PAYLOAD=$(printf '{"commit_sha":"%s","repository_url":"%s","commit_url":"%s","visibility":"%s","factory_run_id":"%s","factory_run_url":"%s","factory_status":"%s","factory_finished_at":"%s"}' \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5448215Z ^[[36;1m  "${SHA}" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5448741Z ^[[36;1m  "https://github.com/${REPO}" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5449408Z ^[[36;1m  "https://github.com/${REPO}/commit/${SHA}" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5450231Z ^[[36;1m  "private" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5450731Z ^[[36;1m  "35248909929" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5451531Z ^[[36;1m  "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/35248909929" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5452388Z ^[[36;1m  "${FR}" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5452904Z ^[[36;1m  "$(date -u +%Y-%m-%dT%H:%M:%SZ)")^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5453861Z ^[[36;1mMETADATA_RESP=$(curl -s -w "\n%{http_code}" -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5454843Z ^[[36;1m  -H "Content-Type: application/json" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5455491Z ^[[36;1m  -d "${METADATA_PAYLOAD}" 2>&1)^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5456200Z ^[[36;1mMETADATA_HTTP=$(echo "${METADATA_RESP}" | tail -1)^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5456975Z ^[[36;1mMETADATA_BODY=$(echo "${METADATA_RESP}" | sed '$d')^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5457815Z ^[[36;1mif [ "${METADATA_HTTP}" -ge 200 ] && [ "${METADATA_HTTP}" -lt 300 ]; then^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5458954Z ^[[36;1m  echo "[PASS] Portal metadata updated (factory) — HTTP ${METADATA_HTTP}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5459850Z ^[[36;1melse^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5460626Z ^[[36;1m  echo "[ERROR] Portal metadata update failed — HTTP ${METADATA_HTTP}, body: ${METADATA_BODY}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5461495Z ^[[36;1mfi^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5461918Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5462333Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5462885Z ^[[36;1mecho "═══════════════════════════════════════════════════"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5463533Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5464060Z ^[[36;1m# --- TRACE: Registrar pasos en Portal ---^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5464682Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5465260Z ^[[36;1mecho "--- TRACE: Registrando trazabilidad en Portal ---"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5465959Z ^[[36;1mregister_paso() {^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5466574Z ^[[36;1m  local NUM=$1 NAME=$2 ESTADO=$3 DETALLE=$4 RESULT=$5^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5467250Z ^[[36;1m  local RESPONSE HTTP_CODE^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5468133Z ^[[36;1m  RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${PORTAL_URL}/api/fabrica/proyectos/${DID}/paso" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5469079Z ^[[36;1m    -H "Content-Type: application/json" \^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5470533Z ^[[36;1m    -d "{\"numero_paso\":${NUM},\"estado_paso\":\"${ESTADO}\",\"detalle\":\"${DETALLE}\",\"evidencia\":\"${RESULT}\"}" 2>&1)^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5471559Z ^[[36;1m  HTTP_CODE=$(echo "${RESPONSE}" | tail -1)^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5472315Z ^[[36;1m  if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5473147Z ^[[36;1m    echo "  OK: Paso ${NUM} ${NAME} -> ${ESTADO} (HTTP ${HTTP_CODE})"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5474005Z ^[[36;1m  else^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5474576Z ^[[36;1m    echo "  WARN: Paso ${NUM} ${NAME} -> HTTP ${HTTP_CODE}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5475240Z ^[[36;1m  fi^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5475662Z ^[[36;1m}^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5476317Z ^[[36;1mregister_paso 2 "FACTORY" "COMPLETADO" "Factory Runner ejecutado" "PASS"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5477364Z ^[[36;1mregister_paso 3 "GITHUB" "COMPLETADO" "Repo hijo creado SHA ${SHA}" "PASS"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5478197Z ^[[36;1mif [ -n "${ASP_ID}" ]; then^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5478939Z ^[[36;1m  register_paso 7 "AZURE" "COMPLETADO" "Plan asignado: ${ASP_ID}" "PASS"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5479896Z ^[[36;1mfi^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5480351Z ^[[36;1m^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5480770Z ^[[36;1mecho ""^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5481305Z ^[[36;1mecho "  RESUMEN EJECUTIVO — FACTORY RUNNER E2E"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5482028Z ^[[36;1mecho "═══════════════════════════════════════════════════"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5482747Z ^[[36;1mecho "  Factory run_id     : 35248909929"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5483379Z ^[[36;1mecho "  Factory conclusion : ${FR}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5483998Z ^[[36;1mecho "  Proyecto           : ${PROJ}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5484622Z ^[[36;1mecho "  Repositorio        : ${REPO}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5485226Z ^[[36;1mecho "  SHA                : ${SHA}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5485832Z ^[[36;1mecho "  CID                : ${CID}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5486431Z ^[[36;1mecho "  DID                : ${DID}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5487126Z ^[[36;1mecho "  Control Plane      : ${CP_RUN_ID:-NO DETECTADO}"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5487823Z ^[[36;1mecho "  AZ LOGIN           : NO"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5488480Z ^[[36;1mecho "═══════════════════════════════════════════════════"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.5489142Z ^[[36;1mecho "::endgroup::"^[[0m
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6261188Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6262301Z env:
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6262782Z   FACTORY_GITHUB_USER: FREDYASARMIENTOT
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6263396Z   FACTORY_SKIP_AZURE: true
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6264197Z   GH_TOKEN: ***
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6264644Z ##[endgroup]
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6476099Z ##[group]=== FASE 8-11: FACTORY RUNNER REPORTE FINAL ===
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6477063Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6575194Z ╔══════════════════════════════════════════════════╗
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6576428Z ║   FACTORY RUNNER — REPORTE DE VERIFICACIÓN      ║
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6577182Z ╚══════════════════════════════════════════════════╝
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6577584Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:40.6577826Z --- FASE 8: CONTROL PLANE DISPATCH ---
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.1893151Z ##[warning]No se encontró run de deploy-child.yml con SHA a38a3b39603677dba1df132fccf24873e8c9725d
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.1901983Z [WARN] El Control Plane pudo no haberse disparado aún o SHA no coincide
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.1902677Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.1902941Z --- FASE 11: EVIDENCIA ---
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.1903298Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.1903625Z --- METADATA: Actualizando trazabilidad en Portal ---
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.4592900Z [PASS] Portal metadata updated (factory) — HTTP 200
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.4593574Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.4593931Z ═══════════════════════════════════════════════════
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.4594586Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.4594612Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.4595181Z --- TRACE: Registrando trazabilidad en Portal ---
+Verificar Resultado	Collect Results	2026-09-17T16:49:41.9651152Z   OK: Paso 2 FACTORY -> COMPLETADO (HTTP 200)
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4493325Z   OK: Paso 3 GITHUB -> COMPLETADO (HTTP 200)
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4494054Z 
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4497773Z   RESUMEN EJECUTIVO — FACTORY RUNNER E2E
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4498698Z ═══════════════════════════════════════════════════
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4499388Z   Factory run_id     : 35248909929
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4500274Z   Factory conclusion : PASS
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4500942Z   Proyecto           : hermes-fix-test-1789663736
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4501730Z   Repositorio        : FREDYASARMIENTOT/hermes-fix-test-1789663736
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4502594Z   SHA                : a38a3b39603677dba1df132fccf24873e8c9725d
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4504214Z   CID                : 646504C4A4B243DD
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4504847Z   DID                : D33A289C0F334E69
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4505449Z   Control Plane      : NO DETECTADO
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4506015Z   AZ LOGIN           : NO
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4506798Z ═══════════════════════════════════════════════════
+Verificar Resultado	Collect Results	2026-09-17T16:49:42.4508989Z ##[endgroup]
+Verificar Resultado	Complete job	﻿2026-09-17T16:49:42.4682632Z Cleaning up orphan processes

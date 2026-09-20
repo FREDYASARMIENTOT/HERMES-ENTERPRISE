@@ -182,12 +182,13 @@
                                         <th>Proyecto</th>
                                         <th>Estado</th>
                                         <th>Resultado</th>
+                                        <th>VENV / Runtime</th><th>GitHub</th><th>App Service</th>
                                         <th>Duracion</th>
                                         <th>Detalle / Paso</th>
                                     </tr>
                                 </thead>
                                 <tbody id="historial-tbody">
-                                    <tr><td colspan="5" class="text-center text-muted py-3"><i class="bi bi-hourglass-split me-1"></i>Cargando...</td></tr>
+                                    <tr><td colspan="6" class="text-center text-muted py-3"><i class="bi bi-hourglass-split me-1"></i>Cargando...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -924,17 +925,42 @@
                     const ahora = new Date();
                     tsEl.textContent = ahora.toISOString().replace('T', ' ').substring(0, 19);
                 }
-                const resp = await fetch('/api/fabrica/proyectos/historial?limit=5');
+                const resp = await fetch('/api/fabrica/proyectos/historial?limit=20');
                 const data = await resp.json();
                 if (!data.proyectos || !Array.isArray(data.proyectos)) return;
                 const tbody = document.getElementById('historial-tbody');
                 if (!tbody) return;
                 if (data.proyectos.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3"><i class="bi bi-folder-open me-1"></i>No hay proyectos registrados aun.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="bi bi-folder-open me-1"></i>No hay proyectos registrados aun.</td></tr>';
                     return;
                 }
+
+                // Separar activos (App Service EXISTE) de historicos (App Service NO_EXISTE o NO_VERIFICADO)
+                var activos = data.proyectos.filter(function(p) { return p.azure_resource_check_status === 'EXISTE'; });
+                var historicos = data.proyectos.filter(function(p) { return p.azure_resource_check_status !== 'EXISTE'; });
+
+                // Mostrar solo las ultimas 5 activas, luego historicas
+                var mostrar = activos.slice(0, 5);
+                // Si hay menos de 5 activas, completar con historicas
+                if (mostrar.length < 5) {
+                    var restantes = historicos.slice(0, 5 - mostrar.length);
+                    mostrar = mostrar.concat(restantes);
+                }
+
+                // Actualizar contadores
+                var activeCount = document.getElementById('active-deployments-count');
+                if (activeCount) activeCount.textContent = activos.length;
+                var totalCount = document.getElementById('total-deployments-count');
+                if (totalCount) totalCount.textContent = data.proyectos.length;
+                var historicalCount = document.getElementById('historical-deployments-count');
+                if (historicalCount) historicalCount.textContent = historicos.length;
+                var githubExistCount = document.getElementById('github-exist-count');
+                if (githubExistCount) githubExistCount.textContent = data.proyectos.filter(function(p) { return p.github_resource_check_status === 'EXISTE'; }).length;
+                var runtimeExistCount = document.getElementById('runtime-exist-count');
+                if (runtimeExistCount) runtimeExistCount.textContent = data.proyectos.filter(function(p) { return p.runtime_resource_check_status === 'EXISTE'; }).length;
+
                 let html = '';
-                data.proyectos.forEach(function(p) {
+                mostrar.forEach(function(p) {
                     var estadoBadge = '<span class="badge bg-secondary">' + (p.estado || 'DESCONOCIDO') + '</span>';
                     if (p.estado === 'COMPLETADO') estadoBadge = '<span class="badge bg-success">COMPLETADO</span>';
                     else if (p.estado === 'FALLIDO') estadoBadge = '<span class="badge bg-danger">FALLIDO</span>';
@@ -944,14 +970,39 @@
                     if (p.resultado === 'PASS') resultadoBadge = '<span class="badge bg-success">PASS</span>';
                     else if (p.resultado === 'FAIL') resultadoBadge = '<span class="badge bg-danger">FAIL</span>';
 
+                    var azureBadge = '<span class="badge bg-secondary">NO_VERIFICADO</span>';
+                    var azureStatus = (p.azure_resource_check_status || 'NO_VERIFICADO');
+                    if (azureStatus === 'EXISTE') azureBadge = '<span class="badge bg-success">EXISTE</span>';
+                    else if (azureStatus === 'NO_EXISTE') azureBadge = '<span class="badge bg-danger">ELIMINADO</span>';
+                    else if (azureStatus === 'ERROR_PERMISOS' || azureStatus === 'ERROR_CONEXION' || azureStatus === 'ERROR_AZURE' || azureStatus === 'ERROR') azureBadge = '<span class="badge bg-warning text-dark">' + azureStatus + '</span>';
+
+                    var runtimeBadge = '<span class="badge bg-secondary">NO_VERIF</span>';
+                    var runtimeStatus = (p.runtime_resource_check_status || 'NO_VERIFICADO');
+                    if (runtimeStatus === 'EXISTE') runtimeBadge = '<span class="badge bg-success">EXISTE</span>';
+                    else if (runtimeStatus === 'NO_EXISTE') runtimeBadge = '<span class="badge bg-danger">NO_EXISTE</span>';
+                    else if (runtimeStatus === 'ERROR_CONEXION' || runtimeStatus === 'ERROR') runtimeBadge = '<span class="badge bg-warning text-dark">' + runtimeStatus + '</span>';
+
+                    var githubBadge = '<span class="badge bg-secondary">NO_VERIF</span>';
+                    var githubStatus = (p.github_resource_check_status || 'NO_VERIFICADO');
+                    if (githubStatus === 'EXISTE') githubBadge = '<span class="badge bg-success">EXISTE</span>';
+                    else if (githubStatus === 'NO_EXISTE') githubBadge = '<span class="badge bg-danger">NO_EXISTE</span>';
+                    else if (githubStatus === 'ERROR_PERMISOS' || githubStatus === 'ERROR_LIMITE' || githubStatus === 'ERROR_GITHUB' || githubStatus === 'ERROR_CONEXION' || githubStatus === 'ERROR') githubBadge = '<span class="badge bg-warning text-dark">' + githubStatus + '</span>';
+
                     var detalle = p.detalle || '';
                     if (p.paso_final && !detalle) detalle = 'Paso: ' + p.paso_final;
                     if (detalle && detalle.length > 60) detalle = detalle.substring(0, 60) + '...';
 
+                    var nombreDisplay = p.nombre_proyecto;
+                    if (azureStatus === 'NO_EXISTE') nombreDisplay = '<span class="text-decoration-line-through text-muted">' + p.nombre_proyecto + '</span>';
+                    else nombreDisplay = '<strong>' + p.nombre_proyecto + '</strong>';
+
                     html += '<tr>' +
-                        '<td><strong><a href="/proyectos/' + p.deployment_id + '" class="text-light text-decoration-none">' + p.nombre_proyecto + '</a></strong></td>' +
+                        '<td><a href="/proyectos/' + p.deployment_id + '" class="text-light text-decoration-none">' + nombreDisplay + '</a></td>' +
                         '<td>' + estadoBadge + '</td>' +
                         '<td>' + resultadoBadge + '</td>' +
+                        '<td>' + runtimeBadge + '</td>' +
+                        '<td>' + githubBadge + '</td>' +
+                        '<td>' + azureBadge + '</td>' +
                         '<td><small class="text-muted">' + (p.duracion || '--') + '</small></td>' +
                         '<td><small class="text-muted">' + (detalle || '--') + '</small></td>' +
                         '</tr>';
@@ -967,7 +1018,6 @@
             }
         }
 
-        // Iniciar polling del historial cada 10 segundos
         setInterval(actualizarHistorial, 10000);
         // Cargar inicial
         actualizarHistorial();

@@ -982,7 +982,10 @@ jobs:
           RDY_RES="${{ needs.readiness.outputs.readiness_result }}"
           FUNC_RES="${{ needs.functional-tests.outputs.functional_result }}"
           UF_RES="${{ needs.user-facing-validation.outputs.validation_result }}"
-          CP_METADATA=$(printf '{"control_plane_run_id":"%s","control_plane_run_url":"%s","control_plane_status":"%s","commit_sha":"%s","web_app_url":"%s","deploy_result":"%s","readiness_result":"%s","functional_result":"%s","user_facing_result":"%s","sha_chain_result":"%s","checkout_sha":"%s","control_plane_finished_at":"%s"}' \
+          # Extraer pass/fail counts del deployment-report.json generado en evidence step
+          FUNC_PASS=$(python3 -c "import json;d=json.load(open('deployment-report.json'));print(d.get('functional_tests',{}).get('pass_count',0))" 2>/dev/null || echo "0")
+          FUNC_FAIL=$(python3 -c "import json;d=json.load(open('deployment-report.json'));print(d.get('functional_tests',{}).get('fail_count',0))" 2>/dev/null || echo "0")
+          CP_METADATA=$(printf '{"control_plane_run_id":"%s","control_plane_run_url":"%s","control_plane_status":"%s","commit_sha":"%s","web_app_url":"%s","deploy_result":"%s","readiness_result":"%s","functional_result":"%s","user_facing_result":"%s","sha_chain_result":"%s","checkout_sha":"%s","control_plane_finished_at":"%s","functional_pass_count":%s,"functional_fail_count":%s}' \
              "${{ github.run_id }}" \
              "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}" \
              "${FINAL_STATUS}" \
@@ -994,7 +997,9 @@ jobs:
              "${UF_RES}" \
              "${{ needs.checkout-child.outputs.sha_chain }}" \
              "${{ needs.checkout-child.outputs.deployed_sha }}" \
-             "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+             "${FUNC_PASS}" \
+             "${FUNC_FAIL}")
           METADATA_RESP=$(curl -s -w "\n%{http_code}" -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
             -H "Content-Type: application/json" \
             -d "${CP_METADATA}" 2>&1)

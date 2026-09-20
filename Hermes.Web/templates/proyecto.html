@@ -134,6 +134,51 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 <tr><td class="text-muted">Actualizaci&oacute;n</td><td class="text-end" id="proj-actualizacion">&mdash;</td></tr>
 </table></div>
 </div></div></div>
+<!-- Validation Results Card -->
+<div class="card mb-4" id="validation-card"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-check2-square"></i></span>Resultados de Validaci&oacute;n</div><div class="card-body">
+<div class="row g-3">
+<div class="col-md-3 col-6"><div class="counter-card"><div class="counter-value result-pending" id="val-readiness">&mdash;</div><div class="counter-label">Readiness</div></div></div>
+<div class="col-md-3 col-6"><div class="counter-card"><div class="counter-value result-pending" id="val-functional">&mdash;</div><div class="counter-label">Funcional</div></div></div>
+<div class="col-md-3 col-6"><div class="counter-card"><div class="counter-value result-pending" id="val-user-facing">&mdash;</div><div class="counter-label">User-Facing</div></div></div>
+<div class="col-md-3 col-6"><div class="counter-card"><div class="counter-value result-pending" id="val-evidence">&mdash;</div><div class="counter-label">Evidencia</div></div></div>
+</div>
+<div class="row g-3 mt-2">
+<div class="col-md-3 col-6"><div class="counter-card"><div class="counter-value text-success" id="val-pass-count">0</div><div class="counter-label">Pruebas PASS</div></div></div>
+<div class="col-md-3 col-6"><div class="counter-card"><div class="counter-value text-danger" id="val-fail-count">0</div><div class="counter-label">Pruebas FAIL</div></div></div>
+</div>
+</div></div>
+</div></div>
+<div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center">
+    <span><span class="section-icon bg-dark me-2"><i class="bi bi-cloud-check"></i></span>Estado Actual de Azure</span>
+    <button class="btn btn-outline-info btn-sm" onclick="verificarAzureAhora()"><i class="bi bi-arrow-clockwise me-1"></i>Verificar Azure</button>
+</div>
+<div class="card-body">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value result-pending" id="azure-resource-status">&mdash;</div>
+                <div class="counter-label">Estado Azure</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value text-light" id="azure-checked-at">&mdash;</div>
+                <div class="counter-label">Ultima verificacion</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value text-info" id="azure-resource-id" style="font-size:0.7rem;word-break:break-all;">&mdash;</div>
+                <div class="counter-label">Resource ID</div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-3 mt-2" id="azure-error-row" style="display:none">
+        <div class="col-12">
+            <div class="alert alert-warning py-2 mb-0" id="azure-error-msg"></div>
+        </div>
+    </div>
+</div></div>
 <div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-list-check"></i></span>Timeline &mdash; 13 Pasos Can&oacute;nicos</div>
 <div class="card-body" id="timeline-container"><div class="text-center text-muted py-3">Cargando timeline...</div></div></div>
 <div class="card mb-4"><div class="card-header d-flex flex-wrap align-items-center justify-content-between">
@@ -246,6 +291,18 @@ document.getElementById('proj-name').textContent=data.nombre_proyecto||'---';
 document.getElementById('proj-did').textContent=data.deployment_id||'---';
 document.getElementById('proj-cid').textContent=data.correlation_id||'---';
 document.getElementById('proj-resultado').textContent=data.resultado||'---';
+// Populate validation results
+function setValBadge(id,val){var e=document.getElementById(id);if(!e)return;if(!val||val===''){e.textContent='---';e.className='counter-value result-pending';return;}
+var v=String(val).toUpperCase();e.textContent=v;
+if(v==='PASS'){e.className='counter-value result-pass';}
+else if(v==='FAIL'){e.className='counter-value result-fail';}
+else{e.className='counter-value result-pending';}}
+setValBadge('val-readiness',data.readiness_result);
+setValBadge('val-functional',data.functional_result);
+setValBadge('val-user-facing',data.user_facing_result);
+setValBadge('val-evidence',data.evidence_result);
+document.getElementById('val-pass-count').textContent=data.functional_pass_count!==undefined?data.functional_pass_count:'0';
+document.getElementById('val-fail-count').textContent=data.functional_fail_count!==undefined?data.functional_fail_count:'0';
 document.getElementById('proj-inicio').textContent=formatTS(data.fecha_solicitud)||'---';
 document.getElementById('proj-fin').textContent=formatTS(data.fecha_fin)||'---';
 document.getElementById('proj-duracion').textContent=data.duracion_total_segundos?formatDuration(data.duracion_total_segundos):'---';
@@ -254,7 +311,8 @@ document.getElementById('total-duration-display').textContent=data.duracion_tota
 if(data.fecha_solicitud&&['COMPLETADO','FALLIDO'].indexOf(est)<0){var st=new Date(data.fecha_solicitud);var elp=Math.floor((Date.now()-st.getTime())/1000);document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: '+formatDuration(elp)}
 else{document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: ---';}
 renderTimeline(pasos);renderLinks(data);actualizarFiltros();}
-function renderTimeline(pasos){var con=document.getElementById('timeline-container');con.innerHTML='';
+function actualizarAzureStatus(data);
+    renderTimeline(pasos){var con=document.getElementById('timeline-container');con.innerHTML='';
 if(!pasos||pasos.length===0){con.innerHTML='<div class="text-center text-muted py-3">No hay pasos registrados.</div>';return;}
 var pn={1:'SOLICITUD',2:'FACTORY',3:'GITHUB',4:'CI CHILD',5:'CONTROL PLANE',6:'AUTENTICACI\u00d3N',7:'AZURE',8:'DEPLOY',9:'READINESS',10:'PRUEBAS FUNC.',11:'EVIDENCIA',12:'PUBLICACI\u00d3N',13:'NAVEGADOR'};
 for(var i=0;i<13;i++){var paso=null;for(var p=0;p<pasos.length;p++){if(pasos[p].numero===i+1){paso=pasos[p];break}}
@@ -459,7 +517,67 @@ var con=document.getElementById('console-container');
 if(con){con.addEventListener('scroll',function(){
 if(con.scrollTop<con.scrollHeight-con.clientHeight-50){isUserScrolledUp=true;}
 else{isUserScrolledUp=false;newEventCount=0;
-document.getElementById('console-new-events-badge').style.display='none';}});}},500);});function renderLinks(data){var cfgs=[{id:'link-repo',url:data.repository_url},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:data.web_app_url},{id:'link-health',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=data.repository_url||''}
+document.getElementById('console-new-events-badge').style.display='none';}});}},500);});
+function actualizarAzureStatus(data) {
+    var azureCheckStatus = data.azure_resource_check_status || 'NO_VERIFICADO';
+    var statusEl = document.getElementById('azure-resource-status');
+    var checkedEl = document.getElementById('azure-checked-at');
+    var resourceIdEl = document.getElementById('azure-resource-id');
+    var errorRow = document.getElementById('azure-error-row');
+    var errorMsg = document.getElementById('azure-error-msg');
+
+    if (statusEl) {
+        if (azureCheckStatus === 'EXISTE') {
+            statusEl.textContent = 'EXISTE';
+            statusEl.className = 'counter-value result-pass';
+        } else if (azureCheckStatus === 'NO_EXISTE') {
+            statusEl.textContent = 'RECURSO AZURE ELIMINADO';
+            statusEl.className = 'counter-value result-fail';
+        } else if (azureCheckStatus === 'ERROR_PERMISOS' || azureCheckStatus === 'ERROR_CONEXION' || azureCheckStatus === 'ERROR_AZURE' || azureCheckStatus === 'ERROR') {
+            statusEl.textContent = azureCheckStatus;
+            statusEl.className = 'counter-value result-pending';
+            if (errorRow && data.azure_resource_check_error) {
+                errorRow.style.display = 'block';
+                errorMsg.textContent = 'Error: ' + data.azure_resource_check_error;
+            }
+        } else {
+            statusEl.textContent = 'NO VERIFICADO';
+            statusEl.className = 'counter-value result-pending';
+        }
+    }
+    if (checkedEl) {
+        checkedEl.textContent = data.azure_resource_checked_at ? formatTS(data.azure_resource_checked_at) : '---';
+    }
+    if (resourceIdEl) {
+        resourceIdEl.textContent = data.web_app_resource_id || '---';
+    }
+}
+
+function verificarAzureAhora() {
+    var btn = document.querySelector('button[onclick="verificarAzureAhora()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1 spinner"></i>Verificando...';
+    }
+    fetch('/api/fabrica/proyectos/' + deploymentId + '/azure-check', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            actualizarAzureStatus(result);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Verificar Azure';
+            }
+        })
+        .catch(function(err) {
+            console.error('Error verificando Azure:', err);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Verificar Azure';
+            }
+        });
+}
+
+function renderLinks(data){var cfgs=[{id:'link-repo',url:data.repository_url},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:data.web_app_url},{id:'link-health',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=data.repository_url||''}
 function verJSON(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/json','_blank')}
 function verMarkdown(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/md','_blank')}
 function descargarJSON(){var a=document.createElement('a');a.href='/api/fabrica/proyectos/'+deploymentId+'/trace/json';a.download='deployment-trace-'+deploymentId+'.json';a.click()}

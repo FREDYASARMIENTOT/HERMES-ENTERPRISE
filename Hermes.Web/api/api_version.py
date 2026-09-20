@@ -10,6 +10,7 @@ Endpoints:
     GET /api/version → Versión completa del sistema
 """
 
+import os
 import platform
 import logging
 import subprocess

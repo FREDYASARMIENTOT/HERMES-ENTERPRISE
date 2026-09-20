@@ -38,7 +38,7 @@ check("GET /api/fabrica/proyectos", requests.get(f"{BASE}/api/fabrica/proyectos"
 print()
 print("--- [Content Validation] ---")
 root_html = requests.get(f"{BASE}/", timeout=30).text
-check_content("Root: canonical portal", root_html, "Portal Web Canónico")
+check_content("Root: Fabrica de Proyectos UR", root_html, "Fábrica de Proyectos UR")
 check_content("Root: Fabrica de Proyectos", root_html, "Fábrica de Proyectos")
 check_content("Root: project input", root_html, "nuevo-proyecto-input")
 check_content("Root: create button", root_html, "crear-proyecto-btn")

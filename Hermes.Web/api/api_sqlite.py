@@ -14,7 +14,7 @@ async def obtener_sqlite(request: Request):
     try:
         # Ruta de la DB del Portal (solicitudes_proyecto)
         import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fabrica.db")
+        db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "proyecto.db")
         if not os.path.exists(db_path):
             return {
                 "estado": "no_verificado",

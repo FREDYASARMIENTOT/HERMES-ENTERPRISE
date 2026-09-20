@@ -15,7 +15,7 @@ async def obtener_bootstrap(request: Request):
     from pathlib import Path
 
     raiz = Path(__file__).resolve().parent.parent.parent
-    db_path = raiz / "Hermes.Web" / "data" / "fabrica.db"
+    db_path = raiz / "Hermes.Web" / "data" / "proyecto.db"
     deployment_path = raiz / "Hermes.Web" / "deployment"
 
     return {

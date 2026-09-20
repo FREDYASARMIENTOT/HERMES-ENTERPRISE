@@ -1,5 +1,5 @@
 """
-main.py — Punto de entrada del Backend FastAPI de Hermes Enterprise
+main.py — Punto de entrada del Backend FastAPI de la Fábrica de Proyectos UR — AS-HermesPortal
 
 Este archivo inicializa la aplicacion FastAPI, configura el Middleware,
 registra los routers de la API Publica y expone el servidor web.
@@ -201,12 +201,12 @@ except ImportError as error_servicio:
     )
 
 # ──────────────────────────────────────────────────────────────
-# Determinacion de rutas base del proyecto Hermes Enterprise
+# Determinacion de rutas base del proyecto Fábrica de Proyectos UR — AS-HermesPortal
 # ──────────────────────────────────────────────────────────────
 
 def obtener_ruta_raiz_hermes() -> Path:
     """
-    Obtiene la ruta raiz del proyecto Hermes Enterprise.
+    Obtiene la ruta raiz del proyecto Fábrica de Proyectos UR — AS-HermesPortal.
     """
     ruta_actual = Path(__file__).resolve().parent.parent.parent  # Hermes.Web/
     # Buscar hacia arriba hasta encontrar raiz del proyecto
@@ -216,7 +216,7 @@ def obtener_ruta_raiz_hermes() -> Path:
     # Si no se encuentra, usar el directorio actual
     return Path.cwd()
 
-# Ruta base del proyecto Hermes Enterprise
+# Ruta base del proyecto Fábrica de Proyectos UR — AS-HermesPortal
 RUTA_HERMES: Path = obtener_ruta_raiz_hermes()
 RUTA_CONFIG: Path = RUTA_HERMES / "config"
 RUTA_HERMES_WEB: Path = RUTA_HERMES / "Hermes.Web"
@@ -250,9 +250,9 @@ RUTA_MODULO_COMMANDS: Path = RUTA_MOTOR / "kernel" / "Module" / "Hermes.Commands
 # ──────────────────────────────────────────────────────────────
 
 DESCRIPCION_API = """
-# API Publica de Hermes Enterprise
+# API Pública de la Fábrica de Proyectos UR
 
-Bienvenido a la API REST oficial de **Hermes Enterprise**.
+Bienvenido a la API REST oficial de la **Fábrica de Proyectos UR**.
 
 Esta API proporciona acceso completo a todas las funcionalidades del sistema:
 
@@ -260,7 +260,7 @@ Esta API proporciona acceso completo a todas las funcionalidades del sistema:
 
 | Recurso | Descripcion |
 |---------|-------------|
-| `/api/version` | Version de Hermes Enterprise y sus componentes |
+| `/api/version` | Version de la Fábrica de Proyectos UR y sus componentes |
 | `/api/proyecto` | Estado y creacion de proyectos Hermes |
 | `/api/workspace` | Gestion de workspaces de VS Code |
 | `/api/git` | Estado del repositorio Git |
@@ -275,14 +275,14 @@ Esta API proporciona acceso completo a todas las funcionalidades del sistema:
 
 # Creacion de la aplicacion FastAPI
 app = FastAPI(
-    title="Hermes Enterprise - API Publica",
+    title="Fábrica de Proyectos UR — API Pública",
     description=DESCRIPCION_API,
     version="2.0.0",
     docs_url="/swagger",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     contact={
-        "name": "Equipo Hermes Enterprise",
+        "name": "Equipo Fábrica de Proyectos UR",
         "url": "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE",
     },
     license_info={
@@ -480,7 +480,7 @@ def ejecutar_comando_hermes(
     except FileNotFoundError:
         resultado["error"] = (
             "PowerShell no esta disponible en el sistema. "
-            "Hermes Enterprise requiere PowerShell para funcionar."
+            "La Fábrica de Proyectos UR requiere PowerShell para funcionar."
         )
     except Exception as error_general:
         resultado["error"] = f"Error inesperado: {str(error_general)}"
@@ -495,14 +495,14 @@ def ejecutar_comando_hermes(
 
 @app.get("/", response_class=HTMLResponse, tags=["Portal"])
 async def raiz_portal_web(request: Request):
-    """Renderiza la pagina principal del Portal Web de Hermes Enterprise."""
+    """Renderiza la pagina principal de la Fábrica de Proyectos UR."""
     if templates:
         return templates.TemplateResponse(
             request,
             "index.html",
             {
                 "request": request,
-                "titulo": "Hermes Enterprise - Portal Web Canonico",
+                "titulo": "Fábrica de Proyectos UR",
                 "version": "2.0.0",
                 "anio_actual": datetime.now().year
             }
@@ -513,11 +513,11 @@ async def raiz_portal_web(request: Request):
         <html lang="es">
         <head>
             <meta charset="UTF-8">
-            <title>Hermes Enterprise - Portal Web</title>
+            <title>Fábrica de Proyectos UR</title>
         </head>
         <body>
-            <h1>Hermes Enterprise</h1>
-            <p>Portal Web - Backend operativo</p>
+            <h1>Fábrica de Proyectos UR</h1>
+            <p>Portal Web — Backend operativo</p>
             <p>API disponible en <a href="/swagger">/swagger</a></p>
         </body>
         </html>
@@ -536,7 +536,7 @@ async def health_check():
     from pathlib import Path
 
     # Verificar DB
-    db_path = RUTA_HERMES / "Hermes.Web" / "data" / "fabrica.db"
+    db_path = RUTA_HERMES / "Hermes.Web" / "data" / "proyecto.db"
     db_ok = False
     db_proyectos = 0
     if db_path.exists() and db_path.stat().st_size > 0:
@@ -561,7 +561,7 @@ async def health_check():
 
     return {
         "estado": "saludable",
-        "aplicacion": "Hermes Enterprise Web",
+        "aplicacion": "Fábrica de Proyectos UR — AS-HermesPortal",
         "version": os.environ.get("HERMES_BUILD_VERSION", "2.0.0"),
         "commit": os.environ.get("HERMES_BUILD_COMMIT", ""),
         "environment": environment,
@@ -606,7 +606,7 @@ async def detalle_proyecto(request: Request, deployment_id: str):
             {
                 "request": request,
                 "deployment_id": deployment_id,
-                "titulo": "Hermes Enterprise - Implementación del Proyecto",
+                "titulo": "Fábrica de Proyectos UR — Implementación del Proyecto",
                 "version": "2.0.0",
                 "anio_actual": datetime.now().year
             }
@@ -622,7 +622,7 @@ async def detalle_proyecto(request: Request, deployment_id: str):
 async def evento_inicio_aplicacion():
     """Evento que se ejecuta cuando la aplicacion FastAPI inicia."""
     logger.info("=" * 60)
-    logger.info("Hermes Enterprise Web - Iniciando...")
+    logger.info("Fábrica de Proyectos UR - Iniciando...")
     logger.info("=" * 60)
     logger.info(f"Python: {platform.python_version()}")
     logger.info(f"Plataforma: {platform.platform()}")
@@ -659,7 +659,7 @@ async def evento_inicio_aplicacion():
 @app.on_event("shutdown")
 async def evento_cierre_aplicacion():
     """Evento que se ejecuta cuando la aplicacion FastAPI se detiene."""
-    logger.info("Hermes Enterprise Web - Deteniendo servidor...")
+    logger.info("Fábrica de Proyectos UR - Deteniendo servidor...")
 
 
 # ──────────────────────────────────────────────────────────────

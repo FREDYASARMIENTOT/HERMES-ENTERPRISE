@@ -322,11 +322,11 @@ jobs:
 
           echo "--- [Version API] ---"
           VERSION=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/version")
-          echo "$VERSION" | python3 -c "import sys,json;d=json.load(sys.stdin);assert d.get('aplicacion')=='Hermes Enterprise';assert d.get('commit','')!='';assert d.get('build_timestamp','')!='';assert d.get('environment','')=='azure';print(f\"OK: app={d.get('aplicacion')} commit={d.get('commit')} env={d.get('environment')}\")" 2>/dev/null && pass "Version: real commit + build_timestamp + environment=azure" || fail "Version: incomplete"
+          echo "$VERSION" | python3 -c "import sys,json;d=json.load(sys.stdin);assert d.get('aplicacion')=='Fábrica de Proyectos UR';assert d.get('commit','')!='';assert d.get('build_timestamp','')!='';assert d.get('environment','')=='azure';print(f\"OK: app={d.get('aplicacion')} commit={d.get('commit')} env={d.get('environment')}\")" 2>/dev/null && pass "Version: real commit + build_timestamp + environment=azure" || fail "Version: incomplete"
 
           echo "--- [Root Page] ---"
           ROOT=$(curl -s --connect-timeout 10 --max-time 15 "$URL/")
-          grep -qi "Portal Web Canónico" <<< "$ROOT" && pass "Root: canonical frontend" || fail "Root: missing canonical frontend"
+          grep -qi "Fábrica de Proyectos UR" <<< "$ROOT" && pass "Root: Fabrica de Proyectos UR" || fail "Root: missing Fabrica de Proyectos UR"
 
           echo "--- [Swagger] ---"
           CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL/swagger")

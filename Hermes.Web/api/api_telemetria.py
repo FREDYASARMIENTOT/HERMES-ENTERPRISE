@@ -16,7 +16,7 @@ async def obtener_telemetria(request: Request):
         import os
         import sqlite3
 
-        db_path = Path(__file__).resolve().parent.parent / "data" / "fabrica.db"
+        db_path = Path(__file__).resolve().parent.parent / "data" / "proyecto.db"
         metrics = {
             "solicitudes": 0,
             "completados": 0,

@@ -23,7 +23,7 @@ async def obtener_proyecto(request: Request):
     from pathlib import Path
     from datetime import datetime, timezone
 
-    db_path = Path(__file__).resolve().parent.parent / "data" / "fabrica.db"
+    db_path = Path(__file__).resolve().parent.parent / "data" / "proyecto.db"
     stats = {
         "total": 0,
         "completados": 0,
@@ -54,7 +54,7 @@ async def obtener_proyecto(request: Request):
             pass
 
     return {
-        "proyecto": "Hermes Enterprise",
+        "proyecto": "Fábrica de Proyectos UR",
         "estado": "activo",
         "version": os.environ.get("HERMES_BUILD_VERSION", "2.0.0"),
         "portal": "AS-HermesPortal",

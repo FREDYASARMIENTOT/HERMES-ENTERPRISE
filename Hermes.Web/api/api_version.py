@@ -1,10 +1,10 @@
 """
 ====================================================================
-api_version.py — Router de /api/version para Hermes.Web
+api_version.py — Router de /api/version para la Fábrica de Proyectos UR
 ====================================================================
 
 Este router expone endpoints para consultar la versión de
-Hermes Enterprise y sus componentes.
+Fábrica de Proyectos UR y sus componentes.
 
 Endpoints:
     GET /api/version → Versión completa del sistema
@@ -22,10 +22,10 @@ logger = logging.getLogger("Hermes.Web.API.Version")
 router = APIRouter()
 
 
-@router.get("/version", summary="Obtiene la versión de Hermes Enterprise")
+@router.get("/version", summary="Obtiene la versión de la Fábrica de Proyectos UR")
 async def obtener_version(request: Request):
     """
-    Obtiene la versión completa de Hermes Enterprise.
+    Obtiene la versión completa de la Fábrica de Proyectos UR.
     
     Returns:
         Dict con versiones de todos los componentes del sistema
@@ -69,7 +69,7 @@ async def obtener_version(request: Request):
             environment = "development"
 
     return {
-        "aplicacion": "Hermes Enterprise",
+        "aplicacion": "Fábrica de Proyectos UR",
         "version": os.environ.get("HERMES_BUILD_VERSION", "2.0.0"),
         "version_api": "2.0.0",
         "commit": commit_hash,

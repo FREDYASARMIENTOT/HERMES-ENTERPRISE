@@ -33,7 +33,7 @@ async def obtener_despliegue(request: Request):
         "estado": "desplegado" if site_name else "local",
         "environment": environment,
         "platform": f"Python {platform.python_version()} on {platform.system()}",
-        "app": "Hermes Enterprise Portal",
+        "app": "Fábrica de Proyectos UR — AS-HermesPortal",
         "version": version,
         "commit": commit,
         "build_timestamp": build_timestamp,

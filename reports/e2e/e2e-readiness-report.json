@@ -1,0 +1,100 @@
+{
+  "reporte": "e2e-readiness-report",
+  "version": "2.0.0",
+  "fecha": "2026-09-20T15:45:00Z",
+  "sesion": "autonoma-b4-b5",
+  "commit_base": "a4541e4b9e8170719cf82af55257c31378e968e3",
+  "aplicacion": "Fábrica de Proyectos UR — AS-HermesPortal",
+  "resumen": {
+    "b4_auditoria": {
+      "ready": 12,
+      "partial": 3,
+      "blocked": 1,
+      "unknown": 0
+    },
+    "b5_preparacion": {
+      "ready": 18,
+      "partial": 3,
+      "blocked": 1,
+      "unknown": 0
+    },
+    "e2e_ready": false,
+    "e2e_executed": false
+  },
+  "correcciones": [
+    {
+      "id": 1,
+      "descripcion": "Health check DB path",
+      "archivos": [
+        "Hermes.Web/backend/main.py",
+        "Hermes.Web/api/api_proyecto.py",
+        "Hermes.Web/api/api_bootstrap.py",
+        "Hermes.Web/api/api_sqlite.py",
+        "Hermes.Web/api/api_telemetria.py"
+      ],
+      "cambio": "fabrica.db → proyecto.db",
+      "severidad": "BAJA"
+    },
+    {
+      "id": 2,
+      "descripcion": "Renombre de aplicación",
+      "archivos": [
+        "Hermes.Web/backend/main.py",
+        "Hermes.Web/api/api_version.py",
+        "Hermes.Web/api/api_despliegue.py",
+        "Hermes.Web/templates/index.html",
+        "Hermes.Web/templates/proyecto.html",
+        "Hermes.Web/templates/proyecto_listado.html",
+        ".github/workflows/portal-ci-cd.yml"
+      ],
+      "cambio": "Hermes Enterprise → Fábrica de Proyectos UR",
+      "severidad": "MEDIA"
+    },
+    {
+      "id": 3,
+      "descripcion": "UI Templates branding",
+      "archivos": [
+        "Hermes.Web/templates/index.html",
+        "Hermes.Web/templates/proyecto.html",
+        "Hermes.Web/templates/proyecto_listado.html"
+      ],
+      "cambio": "Branding actualizado",
+      "severidad": "MEDIA"
+    },
+    {
+      "id": 4,
+      "descripcion": "Workflow assertion",
+      "archivos": [
+        ".github/workflows/portal-ci-cd.yml"
+      ],
+      "cambio": "Assert de aplicación actualizado",
+      "severidad": "BAJA"
+    }
+  ],
+  "tests": {
+    "total": 189,
+    "passed": 189,
+    "failed": 0,
+    "error": 0,
+    "skipped": 0
+  },
+  "blockers": [
+    "No existe Child Project desplegado que complete el pipeline E2E (pasos 4-13)",
+    "20 proyectos históricos atascados en EN_PROCESO"
+  ],
+  "riesgos": [
+    {
+      "nivel": "ALTO",
+      "descripcion": "Si Factory Runner o Control Plane fallan durante E2E, el diagnóstico es complejo"
+    },
+    {
+      "nivel": "MEDIO",
+      "descripcion": "Posible drift entre Child CI template y repositorio hijo"
+    },
+    {
+      "nivel": "BAJO",
+      "descripcion": "Registros históricos con nombre 'Hermes Enterprise' no actualizados retroactivamente"
+    }
+  ],
+  "siguiente_accion": "Ejecutar creación de proyecto Child E2E real para validar pipeline completo"
+}

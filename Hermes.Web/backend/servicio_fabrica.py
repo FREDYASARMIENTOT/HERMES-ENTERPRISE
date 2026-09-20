@@ -165,6 +165,28 @@ class SolicitudProyecto:
         self.functional_fail_count: int = 0
         self.user_facing_result: str = ""
         self.evidence_result: str = ""
+        # Child CI traceability
+        self.child_ci_run_id: str = ""
+        self.child_ci_run_url: str = ""
+        self.child_ci_status: str = ""
+        self.child_ci_started_at: str = ""
+        self.child_ci_finished_at: str = ""
+        self.child_ci_duration: str = ""
+        # Azure detailed info
+        self.azure_hostname: str = ""
+        self.azure_state: str = ""
+        self.azure_location: str = ""
+        self.azure_subscription_id: str = ""
+        self.azure_web_app_name: str = ""
+        # Readiness detailed info
+        self.readiness_http_status: Optional[int] = None
+        self.readiness_url: str = ""
+        self.readiness_timestamp: str = ""
+        # Evidence detailed info
+        self.evidence_status: str = ""
+        self.evidence_url: str = ""
+        # Branch
+        self.branch: str = "main"
         # Azure resource reconciliation
         self.azure_resource_exists: Optional[bool] = None
         self.azure_resource_check_status: str = "NO_VERIFICADO"
@@ -292,6 +314,28 @@ class SolicitudProyecto:
             "azure_resource_check_status": self.azure_resource_check_status,
             "azure_resource_checked_at": self.azure_resource_checked_at,
             "azure_resource_check_error": self.azure_resource_check_error,
+            # Child CI traceability
+            "child_ci_run_id": self.child_ci_run_id,
+            "child_ci_run_url": self.child_ci_run_url,
+            "child_ci_status": self.child_ci_status,
+            "child_ci_started_at": self.child_ci_started_at,
+            "child_ci_finished_at": self.child_ci_finished_at,
+            "child_ci_duration": self.child_ci_duration,
+            # Azure detailed info
+            "azure_hostname": self.azure_hostname,
+            "azure_state": self.azure_state,
+            "azure_location": self.azure_location,
+            "azure_subscription_id": self.azure_subscription_id,
+            "azure_web_app_name": self.azure_web_app_name,
+            # Readiness detailed info
+            "readiness_http_status": self.readiness_http_status,
+            "readiness_url": self.readiness_url,
+            "readiness_timestamp": self.readiness_timestamp,
+            # Evidence detailed info
+            "evidence_status": self.evidence_status,
+            "evidence_url": self.evidence_url,
+            # Branch
+            "branch": self.branch,
             "azure_hostname": self.azure_hostname,
             # GitHub resource reconciliation
             "github_resource_exists": self.github_resource_exists,
@@ -360,6 +404,28 @@ class SolicitudProyecto:
         s.functional_fail_count = datos.get("functional_fail_count", 0)
         s.user_facing_result = datos.get("user_facing_result", "")
         s.evidence_result = datos.get("evidence_result", "")
+        # Child CI traceability
+        s.child_ci_run_id = datos.get("child_ci_run_id", "")
+        s.child_ci_run_url = datos.get("child_ci_run_url", "")
+        s.child_ci_status = datos.get("child_ci_status", "")
+        s.child_ci_started_at = datos.get("child_ci_started_at", "")
+        s.child_ci_finished_at = datos.get("child_ci_finished_at", "")
+        s.child_ci_duration = datos.get("child_ci_duration", "")
+        # Azure detailed info
+        s.azure_hostname = datos.get("azure_hostname", "")
+        s.azure_state = datos.get("azure_state", "")
+        s.azure_location = datos.get("azure_location", "")
+        s.azure_subscription_id = datos.get("azure_subscription_id", "")
+        s.azure_web_app_name = datos.get("azure_web_app_name", "")
+        # Readiness detailed info
+        s.readiness_http_status = datos.get("readiness_http_status")
+        s.readiness_url = datos.get("readiness_url", "")
+        s.readiness_timestamp = datos.get("readiness_timestamp", "")
+        # Evidence detailed info
+        s.evidence_status = datos.get("evidence_status", "")
+        s.evidence_url = datos.get("evidence_url", "")
+        # Branch
+        s.branch = datos.get("branch", "main")
         # Azure resource reconciliation
         s.azure_resource_exists = datos.get("azure_resource_exists")
         if s.azure_resource_exists is not None:
@@ -473,7 +539,24 @@ class ServicioFabrica:
                     user_facing_result TEXT DEFAULT '',
                     evidence_result TEXT DEFAULT '',
                     fecha_fin TEXT DEFAULT '',
-                    duracion_total_segundos INTEGER DEFAULT 0
+                    duracion_total_segundos INTEGER DEFAULT 0,
+                    child_ci_run_id TEXT DEFAULT '',
+                    child_ci_run_url TEXT DEFAULT '',
+                    child_ci_status TEXT DEFAULT '',
+                    child_ci_started_at TEXT DEFAULT '',
+                    child_ci_finished_at TEXT DEFAULT '',
+                    child_ci_duration TEXT DEFAULT '',
+                    azure_hostname TEXT DEFAULT '',
+                    azure_state TEXT DEFAULT '',
+                    azure_location TEXT DEFAULT '',
+                    azure_subscription_id TEXT DEFAULT '01bfad48-c092-4712-bc72-f141eb01a8d4',
+                    azure_web_app_name TEXT DEFAULT '',
+                    readiness_http_status INTEGER,
+                    readiness_url TEXT DEFAULT '',
+                    readiness_timestamp TEXT DEFAULT '',
+                    evidence_status TEXT DEFAULT '',
+                    evidence_url TEXT DEFAULT '',
+                    branch TEXT DEFAULT 'main'
                 )
             """)
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes_proyecto(estado)")
@@ -560,6 +643,22 @@ class ServicioFabrica:
                 ("runtime_resource_check_status", "TEXT DEFAULT 'NO_VERIFICADO'"),
                 ("runtime_resource_checked_at", "TEXT DEFAULT ''"),
                 ("runtime_resource_check_error", "TEXT DEFAULT ''"),
+                ("child_ci_run_id", "TEXT DEFAULT ''"),
+                ("child_ci_run_url", "TEXT DEFAULT ''"),
+                ("child_ci_status", "TEXT DEFAULT ''"),
+                ("child_ci_started_at", "TEXT DEFAULT ''"),
+                ("child_ci_finished_at", "TEXT DEFAULT ''"),
+                ("child_ci_duration", "TEXT DEFAULT ''"),
+                ("azure_state", "TEXT DEFAULT ''"),
+                ("azure_location", "TEXT DEFAULT ''"),
+                ("azure_subscription_id", "TEXT DEFAULT '01bfad48-c092-4712-bc72-f141eb01a8d4'"),
+                ("azure_web_app_name", "TEXT DEFAULT ''"),
+                ("readiness_http_status", "INTEGER"),
+                ("readiness_url", "TEXT DEFAULT ''"),
+                ("readiness_timestamp", "TEXT DEFAULT ''"),
+                ("evidence_status", "TEXT DEFAULT ''"),
+                ("evidence_url", "TEXT DEFAULT ''"),
+                ("branch", "TEXT DEFAULT 'main'"),
             ]:
                 try:
                     cursor.execute(f"ALTER TABLE solicitudes_proyecto ADD COLUMN {col_name} {col_type}")
@@ -1147,10 +1246,17 @@ class ServicioFabrica:
                  github_resource_checked_at, github_resource_check_error,
                  github_repository,
                  runtime_resource_exists, runtime_resource_check_status,
-                 runtime_resource_checked_at, runtime_resource_check_error)
+                 runtime_resource_checked_at, runtime_resource_check_error,
+                 child_ci_run_id, child_ci_run_url, child_ci_status,
+                 child_ci_started_at, child_ci_finished_at, child_ci_duration,
+                 azure_state, azure_location, azure_subscription_id, azure_web_app_name,
+                 readiness_http_status, readiness_url, readiness_timestamp,
+                 evidence_status, evidence_url,
+                 branch)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 datos["id"], datos["nombre_proyecto"], datos["descripcion"],
                 datos["repositorio"], datos["web_app"], datos["web_app_url"],
@@ -1199,7 +1305,23 @@ class ServicioFabrica:
                 datos.get("runtime_resource_exists"),
                 datos.get("runtime_resource_check_status", "NO_VERIFICADO"),
                 datos.get("runtime_resource_checked_at", ""),
-                datos.get("runtime_resource_check_error", "")
+                datos.get("runtime_resource_check_error", ""),
+                datos.get("child_ci_run_id", ""),
+                datos.get("child_ci_run_url", ""),
+                datos.get("child_ci_status", ""),
+                datos.get("child_ci_started_at", ""),
+                datos.get("child_ci_finished_at", ""),
+                datos.get("child_ci_duration", ""),
+                datos.get("azure_state", ""),
+                datos.get("azure_location", ""),
+                datos.get("azure_subscription_id", ""),
+                datos.get("azure_web_app_name", ""),
+                datos.get("readiness_http_status"),
+                datos.get("readiness_url", ""),
+                datos.get("readiness_timestamp", ""),
+                datos.get("evidence_status", ""),
+                datos.get("evidence_url", ""),
+                datos.get("branch", "main")
             ))
             conn.commit()
             conn.close()

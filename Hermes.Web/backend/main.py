@@ -531,16 +531,49 @@ async def raiz_portal_web(request: Request):
 @app.get("/health", tags=["Salud"])
 async def health_check():
     """Endpoint de verificacion de salud para Azure App Service."""
+    import os
+    import sqlite3
+    from pathlib import Path
+
+    # Verificar DB
+    db_path = RUTA_HERMES / "Hermes.Web" / "data" / "fabrica.db"
+    db_ok = False
+    db_proyectos = 0
+    if db_path.exists() and db_path.stat().st_size > 0:
+        try:
+            conn = sqlite3.connect(str(db_path))
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM solicitudes_proyecto")
+            db_proyectos = c.fetchone()[0]
+            db_ok = True
+            conn.close()
+        except Exception:
+            pass
+
+    # Verificar GitHub token
+    github_token = os.environ.get("HERMES_GITHUB_TOKEN", "")
+    github_ok = bool(github_token)
+
+    # Entorno
+    environment = os.environ.get("HERMES_ENVIRONMENT", "")
+    if not environment:
+        environment = "azure" if "WEBSITE_SITE_NAME" in os.environ else "development"
+
     return {
         "estado": "saludable",
         "aplicacion": "Hermes Enterprise Web",
-        "version": "2.0.0",
+        "version": os.environ.get("HERMES_BUILD_VERSION", "2.0.0"),
+        "commit": os.environ.get("HERMES_BUILD_COMMIT", ""),
+        "environment": environment,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "python_version": platform.python_version(),
         "plataforma": platform.platform(),
-        "raiz_proyecto": str(RUTA_HERMES),
+        "event_store_disponible": db_ok,
+        "event_store_proyectos": db_proyectos,
+        "github_integration": github_ok,
+        "azure_integration": bool("WEBSITE_SITE_NAME" in os.environ),
         "servicio_datos_disponible": SERVICIO_DATOS_DISPONIBLE,
-        "middleware_disponible": MIDDLEWARE_DISPONIBLE
+        "middleware_disponible": MIDDLEWARE_DISPONIBLE,
     }
 
 

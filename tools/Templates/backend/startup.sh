@@ -5,8 +5,8 @@ echo "[{{PROJECT_NAME}}] Starting deployment..."
 
 cd /home/site/wwwroot
 
-echo "[{{PROJECT_NAME}}] Installing dependencies..."
-pip install -r requirements.txt -q
+echo "[{{PROJECT_NAME}}] Dependencies installed by Oryx via SCM_DO_BUILD_DURING_DEPLOYMENT"
+# pip install -r requirements.txt -q removido — Oryx lo ejecuta durante deployment
 
 echo "[{{PROJECT_NAME}}] Creating data directory..."
 mkdir -p data

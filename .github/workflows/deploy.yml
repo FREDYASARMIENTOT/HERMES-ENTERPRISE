@@ -1,11 +1,16 @@
 # ====================================================================
-# Deploy Pipeline — Hermes Enterprise Project Factory
+# Deploy Pipeline — Hermes Enterprise Project Factory (DESHABILITADO)
 # ====================================================================
-# RC77: Four-stage pipeline for project validation and deployment.
-# Validate → Build → Deploy → SmokeTest
+# IMPORTANTE: El deploy a AS-HermesEnterprise ha sido deshabilitado
+# porque el recurso fue eliminado intencionalmente.
+#
+# El Portal canónico se despliega mediante portal-ci-cd.yml
+# a AS-HermesPortal.
+#
+# Portal: https://as-hermesportal.azurewebsites.net/
 # ====================================================================
 
-name: Hermes CI/CD Pipeline
+name: Hermes CI/CD Pipeline (Legacy — DEPLOY DISABLED)
 
 permissions:
   contents: read
@@ -88,271 +93,19 @@ jobs:
           print('Entrypoint Hermes.Web.backend.main:app validated')
           " 2>&1
 
-  deploy:
-    name: Deploy to Azure
+  deploy-skip:
+    name: 'DEPLOY DISABLED (AS-HermesEnterprise deleted)'
     runs-on: ubuntu-latest
-    environment: production
     needs: [build]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy to Azure Web App (az webapp deploy)
-        shell: bash
+      - name: Show deploy disabled message
         run: |
-          APP_NAME="as-${{ env.PROJECT_NAME }}"
-          RG="RG-Hermes-Proyectos"
-          ZIP_FILE="/tmp/deploy-${{ github.sha }}.zip"
-
-          echo "=== Creating deployment package ==="
-          zip -r "$ZIP_FILE" . -x '*.git*' '_azure_logs*' '__pycache__/*' '.venv/*' '*.zip' 'node_modules/*'
-          echo "Package size: $(du -sh "$ZIP_FILE" | cut -f1)"
-          echo "Package contents: $(unzip -l "$ZIP_FILE" | wc -l) files"
-
-          echo "=== Deploying to Azure ==="
-          az webapp deploy \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --src-path "$ZIP_FILE" \
-            --type zip \
-            --clean true \
-            --output table
-
-          echo "=== Deployment complete ==="
-          rm -f "$ZIP_FILE"
-
-      - name: Record deployment artifact
-        run: |
-          echo "DEPLOY_CORRELATION_ID=${{ env.CORRELATION_ID }}" >> $GITHUB_ENV
-          echo "DEPLOY_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
-          echo "DEPLOY_SHA=${{ github.sha }}" >> $GITHUB_ENV
-
-      - name: Validate Azure startup command
-        shell: bash
-        run: |
-          APP_NAME="as-${{ env.PROJECT_NAME }}"
-          RG="RG-Hermes-Proyectos"
-          ACTUAL=$(az webapp config show --name "${APP_NAME}" --resource-group "${RG}" --query "appCommandLine" -o tsv 2>&1)
-          EXPECTED='gunicorn --bind=0.0.0.0:8000 --timeout 600 --worker-class uvicorn.workers.UvicornWorker backend.main:app'
-          echo "Expected: ${EXPECTED}"
-          echo "Actual:   ${ACTUAL}"
-          if [ "${ACTUAL}" = "${EXPECTED}" ]; then
-            echo "✅ Startup command MATCH (gunicorn+uvicorn, --timeout 600)"
-          else
-            echo "⚠️  Startup command MISMATCH"
-            echo "Applying correct startup command..."
-            az webapp config set \
-              --name "${APP_NAME}" \
-              --resource-group "${RG}" \
-              --startup-file "${EXPECTED}" \
-              --output none
-            echo "✅ Startup command corrected"
-          fi
-
-  smoketest:
-    name: Smoke Test
-    if: success() && needs.deploy.result == 'success'
-    runs-on: ubuntu-latest
-    needs: [deploy]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Wait for App Service readiness (polling)
-        run: |
-          URL="https://as-${PROJECT_NAME}.azurewebsites.net"
-          echo "Polling ${URL} for readiness..."
-          MAX_ATTEMPTS=60
-          ATTEMPT=1
-          while [ ${ATTEMPT} -le ${MAX_ATTEMPTS} ]; do
-            echo "[${ATTEMPT}/${MAX_ATTEMPTS}] Checking ${URL}/health ..."
-            HTTP_CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "${URL}/health" 2>/dev/null || echo "000")
-            if [ "${HTTP_CODE}" = "200" ]; then
-              echo "App Service is READY (HTTP 200)"
-              curl -s --connect-timeout 10 --max-time 15 "${URL}/health" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'  app={d.get(\"aplicacion\",\"?\")}, estado={d.get(\"estado\",\"?\")}')" 2>/dev/null || true
-              break
-            fi
-            echo "  HTTP ${HTTP_CODE} — waiting 10s..."
-            sleep 10
-            ATTEMPT=$((ATTEMPT + 1))
-          done
-          if [ ${ATTEMPT} -gt ${MAX_ATTEMPTS} ]; then
-            echo "FAIL: App Service not ready after 5 minutes"
-            echo "Last HTTP code: ${HTTP_CODE}"
-            exit 1
-          fi
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          CORRELATION_ID: ${{ env.CORRELATION_ID }}
-
-      - name: Smoke Test — RC77-C4 Adversarial E2E Validation
-        run: |
-          # Redirect all output to log file for artifact capture
-          SMOKE_LOG="${RUNNER_TEMP}/smoke-test-${CORRELATION_ID}.log"
-          exec 5>&1
-          exec > >(tee -a "${SMOKE_LOG}") 2>&1
-
-          URL="https://as-${PROJECT_NAME}.azurewebsites.net"
-          CORR_ID="${CORRELATION_ID}"
-          ALL_PASS=true
-          FAIL_COUNT=0
-          PASS_COUNT=0
-
-          fail() {
-            FAIL_COUNT=$((FAIL_COUNT + 1))
-            ALL_PASS=false
-            echo "FAIL: $1"
-          }
-
-          pass() {
-            PASS_COUNT=$((PASS_COUNT + 1))
-            echo "PASS: $1"
-          }
-
-          echo "=========================================="
-          echo "  RC77-C4 — Adversarial E2E Smoke Test"
-          echo "  CorrelationId: $CORR_ID"
-          echo "  URL: $URL"
-          echo "=========================================="
-
-          # ── Test 1: HTTP Status Codes ──
-          echo "--- [1/6] HTTP Status Codes ---"
-          for EP in "/health" "/api/version" "/api/proyecto" "/openapi.json"; do
-            CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL$EP")
-            if [ "$CODE" -eq 200 ]; then
-              pass "GET $EP -> 200"
-            else
-              fail "GET $EP -> $CODE (expected 200)"
-            fi
-          done
-
-          # Test GET / with content validation (detect Azure default page)
-          ROOT_CONTENT=$(curl -s --connect-timeout 10 --max-time 15 "$URL/")
-          ROOT_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/")
-          if [ "$ROOT_CODE" -eq 200 ]; then
-            if echo "$ROOT_CONTENT" | grep -q "Hermes"; then
-              pass "GET / -> 200 with Hermes content"
-            else
-              # Check for Azure default page markers
-              if echo "$ROOT_CONTENT" | grep -q "Azure App Service\|Microsoft Azure\|Default Web Site"; then
-                fail "GET / -> 200 but content is Azure default page (application not deployed)"
-              else
-                fail "GET / -> 200 but content is NOT Hermes (unknown page)"
-              fi
-            fi
-          else
-            fail "GET / -> $ROOT_CODE (expected 200)"
-          fi
-
-          # ── Test 2: Adversarial 404 ──
-          echo "--- [2/6] Adversarial 404 (expect 404) ---"
-          CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL/api/nonexistent-endpoint-xyz")
-          if [ "$CODE" -eq 404 ]; then
-            pass "adversarial GET /api/nonexistent -> 404 (expected)"
-          else
-            fail "adversarial -> $CODE (expected 404)"
-          fi
-
-          # ── Test 3: Health JSON Schema ──
-          echo "--- [3/6] Health JSON Schema ---"
-          HEALTH=$(curl -s --connect-timeout 10 --max-time 15 "$URL/health")
-          if echo "$HEALTH" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('estado')=='saludable'; assert 'aplicacion' in d; assert 'version' in d; assert 'timestamp' in d; assert 'python_version' in d; print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, py={d[\"python_version\"]}')" 2>&1; then
-            pass "health JSON schema: estado=saludable"
-          else
-            fail "health JSON schema invalid: $HEALTH"
-          fi
-
-          # ── Test 4: Version JSON Schema ──
-          echo "--- [4/6] Version JSON Schema ---"
-          VERSION=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/version")
-          if echo "$VERSION" | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'version' in d; assert 'aplicacion' in d; assert d['aplicacion']=='Hermes Enterprise'; assert 'commit' in d; print(f'  app={d[\"aplicacion\"]}, ver={d[\"version\"]}, commit={d[\"commit\"]}')" 2>&1; then
-            pass "version JSON schema: aplicacion=Hermes Enterprise"
-          else
-            fail "version JSON schema invalid: $VERSION"
-          fi
-
-          # ── Test 5: Proyecto JSON Schema ──
-          echo "--- [5/6] Proyecto JSON Schema ---"
-          PROYECTO=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/proyecto")
-          if echo "$PROYECTO" | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'proyecto' in d; assert d['proyecto']=='Hermes Enterprise'; assert 'estado' in d; print(f'  proyecto={d[\"proyecto\"]}, estado={d[\"estado\"]}')" 2>&1; then
-            pass "proyecto JSON schema: proyecto=Hermes Enterprise"
-          else
-            fail "proyecto JSON schema invalid: $PROYECTO"
-          fi
-
-          # ── Test 6: OpenAPI Contract Validation ──
-          echo "--- [6/6] OpenAPI Contract Validation ---"
-          OPENAPI=$(curl -s --connect-timeout 10 --max-time 15 "$URL/openapi.json")
-          if echo "$OPENAPI" | python3 -c "import json,sys;spec=json.load(sys.stdin);paths=spec.get('paths',{});title=spec.get('info',{}).get('title','');print(f'  OpenAPI title: {title}');print(f'  OpenAPI paths: {len(paths)}');required=['/health','/api/version','/api/proyecto','/'];missing=[p for p in required if p not in paths];print(f'  All required paths present: {len(missing)==0}');exit(0) if (len(missing)==0 and title=='Hermes Enterprise - API Publica') else exit(1)" 2>&1; then
-            pass "OpenAPI contract: title='Hermes Enterprise - API Publica', all required paths present"
-          else
-            fail "OpenAPI validation failed"
-          fi
-
-          # ── Final Result ──
-          echo "=========================================="
-          echo "  RESULTS: $PASS_COUNT passed, $FAIL_COUNT failed"
-          echo "=========================================="
-
-          # ── Validate Application Identity ──
-          echo "--- [IDENTITY] Cross-Validation ---"
-          HEALTH_APP=$(echo "$HEALTH" | python3 -c "import json,sys; print(json.load(sys.stdin).get('aplicacion',''))")
-          VERSION_APP=$(echo "$VERSION" | python3 -c "import json,sys; print(json.load(sys.stdin).get('aplicacion',''))")
-          OPENAPI_TITLE=$(echo "$OPENAPI" | python3 -c "import json,sys; print(json.load(sys.stdin).get('info',{}).get('title',''))")
-          PYTHON_VER=$(echo "$HEALTH" | python3 -c "import json,sys; print(json.load(sys.stdin).get('python_version',''))")
-          echo "  Health aplicacion: ${HEALTH_APP}"
-          echo "  Version aplicacion: ${VERSION_APP}"
-          echo "  OpenAPI title: ${OPENAPI_TITLE}"
-          echo "  Python version: ${PYTHON_VER}"
-          if [ "${HEALTH_APP}" = "Hermes Enterprise Web" ] && [ "${VERSION_APP}" = "Hermes Enterprise" ] && [ "${OPENAPI_TITLE}" = "Hermes Enterprise - API Publica" ]; then
-            pass "Identity confirmed: health='${HEALTH_APP}' version='${VERSION_APP}' openapi='${OPENAPI_TITLE}'"
-          else
-            fail "Identity MISMATCH: health=${HEALTH_APP}, version=${VERSION_APP}, openapi=${OPENAPI_TITLE}"
-          fi
-
-          # ── Final Result ──
-          echo "=========================================="
-          echo "  RESULTS: $PASS_COUNT passed, $FAIL_COUNT failed"
-          echo "=========================================="
-
-          # ── Save evidence JSON with REAL results (no hardcoded PASS) ──
-          EVIDENCE="${{ runner.temp }}/rc77c5-evidence.json"
-          EVIDENCE_RESULT="PASS"
-          if [ "$ALL_PASS" = false ]; then
-            EVIDENCE_RESULT="FAIL"
-          fi
-          python3 tools/evidence.py \
-            "${PASS_COUNT}" "${FAIL_COUNT}" "${EVIDENCE_RESULT}" \
-            "${CORR_ID}" "${PROJECT_NAME}" "${URL}" \
-            "${GITHUB_SHA}" "${GITHUB_RUN_ID}" \
-            "${HEALTH_APP}" "${VERSION_APP}" "${OPENAPI_TITLE}" "${PYTHON_VER}" \
-            "${EVIDENCE}"
-          echo "Evidence saved to ${EVIDENCE}"
-
-          # ── Failure check AFTER evidence capture (not before!) ──
-          if [ "$ALL_PASS" = false ]; then
-            echo "=== SMOKE TEST FAILED (CorrelationId: $CORR_ID) ==="
-            exit 1
-          fi
-          echo "=== ALL RC77-C5 SMOKE TESTS PASSED (CorrelationId: $CORR_ID) ==="
-          echo "=== Hermes Enterprise E2E validated on $(date -u +'%Y-%m-%d') ==="
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          CORRELATION_ID: ${{ env.CORRELATION_ID }}
-
-      - name: Upload Smoke Test Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rc77c5-smoke-test-${{ github.sha }}
-          path: |
-            ${{ runner.temp }}/smoke-test-*.log
-            ${{ runner.temp }}/rc77c5-evidence.json
-          if-no-files-found: error
+          echo "======================================================"
+          echo "  DEPLOY SKIPPED"
+          echo ""
+          echo "  AS-HermesEnterprise was intentionally deleted."
+          echo "  The canonical Portal is deployed via portal-ci-cd.yml"
+          echo "  to AS-HermesPortal."
+          echo ""
+          echo "  Portal: https://as-hermesportal.azurewebsites.net/"
+          echo "======================================================"

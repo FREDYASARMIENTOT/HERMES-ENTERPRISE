@@ -91,9 +91,14 @@ try {
     Write-Step "Backend" "START" "Creating project files"
     $tmplSrc = Join-Path $HermesRoot "tools/Templates/backend"
     Copy-Item "$tmplSrc/requirements.txt" $ProjRoot -Force -ErrorAction SilentlyContinue
-    # Render startup.sh (replace {{PROJECT_NAME}} placeholder)
+    # Render startup.sh (replace all placeholders, same as main.py)
     $startupSh = Get-Content (Join-Path $tmplSrc "startup.sh") -Raw
-    $startupSh = $startupSh -replace "{{PROJECT_NAME}}",$NombreProyecto
+    $startupSh = $startupSh.Replace('{{PROJECT_NAME}}', $NombreProyecto)
+    $startupSh = $startupSh.Replace('{{CORRELATION_ID}}', $CorrelationId)
+    $startupSh = $startupSh.Replace('{{WEBAPP_NAME}}', $WebAppName)
+    $regionVal = if ($azureConfig.ContainsKey('Location') -and $azureConfig['Location']) { $azureConfig['Location'] } else { 'eastus' }
+    $startupSh = $startupSh.Replace('{{REGION}}', $regionVal)
+    $startupSh = $startupSh.Replace('{{DEPLOYMENT_ID}}', $CorrelationId)
     $startupSh | Out-File (Join-Path $ProjRoot "startup.sh") -Encoding utf8
     Copy-Item (Join-Path $HermesRoot "tools/Templates/project/.gitignore") $ProjRoot -Force -ErrorAction SilentlyContinue
     $readmeTemplate = Join-Path $HermesRoot "tools/Templates/project/README.md"

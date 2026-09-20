@@ -605,7 +605,17 @@ jobs:
             --output none 2>/dev/null || true
           echo "Startup command set to: startup.sh"
 
-          echo "=== Deploying via az webapp deploy ==="
+          echo "=== Setting App Environment Variables ==="
+          az webapp config appsettings set \
+            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
+            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
+            --settings \
+              HERMES_REPOSITORY="${{ needs.validate-inputs.outputs.repository }}" \
+              HERMES_COMMIT_SHA="${{ needs.validate-inputs.outputs.commit_sha }}" \
+            --output none 2>/dev/null || true
+          echo "App environment variables set"
+
+          echo "=== Deploying via az webapp deploy ===
           az webapp deploy \
             --name ${{ needs.validate-inputs.outputs.app_service_name }} \
             --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \

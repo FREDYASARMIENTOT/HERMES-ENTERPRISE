@@ -134,6 +134,16 @@ jobs:
             --name "${{ env.APP_NAME }}" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --settings "HERMES_DB_PATH=/home/data/proyecto.db"
+          echo "=== Setting build metadata for /api/version ==="
+          echo "Commit: ${{ github.sha }} | Branch: ${{ github.ref_name }}"
+          az webapp config appsettings set \
+            --name "${{ env.APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --settings \
+              "HERMES_BUILD_COMMIT=${{ github.sha }}" \
+              "HERMES_BUILD_BRANCH=${{ github.ref_name }}" \
+              "HERMES_BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              "HERMES_ENVIRONMENT=azure"
           echo "=== Setting HERMES_GITHUB_TOKEN for Factory Runner dispatch ==="
           echo "=== Source: GH_PORTAL_HERMES_REPO_WRITE_TOKEN (GitHub Secret) ==="
           echo "=== Security: value NEVER printed, NEVER stored in code ==="
@@ -300,7 +310,7 @@ jobs:
           echo "URL: $URL | CorrelationId: $CORR_ID"
 
           echo "--- [HTTP Status] ---"
-          for EP in "/health" "/" "/openapi.json"; do
+          for EP in "/health" "/" "/api/version" "/openapi.json"; do
             CODE=$(curl -s --connect-timeout 10 --max-time 15 -o /dev/null -w "%{http_code}" "$URL$EP")
             [ "$CODE" -eq 200 ] && pass "GET $EP -> 200" || fail "GET $EP -> $CODE"
           done
@@ -308,6 +318,10 @@ jobs:
           echo "--- [Health Check] ---"
           HEALTH=$(curl -s --connect-timeout 10 --max-time 15 "$URL/health")
           echo "$HEALTH" | python3 -c "import sys,json;d=json.load(sys.stdin);assert d.get('estado')=='saludable'" && pass "Health: estado=saludable" || fail "Health invalid"
+
+          echo "--- [Version API] ---"
+          VERSION=$(curl -s --connect-timeout 10 --max-time 15 "$URL/api/version")
+          echo "$VERSION" | python3 -c "import sys,json;d=json.load(sys.stdin);assert d.get('aplicacion')=='Hermes Enterprise';assert d.get('commit','')!='';assert d.get('build_timestamp','')!='';assert d.get('environment','')=='azure';print(f\"OK: app={d.get('aplicacion')} commit={d.get('commit')} env={d.get('environment')}\")" 2>/dev/null && pass "Version: real commit + build_timestamp + environment=azure" || fail "Version: incomplete"
 
           echo "--- [Root Page] ---"
           ROOT=$(curl -s --connect-timeout 10 --max-time 15 "$URL/")

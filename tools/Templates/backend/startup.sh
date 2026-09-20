@@ -12,7 +12,7 @@ echo "[{{PROJECT_NAME}}] Creating data directory..."
 mkdir -p data
 
 echo "[{{PROJECT_NAME}}] Initializing database schema..."
-python -c "
+python3 -c "
 import sqlite3, os
 db_path = os.path.join('data', 'proyecto.db')
 schema_path = os.path.join('tools', 'Templates', 'database', 'schema.sql')
@@ -34,8 +34,40 @@ elif not os.path.exists(db_path):
     print('Database schema initialized (inline)')
 " || true
 
+echo "[{{PROJECT_NAME}}] Inserting project metadata record..."
+python3 -c "
+import sqlite3, os, datetime
+db_path = os.path.join('data', 'proyecto.db')
+if not os.path.exists(db_path):
+    print('No database yet, skipping metadata insert')
+    exit(0)
+conn = sqlite3.connect(db_path)
+c = conn.cursor()
+corr_id = os.environ.get('HERMES_CORRELATION_ID', '')
+name = os.environ.get('HERMES_PROJECT_NAME', '')
+webapp = os.environ.get('HERMES_WEBAPP_NAME', '')
+repo = os.environ.get('HERMES_REPOSITORY', '')
+commit = os.environ.get('HERMES_COMMIT_SHA', '')
+region = os.environ.get('HERMES_REGION', '')
+deploy_id = os.environ.get('HERMES_DEPLOYMENT_ID', corr_id)
+url = f'https://{webapp}.azurewebsites.net' if webapp else ''
+now = datetime.datetime.utcnow().isoformat()
+if corr_id and name:
+    c.execute('SELECT COUNT(*) FROM Proyecto WHERE CorrelationId = ?', (corr_id,))
+    if c.fetchone()[0] == 0:
+        c.execute('INSERT INTO Proyecto (CorrelationId, Nombre, Repositorio, CommitHash, Estado, Region, DeploymentId, UrlPublica, FechaCreacion, FechaActualizacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                  (corr_id, name, repo, commit, 'CREADO', region, deploy_id, url, now, now))
+        conn.commit()
+        print(f'Project metadata inserted: {name} ({corr_id})')
+    else:
+        print(f'Project metadata already exists: {corr_id}')
+else:
+    print(f'Skipping metadata insert: corr_id={corr_id!r} name={name!r}')
+conn.close()
+" || true
+
 echo "[{{PROJECT_NAME}}] Migrating database schema (add Region/DeploymentId if missing)..."
-python -c "
+python3 -c "
 import sqlite3, os
 db_path = os.path.join('data', 'proyecto.db')
 if not os.path.exists(db_path):
@@ -64,6 +96,13 @@ export HERMES_CORRELATION_ID="{{CORRELATION_ID}}"
 export HERMES_WEBAPP_NAME="{{WEBAPP_NAME}}"
 export HERMES_REGION="${REGION:-${LOCATION:-eastus}}"
 export HERMES_DEPLOYMENT_ID="${DEPLOYMENT_ID:-{{CORRELATION_ID}}}"
+
+# NOTA: HERMES_REPOSITORY y HERMES_COMMIT_SHA son configuradas como
+# App Settings por deploy-child.yml (az webapp config appsettings set).
+# NO sobrescribirlas aquí — se leen automáticamente desde el entorno.
+# Si no están definidas, se mantienen como cadenas vacías.
+# export HERMES_REPOSITORY=""          # ← NO: esto sobrescribe las App Settings
+# export HERMES_COMMIT_SHA=""          # ← NO: esto sobrescribe las App Settings
 
 echo "[{{PROJECT_NAME}}] Starting application..."
 python -m uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}

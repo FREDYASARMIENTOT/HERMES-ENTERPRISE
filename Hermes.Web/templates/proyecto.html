@@ -173,7 +173,71 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
             </div>
         </div>
     </div>
-    <div class="row g-3 mt-2" id="azure-error-row" style="display:none">
+    
+<div class="card mb-4 mt-3"><div class="card-header d-flex justify-content-between align-items-center">
+    <span><span class="section-icon bg-dark me-2"><i class="bi bi-github"></i></span>Estado de GitHub</span>
+    <button class="btn btn-outline-info btn-sm" onclick="verificarGitHubAhora()"><i class="bi bi-arrow-clockwise me-1"></i>Verificar GitHub</button>
+</div>
+<div class="card-body">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value result-pending" id="github-resource-status">&mdash;</div>
+                <div class="counter-label">Estado GitHub</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value text-light" id="github-checked-at">&mdash;</div>
+                <div class="counter-label">Ultima verificacion</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value text-info" id="github-repo-name" style="font-size:0.7rem;word-break:break-all;">&mdash;</div>
+                <div class="counter-label">Repositorio</div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-3 mt-2" id="github-error-row" style="display:none">
+        <div class="col-12">
+            <div class="alert alert-warning py-2 mb-0" id="github-error-msg"></div>
+        </div>
+    </div>
+</div></div>
+
+<div class="card mb-4 mt-3"><div class="card-header d-flex justify-content-between align-items-center">
+    <span><span class="section-icon bg-dark me-2"><i class="bi bi-terminal"></i></span>Estado de Runtime / VENV</span>
+    <button class="btn btn-outline-info btn-sm" onclick="verificarRuntimeAhora()"><i class="bi bi-arrow-clockwise me-1"></i>Verificar Runtime</button>
+</div>
+<div class="card-body">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value result-pending" id="runtime-resource-status">&mdash;</div>
+                <div class="counter-label">Estado Runtime</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value text-light" id="runtime-checked-at">&mdash;</div>
+                <div class="counter-label">Ultima verificacion</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="counter-card">
+                <div class="counter-value text-info" id="runtime-hostname" style="font-size:0.7rem;word-break:break-all;">&mdash;</div>
+                <div class="counter-label">Hostname</div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-3 mt-2" id="runtime-error-row" style="display:none">
+        <div class="col-12">
+            <div class="alert alert-warning py-2 mb-0" id="runtime-error-msg"></div>
+        </div>
+    </div>
+</div></div>
+<div class="row g-3 mt-2" id="azure-error-row" style="display:none">
         <div class="col-12">
             <div class="alert alert-warning py-2 mb-0" id="azure-error-msg"></div>
         </div>
@@ -312,6 +376,8 @@ if(data.fecha_solicitud&&['COMPLETADO','FALLIDO'].indexOf(est)<0){var st=new Dat
 else{document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: ---';}
 renderTimeline(pasos);renderLinks(data);actualizarFiltros();}
 function actualizarAzureStatus(data);
+            actualizarGitHubStatus(data);
+            actualizarRuntimeStatus(data);
     renderTimeline(pasos){var con=document.getElementById('timeline-container');con.innerHTML='';
 if(!pasos||pasos.length===0){con.innerHTML='<div class="text-center text-muted py-3">No hay pasos registrados.</div>';return;}
 var pn={1:'SOLICITUD',2:'FACTORY',3:'GITHUB',4:'CI CHILD',5:'CONTROL PLANE',6:'AUTENTICACI\u00d3N',7:'AZURE',8:'DEPLOY',9:'READINESS',10:'PRUEBAS FUNC.',11:'EVIDENCIA',12:'PUBLICACI\u00d3N',13:'NAVEGADOR'};
@@ -573,6 +639,124 @@ function verificarAzureAhora() {
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Verificar Azure';
+            }
+        });
+}
+
+function actualizarGitHubStatus(data) {
+    var ghStatus = data.github_resource_check_status || 'NO_VERIFICADO';
+    var statusEl = document.getElementById('github-resource-status');
+    var checkedEl = document.getElementById('github-checked-at');
+    var repoEl = document.getElementById('github-repo-name');
+    var errorRow = document.getElementById('github-error-row');
+    var errorMsg = document.getElementById('github-error-msg');
+
+    if (statusEl) {
+        if (ghStatus === 'EXISTE') {
+            statusEl.textContent = 'EXISTE';
+            statusEl.className = 'counter-value result-pass';
+        } else if (ghStatus === 'NO_EXISTE') {
+            statusEl.textContent = 'NO EXISTE';
+            statusEl.className = 'counter-value result-fail';
+        } else if (ghStatus === 'ERROR_PERMISOS' || ghStatus === 'ERROR_GITHUB' || ghStatus === 'ERROR_CONEXION' || ghStatus === 'ERROR') {
+            statusEl.textContent = ghStatus;
+            statusEl.className = 'counter-value result-pending';
+            if (errorRow && data.github_resource_check_error) {
+                errorRow.style.display = 'block';
+                errorMsg.textContent = 'Error: ' + data.github_resource_check_error;
+            }
+        } else {
+            statusEl.textContent = 'NO VERIFICADO';
+            statusEl.className = 'counter-value result-pending';
+        }
+    }
+    if (checkedEl) {
+        checkedEl.textContent = data.github_resource_checked_at ? formatTS(data.github_resource_checked_at) : '---';
+    }
+    if (repoEl) {
+        repoEl.textContent = data.github_repository || '---';
+    }
+}
+
+function verificarGitHubAhora() {
+    var btn = document.querySelector('button[onclick="verificarGitHubAhora()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1 spinner"></i>Verificando...';
+    }
+    fetch('/api/fabrica/proyectos/' + deploymentId + '/github-check', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            actualizarGitHubStatus(result);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Verificar GitHub';
+            }
+        })
+        .catch(function(err) {
+            console.error('Error verificando GitHub:', err);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Verificar GitHub';
+            }
+        });
+}
+
+function actualizarRuntimeStatus(data) {
+    var rtStatus = data.runtime_resource_check_status || 'NO_VERIFICADO';
+    var statusEl = document.getElementById('runtime-resource-status');
+    var checkedEl = document.getElementById('runtime-checked-at');
+    var hostEl = document.getElementById('runtime-hostname');
+    var errorRow = document.getElementById('runtime-error-row');
+    var errorMsg = document.getElementById('runtime-error-msg');
+
+    if (statusEl) {
+        if (rtStatus === 'EXISTE') {
+            statusEl.textContent = 'EXISTE';
+            statusEl.className = 'counter-value result-pass';
+        } else if (rtStatus === 'NO_EXISTE') {
+            statusEl.textContent = 'NO EXISTE';
+            statusEl.className = 'counter-value result-fail';
+        } else if (rtStatus === 'ERROR_CONEXION' || rtStatus === 'ERROR') {
+            statusEl.textContent = rtStatus;
+            statusEl.className = 'counter-value result-pending';
+            if (errorRow && data.runtime_resource_check_error) {
+                errorRow.style.display = 'block';
+                errorMsg.textContent = 'Error: ' + data.runtime_resource_check_error;
+            }
+        } else {
+            statusEl.textContent = 'NO VERIFICADO';
+            statusEl.className = 'counter-value result-pending';
+        }
+    }
+    if (checkedEl) {
+        checkedEl.textContent = data.runtime_resource_checked_at ? formatTS(data.runtime_resource_checked_at) : '---';
+    }
+    if (hostEl) {
+        hostEl.textContent = data.azure_hostname || '---';
+    }
+}
+
+function verificarRuntimeAhora() {
+    var btn = document.querySelector('button[onclick="verificarRuntimeAhora()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1 spinner"></i>Verificando...';
+    }
+    fetch('/api/fabrica/proyectos/' + deploymentId + '/runtime-check', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            actualizarRuntimeStatus(result);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Verificar Runtime';
+            }
+        })
+        .catch(function(err) {
+            console.error('Error verificando Runtime:', err);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Verificar Runtime';
             }
         });
 }

@@ -420,6 +420,95 @@ for _mod_name, _tag in _router_modules:
         logger.warning(f"Router /api/{_mod_name} no disponible.")
 
 # ──────────────────────────────────────────────────────────────
+# Endpoint metadata catalog: /api/endpoints
+# ──────────────────────────────────────────────────────────────
+
+ENDPOINTS_CATALOG = [
+    {
+        "method": "GET",
+        "path": "/api/version",
+        "name": "Versión del Sistema",
+        "description": "Consulta la versión desplegada, commit, rama y runtime de Python.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/proyecto",
+        "name": "Estado del Proyecto",
+        "description": "Consulta la identidad y estado actual del proyecto y sus estadísticas.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/workspace",
+        "name": "Workspace",
+        "description": "Verifica el estado y disponibilidad del workspace de ejecución.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/git",
+        "name": "Git Local",
+        "description": "Consulta información disponible del repositorio Git local del runtime.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/github",
+        "name": "GitHub Remoto",
+        "description": "Verifica la integración y conectividad con el repositorio GitHub.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/entorno",
+        "name": "Entorno Python",
+        "description": "Consulta versión de Python y características del entorno de ejecución.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/azure",
+        "name": "Azure",
+        "description": "Consulta el estado de integración y recursos Azure disponibles.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/sqlite",
+        "name": "SQLite",
+        "description": "Verifica la disponibilidad y estado de la persistencia SQLite.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/despliegue",
+        "name": "Despliegue",
+        "description": "Consulta información del despliegue y runtime actualmente publicado.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/telemetria",
+        "name": "Telemetría",
+        "description": "Consulta el estado de los mecanismos de telemetría disponibles.",
+        "is_get": True,
+    },
+    {
+        "method": "GET",
+        "path": "/api/bootstrap",
+        "name": "Bootstrap",
+        "description": "Consulta el estado de inicialización y configuración inicial del runtime.",
+        "is_get": True,
+    },
+]
+
+
+@app.get("/api/endpoints", tags=["API"])
+async def listar_endpoints():
+    """Devuelve el catálogo de endpoints disponibles con sus metadatos."""
+    return ENDPOINTS_CATALOG
+# ──────────────────────────────────────────────────────────────
 # Funcion auxiliar para ejecutar comandos PowerShell
 # ──────────────────────────────────────────────────────────────
 

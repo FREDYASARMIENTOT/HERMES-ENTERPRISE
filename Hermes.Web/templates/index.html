@@ -69,6 +69,32 @@
         }
         .data-loaded .loading-spinner { display: none !important; }
         .data-loaded .error-state { display: none !important; }
+        .endpoint-status-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+        }
+        .endpoint-desc {
+            font-size: 0.78rem;
+            opacity: 0.8;
+            border-left: 2px solid rgba(13,110,253,0.3);
+            padding-left: 0.5rem;
+        }
+        .endpoint-open-btn {
+            font-size: 0.75rem;
+            border-color: rgba(13,110,253,0.3);
+            color: var(--hermes-primary);
+            transition: all 0.2s;
+        }
+        .endpoint-open-btn:hover {
+            background: rgba(13,110,253,0.15);
+            border-color: var(--hermes-primary);
+        }
+        .card-endpoint {
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+        .card-endpoint:hover {
+            border-color: rgba(13,110,253,0.3);
+        }
     </style>
 </head>
 <body>
@@ -243,13 +269,15 @@
                 <h5 class="text-light mb-3"><i class="bi bi-hdd-stack me-2"></i>Endpoints de la API</h5>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/version">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/version">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/version</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-version">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Versión del Sistema</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta la versión desplegada, commit, rama y runtime de Python.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Commit:</span>
@@ -264,17 +292,24 @@
                                 <span id="version-python" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/version" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/proyecto">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/proyecto">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/proyecto</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-proyecto">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Estado del Proyecto</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta la identidad y estado actual del proyecto y sus estadísticas.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
@@ -285,34 +320,48 @@
                                 <span id="proyecto-raiz" class="text-light text-truncate" style="max-width:200px">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/proyecto" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/workspace">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/workspace">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/workspace</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-workspace">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Workspace</h6>
+                        <p class="endpoint-desc text-light mb-2">Verifica el estado y disponibilidad del workspace de ejecución.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
                                 <span id="workspace-estado" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/workspace" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/git">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/git">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/git</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-git">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Git Local</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta información disponible del repositorio Git local del runtime.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
@@ -323,34 +372,48 @@
                                 <span id="git-branch" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/git" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/github">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/github">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/github</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-github">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">GitHub Remoto</h6>
+                        <p class="endpoint-desc text-light mb-2">Verifica la integración y conectividad con el repositorio GitHub.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
                                 <span id="github-estado" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/github" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/entorno">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/entorno">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/entorno</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-entorno">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Entorno Python</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta versión de Python y características del entorno de ejecución.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Python:</span>
@@ -361,51 +424,72 @@
                                 <span id="entorno-plataforma" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/entorno" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/azure">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/azure">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/azure</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-azure">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Azure</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta el estado de integración y recursos Azure disponibles.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
                                 <span id="azure-estado" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/azure" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/sqlite">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/sqlite">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/sqlite</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-sqlite">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">SQLite</h6>
+                        <p class="endpoint-desc text-light mb-2">Verifica la disponibilidad y estado de la persistencia SQLite.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
                                 <span id="sqlite-estado" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/sqlite" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/despliegue">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/despliegue">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/despliegue</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-despliegue">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Despliegue</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta información del despliegue y runtime actualmente publicado.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
@@ -416,39 +500,58 @@
                                 <span id="despliegue-plataforma" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/despliegue" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/telemetria">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/telemetria">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/telemetria</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-telemetria">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Telemetría</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta el estado de los mecanismos de telemetría disponibles.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
                                 <span id="telemetria-estado" class="text-light">-</span>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <a href="/api/telemetria" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100" data-endpoint="/api/bootstrap">
+                <div class="card h-100 card-endpoint" data-endpoint="/api/bootstrap">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="badge bg-success">GET</span>
                         <span class="endpoint-url">/api/bootstrap</span>
+                        <span class="badge bg-secondary endpoint-status-badge" id="status-bootstrap">cargando...</span>
                     </div>
                     <div class="card-body">
                         <h6 class="card-title">Bootstrap</h6>
+                        <p class="endpoint-desc text-light mb-2">Consulta el estado de inicialización y configuración inicial del runtime.</p>
                         <div class="response-data">
                             <div class="d-flex justify-content-between">
                                 <span class="text-secondary">Estado:</span>
                                 <span id="bootstrap-estado" class="text-light">-</span>
                             </div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="/api/bootstrap" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm w-100 endpoint-open-btn">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>ABRIR ENDPOINT ↗
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -530,6 +633,38 @@
             }
         }
 
+        function setEndpointStatus(id, data, error) {
+            const badge = document.getElementById(id);
+            if (!badge) return;
+            if (error) {
+                badge.className = 'badge bg-danger endpoint-status-badge';
+                badge.textContent = '✗ error';
+                return;
+            }
+            const estado = data && data.estado;
+            if (!estado) {
+                // Endpoint responded with data but no explicit estado field → assume verificado
+                badge.className = 'badge bg-success endpoint-status-badge';
+                badge.textContent = '✓ verificado';
+                return;
+            }
+            const estadosPositivos = ['verificado', 'activo', 'saludable', 'desplegado', 'telemetria_activa'];
+            const estadosNegativos = ['no_disponible', 'no_configurado', 'no_verificado', 'no_iniciado'];
+            if (estadosPositivos.includes(estado)) {
+                badge.className = 'badge bg-success endpoint-status-badge';
+                badge.textContent = '✓ verificado';
+            } else if (estado === 'error' || estado === 'error') {
+                badge.className = 'badge bg-danger endpoint-status-badge';
+                badge.textContent = '✗ error';
+            } else if (estadosNegativos.includes(estado)) {
+                badge.className = 'badge bg-warning text-dark endpoint-status-badge';
+                badge.textContent = '⚠ ' + estado;
+            } else {
+                badge.className = 'badge bg-info endpoint-status-badge';
+                badge.textContent = '✓ ' + estado;
+            }
+        }
+
         async function loadAll() {
             const now = new Date();
             document.getElementById('fecha-carga').textContent = now.toLocaleString('es-CO', { timeZone: 'America/Bogota' });
@@ -557,6 +692,7 @@
             setText('version-branch', v.branch || '-');
             setText('version-python', v.python_version || '-');
             if (v.version) setText('version-badge', 'v' + v.version);
+            setEndpointStatus('status-version', v, vR.error);
 
             // /api/proyecto
             const pR = await fetchJSON('/api/proyecto');
@@ -565,6 +701,7 @@
             const p = pR.data;
             setText('proyecto-estado', p.estado || p.nombre || '-');
             setText('proyecto-raiz', p.raiz || p.ruta || '-');
+            setEndpointStatus('status-proyecto', p, pR.error);
 
             // /api/workspace
             const wR = await fetchJSON('/api/workspace');
@@ -572,6 +709,7 @@
             endpointCount++;
             const w = wR.data;
             setText('workspace-estado', w.estado || 'OK');
+            setEndpointStatus('status-workspace', w, wR.error);
 
             // /api/git
             const gR = await fetchJSON('/api/git');
@@ -581,6 +719,7 @@
             setText('git-estado', g.estado);
             setText('git-branch', g.branch);
             if (g.estado !== '-') setText('status-git', g.branch || 'OK');
+            setEndpointStatus('status-git', g, gR.error);
 
             // /api/github
             const ghR = await fetchJSON('/api/github');
@@ -588,6 +727,7 @@
             endpointCount++;
             const gh = ghR.data;
             setText('github-estado', gh.estado || 'no_configurado');
+            setEndpointStatus('status-github', gh, ghR.error);
 
             // /api/entorno
             const eR = await fetchJSON('/api/entorno');
@@ -596,6 +736,7 @@
             const e = eR.data;
             setText('entorno-python', e.python_version || e.python || '-');
             setText('entorno-plataforma', e.plataforma || e.platform || '-');
+            setEndpointStatus('status-entorno', e, eR.error);
 
             // /api/bootstrap
             const bR = await fetchJSON('/api/bootstrap');
@@ -603,6 +744,7 @@
             endpointCount++;
             const b = bR.data;
             setText('bootstrap-estado', b.estado || 'no_iniciado');
+            setEndpointStatus('status-bootstrap', b, bR.error);
 
             // /api/telemetria
             const tR = await fetchJSON('/api/telemetria');
@@ -610,6 +752,7 @@
             endpointCount++;
             const t = tR.data;
             setText('telemetria-estado', t.estado || 'no_disponible');
+            setEndpointStatus('status-telemetria', t, tR.error);
 
             // /api/azure
             const azR = await fetchJSON('/api/azure');
@@ -618,6 +761,7 @@
             const az = azR.data;
             setText('azure-estado', az.estado || 'no_configurado');
             if (az.estado && az.estado !== '-') setText('status-azure', az.estado === 'no_configurado' ? 'N/A' : 'OK');
+            setEndpointStatus('status-azure', az, azR.error);
 
             // /api/sqlite
             const sqR = await fetchJSON('/api/sqlite');
@@ -626,6 +770,7 @@
             const sq = sqR.data;
             setText('sqlite-estado', sq.estado || 'no_verificado');
             if (sq.estado && sq.estado !== '-') setText('status-db', sq.estado === 'no_verificado' ? 'N/A' : sq.estado);
+            setEndpointStatus('status-sqlite', sq, sqR.error);
 
             // /api/despliegue
             const dR = await fetchJSON('/api/despliegue');
@@ -634,6 +779,7 @@
             const d = dR.data;
             setText('despliegue-estado', d.estado || d.ultimo_despliegue || '-');
             setText('despliegue-plataforma', d.plataforma || d.platform || '-');
+            setEndpointStatus('status-despliegue', d, dR.error);
 
             // Show elapsed times
             const avgTime = endpointCount > 0 ? (totalTime / endpointCount).toFixed(3) : '0.000';

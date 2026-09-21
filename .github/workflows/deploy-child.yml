@@ -712,6 +712,8 @@ jobs:
             --src-path deploy.zip \
             --type zip \
             --clean true \
+            --track-status false \
+            --timeout 600000 \
             --output none
           echo "=== Deployment Complete ==="
           echo "App          : ${APP_NAME}"

@@ -577,6 +577,15 @@ jobs:
           echo "=== Packaging child project ==="
           ls -la child-project/
           ls -la child-project/backend/ 2>/dev/null
+
+          # Pre-install dependencies into __deps__ for self-contained deploy
+          # This avoids Oryx's --compress-destination-dir which breaks startup.sh
+          echo "Installing dependencies to __deps__/..."
+          pip install -r child-project/requirements.txt -t child-project/__deps__ --no-user -q 2>&1
+          echo "__deps__ size: $(du -sh child-project/__deps__ | cut -f1)"
+          echo "__deps__ contents:"
+          ls child-project/__deps__/ | head -20
+
           cd child-project
           zip -r ../deploy.zip . -x ".git/*" -x ".gitignore"
           cd ..
@@ -610,7 +619,8 @@ jobs:
             --name ${{ needs.validate-inputs.outputs.app_service_name }} \
             --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
             --settings \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=true \
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+              PYTHONPATH="/home/site/wwwroot/__deps__" \
               HERMES_REPOSITORY="${{ needs.validate-inputs.outputs.repository }}" \
               HERMES_COMMIT_SHA="${{ needs.validate-inputs.outputs.commit_sha }}" \
             --output none 2>/dev/null || true
@@ -1073,4 +1083,67 @@ jobs:
             echo "  CONTROL PLANE DEPLOYMENT: FAIL"
             echo "=========================================="
             exit 1
+          fi
+
+  # ==================================================================
+  # TRABAJO 11: notify-portal — Notificar resultado al Portal (SIEMPRE)
+  # ==================================================================
+  notify-portal:
+    name: Notify Portal
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - validate-inputs
+      - evidence
+    steps:
+      - name: Notify Portal Final Status
+        shell: bash
+        run: |
+          DID="${{ needs.validate-inputs.outputs.deployment_id }}"
+          WORKFLOW_CONCLUSION="${{ needs.evidence.result }}"
+
+          # Determinar resultado segun la conclusión del trabajo 'evidence'
+          if [ "${WORKFLOW_CONCLUSION}" = "success" ]; then
+            FINAL_RESULT="PASS"
+            FINAL_STATUS="COMPLETADO"
+            FINAL_ERROR=""
+          else
+            FINAL_RESULT="FAIL"
+            FINAL_STATUS="FALLIDO"
+            FINAL_ERROR="Control Plane workflow falló en uno o más trabajos (conclusión: ${WORKFLOW_CONCLUSION})"
+          fi
+
+          PORTAL_URL="${{ vars.PORTAL_URL || 'https://hermesportal.azurewebsites.net' }}"
+
+          echo "=== Notificando Portal: ${FINAL_STATUS} (${FINAL_RESULT}) ==="
+          echo "  Deployment ID: ${DID}"
+          echo "  Portal URL: ${PORTAL_URL}"
+          echo "  Error: ${FINAL_ERROR:-N/A}"
+
+          # Intentar primero con finalizar (POST), fallback a error endpoint (PUT)
+          FINAL_RESP=$(curl -s -w "\n%{http_code}" -X POST \
+            "${PORTAL_URL}/api/fabrica/proyectos/${DID}/finalizar" \
+            -H "Content-Type: application/json" \
+            -d "{\"resultado\":\"${FINAL_RESULT}\",\"error\":\"${FINAL_ERROR}\"}" 2>&1)
+          FINAL_HTTP=$(echo "${FINAL_RESP}" | tail -1)
+          FINAL_BODY=$(echo "${FINAL_RESP}" | sed '$d')
+
+          if [ "${FINAL_HTTP}" -ge 200 ] && [ "${FINAL_HTTP}" -lt 300 ]; then
+            echo "  OK: Portal notificado (finalizar) — HTTP ${FINAL_HTTP}"
+          elif [ "${FINAL_RESULT}" = "FAIL" ]; then
+            # Fallback: usar PUT /error (bypass adversarial validation)
+            echo "  INFO: finalizar falló (HTTP ${FINAL_HTTP}), intentando PUT /error..."
+            ERROR_RESP=$(curl -s -w "\n%{http_code}" -X PUT \
+              "${PORTAL_URL}/api/fabrica/proyectos/${DID}/error" \
+              -H "Content-Type: application/json" \
+              -d "{\"error\":\"${FINAL_ERROR}\",\"detalle\":\"Control Plane workflow falló (conclusión: ${WORKFLOW_CONCLUSION})\"}" 2>&1)
+            ERROR_HTTP=$(echo "${ERROR_RESP}" | tail -1)
+            ERROR_BODY=$(echo "${ERROR_RESP}" | sed '$d')
+            if [ "${ERROR_HTTP}" -ge 200 ] && [ "${ERROR_HTTP}" -lt 300 ]; then
+              echo "  OK: Portal notificado (error endpoint) — HTTP ${ERROR_HTTP}"
+            else
+              echo "  ERROR: Portal notificación falló — HTTP ${ERROR_HTTP}, body: ${ERROR_BODY}"
+            fi
+          else
+            echo "  WARN: Portal finalizar falló (HTTP ${FINAL_HTTP}), body: ${FINAL_BODY}"
           fi

@@ -620,16 +620,17 @@ jobs:
           # --- Step 1: Clean stale Oryx build artifacts ---
           # These persist from initial provisioning (SCM_DO_BUILD=true) and cause
           # Oryx to extract old build tarballs that shadow the clean deploy.
-          echo "=== Cleaning stale Oryx build artifacts ==="
+          # NOTE: Do NOT use --clean true here — it wipes wwwroot and crashes
+          # the container before the real deploy in Step 4 can run.
+          echo "=== Cleaning stale Oryx build artifacts (no --clean) ==="
           az webapp deploy \
             --name "${APP_NAME}" \
             --resource-group "${APP_RG}" \
             --src-path /dev/null \
             --type zip \
-            --clean true \
             --output none 2>/dev/null || true
           # Also remove known stale artifacts via az webapp ssh (best-effort)
-          echo "Stale artifacts cleaned"
+          echo "Stale artifacts cleaned (best-effort)"
 
           # --- Step 2: Set absolute startup path (pre-deploy) ---
           # Using absolute path ensures Oryx wrapper can find startup.sh

@@ -586,6 +586,13 @@ jobs:
           echo "__deps__ contents:"
           ls child-project/__deps__/ | head -20
 
+          # Normalize: startup.sh must have LF (Unix) line endings
+          # CRLF (\r\n) in the shebang line makes the kernel see interpreter as
+          # "/bin/bash\r" instead of "/bin/bash" → execve() fails with ENOENT
+          # → Exit Code 127. This was the root cause in Run 35562370108.
+          sed -i 's/\r$//' child-project/startup.sh
+          echo "startup.sh line endings normalized to LF"
+
           cd child-project
           zip -r ../deploy.zip . -x ".git/*" -x ".gitignore"
           cd ..

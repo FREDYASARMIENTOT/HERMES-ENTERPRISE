@@ -65,6 +65,12 @@ class FinalizarRequest(BaseModel):
     resultado: str = Field("PASS", pattern="^(PASS|FAIL)$")
     error: str = ''
 
+class ErrorRequest(BaseModel):
+    """Modelo para reportar error en una solicitud (sin validación adversarial)."""
+    error: str = Field(..., min_length=1, max_length=5000,
+                       description="Mensaje de error detallado")
+    detalle: str = Field("", description="Contexto adicional del error")
+
 # ──────────────────────────────────────────────────────────────
 # Endpoints
 # ──────────────────────────────────────────────────────────────
@@ -391,6 +397,40 @@ async def finalizar_proyecto(request: Request, deployment_id: str, final: Finali
         raise HTTPException(status_code=409, detail={"resultado": "FAIL", "error": str(e)})
     except Exception as e:
         logger.error(f"Error finalizando solicitud: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.put("/fabrica/proyectos/{deployment_id}/error",
+             summary="Reportar error de despliegue (sin validación adversarial)")
+async def reportar_error(request: Request, deployment_id: str, error_req: ErrorRequest):
+    """Reporta un error de despliegue y marca el proyecto como FALLIDO.
+
+    A diferencia de POST /finalizar con resultado=FAIL, este endpoint:
+    - NO requiere que todos los pasos estén COMPLETADOS (bypass adversarial).
+    - Marca automáticamente todos los pasos PENDIENTE/EN_PROCESO como FALLIDO.
+    - Útil para fallos tempranos en el Control Plane o Factory.
+    """
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.reportar_error(
+            deployment_id=deployment_id,
+            error=error_req.error,
+            detalle=error_req.detalle
+        )
+        if not resultado:
+            raise HTTPException(status_code=404, detail=f"Solicitud no encontrada: {deployment_id}")
+        logger.info(f"Error reportado para {deployment_id}: {error_req.error[:80]}...")
+        return {
+            "mensaje": "Error registrado, proyecto marcado como FALLIDO",
+            "deployment_id": deployment_id,
+            "estado": resultado.estado,
+            "resultado": resultado.resultado,
+            "error": resultado.error
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reportando error para {deployment_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 

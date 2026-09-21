@@ -16,6 +16,7 @@ import sys
 import json
 import uuid
 import time
+import asyncio
 import logging
 import subprocess
 import platform
@@ -653,13 +654,49 @@ async def evento_inicio_aplicacion():
         logger.error(f"Error inicializando ServicioFabrica: {e}")
         app.state.servicio_fabrica = None
 
+    # Iniciar sweeper de despliegues atascados (cada 10 minutos)
+    try:
+        servicio_fabrica = app.state.servicio_fabrica
+        sweeper_interval = int(os.environ.get("HERMES_SWEEPER_INTERVAL_MINUTES", "10"))
+        asyncio.create_task(_sweeper_loop(servicio_fabrica, sweeper_interval))
+        logger.info(f"Sweeper de despliegues atascados iniciado (intervalo: {sweeper_interval} min)")
+    except Exception as e:
+        logger.warning(f"Error iniciando sweeper: {e}")
+
     logger.info("=" * 60)
 
 
 @app.on_event("shutdown")
 async def evento_cierre_aplicacion():
     """Evento que se ejecuta cuando la aplicacion FastAPI se detiene."""
+    global _sweeper_active
+    _sweeper_active = False
+    logger.info("Sweeper de despliegues atascados detenido")
     logger.info("Fábrica de Proyectos UR - Deteniendo servidor...")
+
+
+# ──────────────────────────────────────────────────────────────
+# Sweeper de despliegues atascados
+# ──────────────────────────────────────────────────────────────
+
+_sweeper_active = True
+
+async def _sweeper_loop(servicio, interval_minutos: int = 10):
+    """Bucle asíncrono que limpia despliegues atascados periódicamente."""
+    global _sweeper_active
+    while _sweeper_active:
+        try:
+            await asyncio.sleep(interval_minutos * 60)
+            if not _sweeper_active:
+                break
+            limpiados = servicio.limpiar_despliegues_atascados(max_minutos=30)
+            if limpiados:
+                logger.info(f"Sweeper: {len(limpiados)} despliegue(s) limpiado(s)")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Sweeper: error en bucle: {e}")
+            await asyncio.sleep(60)  # Esperar antes de reintentar
 
 
 # ──────────────────────────────────────────────────────────────

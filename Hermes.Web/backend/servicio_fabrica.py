@@ -2050,6 +2050,137 @@ class ServicioFabrica:
 
         return solicitud
 
+    # ──────────────────────────────────────────────────────────
+    # Reporte de error (sin validación adversarial)
+    # ──────────────────────────────────────────────────────────
+
+    def reportar_error(self, deployment_id: str, error: str, detalle: str = "") -> Optional[SolicitudProyecto]:
+        """Marca un proyecto como FALLIDO por error, sin validación adversarial.
+
+        A diferencia de finalizar_solicitud(resultado="FAIL"), este método:
+        - NO valida que todos los pasos estén completados.
+        - Marca automáticamente todos los pasos PENDIENTE/EN_PROCESO como FALLIDO.
+        - Útil para fallos tempranos del Control Plane o Factory que nunca
+          llegan a llamar a finalizar_solicitud.
+        """
+        solicitud = self.obtener_solicitud(deployment_id)
+        if not solicitud:
+            return None
+
+        estado_anterior = solicitud.estado
+
+        # Marcar todos los pasos pendientes o en proceso como FALLIDO
+        for paso in solicitud.pasos:
+            if paso["estado"] in ("PENDIENTE", "EN_PROCESO"):
+                solicitud.finalizar_paso(
+                    paso["numero"], "FALLIDO",
+                    detalle or f"Despliegue fallido: {error[:200]}",
+                    "ERROR"
+                )
+
+        # Marcar proyecto como FALLIDO
+        solicitud.estado = "FALLIDO"
+        solicitud.resultado = "FAIL"
+        solicitud.error = error
+        solicitud.fecha_fin = _ahora()
+        solicitud.fecha_actualizacion = solicitud.fecha_fin
+
+        # Calcular duración total
+        try:
+            from datetime import datetime
+            inicio = datetime.fromisoformat(solicitud.fecha_solicitud.replace('Z', '+00:00'))
+            fin = datetime.fromisoformat(solicitud.fecha_fin.replace('Z', '+00:00'))
+            solicitud.duracion_total_segundos = int((fin - inicio).total_seconds())
+        except Exception:
+            pass
+
+        self._guardar(solicitud)
+
+        # Registrar evento de terminación forzada
+        self._registrar_evento(
+            deployment_id=solicitud.deployment_id,
+            correlation_id=solicitud.correlation_id,
+            estado_anterior=estado_anterior,
+            estado_nuevo=solicitud.estado,
+            tipo="FAIL",
+            mensaje=f"Proyecto marcado como FALLIDO por error: {error[:100]}",
+            detalle=error,
+            duracion_segundos=float(solicitud.duracion_total_segundos or 0)
+        )
+
+        logger.warning(
+            f"Error reportado para {deployment_id}: {error[:120]}... "
+            f"(estado anterior: {estado_anterior})"
+        )
+        return solicitud
+
+    # ──────────────────────────────────────────────────────────
+    # Limpieza de despliegues atascados (sweeper)
+    # ──────────────────────────────────────────────────────────
+
+    def limpiar_despliegues_atascados(self, max_minutos: int = 30) -> List[str]:
+        """Limpia despliegues atascados en EN_PROCESO por más de N minutos.
+
+        Escanea la base de datos buscando proyectos cuyo estado sea EN_PROCESO
+        y cuya última actualización sea anterior a max_minutos atrás.
+        Los marca como FALLIDO automáticamente.
+
+        Returns:
+            Lista de deployment_id de los proyectos limpiados.
+        """
+        limpiados = []
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            from datetime import datetime, timedelta, timezone
+            corte = datetime.now(timezone.utc) - timedelta(minutes=max_minutos)
+            corte_str = corte.isoformat()
+
+            cursor.execute(
+                "SELECT deployment_id, nombre_proyecto, fecha_actualizacion "
+                "FROM solicitudes_proyecto "
+                "WHERE estado = 'EN_PROCESO' AND fecha_actualizacion < ?",
+                (corte_str,)
+            )
+            atascados = cursor.fetchall()
+            conn.close()
+
+            for row in atascados:
+                did = row["deployment_id"]
+                nombre = row["nombre_proyecto"]
+                ultima_act = row["fecha_actualizacion"]
+
+                logger.warning(
+                    f"Sweeper: limpiando despliegue atascado {did} ({nombre}), "
+                    f"última actualización: {ultima_act}"
+                )
+
+                try:
+                    self.reportar_error(
+                        deployment_id=did,
+                        error=f"Timeout de despliegue: sin actualización desde {ultima_act} "
+                              f"(límite: {max_minutos} minutos)",
+                        detalle="Limpieza automática por sweeper de despliegues atascados"
+                    )
+                    limpiados.append(did)
+                except Exception as e:
+                    logger.error(f"Sweeper: error limpiando {did}: {e}")
+
+            if limpiados:
+                logger.info(
+                    f"Sweeper: {len(limpiados)} despliegue(s) atascado(s) limpiado(s): "
+                    f"{', '.join(limpiados)}"
+                )
+            else:
+                logger.debug("Sweeper: no se encontraron despliegues atascados")
+
+        except Exception as e:
+            logger.error(f"Sweeper: error general: {e}")
+
+        return limpiados
+
 
 # ═══════════════════════════════════════════════════════════════
 # Instancia singleton para la aplicación

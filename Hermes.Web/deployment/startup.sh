@@ -10,7 +10,8 @@
 # ====================================================================
 # RC94.27: Dependencias preinstaladas en __deps/ (paquete autocontenido)
 # Activamos PYTHONPATH para que Python encuentre los paquetes locales
-export PYTHONPATH="/home/site/wwwroot/__deps__:$PYTHONPATH"
+# Incluimos /home/site/wwwroot para que python encuentre backend/ y otros modulos locales
+export PYTHONPATH="/home/site/wwwroot/__deps__:/home/site/wwwroot:$PYTHONPATH"
 
 set -e
 

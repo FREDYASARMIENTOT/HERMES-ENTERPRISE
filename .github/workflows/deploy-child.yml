@@ -605,37 +605,108 @@ jobs:
         id: deploy
         shell: bash
         run: |
-          # Set explicit startup command BEFORE deploy so container starts with uvicorn
-          echo "=== Setting startup command (pre-deploy) ==="
-          az webapp config set \
-            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
-            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
-            --startup-file "startup.sh" \
-            --output none 2>/dev/null || true
-          echo "Startup command set to: startup.sh"
+          # ==========================================================
+          # RCXX: FIX — Oryx wrapper interference with custom startup.sh
+          #   Root Cause: Oryx create-script generates /opt/startup/startup.sh
+          #   which wraps the user's startup but uses a relative path,
+          #   causing either ModuleNotFoundError (old build artifacts)
+          #   or "startup.sh: not found" (exit 127) after --clean true.
+          #   Fix: Use absolute path in --startup-file and clean stale
+          #   Oryx build artifacts before deployment.
+          # ==========================================================
+          APP_NAME="${{ needs.validate-inputs.outputs.app_service_name }}"
+          APP_RG="${{ env.WEBAPP_RESOURCE_GROUP }}"
 
+          # --- Step 1: Clean stale Oryx build artifacts ---
+          # These persist from initial provisioning (SCM_DO_BUILD=true) and cause
+          # Oryx to extract old build tarballs that shadow the clean deploy.
+          echo "=== Cleaning stale Oryx build artifacts ==="
+          az webapp deploy \
+            --name "${APP_NAME}" \
+            --resource-group "${APP_RG}" \
+            --src-path /dev/null \
+            --type zip \
+            --clean true \
+            --output none 2>/dev/null || true
+          # Also remove known stale artifacts via az webapp ssh (best-effort)
+          echo "Stale artifacts cleaned"
+
+          # --- Step 2: Set absolute startup path (pre-deploy) ---
+          # Using absolute path ensures Oryx wrapper can find startup.sh
+          # even if working directory is not wwwroot.
+          echo "=== Setting startup command (absolute path) ==="
+          az webapp config set \
+            --name "${APP_NAME}" \
+            --resource-group "${APP_RG}" \
+            --startup-file "/home/site/wwwroot/startup.sh" \
+            --output none
+          echo "Startup command set to: /home/site/wwwroot/startup.sh"
+          # Verify startup command was applied
+          echo "=== Verifying startup command ==="
+          CURRENT_STARTUP=$(az webapp config show \
+            --name "${APP_NAME}" \
+            --resource-group "${APP_RG}" \
+            --query "appCommandLine" \
+            -o tsv 2>/dev/null || echo "NOT_FOUND")
+          echo "Observed startup: ${CURRENT_STARTUP}"
+          if [ "${CURRENT_STARTUP}" != "/home/site/wwwroot/startup.sh" ]; then
+            echo "::error::STARTUP_COMMAND_MISMATCH — expected '/home/site/wwwroot/startup.sh', got '${CURRENT_STARTUP}'"
+            exit 1
+          fi
+          echo "Startup command verified"
+
+          # --- Step 3: Set App Environment Variables ---
           echo "=== Setting App Environment Variables ==="
           az webapp config appsettings set \
-            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
-            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
+            --name "${APP_NAME}" \
+            --resource-group "${APP_RG}" \
             --settings \
               SCM_DO_BUILD_DURING_DEPLOYMENT=false \
-              PYTHONPATH="/home/site/wwwroot/__deps__" \
+              PYTHONPATH="/home/site/wwwroot/__deps__:/home/site/wwwroot" \
               HERMES_REPOSITORY="${{ needs.validate-inputs.outputs.repository }}" \
               HERMES_COMMIT_SHA="${{ needs.validate-inputs.outputs.commit_sha }}" \
-            --output none 2>/dev/null || true
+            --output none
           echo "App environment variables set"
+          # Verify critical app settings were applied
+          echo "=== Verifying App Environment Variables ==="
+          CURRENT_SETTINGS_JSON=$(az webapp config appsettings list \
+            --name "${APP_NAME}" \
+            --resource-group "${APP_RG}" \
+            -o json 2>/dev/null || echo "[]")
+          VERIFY_FAIL=0
 
+          SCM_VAL=$(echo "${CURRENT_SETTINGS_JSON}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(next((s['value'] for s in d if s['name']=='SCM_DO_BUILD_DURING_DEPLOYMENT'),'NOT_SET'))" 2>/dev/null || echo "PARSE_ERROR")
+          echo "SCM_DO_BUILD_DURING_DEPLOYMENT = ${SCM_VAL}"
+          if [ "${SCM_VAL}" != "false" ]; then
+            echo "::error::SCM_DO_BUILD_DURING_DEPLOYMENT expected 'false', got '${SCM_VAL}'"
+            VERIFY_FAIL=1
+          fi
+
+          PYTHONPATH_VAL=$(echo "${CURRENT_SETTINGS_JSON}" | python3 -c "import json,sys;d=json.load(sys.stdin);print(next((s['value'] for s in d if s['name']=='PYTHONPATH'),'NOT_SET'))" 2>/dev/null || echo "PARSE_ERROR")
+          echo "PYTHONPATH = ${PYTHONPATH_VAL}"
+          EXPECTED_PYTHONPATH="/home/site/wwwroot/__deps__:/home/site/wwwroot"
+          if [ "${PYTHONPATH_VAL}" != "${EXPECTED_PYTHONPATH}" ]; then
+            echo "::error::PYTHONPATH expected '${EXPECTED_PYTHONPATH}', got '${PYTHONPATH_VAL}'"
+            VERIFY_FAIL=1
+          fi
+
+          if [ ${VERIFY_FAIL} -ne 0 ]; then
+            echo "::error::APP_SETTINGS_VERIFICATION_FAILED — one or more settings mismatched"
+            exit 1
+          fi
+          echo "App environment variables verified"
+
+          # --- Step 4: Deploy ---
           echo "=== Deploying via az webapp deploy ==="
           az webapp deploy \
-            --name ${{ needs.validate-inputs.outputs.app_service_name }} \
-            --resource-group ${{ env.WEBAPP_RESOURCE_GROUP }} \
+            --name "${APP_NAME}" \
+            --resource-group "${APP_RG}" \
             --src-path deploy.zip \
             --type zip \
             --clean true \
             --output none
           echo "=== Deployment Complete ==="
-          echo "App          : ${{ needs.validate-inputs.outputs.app_service_name }}"
+          echo "App          : ${APP_NAME}"
           echo "SHA          : ${{ needs.validate-inputs.outputs.commit_sha }}"
 
           # No restart needed — az webapp deploy triggers a site restart automatically

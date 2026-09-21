@@ -4,6 +4,8 @@ set -e
 echo "[{{PROJECT_NAME}}] Starting deployment..."
 
 cd /home/site/wwwroot
+# RCXX: PYTHONPATH must include wwwroot so Python can find backend/ module
+export PYTHONPATH="/home/site/wwwroot/__deps__:/home/site/wwwroot${PYTHONPATH:+:$PYTHONPATH}"
 
 echo "[{{PROJECT_NAME}}] Dependencies installed by Oryx via SCM_DO_BUILD_DURING_DEPLOYMENT"
 # pip install -r requirements.txt -q removido — Oryx lo ejecuta durante deployment

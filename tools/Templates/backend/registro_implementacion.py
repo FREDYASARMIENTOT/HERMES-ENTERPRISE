@@ -124,43 +124,62 @@ class RegistroImplementacion:
         self.imp["fecha_fin"] = a; self.imp["estado_general"] = estado
         if self.imp["fecha_inicio"]: self.imp["duracion_total_segundos"] = calc_duracion(self.imp["fecha_inicio"], a)
         if detalle: self.imp["detalle_final"] = detalle
+        # Si el estado es FALLIDO, cascada a pasos PENDIENTE/EN_PROCESO
+        if estado == ESTADO_FALLIDO:
+            for p in self.pasos:
+                if p["estado"] in (ESTADO_PENDIENTE, ESTADO_EN_PROCESO):
+                    p["estado"] = ESTADO_FALLIDO
+                    p["fecha_fin"] = a
+                    if p.get("fecha_inicio"):
+                        p["duracion_segundos"] = calc_duracion(p["fecha_inicio"], a)
+                    p["resultado"] = "FAIL"
+                    if not p.get("detalle"):
+                        p["detalle"] = detalle or "Fallido por error en despliegue"
+                # Marcar subpasos pendientes como FALLIDO
+                if "subpasos" in p:
+                    for sp in p["subpasos"]:
+                        if sp["estado"] in (ESTADO_PENDIENTE, ESTADO_EN_PROCESO):
+                            sp["estado"] = ESTADO_FALLIDO
+                            sp["fecha_fin"] = a
+                            sp["resultado"] = "FAIL"
+            self.imp["pasos_fallidos"] = sum(1 for p in self.pasos if p["estado"] == ESTADO_FALLIDO)
         return self
 
-        def _ensure_tables(self, c):
-            """Crea las tablas de Implementacion si no existen (idempotente)."""
-            c.execute("""CREATE TABLE IF NOT EXISTS Implementacion (
-            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            CorrelationId TEXT NOT NULL UNIQUE,
-            NombreProyecto TEXT NOT NULL,
-            Repositorio TEXT DEFAULT '',
-            CommitSolicitado TEXT DEFAULT '',
-            CommitDesplegado TEXT DEFAULT '',
-            DeploymentId TEXT DEFAULT '',
-            EstadoGeneral TEXT DEFAULT 'PENDIENTE',
-            PasosCompletados INTEGER DEFAULT 0,
-            PasosFallidos INTEGER DEFAULT 0,
-            PasosTotales INTEGER DEFAULT 0,
-            DuracionTotalSegundos REAL DEFAULT 0,
-            FechaInicio TEXT,
-            FechaFin TEXT)""")
-            c.execute("""CREATE TABLE IF NOT EXISTS PasoImplementacion (
-            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            CorrelationId TEXT NOT NULL,
-            NumeroPaso INTEGER NOT NULL,
-            NombrePaso TEXT NOT NULL,
-            NumeroSubpaso TEXT,
-            NombreSubpaso TEXT,
-            Estado TEXT DEFAULT 'PENDIENTE',
-            FechaInicio TEXT,
-            FechaFin TEXT,
-            DuracionSegundos REAL DEFAULT 0,
-            Detalle TEXT DEFAULT '',
-            Evidencia TEXT DEFAULT '',
-            Resultado TEXT DEFAULT '')""")
-            try:
-                c.execute("CREATE INDEX IF NOT EXISTS idx_paso_corr ON PasoImplementacion(CorrelationId)")
-            except Exception:
-                pass
+    def _ensure_tables(self, c):
+        """Crea las tablas de Implementacion si no existen (idempotente)."""
+        c.execute("""CREATE TABLE IF NOT EXISTS Implementacion (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CorrelationId TEXT NOT NULL UNIQUE,
+        NombreProyecto TEXT NOT NULL,
+        Repositorio TEXT DEFAULT '',
+        CommitSolicitado TEXT DEFAULT '',
+        CommitDesplegado TEXT DEFAULT '',
+        DeploymentId TEXT DEFAULT '',
+        EstadoGeneral TEXT DEFAULT 'PENDIENTE',
+        PasosCompletados INTEGER DEFAULT 0,
+        PasosFallidos INTEGER DEFAULT 0,
+        PasosTotales INTEGER DEFAULT 0,
+        DuracionTotalSegundos REAL DEFAULT 0,
+        FechaInicio TEXT,
+        FechaFin TEXT)""")
+        c.execute("""CREATE TABLE IF NOT EXISTS PasoImplementacion (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CorrelationId TEXT NOT NULL,
+        NumeroPaso INTEGER NOT NULL,
+        NombrePaso TEXT NOT NULL,
+        NumeroSubpaso TEXT,
+        NombreSubpaso TEXT,
+        Estado TEXT DEFAULT 'PENDIENTE',
+        FechaInicio TEXT,
+        FechaFin TEXT,
+        DuracionSegundos REAL DEFAULT 0,
+        Detalle TEXT DEFAULT '',
+        Evidencia TEXT DEFAULT '',
+        Resultado TEXT DEFAULT '')""")
+        try:
+            c.execute("CREATE INDEX IF NOT EXISTS idx_paso_corr ON PasoImplementacion(CorrelationId)")
+        except Exception:
+            pass
 
     def persistir(self):
         if not self.ruta_sqlite or self.ruta_sqlite==":memory:": return False

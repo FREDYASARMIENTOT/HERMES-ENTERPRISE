@@ -38,6 +38,36 @@ if fresh:
         Id INTEGER PRIMARY KEY AUTOINCREMENT, CorrelationId TEXT, Fecha TEXT,
         Hora TEXT, Usuario TEXT, Paso TEXT, Estado TEXT, Duracion REAL,
         Mensaje TEXT, Resultado TEXT)''')
+    # ── TABLAS DE IMPLEMENTACION (RC87) ──
+    c.execute('''CREATE TABLE IF NOT EXISTS Implementacion (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CorrelationId TEXT NOT NULL UNIQUE,
+        NombreProyecto TEXT NOT NULL,
+        Repositorio TEXT DEFAULT '',
+        CommitSolicitado TEXT DEFAULT '',
+        CommitDesplegado TEXT DEFAULT '',
+        DeploymentId TEXT DEFAULT '',
+        EstadoGeneral TEXT DEFAULT 'PENDIENTE',
+        PasosCompletados INTEGER DEFAULT 0,
+        PasosFallidos INTEGER DEFAULT 0,
+        PasosTotales INTEGER DEFAULT 0,
+        DuracionTotalSegundos REAL DEFAULT 0,
+        FechaInicio TEXT,
+        FechaFin TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS PasoImplementacion (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CorrelationId TEXT NOT NULL,
+        NumeroPaso INTEGER NOT NULL,
+        NombrePaso TEXT NOT NULL,
+        NumeroSubpaso TEXT,
+        NombreSubpaso TEXT,
+        Estado TEXT DEFAULT 'PENDIENTE',
+        FechaInicio TEXT,
+        FechaFin TEXT,
+        DuracionSegundos REAL DEFAULT 0,
+        Detalle TEXT DEFAULT '',
+        Evidencia TEXT DEFAULT '',
+        Resultado TEXT DEFAULT '')''')
     conn.commit()
     print(f'schema_init: {time.time()-t0:.3f}s')
 

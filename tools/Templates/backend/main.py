@@ -201,7 +201,16 @@ async def api_obtener_implementacion():
     result = obtener_implementacion(corr_id)
     return JSONResponse(result)
 
-@app.post("/api/implementacion/finalizar")
+@app.get("/api/evidence")
+async def api_evidence():
+    \"\"\"Endpoint público de evidencia: retorna deployment-report completo.\"\"\"
+    corr_id = _resolve_meta(_CORRELATION_ID, \"HERMES_CORRELATION_ID\")
+    result = obtener_implementacion(corr_id)
+    if \"error\" in result:
+        return JSONResponse(result, status_code=404)
+    return JSONResponse(result)
+
+@app.post(\"/api/implementacion/finalizar\")
 async def api_finalizar_implementacion(request: Request):
     """Finaliza el registro de implementación."""
     try:
@@ -287,14 +296,14 @@ async def landing(request: Request):
     nombre = info.get("Nombre", project_name)
     estado = info.get("Estado", "CREADO")
     url_publica = info.get("UrlPublica", f"https://{webapp_name}.azurewebsites.net" if "No" not in webapp_name else "#")
-    repositorio = info.get("Repositorio", "No disponible")
-    commit_hash = info.get("CommitHash", "No disponible")
+    repositorio = info.get("Repositorio") or _resolve_meta("", "HERMES_REPOSITORY", "No disponible")
+    commit_hash = info.get("CommitHash") or _resolve_meta("", "HERMES_COMMIT_SHA", "No disponible")
     region_db = info.get("Region", region)
 
     # ── Estado general ──
     passed = sum(1 for s in smoke if s.get("Estado") == "PASS") if smoke else 0
     total = len(smoke) if smoke else 0
-    overall_status = "PASS" if (total > 0 and passed == total) else ("PASS" if estado == "OK" else "UNKNOWN")
+    overall_status = "PASS" if (total > 0 and passed == total) else ("PASS" if estado in ("OK", "COMPLETADO") else ("FAIL" if estado == "FALLIDO" else "PENDIENTE"))
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     pipeline = _build_pipeline(info, smoke, timeline)
@@ -372,7 +381,7 @@ body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-ser
         <h1>HERMES ENTERPRISE</h1>
         <div class="sub">FICHA DE DESPLIEGUE :: {nombre}</div>
         <div class="mt-3">
-            <span class="badge bg-success me-2">{'🟢 OPERATIVO' if overall_status=='PASS' else '🔴 FALLIDO'}</span>
+            <span class="badge bg-{'success' if overall_status=='PASS' else 'danger' if overall_status=='FAIL' else 'warning'} me-2">{'🟢 OPERATIVO' if overall_status=='PASS' else '🔴 FALLIDO' if overall_status=='FAIL' else '⏳ PENDIENTE'}</span>
             <span class="badge bg-info text-dark">CID:{corr_id[:8] if len(corr_id)>8 else corr_id}</span>
         </div>
     </div>
@@ -428,14 +437,15 @@ body{{background:#0b0f1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-ser
 
     <div class="card mb-4">
         <h5><i class="bi bi-link me-2"></i>ACCESOS</h5>
-        <div class="link-grid">
-            <a href="{url_publica}/" target="_blank"><i class="bi bi-house-fill me-1"></i>Frontend</a>
-            <a href="{url_publica}/health" target="_blank"><i class="bi bi-heart-pulse me-1"></i>Health</a>
-            <a href="{url_publica}/swagger" target="_blank"><i class="bi bi-file-earmark-code me-1"></i>Swagger</a>
-            <a href="{url_publica}/openapi.json" target="_blank"><i class="bi bi-filetype-json me-1"></i>OpenAPI</a>
-            <a href="{url_publica}/api/version" target="_blank"><i class="bi bi-tag me-1"></i>Version</a>
-            <a href="{url_publica}/api/proyecto" target="_blank"><i class="bi bi-info-circle me-1"></i>Proyecto</a>
-            <a href="{url_publica}/redoc" target="_blank"><i class="bi bi-book me-1"></i>ReDoc</a>
+        <div class="link-grid" role="navigation" aria-label="Accesos rápidos">
+            <a href="{url_publica}/" target="_blank" aria-label="Abrir Frontend del proyecto"><i class="bi bi-house-fill me-1"></i>Frontend</a>
+            <a href="{url_publica}/health" target="_blank" aria-label="Abrir Health Check"><i class="bi bi-heart-pulse me-1"></i>Health</a>
+            <a href="{url_publica}/swagger" target="_blank" aria-label="Abrir documentación Swagger"><i class="bi bi-file-earmark-code me-1"></i>Swagger</a>
+            <a href="{url_publica}/openapi.json" target="_blank" aria-label="Abrir esquema OpenAPI"><i class="bi bi-filetype-json me-1"></i>OpenAPI</a>
+            <a href="{url_publica}/api/version" target="_blank" aria-label="Abrir información de versión"><i class="bi bi-tag me-1"></i>Version</a>
+            <a href="{url_publica}/api/proyecto" target="_blank" aria-label="Abrir endpoint del proyecto"><i class="bi bi-info-circle me-1"></i>Proyecto</a>
+            <a href="{url_publica}/redoc" target="_blank" aria-label="Abrir documentación ReDoc"><i class="bi bi-book me-1"></i>ReDoc</a>
+            <a href="{url_publica}/api/evidence" target="_blank" aria-label="Abrir evidencia del despliegue"><i class="bi bi-file-earmark-text me-1"></i>Evidencia</a>
         </div>
     </div>
 

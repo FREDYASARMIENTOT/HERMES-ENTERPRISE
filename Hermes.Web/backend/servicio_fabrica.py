@@ -121,7 +121,10 @@ class SolicitudProyecto:
         self.id: str = _generar_id()
         self.nombre_proyecto: str = nombre_proyecto
         self.descripcion: str = descripcion
-        self.repositorio: str = repositorio or f"FREDYASARMIENTOT/hermes-{nombre_proyecto.replace('_', '-')}"
+        # Normalize project base: strip leading "hermes-" if present to avoid double prefix
+        _base = nombre_proyecto.replace('_', '-')
+        _repo_slug = f"hermes-{_base}" if not _base.startswith("hermes-") else _base
+        self.repositorio: str = repositorio or f"FREDYASARMIENTOT/{_repo_slug}"
         self.web_app: str = web_app or f"as-{nombre_proyecto.replace('_', '-')}"
         self.estado: str = estado
         self.correlation_id: str = correlation_id or _generar_id()

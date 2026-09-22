@@ -126,11 +126,48 @@ class RegistroImplementacion:
         if detalle: self.imp["detalle_final"] = detalle
         return self
 
+        def _ensure_tables(self, c):
+            """Crea las tablas de Implementacion si no existen (idempotente)."""
+            c.execute("""CREATE TABLE IF NOT EXISTS Implementacion (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CorrelationId TEXT NOT NULL UNIQUE,
+            NombreProyecto TEXT NOT NULL,
+            Repositorio TEXT DEFAULT '',
+            CommitSolicitado TEXT DEFAULT '',
+            CommitDesplegado TEXT DEFAULT '',
+            DeploymentId TEXT DEFAULT '',
+            EstadoGeneral TEXT DEFAULT 'PENDIENTE',
+            PasosCompletados INTEGER DEFAULT 0,
+            PasosFallidos INTEGER DEFAULT 0,
+            PasosTotales INTEGER DEFAULT 0,
+            DuracionTotalSegundos REAL DEFAULT 0,
+            FechaInicio TEXT,
+            FechaFin TEXT)""")
+            c.execute("""CREATE TABLE IF NOT EXISTS PasoImplementacion (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CorrelationId TEXT NOT NULL,
+            NumeroPaso INTEGER NOT NULL,
+            NombrePaso TEXT NOT NULL,
+            NumeroSubpaso TEXT,
+            NombreSubpaso TEXT,
+            Estado TEXT DEFAULT 'PENDIENTE',
+            FechaInicio TEXT,
+            FechaFin TEXT,
+            DuracionSegundos REAL DEFAULT 0,
+            Detalle TEXT DEFAULT '',
+            Evidencia TEXT DEFAULT '',
+            Resultado TEXT DEFAULT '')""")
+            try:
+                c.execute("CREATE INDEX IF NOT EXISTS idx_paso_corr ON PasoImplementacion(CorrelationId)")
+            except Exception:
+                pass
+
     def persistir(self):
         if not self.ruta_sqlite or self.ruta_sqlite==":memory:": return False
         try:
             conn = sqlite3.connect(self.ruta_sqlite)
             c = conn.cursor()
+            self._ensure_tables(c)
             i = self.imp
             c.execute('''INSERT INTO Implementacion (CorrelationId,NombreProyecto,Repositorio,
                 CommitSolicitado,CommitDesplegado,DeploymentId,EstadoGeneral,

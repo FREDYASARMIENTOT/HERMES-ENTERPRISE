@@ -20,6 +20,7 @@ $RECYCLE.BIN/
 .venv_*/
 .conda_env/
 __pycache__/
+fix_*.py
 *.pyc
 *.pyo
 node_modules/

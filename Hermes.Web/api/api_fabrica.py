@@ -466,7 +466,6 @@ async def actualizar_metadata(request: Request, deployment_id: str, metadata: Di
             solicitud.control_plane_finished_at and
             not solicitud.control_plane_duration):
             try:
-                from datetime import datetime
                 start = datetime.fromisoformat(solicitud.control_plane_started_at.replace("Z", "+00:00"))
                 end = datetime.fromisoformat(solicitud.control_plane_finished_at.replace("Z", "+00:00"))
                 duration = (end - start).total_seconds()

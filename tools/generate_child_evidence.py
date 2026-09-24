@@ -94,7 +94,7 @@ def main():
         },
         'deployment': {
             'result': deploy_res,
-            'method': 'az webapp deploy --type zip --clean true',
+            'method': 'az webapp deploy --type zip (no --clean, B5.3.2)',
             'tool': 'AZ CLI (not Azure/webapps-deploy@v3)',
             'kudu_used': False,
             'publishing_profile_used': False,

@@ -704,14 +704,16 @@ jobs:
           fi
           echo "App environment variables verified"
 
-          # --- Step 4: Deploy ---
-          echo "=== Deploying via az webapp deploy ==="
+          # --- Step 4: Deploy (NO --clean true) ---
+          # RCXX (B5.3.2): Removed --clean true because it crashes Kudu
+          # on B1 plans (HTTP 502). Step 1 already cleans stale artifacts.
+          # The zip deploy overwrites files without needing a full wipe.
+          echo "=== Deploying via az webapp deploy (no --clean) ==="
           az webapp deploy \
             --name "${APP_NAME}" \
             --resource-group "${APP_RG}" \
             --src-path deploy.zip \
             --type zip \
-            --clean true \
             --track-status false \
             --timeout 600000 \
             --output none

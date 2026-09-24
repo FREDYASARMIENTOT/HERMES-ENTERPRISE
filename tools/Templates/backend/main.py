@@ -203,14 +203,14 @@ async def api_obtener_implementacion():
 
 @app.get("/api/evidence")
 async def api_evidence():
-    \"\"\"Endpoint público de evidencia: retorna deployment-report completo.\"\"\"
-    corr_id = _resolve_meta(_CORRELATION_ID, \"HERMES_CORRELATION_ID\")
+    """Endpoint público de evidencia: retorna deployment-report completo."""
+    corr_id = _resolve_meta(_CORRELATION_ID, "HERMES_CORRELATION_ID")
     result = obtener_implementacion(corr_id)
-    if \"error\" in result:
+    if "error" in result:
         return JSONResponse(result, status_code=404)
     return JSONResponse(result)
 
-@app.post(\"/api/implementacion/finalizar\")
+@app.post("/api/implementacion/finalizar")
 async def api_finalizar_implementacion(request: Request):
     """Finaliza el registro de implementación."""
     try:

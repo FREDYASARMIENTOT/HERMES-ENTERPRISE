@@ -451,10 +451,30 @@ async def actualizar_metadata(request: Request, deployment_id: str, metadata: Di
             raise HTTPException(status_code=404, detail=f"Solicitud no encontrada: {deployment_id}")
 
         updated = False
+        # Map control_plane_duration_seconds -> control_plane_duration
+        if "control_plane_duration_seconds" in metadata:
+            metadata["control_plane_duration"] = metadata.pop("control_plane_duration_seconds")
         for key, value in metadata.items():
             if hasattr(solicitud, key) and key not in ("id", "nombre_proyecto", "estado", "pasos"):
                 setattr(solicitud, key, value)
                 updated = True
+
+        # Auto-calculate control_plane_duration if both timestamps are present
+        if (hasattr(solicitud, "control_plane_started_at") and
+            hasattr(solicitud, "control_plane_finished_at") and
+            solicitud.control_plane_started_at and
+            solicitud.control_plane_finished_at and
+            not solicitud.control_plane_duration):
+            try:
+                from datetime import datetime
+                start = datetime.fromisoformat(solicitud.control_plane_started_at.replace("Z", "+00:00"))
+                end = datetime.fromisoformat(solicitud.control_plane_finished_at.replace("Z", "+00:00"))
+                duration = (end - start).total_seconds()
+                if duration > 0:
+                    solicitud.control_plane_duration = str(int(duration))
+                    updated = True
+            except Exception as e:
+                logger.warning(f"Could not calculate control_plane_duration: {e}")
 
         if not updated:
             return {"mensaje": "Sin cambios", "deployment_id": deployment_id}

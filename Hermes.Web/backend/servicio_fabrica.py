@@ -188,6 +188,9 @@ class SolicitudProyecto:
         # Evidence detailed info
         self.evidence_status: str = ""
         self.evidence_url: str = ""
+        # Azure deployment traceability
+        self.azure_deployment_id: str = ""
+        self.azure_deployment_status: str = ""
         # Branch
         self.branch: str = "main"
         # Azure resource reconciliation
@@ -337,6 +340,9 @@ class SolicitudProyecto:
             # Evidence detailed info
             "evidence_status": self.evidence_status,
             "evidence_url": self.evidence_url,
+            # Azure deployment traceability
+            "azure_deployment_id": self.azure_deployment_id,
+            "azure_deployment_status": self.azure_deployment_status,
             # Branch
             "branch": self.branch,
             "azure_hostname": self.azure_hostname,
@@ -427,6 +433,9 @@ class SolicitudProyecto:
         # Evidence detailed info
         s.evidence_status = datos.get("evidence_status", "")
         s.evidence_url = datos.get("evidence_url", "")
+        # Azure deployment traceability
+        s.azure_deployment_id = datos.get("azure_deployment_id", "")
+        s.azure_deployment_status = datos.get("azure_deployment_status", "")
         # Branch
         s.branch = datos.get("branch", "main")
         # Azure resource reconciliation
@@ -558,6 +567,8 @@ class ServicioFabrica:
                     readiness_url TEXT DEFAULT '',
                     readiness_timestamp TEXT DEFAULT '',
                     evidence_status TEXT DEFAULT '',
+                    azure_deployment_id TEXT DEFAULT '',
+                    azure_deployment_status TEXT DEFAULT '',
                     evidence_url TEXT DEFAULT '',
                     branch TEXT DEFAULT 'main'
                 )
@@ -662,6 +673,8 @@ class ServicioFabrica:
                 ("evidence_status", "TEXT DEFAULT ''"),
                 ("evidence_url", "TEXT DEFAULT ''"),
                 ("branch", "TEXT DEFAULT 'main'"),
+                ("azure_deployment_id", "TEXT DEFAULT ''"),
+                ("azure_deployment_status", "TEXT DEFAULT ''"),
             ]:
                 try:
                     cursor.execute(f"ALTER TABLE solicitudes_proyecto ADD COLUMN {col_name} {col_type}")
@@ -1255,11 +1268,12 @@ class ServicioFabrica:
                  azure_state, azure_location, azure_subscription_id, azure_web_app_name,
                  readiness_http_status, readiness_url, readiness_timestamp,
                  evidence_status, evidence_url,
+                 azure_deployment_id, azure_deployment_status,
                  branch)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 datos["id"], datos["nombre_proyecto"], datos["descripcion"],
                 datos["repositorio"], datos["web_app"], datos["web_app_url"],
@@ -1324,6 +1338,8 @@ class ServicioFabrica:
                 datos.get("readiness_timestamp", ""),
                 datos.get("evidence_status", ""),
                 datos.get("evidence_url", ""),
+                datos.get("azure_deployment_id", ""),
+                datos.get("azure_deployment_status", ""),
                 datos.get("branch", "main")
             ))
             conn.commit()

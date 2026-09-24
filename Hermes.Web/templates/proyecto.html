@@ -126,6 +126,9 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 <tr><td class="text-muted">Deployment ID</td><td class="text-end" id="proj-did" style="font-family:monospace">&mdash;</td></tr>
 <tr><td class="text-muted">Correlation ID</td><td class="text-end" id="proj-cid" style="font-family:monospace">&mdash;</td></tr>
 <tr><td class="text-muted">Resultado</td><td class="text-end" id="proj-resultado">&mdash;</td></tr>
+<tr><td class="text-muted">Commit SHA</td><td class="text-end" id="proj-commit-sha" style="font-family:monospace;font-size:.75rem">&mdash;</td></tr>
+<tr><td class="text-muted">Repositorio</td><td class="text-end" id="proj-repositorio" style="font-size:.75rem">&mdash;</td></tr>
+<tr><td class="text-muted">Visibilidad</td><td class="text-end" id="proj-visibilidad">&mdash;</td></tr>
 </table></div>
 <div class="col-md-6"><table class="table table-borderless trace-table mb-0 small">
 <tr><td class="text-muted">Inicio</td><td class="text-end" id="proj-inicio">&mdash;</td></tr>
@@ -148,6 +151,34 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 </div>
 </div></div>
 </div></div>
+<!-- Trazabilidad Card -->
+<div class="card mb-4" id="trace-card">
+    <div class="card-header">
+        <span><span class="section-icon bg-dark me-2"><i class="bi bi-diagram-3"></i></span>Trazabilidad</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <h6 class="text-info mb-2"><i class="bi bi-gear-wide-connected me-1"></i>Factory Run</h6>
+                <table class="table table-borderless trace-table mb-0 small">
+                    <tr><td class="text-muted">Factory Run ID</td><td class="text-end" id="trace-factory-run-id" style="font-family:monospace;font-size:.7rem">&mdash;</td></tr>
+                    <tr><td class="text-muted">Factory Status</td><td class="text-end" id="trace-factory-status">&mdash;</td></tr>
+                    <tr><td class="text-muted">Factory URL</td><td class="text-end" id="trace-factory-url" style="font-size:.7rem;word-break:break-all">&mdash;</td></tr>
+                    <tr><td class="text-muted">Factory Duration</td><td class="text-end" id="trace-factory-duracion">&mdash;</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-warning mb-2"><i class="bi bi-gear-wide-connected me-1"></i>Control Plane Run</h6>
+                <table class="table table-borderless trace-table mb-0 small">
+                    <tr><td class="text-muted">Control Plane Run ID</td><td class="text-end" id="trace-cp-run-id" style="font-family:monospace;font-size:.7rem">&mdash;</td></tr>
+                    <tr><td class="text-muted">Control Plane Status</td><td class="text-end" id="trace-cp-status">&mdash;</td></tr>
+                    <tr><td class="text-muted">Control Plane URL</td><td class="text-end" id="trace-cp-url" style="font-size:.7rem;word-break:break-all">&mdash;</td></tr>
+                    <tr><td class="text-muted">Control Plane Duration</td><td class="text-end" id="trace-cp-duracion">&mdash;</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center">
     <span><span class="section-icon bg-dark me-2"><i class="bi bi-cloud-check"></i></span>Estado Actual de Azure</span>
     <button class="btn btn-outline-info btn-sm" onclick="verificarAzureAhora()"><i class="bi bi-arrow-clockwise me-1"></i>Verificar Azure</button>
@@ -355,6 +386,9 @@ document.getElementById('proj-name').textContent=data.nombre_proyecto||'---';
 document.getElementById('proj-did').textContent=data.deployment_id||'---';
 document.getElementById('proj-cid').textContent=data.correlation_id||'---';
 document.getElementById('proj-resultado').textContent=data.resultado||'---';
+document.getElementById('proj-commit-sha').textContent=data.commit_sha||'---';
+document.getElementById('proj-repositorio').textContent=data.repository_url||'---';
+document.getElementById('proj-visibilidad').textContent=data.visibility||'---';
 // Populate validation results
 function setValBadge(id,val){var e=document.getElementById(id);if(!e)return;if(!val||val===''){e.textContent='---';e.className='counter-value result-pending';return;}
 var v=String(val).toUpperCase();e.textContent=v;
@@ -367,6 +401,14 @@ setValBadge('val-user-facing',data.user_facing_result);
 setValBadge('val-evidence',data.evidence_result);
 document.getElementById('val-pass-count').textContent=data.functional_pass_count!==undefined?data.functional_pass_count:'0';
 document.getElementById('val-fail-count').textContent=data.functional_fail_count!==undefined?data.functional_fail_count:'0';
+document.getElementById('trace-factory-run-id').textContent=data.factory_run_id||'---';
+document.getElementById('trace-factory-status').textContent=data.factory_status||'---';
+document.getElementById('trace-factory-url').textContent=data.factory_run_url||'---';
+document.getElementById('trace-factory-duracion').textContent=data.factory_duration?formatDuration(data.factory_duration):'---';
+document.getElementById('trace-cp-run-id').textContent=data.control_plane_run_id||'---';
+document.getElementById('trace-cp-status').textContent=data.control_plane_status||'---';
+document.getElementById('trace-cp-url').textContent=data.control_plane_run_url||'---';
+document.getElementById('trace-cp-duracion').textContent=data.control_plane_duration?formatDuration(data.control_plane_duration):'---';
 document.getElementById('proj-inicio').textContent=formatTS(data.fecha_solicitud)||'---';
 document.getElementById('proj-fin').textContent=formatTS(data.fecha_fin)||'---';
 document.getElementById('proj-duracion').textContent=data.duracion_total_segundos?formatDuration(data.duracion_total_segundos):'---';

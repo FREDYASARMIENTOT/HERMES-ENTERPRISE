@@ -1,0 +1,38 @@
+<step title="Incoming Request" date="2026-09-22T13:47:45.192" instance="cfe119" url="/api/publish?type=zip" method="POST" type="request" pid="842,1,46" Accept="*/*" Host="as-hermese2eb5003.scm.azurewebsites.net" User-Agent="AZURECLI/2.90.0 (DEB)" Accept-Encoding="gzip, deflate" Authorization="Bea..." Cache-Control="no-cache" Content-Type="application/octet-stream" Cookie="ARRAffinity=cfe11976a55ae6de4d3f1284935dd930bb18042eb46382713c99c01913f1afaa; ARRAffinitySameSite=cfe11976a55ae6de4d3f1284935dd930bb18042eb46382713c99c01913f1afaa" Content-Length="0" x-ms-client-request-id="27bb92d6-b68c-11f1-a931-6045bdb8a026" x-ms-artifact-checksum="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" X-ARR-LOG-ID="27bb92d6-b68c-11f1-a931-6045bdb8a026" CLIENT-IP="48.214.54.119:44033" X-SITE-DEPLOYMENT-ID="as-hermese2eb5003" WAS-DEFAULT-HOSTNAME="as-hermese2eb5003.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?type=zip" X-Client-IP="48.214.54.119" X-Client-Port="44033" >
+  <step title="OneDeploy" date="2026-09-22T13:47:45.322" >
+    <step title="Starting PushDeployAsync" date="2026-09-22T13:47:45.441" /><!-- duration: 21ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/dda7b1c3-8c37-4e45-9760-49c4bf50c1b1.zip" date="2026-09-22T13:47:45.582" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/dda7b1c3-8c37-4e45-9760-49c4bf50c1b1.zip" date="2026-09-22T13:47:45.625" /><!-- duration: 200ms -->
+      <step title="Writing zip file to /tmp/zipdeploy/dda7b1c3-8c37-4e45-9760-49c4bf50c1b1.zip" date="2026-09-22T13:47:45.923" /><!-- duration: 121ms -->
+      <step title="Error occurred" date="2026-09-22T13:47:46.215" type="error" text="Exception copying zip file: [ValidateCopiedZipFromRequest] File is empty after copy operation: /tmp/zipdeploy/dda7b1c3-8c37-4e45-9760-49c4bf50c1b1.zip: [ValidateCopiedZipFromRequest] File is empty after copy operation: /tmp/zipdeploy/dda7b1c3-8c37-4e45-9760-49c4bf50c1b1.zip" stackTrace="   at Kudu.Services.Deployment.PushDeploymentController.ValidateCopiedZipFromRequest(String filePath) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 1570
+   at Kudu.Services.Deployment.PushDeploymentController.CopyZipFromRequestBody(String artifactTempPath, ITracer tracer) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 1540" /><!-- duration: 2ms -->
+      <step title="Cleaning up incomplete file: /tmp/zipdeploy/dda7b1c3-8c37-4e45-9760-49c4bf50c1b1.zip" date="2026-09-22T13:47:46.286" /><!-- duration: 11ms -->
+    </step><!-- duration: 905ms -->
+  </step><!-- duration: 1262ms -->
+  <step title="Error occurred" date="2026-09-22T13:47:46.735" type="error" text="[ValidateCopiedZipFromRequest] File is empty after copy operation: /tmp/zipdeploy/dda7b1c3-8c37-4e45-9760-49c4bf50c1b1.zip" stackTrace="   at Kudu.Services.Deployment.PushDeploymentController.ValidateCopiedZipFromRequest(String filePath) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 1570
+   at Kudu.Services.Deployment.PushDeploymentController.CopyZipFromRequestBody(String artifactTempPath, ITracer tracer) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 1540
+   at Kudu.Services.Deployment.PushDeploymentController.PushDeployAsync(ArtifactDeploymentInfo deploymentInfo, Boolean isAsync, HttpContext context, JObject requestJson) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 794
+   at Kudu.Services.Deployment.PushDeploymentController.OneDeploy(String type, Boolean async, String path, Nullable`1 restart, Nullable`1 clean, Boolean ignoreStack, Boolean trackDeploymentProgress, Boolean trackStatus, Boolean reset, String deploymentTag) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 649
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.&lt;InvokeActionMethodAsync&gt;g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.&lt;InvokeNextActionFilterAsync&gt;g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State&amp; next, Scope&amp; scope, Object&amp; state, Boolean&amp; isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.&lt;InvokeNextResourceFilter&gt;g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State&amp; next, Scope&amp; scope, Object&amp; state, Boolean&amp; isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeFilterPipelineAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.&lt;InvokeAsync&gt;g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.&lt;InvokeAsync&gt;g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
+   at Kudu.Services.Web.Startup.&lt;&gt;c.&lt;&lt;Configure&gt;b__11_9&gt;d.MoveNext() in /tmp/KuduLite/Kudu.Services.Web/Startup.cs:line 545
+--- End of stack trace from previous location ---
+   at Kudu.Services.Web.Startup.&lt;&gt;c.&lt;&lt;Configure&gt;b__11_8&gt;d.MoveNext() in /tmp/KuduLite/Kudu.Services.Web/Startup.cs:line 507
+--- End of stack trace from previous location ---
+   at Kudu.Services.Web.Tracing.TraceMiddleware.Invoke(HttpContext context) in /tmp/KuduLite/Kudu.Services.Web/Tracing/TraceMiddleware.cs:line 101" /><!-- duration: 30ms -->
+  <step title="Incoming Request" date="2026-09-22T13:47:47.124" url="/Error?type=zip" method="POST" type="request" pid="842,1,16" Accept="*/*" Host="as-hermese2eb5003.scm.azurewebsites.net" User-Agent="AZURECLI/2.90.0 (DEB)" Accept-Encoding="gzip, deflate" Authorization="Bea..." Cache-Control="no-cache" Content-Type="application/octet-stream" Cookie="ARRAffinity=cfe11976a55ae6de4d3f1284935dd930bb18042eb46382713c99c01913f1afaa; ARRAffinitySameSite=cfe11976a55ae6de4d3f1284935dd930bb18042eb46382713c99c01913f1afaa" Content-Length="0" x-ms-client-request-id="27bb92d6-b68c-11f1-a931-6045bdb8a026" x-ms-artifact-checksum="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" X-ARR-LOG-ID="27bb92d6-b68c-11f1-a931-6045bdb8a026" CLIENT-IP="48.214.54.119:44033" X-SITE-DEPLOYMENT-ID="as-hermese2eb5003" WAS-DEFAULT-HOSTNAME="as-hermese2eb5003.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?type=zip" X-Client-IP="48.214.54.119" X-Client-Port="44033" >
+    <step title="Outgoing response" date="2026-09-22T13:47:49.057" type="response" statusCode="400" statusText="BadRequest" /><!-- duration: 59ms -->
+  </step><!-- duration: 2063ms -->

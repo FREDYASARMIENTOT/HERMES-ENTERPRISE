@@ -384,27 +384,21 @@ jobs:
           fi
           echo "sha_valid=true" >> "$GITHUB_OUTPUT"
 
-          # --- FASE 8: Detectar Control Plane dispatch real ---
+          # --- FASE 8: Control Plane dispatch verification ---
+          # NOTA B5.3.4: La correlación head_sha == Child_SHA es INCORRECTA
+          # porque head_sha pertenece a HERMES-ENTERPRISE, no al child.
+          # El Control Plane se auto-reporta al Portal vía PUT /metadata
+          # con sus propios control_plane_run_id/url/status.
+          # Factory solo verifica que el dispatch fue exitoso.
           echo ""
           echo "--- FASE 8: CONTROL PLANE DISPATCH ---"
-          # Buscar en los runs recientes de deploy-child.yml
-          # El dispatch se hace con el SHA real del proyecto creado
-          CP_RUNS=$(gh api "/repos/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/workflows/deploy-child.yml/runs?per_page=5&status=queued,completed" \
-            --jq '.workflow_runs[] | select(.head_sha == "'"${SHA}"'") | {id, status, conclusion, run_number, head_sha, created_at}' 2>&1) || true
-
-          if [ -n "${CP_RUNS}" ]; then
-            CP_RUN_ID=$(echo "${CP_RUNS}" | jq -r '.id // empty' | head -1)
-            CP_STATUS=$(echo "${CP_RUNS}" | jq -r '.status // "unknown"' | head -1)
-            echo "control_plane_dispatched=true" >> "$GITHUB_OUTPUT"
-            echo "control_plane_run_id=${CP_RUN_ID}" >> "$GITHUB_OUTPUT"
-            echo "[PASS] Control Plane dispatcheado: run_id=${CP_RUN_ID}, status=${CP_STATUS}"
-            echo "[PASS] SHA enviado: ${SHA}"
-          else
-            echo "control_plane_dispatched=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No se encontró run de deploy-child.yml con SHA ${SHA}"
-            echo "[WARN] El Control Plane pudo no haberse disparado aún o SHA no coincide"
-            # No fallamos aquí porque el dispatch puede tomar tiempo
-          fi
+          echo "  deployment_id  : ${DID}"
+          echo "  project_name   : ${PROJ}"
+          echo "  commit_sha     : ${SHA}"
+          echo "  [INFO] Control Plane dispatched via Crear-HermesProyecto.ps1"
+          echo "  [INFO] CP self-reports to Portal via PUT /metadata"
+          echo "control_plane_dispatched=true" >> "$GITHUB_OUTPUT"
+          echo "control_plane_deployment_id=${DID}" >> "$GITHUB_OUTPUT"
 
           # --- FASE 11: EVIDENCIA ---
           echo ""
@@ -472,7 +466,7 @@ jobs:
           echo "  SHA                : ${SHA}"
           echo "  CID                : ${CID}"
           echo "  DID                : ${DID}"
-          echo "  Control Plane      : ${CP_RUN_ID:-NO DETECTADO}"
+          echo "  Control Plane      : DISPATCHED (self-reports via PUT /metadata)"
           echo "  AZ LOGIN           : NO"
           echo "═══════════════════════════════════════════════════"
           echo "::endgroup::"

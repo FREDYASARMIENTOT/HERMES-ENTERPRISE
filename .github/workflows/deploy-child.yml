@@ -1095,10 +1095,28 @@ jobs:
           # Extraer azure_hostname desde la URL del Web App
           AZURE_HOSTNAME=$(echo "${URL}" | sed 's|https://||;s|/||g')
           AZURE_LOCATION="${{ env.LOCATION }}"
+          # Calcular control_plane_started_at (inicio real del workflow)
+          # GitHub Actions no expone github.run_started_at de forma confiable,
+          # así que usamos el created_at del run vía API
+          CP_STARTED_AT=$(gh api "/repos/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}" --jq '.created_at // ""' 2>/dev/null || echo "")
+          if [ -z "${CP_STARTED_AT}" ]; then CP_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"; fi
+          CP_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # Calcular duración del Control Plane (en segundos)
+          CP_DURATION=0
+          if [ -n "${CP_STARTED_AT}" ] && [ -n "${CP_FINISHED_AT}" ]; then
+            CP_START_EPOCH=$(date -d "${CP_STARTED_AT}" +%s 2>/dev/null || echo 0)
+            CP_FINISH_EPOCH=$(date -d "${CP_FINISHED_AT}" +%s 2>/dev/null || echo 0)
+            if [ "${CP_START_EPOCH}" -gt 0 ] && [ "${CP_FINISH_EPOCH}" -gt "${CP_START_EPOCH}" ]; then
+              CP_DURATION=$(( CP_FINISH_EPOCH - CP_START_EPOCH ))
+            fi
+          fi
+          # Extraer Azure deployment ID del resultado del deploy
+          AZURE_DEPLOY_ID="$(python3 -c "import json;d=json.load(open('deployment-report.json'));print(d.get('azure_deployment_id',''))" 2>/dev/null || echo '')"
+          AZURE_DEPLOY_STATUS="${DEP_RES}"
           # Extraer readiness HTTP status code
           RDY_HTTP_STATUS="${{ needs.readiness.outputs.health_code }}"
           RDY_URL="${URL}/health"
-          CP_METADATA=$(printf '{"control_plane_run_id":"%s","control_plane_run_url":"%s","control_plane_status":"%s","commit_sha":"%s","web_app_url":"%s","deploy_result":"%s","readiness_result":"%s","readiness_http_status":"%s","readiness_url":"%s","functional_result":"%s","user_facing_result":"%s","sha_chain_result":"%s","checkout_sha":"%s","control_plane_finished_at":"%s","functional_pass_count":%s,"functional_fail_count":%s,"evidence_result":"%s","evidence_url":"%s","azure_hostname":"%s","azure_location":"%s"}' \
+          CP_METADATA=$(printf '{"control_plane_run_id":"%s","control_plane_run_url":"%s","control_plane_status":"%s","commit_sha":"%s","web_app_url":"%s","deploy_result":"%s","readiness_result":"%s","readiness_http_status":"%s","readiness_url":"%s","functional_result":"%s","user_facing_result":"%s","sha_chain_result":"%s","checkout_sha":"%s","control_plane_started_at":"%s","control_plane_finished_at":"%s","control_plane_duration_seconds":%s,"functional_pass_count":%s,"functional_fail_count":%s,"evidence_result":"%s","evidence_url":"%s","azure_hostname":"%s","azure_location":"%s","azure_deployment_id":"%s","azure_deployment_status":"%s"}' \
              "${{ github.run_id }}" \
              "https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/${{ github.run_id }}" \
              "${FINAL_STATUS}" \
@@ -1112,13 +1130,17 @@ jobs:
              "${UF_RES}" \
              "${{ needs.checkout-child.outputs.sha_chain }}" \
              "${{ needs.checkout-child.outputs.deployed_sha }}" \
-             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+             "${CP_STARTED_AT}" \
+             "${CP_FINISHED_AT}" \
+             "${CP_DURATION}" \
              "${FUNC_PASS}" \
              "${FUNC_FAIL}" \
              "${EVIDENCE_RESULT}" \
              "${EVIDENCE_URL}" \
              "${AZURE_HOSTNAME}" \
-             "${AZURE_LOCATION}")
+             "${AZURE_LOCATION}" \
+             "${AZURE_DEPLOY_ID}" \
+             "${AZURE_DEPLOY_STATUS}")
           METADATA_RESP=$(curl -s -w "\n%{http_code}" -X PUT "${PORTAL_URL}/api/fabrica/proyectos/${DID}/metadata" \
             -H "Content-Type: application/json" \
             -d "${CP_METADATA}" 2>&1)

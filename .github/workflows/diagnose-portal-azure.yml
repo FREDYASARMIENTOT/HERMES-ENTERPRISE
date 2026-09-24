@@ -1,16 +1,18 @@
 # diagnose-portal-azure.yml
+# B5.5 — Portal Azure Diagnostic Tool
+# READ-ONLY por defecto. No modifica producción en `diagnose`.
 name: Diagnose Portal Azure
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Acción'
+        description: 'Acción a ejecutar'
         required: true
-        default: 'enable-mi'
+        default: 'diagnose'
         type: choice
         options:
-          - enable-mi
           - diagnose
+          - enable-mi
           - assign-reader
 permissions:
   contents: read
@@ -18,9 +20,10 @@ permissions:
 env:
   APP_NAME: as-hermesportal
   RESOURCE_GROUP: RG-Hermes-Proyectos
+  PORTAL_URL: https://as-hermesportal.azurewebsites.net
 jobs:
   manage:
-    name: Manage Portal Azure
+    name: Portal Azure Diagnose
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -29,32 +32,267 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Diagnose
-        if: ${{ inputs.action == 'diagnose' || inputs.action == 'enable-mi' }}
+
+      # ════════════════════════════════════════════════════════════════
+      # DIAGNOSE — READ-ONLY comprehensive portal diagnostic
+      # ════════════════════════════════════════════════════════════════
+      - name: Diagnose Portal (READ-ONLY)
+        if: ${{ inputs.action == 'diagnose' }}
         shell: bash
         run: |
-          echo "=== Current Identity ==="
-          az webapp identity show --name ${{ env.APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} 2>/dev/null || echo "NO_MI"
-          echo "=== App Service Plans ==="
-          az resource list --resource-group ${{ env.RESOURCE_GROUP }} --resource-type Microsoft.Web/serverfarms --query "[].{name:name, id:id, sku:sku.tier}" -o table 2>/dev/null
-      - name: Enable MI
+          set -euo pipefail
+          PORTAL_URL="${{ env.PORTAL_URL }}"
+          APP_NAME="${{ env.APP_NAME }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+          green() { echo -e "\033[0;32m$1\033[0m"; }
+          red()   { echo -e "\033[0;31m$1\033[0m"; }
+          yellow(){ echo -e "\033[0;33m$1\033[0m"; }
+          header(){ echo -e "\n\033[1;36m===== $1 =====\033[0m"; }
+          PORTAL_RUNTIME=""; HEALTH_STATUS=""; ROOT_STATUS=""; OPENAPI_STATUS=""
+          PLAN_NAME=""; PLAN_STATUS=""; MI_STATUS=""; MI_PRINCIPAL_ID=""; READER_RG=""
+
+          # ── 1. PORTAL IDENTITY ──
+          header "PORTAL IDENTITY"
+          MI_JSON=$(az webapp identity show --name "$APP_NAME" --resource-group "$RG" 2>/dev/null || true)
+          if [ -n "$MI_JSON" ] && [ "$MI_JSON" != "null" ]; then
+            MI_STATUS="CONFIGURED"
+            MI_PRINCIPAL_ID=$(echo "$MI_JSON" | jq -r '.principalId // empty')
+            MI_TENANT=$(echo "$MI_JSON" | jq -r '.tenantId // empty')
+            MI_TYPE=$(echo "$MI_JSON" | jq -r '.type // empty')
+            echo "MI_STATUS = ${MI_STATUS}"
+            echo "PRINCIPAL_ID = ${MI_PRINCIPAL_ID}"
+            echo "TENANT_ID   = ${MI_TENANT}"
+            echo "TYPE        = ${MI_TYPE}"
+          else
+            MI_STATUS="NOT_CONFIGURED"
+            echo "MI_STATUS = ${MI_STATUS}"
+            echo "(Portal can function without MI - informational only)"
+          fi
+
+          # ── 2. APP SERVICE ──
+          header "APP SERVICE"
+          WEBAPP_JSON=$(az webapp show --name "$APP_NAME" --resource-group "$RG" 2>/dev/null || echo "null")
+          if [ "$WEBAPP_JSON" = "null" ]; then
+            PORTAL_RUNTIME="NOT_FOUND"; echo "PORTAL NOT FOUND in Azure!"
+          else
+            PORTAL_RUNTIME=$(echo "$WEBAPP_JSON" | jq -r '.state // "UNKNOWN"')
+            DEFAULT_HOST=$(echo "$WEBAPP_JSON" | jq -r '.defaultHostName // "N/A"')
+            LOCATION=$(echo "$WEBAPP_JSON" | jq -r '.location // "N/A"')
+            SERVER_FARM_ID=$(echo "$WEBAPP_JSON" | jq -r '.serverFarmId // "N/A"')
+            HTTPS_ONLY=$(echo "$WEBAPP_JSON" | jq -r '.httpsOnly // "N/A"')
+            KIND=$(echo "$WEBAPP_JSON" | jq -r '.kind // "N/A"')
+            echo "name           = ${APP_NAME}"
+            echo "state          = ${PORTAL_RUNTIME}"
+            echo "defaultHostName = ${DEFAULT_HOST}"
+            echo "location       = ${LOCATION}"
+            echo "httpsOnly      = ${HTTPS_ONLY}"
+            echo "kind           = ${KIND}"
+            echo "serverFarmId   = ${SERVER_FARM_ID}"
+            if [ "$PORTAL_RUNTIME" != "Running" ]; then
+              echo "PORTAL_RUNTIME_WARNING - state is ${PORTAL_RUNTIME}, expected Running"
+            fi
+          fi
+
+          # ── 3. APP SERVICE PLAN ──
+          header "APP SERVICE PLAN"
+          PLAN_JSON=$(az appservice plan list --resource-group "$RG" --query "[?contains(id, 'ASP-HERMES-PORTAL')]" 2>/dev/null || echo "[]")
+          PLAN_COUNT=$(echo "$PLAN_JSON" | jq 'length')
+          if [ "$PLAN_COUNT" -gt 0 ]; then
+            PLAN_NAME=$(echo "$PLAN_JSON" | jq -r '.[0].name // "N/A"')
+            PLAN_ID=$(echo "$PLAN_JSON" | jq -r '.[0].id // "N/A"')
+            PLAN_SKU=$(echo "$PLAN_JSON" | jq -r '.[0].sku.name // "N/A"')
+            PLAN_TIER=$(echo "$PLAN_JSON" | jq -r '.[0].sku.tier // "N/A"')
+            PLAN_LOC=$(echo "$PLAN_JSON" | jq -r '.[0].location // "N/A"')
+            PLAN_STATUS="OK"
+            echo "plan name  = ${PLAN_NAME}"
+            echo "plan id    = ${PLAN_ID}"
+            echo "SKU        = ${PLAN_SKU}"
+            echo "tier       = ${PLAN_TIER}"
+            echo "location   = ${PLAN_LOC}"
+            echo "plan status = ${PLAN_STATUS}"
+          else
+            PLAN_STATUS="WARNING"; PLAN_NAME="NOT_FOUND"
+            echo "PLAN NOT FOUND - ASP-HERMES-PORTAL missing from resource group"
+          fi
+
+          # ── 4. HEALTH HTTP CHECKS ──
+          header "HEALTH HTTP CHECKS"
+          check_endpoint() {
+            local label="$1" url="$2" expected="$3"
+            local start end dur http_code
+            start=$(date +%s%N)
+            http_code=$(curl -fsS --max-time 20 -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")
+            end=$(date +%s%N)
+            dur=$(echo "scale=2; ($end - $start) / 1000000000" | bc 2>/dev/null || echo "?")
+            if [ "$http_code" = "$expected" ]; then
+              echo "  [PASS] ${label}: HTTP ${http_code} (${dur}s)"; echo "PASS"
+            else
+              echo "  [FAIL] ${label}: HTTP ${http_code} (expected ${expected}) (${dur}s)"; echo "FAIL"
+            fi
+          }
+          HEALTH_STATUS=$(check_endpoint "/health"      "${PORTAL_URL}/health" "200")
+          ROOT_STATUS=$(check_endpoint "/"            "${PORTAL_URL}/" "200")
+          OPENAPI_STATUS=$(check_endpoint "/openapi.json" "${PORTAL_URL}/openapi.json" "200")
+
+          # ── 5. ADDITIONAL ENDPOINTS ──
+          header "FUNCTIONAL ENDPOINTS"
+          HTTP_APIPROY=$(curl -fsS --max-time 20 -o /dev/null -w "%{http_code}" "${PORTAL_URL}/api/proyecto" 2>/dev/null || echo "000")
+          if [ "$HTTP_APIPROY" = "200" ]; then echo "  [OK] /api/proyecto: HTTP ${HTTP_APIPROY}"
+          else echo "  [INFO] /api/proyecto: HTTP ${HTTP_APIPROY} (optional)"; fi
+          HTTP_DOCS=$(curl -fsS --max-time 20 -o /dev/null -w "%{http_code}" "${PORTAL_URL}/docs" 2>/dev/null || echo "000")
+          if [ "$HTTP_DOCS" = "200" ]; then echo "  [OK] /docs: HTTP ${HTTP_DOCS}"
+          else echo "  [INFO] /docs: HTTP ${HTTP_DOCS} (optional)"; fi
+          HTTP_REDOC=$(curl -fsS --max-time 20 -o /dev/null -w "%{http_code}" "${PORTAL_URL}/redoc" 2>/dev/null || echo "000")
+          if [ "$HTTP_REDOC" = "200" ]; then echo "  [OK] /redoc: HTTP ${HTTP_REDOC}"
+          else echo "  [INFO] /redoc: HTTP ${HTTP_REDOC} (optional)"; fi
+
+          # ── 6. RBAC DIAGNOSTIC ──
+          header "RBAC DIAGNOSTIC"
+          if [ -n "$MI_PRINCIPAL_ID" ]; then
+            echo "Checking role assignments for principal: ${MI_PRINCIPAL_ID}"
+            ROLE_JSON=$(az role assignment list --assignee "$MI_PRINCIPAL_ID" --resource-group "$RG" 2>/dev/null || echo "[]")
+            ROLE_COUNT=$(echo "$ROLE_JSON" | jq 'length')
+            if [ "$ROLE_COUNT" -gt 0 ]; then
+              echo "Role assignments at RG scope:"
+              echo "$ROLE_JSON" | jq -r '.[] | "  role: \(.roleDefinitionName) | scope: \(.scope)"'
+              HAS_READER=$(echo "$ROLE_JSON" | jq -r '[.[] | select(.roleDefinitionName == "Reader")] | length')
+              if [ "$HAS_READER" -gt 0 ]; then READER_RG="YES"; echo "  READER_AT_RG_SCOPE = YES"
+              else READER_RG="YES_OTHER"; echo "  Reader not found - other roles present"; fi
+            else READER_RG="NO"; echo "  No RBAC assignments at RG scope for this MI"; fi
+          else READER_RG="NOT_APPLICABLE"; echo "  (MI not configured - skip RBAC check)"; fi
+
+          # ── 7. FUNCTIONAL STATUS ──
+          header "FUNCTIONAL STATUS"
+          if [ "$PORTAL_RUNTIME" = "Running" ] && [ "$HEALTH_STATUS" = "PASS" ] && [ "$ROOT_STATUS" = "PASS" ]; then
+            PORTAL_FUNCTIONAL="YES"; echo "  PORTAL_FUNCTIONAL = YES"
+          else PORTAL_FUNCTIONAL="NO"; echo "  PORTAL_FUNCTIONAL = NO"; fi
+
+          # ── 8. SUMMARY ──
+          header "PORTAL AZURE DIAGNOSTIC SUMMARY"
+          echo "================================================"
+          echo ""
+          echo "Portal:"
+          echo "  ${APP_NAME}"
+          echo ""
+          echo "URL:"
+          echo "  ${PORTAL_URL}"
+          echo ""
+          echo "Runtime:           ${PORTAL_RUNTIME}"
+          echo "Health:            ${HEALTH_STATUS}"
+          echo "Root:              ${ROOT_STATUS}"
+          echo "OpenAPI:           ${OPENAPI_STATUS}"
+          echo "App Service Plan:  ${PLAN_NAME}"
+          echo "Plan:              ${PLAN_STATUS}"
+          echo "Managed Identity:  ${MI_STATUS}"
+          echo "Reader RG:         ${READER_RG}"
+          echo "Portal Functional: ${PORTAL_FUNCTIONAL}"
+          echo ""
+          echo "================================================"
+          # Set outputs
+          echo "PORTAL_FUNCTIONAL=${PORTAL_FUNCTIONAL}" >> "$GITHUB_ENV"
+          echo "PORTAL_RUNTIME=${PORTAL_RUNTIME}" >> "$GITHUB_ENV"
+          echo "HEALTH_STATUS=${HEALTH_STATUS}" >> "$GITHUB_ENV"
+          echo "PLAN_STATUS=${PLAN_STATUS}" >> "$GITHUB_ENV"
+          echo "MI_STATUS=${MI_STATUS}" >> "$GITHUB_ENV"
+          echo "READER_RG=${READER_RG}" >> "$GITHUB_ENV"
+
+      # ════════════════════════════════════════════════════════════════
+      # ENABLE MI — modify: enable system-assigned managed identity
+      # ════════════════════════════════════════════════════════════════
+      - name: Enable System-Assigned Managed Identity
         if: ${{ inputs.action == 'enable-mi' }}
         shell: bash
         run: |
-          az webapp identity assign --name ${{ env.APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
-      - name: Assign Reader
-        if: ${{ inputs.action == 'enable-mi' || inputs.action == 'assign-reader' }}
+          set -euo pipefail
+          APP_NAME="${{ env.APP_NAME }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+          echo "=== Enabling System-Assigned Managed Identity ==="
+          az webapp identity assign --name "$APP_NAME" --resource-group "$RG" --output json 2>/dev/null || {
+            echo "ERROR: Failed to enable MI"; exit 1
+          }
+          echo ""
+          echo "=== Verifying MI ==="
+          MI_JSON=$(az webapp identity show --name "$APP_NAME" --resource-group "$RG" 2>/dev/null || echo "null")
+          if [ "$MI_JSON" != "null" ] && [ -n "$MI_JSON" ]; then
+            PRINCIPAL_ID=$(echo "$MI_JSON" | jq -r '.principalId // empty')
+            if [ -n "$PRINCIPAL_ID" ]; then
+              echo "MI_ENABLED = YES"; echo "PRINCIPAL_ID = ${PRINCIPAL_ID}"
+              echo "MI_ENABLED=YES" >> "$GITHUB_ENV"
+            else echo "MI_ENABLED = NO (no principalId returned)"; echo "MI_ENABLED=NO" >> "$GITHUB_ENV"; fi
+          else echo "MI_ENABLED = NO (identity show failed)"; echo "MI_ENABLED=NO" >> "$GITHUB_ENV"; fi
+
+      # ════════════════════════════════════════════════════════════════
+      # ASSIGN READER — idempotent: checks existing assignments first
+      # ════════════════════════════════════════════════════════════════
+      - name: Assign Reader Role to MI at RG Scope
+        if: ${{ inputs.action == 'assign-reader' }}
         shell: bash
         run: |
-          MI=$(az webapp identity show --name ${{ env.APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query principalId -o tsv)
-          if [ -n "$MI" ]; then
-            az role assignment create --assignee "$MI" --role Reader --scope "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.RESOURCE_GROUP }}" --output none
-            echo "Reader assigned to MI at RG scope"
-          else
-            echo "No MI found"
+          set -euo pipefail
+          APP_NAME="${{ env.APP_NAME }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+          SUBSCRIPTION="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          SCOPE="/subscriptions/${SUBSCRIPTION}/resourceGroups/${RG}"
+          echo "=== Checking MI ==="
+          MI_JSON=$(az webapp identity show --name "$APP_NAME" --resource-group "$RG" 2>/dev/null || echo "null")
+          if [ "$MI_JSON" = "null" ] || [ -z "$MI_JSON" ]; then
+            echo "MI_REQUIRED"; echo "Managed Identity must be enabled before assigning Reader."
+            echo "Run 'enable-mi' action first, then retry 'assign-reader'."
+            echo "MI_REQUIRED=YES" >> "$GITHUB_ENV"; exit 1
           fi
-      - name: Verify
+          PRINCIPAL_ID=$(echo "$MI_JSON" | jq -r '.principalId // empty')
+          if [ -z "$PRINCIPAL_ID" ]; then
+            echo "MI_REQUIRED - principalId not found"; echo "MI_REQUIRED=YES" >> "$GITHUB_ENV"; exit 1
+          fi
+          echo "MI Principal ID: ${PRINCIPAL_ID}"
+          # ── Check existing assignments for idempotency ──
+          echo ""
+          echo "=== Checking existing Reader assignments ==="
+          EXISTING=$(az role assignment list --assignee "$PRINCIPAL_ID" --resource-group "$RG" --role "Reader" --output json 2>/dev/null || echo "[]")
+          EXISTING_COUNT=$(echo "$EXISTING" | jq 'length')
+          if [ "$EXISTING_COUNT" -gt 0 ]; then
+            echo "READER_ALREADY_ASSIGNED"
+            echo "Reader role already exists at RG scope (${EXISTING_COUNT} assignment(s))"
+            echo "READER_ASSIGNED=ALREADY_EXISTS" >> "$GITHUB_ENV"; exit 0
+          fi
+          # ── Assign Reader (only if not exists) ──
+          echo ""
+          echo "=== Assigning Reader role ==="
+          if az role assignment create \
+            --assignee-object-id "${PRINCIPAL_ID}" \
+            --assignee-principal-type "ServicePrincipal" \
+            --role "Reader" \
+            --scope "${SCOPE}" \
+            --output json 2>&1; then
+            echo ""; echo "READER_ASSIGNED"
+            echo "Reader role successfully assigned at RG scope"
+            echo "READER_ASSIGNED=CREATED" >> "$GITHUB_ENV"
+          else
+            echo ""; echo "READER_ASSIGN_FAILED"
+            echo "Could not assign Reader role. Check permissions of the OIDC identity."
+            echo "READER_ASSIGNED=FAILED" >> "$GITHUB_ENV"; exit 1
+          fi
+
+      # ════════════════════════════════════════════════════════════════
+      # VERIFY — runs after any action (including diagnose)
+      # ════════════════════════════════════════════════════════════════
+      - name: Verify Final State
         if: ${{ always() }}
         shell: bash
         run: |
-          az webapp identity show --name ${{ env.APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} 2>/dev/null && echo "MI: OK" || echo "MI: NO"
+          APP_NAME="${{ env.APP_NAME }}"
+          RG="${{ env.RESOURCE_GROUP }}"
+          PORTAL_URL="${{ env.PORTAL_URL }}"
+          echo "=== Final Verification ==="
+          STATE=$(az webapp show --name "$APP_NAME" --resource-group "$RG" --query "state" -o tsv 2>/dev/null || echo "UNKNOWN")
+          echo "App Service state: ${STATE}"
+          HTTP_HEALTH=$(curl -fsS --max-time 10 -o /dev/null -w "%{http_code}" "${PORTAL_URL}/health" 2>/dev/null || echo "000")
+          echo "Health HTTP: ${HTTP_HEALTH}"
+          MI_PRIN=$(az webapp identity show --name "$APP_NAME" --resource-group "$RG" --query "principalId" -o tsv 2>/dev/null || echo "NONE")
+          if [ "$MI_PRIN" = "NONE" ] || [ -z "$MI_PRIN" ]; then
+            echo "MI: NOT_CONFIGURED"
+          else
+            echo "MI: CONFIGURED (principalId: ${MI_PRIN})"
+          fi
+          echo ""
+          echo "=== Verification Complete ==="

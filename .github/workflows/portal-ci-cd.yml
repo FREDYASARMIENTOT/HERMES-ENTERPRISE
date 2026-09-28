@@ -333,10 +333,20 @@ jobs:
           [ "$CODE" -eq 200 ] && pass "Swagger: 200" || fail "Swagger: $CODE"
 
           echo "--- [Factory API] ---"
-          curl -s --connect-timeout 10 --max-time 15 "$URL/api/fabrica/proyectos" | python3 -c "import sys,json;d=json.load(sys.stdin)" 2>/dev/null && pass "Factory API: valid" || fail "Factory API: invalid"
+          FACTORY_RETRIES=5
+          FACTORY_DELAY=15
+          FACTORY_PASS=false
+          for i in $(seq 1 ${FACTORY_RETRIES}); do
+            if curl -s --connect-timeout 10 --max-time 30 "$URL/api/fabrica/proyectos" | python3 -c "import sys,json;d=json.load(sys.stdin)" 2>/dev/null; then
+              FACTORY_PASS=true; break
+            fi
+            echo "  [Factory API] Intento ${i}/${FACTORY_RETRIES} falló, esperando ${FACTORY_DELAY}s (app startup)..."
+            sleep ${FACTORY_DELAY}
+          done
+          if [ "$FACTORY_PASS" = true ]; then pass "Factory API: valid"; else fail "Factory API: invalid"; fi
 
           echo "--- [App Service Plans API] ---"
-          ASP_RETRIES=3
+          ASP_RETRIES=6
           ASP_DELAY=30
           ASP_PASS=false
           for i in $(seq 1 ${ASP_RETRIES}); do

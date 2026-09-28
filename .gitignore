@@ -160,6 +160,15 @@ _TestFix.ps1
 _TestProvision.ps1
 hello.ps1
 
+# ██████ DEBUG / VERIFICATION SCRIPTS ██████
+data/check_*.py
+data/count_*.py
+data/get_template*.py
+data/insert_*.py
+data/test_server*.py
+data/verify_*.py
+run_status.json
+
 # ██████ .git-credentials ██████
 .git-credentials
 # ██████ DEPLOYMENT ARTIFACTS ██████

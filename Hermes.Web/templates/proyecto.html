@@ -49,6 +49,12 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 .filter-btn.active{border-color:var(--hermes-primary)!important}
 .event-detail-panel{background:rgba(0,0,0,0.3);border-radius:8px}
 .clickable{cursor:pointer}
+.clickable:hover
+.btn-gestion-azure{font-size:.75rem;padding:2px 10px;border-radius:16px;white-space:nowrap}
+.btn-detener{border-color:#ffc107;color:#ffc107}
+.btn-detener:hover{background:#ffc107;color:#000}
+.btn-eliminar{border-color:#dc3545;color:#dc3545}
+.btn-eliminar:hover{background:#dc3545;color:#fff}
 .clickable:hover{background:rgba(255,255,255,0.05)}
 .big-number{font-size:2.2rem;font-weight:800;line-height:1}
 .step-counter{font-size:.9rem;opacity:.8}
@@ -204,7 +210,21 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
             </div>
         </div>
     </div>
-    
+    <hr class="border-secondary opacity-25 my-3">
+    <div class="row g-2 align-items-center">
+        <div class="col-auto"><span class="text-muted small"><i class="bi bi-tools me-1"></i>Acciones de Gesti&oacute;n:</span></div>
+        <div class="col-auto">
+            <button class="btn btn-sm btn-outline-warning btn-gestion-azure btn-detener" onclick="confirmarDetenerAppService()" id="btn-detener-app">
+                <i class="bi bi-stop-circle me-1"></i>Detener App Service
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-sm btn-outline-danger btn-gestion-azure btn-eliminar" onclick="confirmarEliminarAppService()" id="btn-eliminar-app">
+                <i class="bi bi-trash3 me-1"></i>Eliminar App Service
+            </button>
+        </div>
+    </div>
+</div></div>
 <div class="card mb-4 mt-3"><div class="card-header d-flex justify-content-between align-items-center">
     <span><span class="section-icon bg-dark me-2"><i class="bi bi-github"></i></span>Estado de GitHub</span>
     <button class="btn btn-outline-info btn-sm" onclick="verificarGitHubAhora()"><i class="bi bi-arrow-clockwise me-1"></i>Verificar GitHub</button>
@@ -811,7 +831,78 @@ function formatTS(ts){if(!ts)return '';try{return new Date(ts).toLocaleString('e
 function formatTSshort(ts){if(!ts)return '';try{return new Date(ts).toLocaleTimeString('es-CO')}catch(e){return ts}}
 function formatDuration(s){if(!s||s<=0)return '---';s=Math.round(s);var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),se=s%60;if(h>0)return h+'h '+m+'m '+se+'s';if(m>0)return m+'m '+se+'s';return se+'s'}
 function pad2(n){return n<10?'0'+n:''+n}
+var accionPendiente=null;
+function confirmarDetenerAppService(){var nm=document.getElementById('proj-name').textContent||deploymentId;
+document.getElementById('confirmacionMensaje').textContent='\u00bfEst\u00e1 seguro de DETENER el App Service del proyecto '+nm+'?';
+document.getElementById('confirmacionDetalle').textContent='Esta acci\u00f3n detendr\u00e1 el Web App de Azure. El proyecto quedar\u00e1 inaccesible hasta que se reinicie manualmente desde Azure Portal.';
+var btn=document.getElementById('btn-confirmar-accion');btn.className='btn btn-warning';btn.innerHTML='<i class=\"bi bi-stop-circle me-1\"></i>Detener App Service';
+accionPendiente='detener';var modal=new bootstrap.Modal(document.getElementById('confirmacionModal'));modal.show();}
+function confirmarEliminarAppService(){var nm=document.getElementById('proj-name').textContent||deploymentId;
+document.getElementById('confirmacionMensaje').textContent='\u00bfEst\u00e1 seguro de ELIMINAR el App Service del proyecto '+nm+'?';
+document.getElementById('confirmacionDetalle').textContent='\u00a1ADVERTENCIA! Esta acci\u00f3n ELIMINAR\u00c1 permanentemente el Web App de Azure. No se podr\u00e1 recuperar. Todos los datos y configuraciones se perder\u00e1n.';
+var btn=document.getElementById('btn-confirmar-accion');btn.className='btn btn-danger';btn.innerHTML='<i class=\"bi bi-trash3 me-1\"></i>Eliminar App Service';
+accionPendiente='eliminar';var modal=new bootstrap.Modal(document.getElementById('confirmacionModal'));modal.show();}
+function ejecutarAccionConfirmada(){var modal=document.getElementById('confirmacionModal');var bsModal=bootstrap.Modal.getInstance(modal);if(bsModal)bsModal.hide();
+if(!accionPendiente)return;
+var url='';var msg='';
+if(accionPendiente==='detener'){url='/api/fabrica/proyectos/'+deploymentId+'/detener-app';msg='Deteniendo App Service...';}
+else if(accionPendiente==='eliminar'){url='/api/fabrica/proyectos/'+deploymentId+'/eliminar-app';msg='Eliminando App Service...';}
+accionPendiente=null;
+document.getElementById('progresoMensaje').textContent=msg;document.getElementById('progresoDetalle').textContent='Por favor espere, esto puede tomar unos segundos...';
+var progModal=new bootstrap.Modal(document.getElementById('progresoModal'));progModal.show();
+fetch(url,{method:'POST'}).then(function(r){return r.json();}).then(function(result){progModal.hide();
+if(result.exito){var res=document.createElement('div');res.className='alert alert-success alert-dismissible fade show mt-2';res.role='alert';
+res.innerHTML='<i class=\"bi bi-check-circle-fill me-2\"></i><strong>Operaci\u00f3n exitosa:</strong> '+msg+'<br><small class=\"text-muted\">Azure respondi\u00f3: '+result.status+'</small><button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>';
+document.getElementById('azure-error-row').style.display='';document.getElementById('azure-error-msg').innerHTML='';document.getElementById('azure-error-msg').appendChild(res);}
+else{var err=document.createElement('div');err.className='alert alert-danger alert-dismissible fade show mt-2';err.role='alert';
+err.innerHTML='<i class=\"bi bi-exclamation-triangle-fill me-2\"></i><strong>Error:</strong> '+result.error+'<br><small class=\"text-muted\">Status: '+result.status+'</small><button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>';
+document.getElementById('azure-error-row').style.display='';document.getElementById('azure-error-msg').innerHTML='';document.getElementById('azure-error-msg').appendChild(err);}
+}).catch(function(err){progModal.hide();
+var e=document.createElement('div');e.className='alert alert-danger alert-dismissible fade show mt-2';e.role='alert';
+e.innerHTML='<i class=\"bi bi-exclamation-triangle-fill me-2\"></i><strong>Error de conexi\u00f3n:</strong> '+err.message+'<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>';
+document.getElementById('azure-error-row').style.display='';document.getElementById('azure-error-msg').innerHTML='';document.getElementById('azure-error-msg').appendChild(e);});}
 document.addEventListener('DOMContentLoaded',cargarDatos);
 </script>
+
+<!-- Modal de confirmación para Detener/Eliminar App Service -->
+<div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="confirmacionModalLabel"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirmar Acci&oacute;n</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="confirmacionModalBody">
+        <p id="confirmacionMensaje">¿Est&aacute; seguro de realizar esta acci&oacute;n?</p>
+        <div class="alert alert-warning py-2 small" id="confirmacionAdvertencia">
+          <i class="bi bi-info-circle me-1"></i>
+          <span id="confirmacionDetalle"></span>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btn-cancelar-accion">
+          <i class="bi bi-x-circle me-1"></i>Cancelar
+        </button>
+        <button type="button" class="btn" id="btn-confirmar-accion" onclick="ejecutarAccionConfirmada()">
+          <i class="bi bi-check-circle me-1"></i><span id="btn-confirmar-texto">Confirmar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estado de accion en progreso (overlay) -->
+<div class="modal fade" id="progresoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content bg-dark border-secondary text-center py-4">
+      <div class="modal-body">
+        <div class="spinner-border text-info mb-3" role="status" style="width:3rem;height:3rem"></div>
+        <h6 id="progresoMensaje">Ejecutando acci&oacute;n...</h6>
+        <p class="text-muted small mb-0" id="progresoDetalle">Por favor espere...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

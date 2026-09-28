@@ -12,6 +12,8 @@ Endpoints:
     POST   /api/fabrica/proyectos/{id}/disparar -> Disparar Factory Runner remoto (GitHub Actions)
     POST   /api/fabrica/proyectos/{id}/paso     -> Actualizar paso (Control Plane)
     POST   /api/fabrica/proyectos/{id}/finalizar -> Finalizar solicitud
+    POST   /api/fabrica/proyectos/{id}/detener-app -> Detener App Service (Azure)
+    POST   /api/fabrica/proyectos/{id}/eliminar-app -> Eliminar App Service (Azure)
 ====================================================================
 """
 
@@ -166,6 +168,7 @@ async def historial_proyectos(request: Request, limit: int = 5):
                 "paso_final": paso_final["nombre"] if paso_final else None,
                 "paso_estado": paso_final["estado"] if paso_final else None,
                 "detalle": d.get("error", "") or (paso_final.get("detalle", "") if paso_final else ""),
+                "repository_url": d.get("repository_url", ""),
             })
         return {"proyectos": resultado, "total": len(resultado)}
     except Exception as e:
@@ -254,6 +257,30 @@ async def runtime_check_proyecto(request: Request, deployment_id: str):
     except Exception as e:
         logger.error(f"Error verificando Runtime: {e}")
         return {"error": str(e)}
+
+@router.post("/fabrica/proyectos/{deployment_id}/detener-app",
+             summary="Detener App Service del proyecto")
+async def detener_app_service(request: Request, deployment_id: str):
+    """Detiene el App Service de Azure asociado al proyecto via ARM REST API."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.detener_app_service(deployment_id)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error deteniendo App Service {deployment_id}: {e}")
+        return {"error": str(e), "exito": False, "deployment_id": deployment_id}
+
+@router.post("/fabrica/proyectos/{deployment_id}/eliminar-app",
+             summary="Eliminar App Service del proyecto")
+async def eliminar_app_service(request: Request, deployment_id: str):
+    """Elimina el App Service de Azure asociado al proyecto via ARM REST API."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.eliminar_app_service(deployment_id)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error eliminando App Service {deployment_id}: {e}")
+        return {"error": str(e), "exito": False, "deployment_id": deployment_id}
 
 @router.get("/fabrica/proyectos/{deployment_id}", summary="Obtener estado de un proyecto")
 async def obtener_proyecto(request: Request, deployment_id: str):

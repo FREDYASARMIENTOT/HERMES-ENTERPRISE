@@ -95,6 +95,17 @@
         .card-endpoint:hover {
             border-color: rgba(13,110,253,0.3);
         }
+        .vscode-btn {
+            background: #007acc;
+            color: #fff;
+            border: none;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+        }
+        .vscode-btn:hover {
+            background: #005a9e;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -211,10 +222,11 @@
                                         <th>VENV / Runtime</th><th>GitHub</th><th>App Service</th>
                                         <th>Duracion</th>
                                         <th>Detalle / Paso</th>
+                                        <th>Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody id="historial-tbody">
-                                    <tr><td colspan="6" class="text-center text-muted py-3"><i class="bi bi-hourglass-split me-1"></i>Cargando...</td></tr>
+                                    <tr><td colspan="9" class="text-center text-muted py-3"><i class="bi bi-hourglass-split me-1"></i>Cargando...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1060,6 +1072,33 @@
         cargarPlanes();
 
         // ══════════════════════════════════════════════════
+        // Abrir en Visual Studio Code
+        // ══════════════════════════════════════════════════
+
+        function abrirVSCodePorURL(repoUrl) {
+            if (!repoUrl || repoUrl === '' || repoUrl === 'https://github.com/.git') {
+                alert('URL de repositorio no disponible. Clone manualmente.');
+                return;
+            }
+            var enc = encodeURIComponent(repoUrl);
+            var vu = 'vscode://vscode.git/clone?url=' + enc;
+            var op = window.open(vu);
+            if (!op || op.closed) {
+                var ta = document.createElement('textarea');
+                ta.value = 'git clone ' + repoUrl;
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    alert('VS Code no se abrió automáticamente.\n\nComando copiado al portapapeles:\ngit clone ' + repoUrl);
+                } catch(e) {
+                    alert('Para clonar:\n1. Abra VS Code\n2. Ctrl+Shift+P\n3. "Git: Clone"\n4. Pegue: ' + repoUrl);
+                }
+                document.body.removeChild(ta);
+            }
+        }
+
+        // ══════════════════════════════════════════════════
         // Top 5 Historial - Actualizacion automatica
         // ══════════════════════════════════════════════════
 
@@ -1142,6 +1181,12 @@
                     if (azureStatus === 'NO_EXISTE') nombreDisplay = '<span class="text-decoration-line-through text-muted">' + p.nombre_proyecto + '</span>';
                     else nombreDisplay = '<strong>' + p.nombre_proyecto + '</strong>';
 
+                    var repoUrl = p.repository_url || '';
+                    var vscodeBtn = '';
+                    if (repoUrl && repoUrl !== '' && repoUrl !== 'https://github.com/.git') {
+                        vscodeBtn = '<button class="btn btn-sm vscode-btn" onclick="abrirVSCodePorURL(\'' + repoUrl.replace(/'/g, "\\'") + '\')" title="Abrir en Visual Studio Code"><i class="bi bi-windows me-1"></i>VS Code</button>';
+                    }
+
                     html += '<tr>' +
                         '<td><a href="/proyectos/' + p.deployment_id + '" class="text-light text-decoration-none">' + nombreDisplay + '</a></td>' +
                         '<td>' + estadoBadge + '</td>' +
@@ -1151,6 +1196,7 @@
                         '<td>' + azureBadge + '</td>' +
                         '<td><small class="text-muted">' + (p.duracion || '--') + '</small></td>' +
                         '<td><small class="text-muted">' + (detalle || '--') + '</small></td>' +
+                        '<td>' + vscodeBtn + '</td>' +
                         '</tr>';
                 });
                 tbody.innerHTML = html;

@@ -28,7 +28,11 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 
 from Hermes.Web.backend.event_broker import obtener_broker
-from Hermes.Web.backend.servicio_fabrica import _ahora
+from Hermes.Web.backend.servicio_fabrica import (
+    _ahora,
+    resolver_url_app_service,
+    resolver_url_repositorio,
+)
 
 logger = logging.getLogger("Hermes.Web.API.Fabrica")
 router = APIRouter()
@@ -161,7 +165,11 @@ async def historial_proyectos(request: Request, limit: int = 5):
                 "correlation_id": d.get("correlation_id", ""),
                 "repositorio": d.get("repositorio", ""),
                 "web_app_url": d.get("web_app_url", ""),
+                # Enlaces resueltos para la UI (hipervinculos del portal)
+                "app_service_url": resolver_url_app_service(d),
+                "github_repo_url": resolver_url_repositorio(d),
                 "web_app": d.get("web_app", ""),
+                "azure_hostname": d.get("azure_hostname", ""),
                 "azure_resource_exists": d.get("azure_resource_exists"),
                 "azure_resource_check_status": d.get("azure_resource_check_status", "NO_VERIFICADO"),
                 "azure_resource_checked_at": d.get("azure_resource_checked_at", ""),

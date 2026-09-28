@@ -142,6 +142,54 @@
             background: var(--hermes-danger);
             color: #fff;
         }
+        /* Hipervinculos del historial: proyecto -> App Service desplegado */
+        .proj-link {
+            color: #fff;
+            text-decoration: none;
+            border-bottom: 1px dotted rgba(13, 110, 253, 0.7);
+        }
+        .proj-link:hover {
+            color: #6ea8fe;
+            border-bottom-color: #6ea8fe;
+        }
+        .proj-ext-icon {
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
+        .proj-detail-icon {
+            color: var(--hermes-text-muted, #adb5bd);
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+            text-decoration: none;
+        }
+        .proj-detail-icon:hover {
+            color: #0d6efd;
+        }
+        .detalle-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.2rem;
+        }
+        .mini-link {
+            font-size: 0.68rem;
+            color: #6ea8fe;
+            text-decoration: none;
+            border: 1px solid rgba(110, 168, 254, 0.4);
+            border-radius: 0.25rem;
+            padding: 0.05rem 0.35rem;
+            white-space: nowrap;
+        }
+        .mini-link:hover {
+            background: rgba(110, 168, 254, 0.15);
+            color: #fff;
+        }
+        .azure-badge-link {
+            text-decoration: none;
+        }
+        .azure-badge-link:hover .badge {
+            outline: 1px solid rgba(255, 255, 255, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -1245,6 +1293,19 @@
         // Top 5 Historial - Actualizacion automatica
         // ══════════════════════════════════════════════════
 
+        // Auto-correccion de URLs por deployment (una verificacion Azure por sesion)
+        var autocorreccionAzure = {};
+
+        // Escapa valores antes de inyectarlos en HTML/atributos
+        function esc(valor) {
+            return String(valor === null || valor === undefined ? '' : valor)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         async function actualizarHistorial() {
             try {
                 // Actualizar timestamp de ultima actualizacion
@@ -1259,7 +1320,7 @@
                 const tbody = document.getElementById('historial-tbody');
                 if (!tbody) return;
                 if (data.proyectos.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="bi bi-folder-open me-1"></i>No hay proyectos registrados aun.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3"><i class="bi bi-folder-open me-1"></i>No hay proyectos registrados aun.</td></tr>';
                     return;
                 }
 
@@ -1320,17 +1381,69 @@
                     if (p.paso_final && !detalle) detalle = 'Paso: ' + p.paso_final;
                     if (detalle && detalle.length > 60) detalle = detalle.substring(0, 60) + '...';
 
-                    var nombreDisplay = p.nombre_proyecto;
-                    if (azureStatus === 'NO_EXISTE') nombreDisplay = '<span class="text-decoration-line-through text-muted">' + p.nombre_proyecto + '</span>';
-                    else nombreDisplay = '<strong>' + p.nombre_proyecto + '</strong>';
+                    // ── Enlaces operacionales del proyecto creado por la fabrica ──
+                    var did = p.deployment_id || '';
+                    var detalleUrl = did ? '/proyectos/' + did : '';
+                    // URL canonica: primero la persistida, luego el hostname real de Azure
+                    var appUrlCanonica = p.app_service_url || p.web_app_url || '';
+                    if (!appUrlCanonica && p.azure_hostname) appUrlCanonica = 'https://' + p.azure_hostname;
+                    // Fallback best-effort derivado del nombre del recurso
+                    var appUrl = appUrlCanonica || (p.web_app ? 'https://' + p.web_app + '.azurewebsites.net' : '');
+                    var repoSrc = p.github_repo_url || p.repository_url || '';
+                    var repoUrl = '';
+                    if (repoSrc && repoSrc !== 'https://github.com/.git') {
+                        repoUrl = repoSrc;
+                    } else if (p.repositorio && p.repositorio.indexOf('/') > 0) {
+                        repoUrl = 'https://github.com/' + p.repositorio;
+                    }
+                    var linkApp = !!appUrl && azureStatus !== 'NO_EXISTE';
 
-                    var repoUrl = p.repository_url || '';
-                    var vscodeBtn = '';
-                    if (repoUrl && repoUrl !== '' && repoUrl !== 'https://github.com/.git') {
-                        vscodeBtn = '<button class="btn btn-sm vscode-btn" onclick="abrirVSCodePorURL(\'' + repoUrl.replace(/'/g, "\\'") + '\')" title="Abrir en Visual Studio Code"><i class="bi bi-windows me-1"></i>VS Code</button>';
+                    // Auto-correccion: el App Service existe pero aun no hay URL
+                    // canonica -> se dispara UNA verificacion Azure (persiste el
+                    // defaultHostName real) y el siguiente polling ya pinta el enlace.
+                    if (azureStatus === 'EXISTE' && !appUrlCanonica && did && !autocorreccionAzure[did]) {
+                        autocorreccionAzure[did] = true;
+                        fetch('/api/fabrica/proyectos/' + did + '/azure-check', { method: 'POST' })
+                            .catch(function() {});
                     }
 
-                    var did = p.deployment_id || '';
+                    // Proyecto -> hipervinculo al App Service creado y desplegado
+                    var nombreInner = (azureStatus === 'NO_EXISTE')
+                        ? '<span class="text-decoration-line-through text-muted">' + p.nombre_proyecto + '</span>'
+                        : '<strong>' + p.nombre_proyecto + '</strong>';
+                    var nombreCell;
+                    if (linkApp) {
+                        nombreCell = '<a href="' + esc(appUrl) + '" target="_blank" rel="noopener" class="proj-link" title="Abrir el App Service desplegado: ' + esc(appUrl) + '">' + nombreInner + '<i class="bi bi-box-arrow-up-right ms-1 proj-ext-icon"></i></a>';
+                    } else {
+                        nombreCell = nombreInner;
+                    }
+                    if (detalleUrl) {
+                        nombreCell += '<a href="' + detalleUrl + '" class="proj-detail-icon" title="Ver detalle y trazabilidad del proyecto"><i class="bi bi-file-earmark-text"></i></a>';
+                    }
+
+                    // Badge de App Service clicable cuando el sitio existe
+                    var azureCell = azureBadge;
+                    if (linkApp) {
+                        azureCell = '<a href="' + esc(appUrl) + '" target="_blank" rel="noopener" class="azure-badge-link" title="Abrir ' + esc(appUrl) + '">' + azureBadge + '</a>';
+                    }
+
+                    // Detalle / Paso -> enlaces al sitio landing page y al GitHub
+                    var miniLinks = [];
+                    if (linkApp) {
+                        miniLinks.push('<a href="' + esc(appUrl) + '" target="_blank" rel="noopener" class="mini-link" title="Sitio landing page del proyecto creado por la fabrica"><i class="bi bi-globe2 me-1"></i>Sitio</a>');
+                    }
+                    if (repoUrl) {
+                        miniLinks.push('<a href="' + esc(repoUrl) + '" target="_blank" rel="noopener" class="mini-link" title="Repositorio GitHub del proyecto creado por la fabrica"><i class="bi bi-github me-1"></i>GitHub</a>');
+                    }
+                    var detalleCell = '<small class="text-muted">' + (detalle || '--') + '</small>';
+                    if (miniLinks.length) {
+                        detalleCell += '<div class="detalle-links">' + miniLinks.join('') + '</div>';
+                    }
+
+                    var vscodeBtn = '';
+                    if (repoUrl) {
+                        vscodeBtn = '<button class="btn btn-sm vscode-btn" onclick="abrirVSCodePorURL(\'' + repoUrl.replace(/'/g, "\\'") + '\')" title="Abrir en Visual Studio Code"><i class="bi bi-windows me-1"></i>VS Code</button>';
+                    }
                     var gestionBtn = '';
                     if (did && azureStatus !== 'NO_EXISTE') {
                         var nomArg = "'" + String(p.nombre_proyecto || did).replace(/'/g, "\\'") + "'";
@@ -1343,14 +1456,14 @@
                     if (!vscodeBtn && !gestionBtn) accionesCell = '<span class="text-muted small">--</span>';
 
                     html += '<tr>' +
-                        '<td><a href="/proyectos/' + p.deployment_id + '" class="text-light text-decoration-none">' + nombreDisplay + '</a></td>' +
+                        '<td>' + nombreCell + '</td>' +
                         '<td>' + estadoBadge + '</td>' +
                         '<td>' + resultadoBadge + '</td>' +
                         '<td>' + runtimeBadge + '</td>' +
                         '<td>' + githubBadge + '</td>' +
-                        '<td>' + azureBadge + '</td>' +
+                        '<td>' + azureCell + '</td>' +
                         '<td><small class="text-muted">' + (p.duracion || '--') + '</small></td>' +
-                        '<td><small class="text-muted">' + (detalle || '--') + '</small></td>' +
+                        '<td>' + detalleCell + '</td>' +
                         '<td>' + accionesCell + '</td>' +
                         '</tr>';
                 });

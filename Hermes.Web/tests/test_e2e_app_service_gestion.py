@@ -643,5 +643,133 @@ class TestAPIEndpointsGestion:
         assert "/api/fabrica/proyectos/{deployment_id}/eliminar-app" in paths
 
 
+# =====================================================================
+# Hipervinculos del proyecto en el portal y en la vista de detalle
+# =====================================================================
+
+class TestHipervinculosProyecto:
+    """Enlaces App Service / GitHub expuestos por el portal."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, clean_db):
+        global _instancia_servicio
+        self.svc = ServicioFabrica()
+        _instancia_servicio = self.svc
+        app.state.servicio_fabrica = self.svc
+        self.client = TestClient(app)
+
+    # ── resolucion de la URL del App Service ──
+
+    def test_url_prioriza_web_app_url_persistida(self):
+        from Hermes.Web.backend.servicio_fabrica import resolver_url_app_service
+        assert resolver_url_app_service({
+            "web_app_url": "https://as-real.azurewebsites.net",
+            "azure_hostname": "as-otro.azurewebsites.net",
+            "web_app": "as-otro",
+        }) == "https://as-real.azurewebsites.net"
+
+    def test_url_prefiere_hostname_real_de_azure(self):
+        """Azure normaliza el nombre (quita guiones): gana el defaultHostName."""
+        from Hermes.Web.backend.servicio_fabrica import resolver_url_app_service
+        assert resolver_url_app_service({
+            "web_app": "as-hermes-e2e-b5-004",
+            "azure_hostname": "as-hermese2eb5004.azurewebsites.net",
+        }) == "https://as-hermese2eb5004.azurewebsites.net"
+
+    def test_url_deriva_del_nombre_del_recurso(self):
+        from Hermes.Web.backend.servicio_fabrica import resolver_url_app_service
+        assert resolver_url_app_service({
+            "web_app": "as-crearproyectohijo",
+        }) == "https://as-crearproyectohijo.azurewebsites.net"
+
+    def test_url_vacia_sin_datos(self):
+        from Hermes.Web.backend.servicio_fabrica import resolver_url_app_service
+        assert resolver_url_app_service({}) == ""
+        assert resolver_url_app_service({"web_app_url": "   ", "web_app": ""}) == ""
+        assert resolver_url_app_service({"web_app_url": "https://ok.azurewebsites.net"}) \
+            == "https://ok.azurewebsites.net"
+
+    # ── resolucion de la URL GitHub ──
+
+    def test_repo_url_prioriza_url_completa(self):
+        from Hermes.Web.backend.servicio_fabrica import resolver_url_repositorio
+        assert resolver_url_repositorio({
+            "repository_url": "https://github.com/FREDYASARMIENTOT/crearproyectohijo",
+            "repositorio": "FREDYASARMIENTOT/otro",
+        }) == "https://github.com/FREDYASARMIENTOT/crearproyectohijo"
+
+    def test_repo_url_deriva_del_slug(self):
+        from Hermes.Web.backend.servicio_fabrica import resolver_url_repositorio
+        assert resolver_url_repositorio({
+            "repository_url": "https://github.com/.git",
+            "repositorio": "FREDYASARMIENTOT/hermes-e2e-b5-004",
+        }) == "https://github.com/FREDYASARMIENTOT/hermes-e2e-b5-004"
+
+    def test_repo_url_vacia_sin_datos(self):
+        from Hermes.Web.backend.servicio_fabrica import resolver_url_repositorio
+        assert resolver_url_repositorio({}) == ""
+        assert resolver_url_repositorio({"repositorio": "sin-slash"}) == ""
+
+    # ── exposicion en las APIs ──
+
+    def test_a_dict_expone_enlaces_resueltos(self):
+        """a_dict() incluye app_service_url y github_repo_url para la UI."""
+        sol = self.svc.crear_solicitud("hermes-links-dict",
+                                       descripcion="Links",
+                                       app_service_plan_id=_ASP_VALIDO)
+        sol.azure_hostname = "as-hermeslinksdict.azurewebsites.net"
+        self.svc._guardar(sol)
+        d = self.svc.obtener_solicitud(sol.deployment_id).a_dict()
+        assert d["app_service_url"] == "https://as-hermeslinksdict.azurewebsites.net"
+        assert d["github_repo_url"] == \
+            "https://github.com/FREDYASARMIENTOT/hermes-links-dict"
+
+    def test_historial_expone_enlaces_resueltos(self):
+        """GET /historial devuelve app_service_url y github_repo_url."""
+        r = self.client.post("/api/fabrica/proyectos",
+                             json={"nombre_proyecto": "hermes-links-hist",
+                                   "app_service_plan_id": _ASP_VALIDO})
+        did = r.json()["deployment_id"]
+        rh = self.client.get("/api/fabrica/proyectos/historial?limit=5")
+        assert rh.status_code == 200
+        item = next(p for p in rh.json()["proyectos"] if p["deployment_id"] == did)
+        assert item["app_service_url"] == \
+            "https://as-hermes-links-hist.azurewebsites.net"
+        assert item["github_repo_url"].startswith("https://github.com/")
+        assert "azure_hostname" in item and "web_app_url" in item
+
+    def test_historial_no_expone_secretos_con_enlaces(self):
+        self.client.post("/api/fabrica/proyectos",
+                         json={"nombre_proyecto": "hermes-links-sec",
+                               "app_service_plan_id": _ASP_VALIDO})
+        t = json.dumps(self.client.get(
+            "/api/fabrica/proyectos/historial?limit=5").json()).lower()
+        for s in ["ghp_", "gho_", "pat_", "bearer", "authorization"]:
+            assert s not in t
+
+    # ── tokens de UI ──
+
+    def test_portal_index_enlaza_app_service(self):
+        """index.html convierte el proyecto en hipervinculo al App Service."""
+        html = Path(_PROJECT_ROOT, "Hermes.Web", "templates",
+                    "index.html").read_text(encoding="utf-8")
+        for token in ["app_service_url", "github_repo_url", "appUrlCanonica",
+                      "proj-link", "proj-detail-icon", "azure-badge-link",
+                      "detalle-links", "mini-link", "rel=\"noopener\"",
+                      "/azure-check", "autocorreccionAzure", "function esc("]:
+            assert token in html, f"Falta: {token}"
+        assert "bi-globe2 me-1\"></i>Sitio</a>" in html
+
+    def test_proyecto_detalle_enlaza_app_service_y_github(self):
+        """proyecto.html muestra el enlace del proyecto, del sitio y del GitHub."""
+        html = Path(_PROJECT_ROOT, "Hermes.Web", "templates",
+                    "proyecto.html").read_text(encoding="utf-8")
+        for token in ["proj-sitio", "proj-github", "proj-app-service",
+                      "resolverAppUrl", "resolverRepoUrl", "setEnlace",
+                      "enlace-proyecto", "Sitio / Landing Page",
+                      "GitHub Proyecto"]:
+            assert token in html, f"Falta: {token}"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

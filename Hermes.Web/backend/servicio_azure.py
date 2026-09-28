@@ -21,6 +21,7 @@ Seguridad:
 
 import os
 import json
+import time
 import logging
 from typing import Optional, Dict, Any, List
 
@@ -32,6 +33,10 @@ RESOURCE_GROUP_AUTORIZADO = "RG-Hermes-Proyectos"
 TIPO_RECURSO = "Microsoft.Web/serverfarms"
 API_VERSION = "2023-01-01"
 ARM_ENDPOINT = "https://management.azure.com"
+# TTL de la cache negativa de token: evita repetir la cadena completa de
+# DefaultAzureCredential (hasta ~7s) en cada operacion cuando Managed Identity
+# o Azure CLI no estan disponibles. Un fallo transitorio se reintenta tras el TTL.
+TOKEN_ERROR_TTL_SEGUNDOS = 30
 class ServicioAzure:
     """Servicio de consulta a Azure ARM REST API."""
 
@@ -39,6 +44,7 @@ class ServicioAzure:
         self._credential_disponible = False
         self._credential = None
         self._httpx_disponible = False
+        self._token_error_desde: Optional[float] = None
         try:
             import httpx
             self._httpx = httpx
@@ -68,14 +74,22 @@ class ServicioAzure:
             return False
 
     def _obtener_token(self) -> Optional[str]:
-        """Obtiene token de acceso para ARM."""
+        """Obtiene token de acceso para ARM (con cache negativa de fallos)."""
+        if self._token_error_desde is not None:
+            if (time.time() - self._token_error_desde) < TOKEN_ERROR_TTL_SEGUNDOS:
+                return None
         if not self._obtener_credential():
             return None
         try:
             token = self._credential.get_token(f"{ARM_ENDPOINT}/.default")
+            self._token_error_desde = None
             return token.token
         except Exception as e:
-            logger.error(f"Error obteniendo token Azure: {e}")
+            self._token_error_desde = time.time()
+            logger.error(
+                f"Error obteniendo token Azure (reintento en "
+                f"{TOKEN_ERROR_TTL_SEGUNDOS}s): {e}"
+            )
             return None
 
     # ─── Detener Web App ───

@@ -758,3 +758,20 @@ class TestFrontendFeatures:
         assert "detener-app" in c
         assert "eliminar-app" in c
         assert "gestionModal" in c
+
+    def test_historial_hipervinculos_app_service_y_github(self):
+        """Cada fila del historial enlaza al App Service y al GitHub del proyecto."""
+        c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read()
+        for t in ["app_service_url", "github_repo_url", "appUrlCanonica",
+                  "proj-link", "proj-detail-icon", "azure-badge-link",
+                  "detalle-links", "mini-link", "rel=\"noopener\"",
+                  "/azure-check", "autocorreccionAzure", "function esc("]:
+            assert t in c, f"Falta: {t}"
+
+    def test_proyecto_detalle_hipervinculos(self):
+        """El detalle del proyecto expone el sitio (landing page) y el GitHub."""
+        c = open(_HERMES_WEB_DIR / "templates" / "proyecto.html", encoding="utf-8").read()
+        for t in ["proj-sitio", "proj-github", "proj-app-service",
+                  "resolverAppUrl", "resolverRepoUrl", "setEnlace",
+                  "enlace-proyecto", "Sitio / Landing Page"]:
+            assert t in c, f"Falta: {t}"

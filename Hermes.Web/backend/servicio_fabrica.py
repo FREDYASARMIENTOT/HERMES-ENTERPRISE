@@ -86,6 +86,55 @@ def _ruta_db_por_defecto() -> str:
     return str(ruta_data / "proyecto.db")
 
 
+def resolver_url_app_service(datos: Dict[str, Any]) -> str:
+    """
+    Resuelve la URL publica del App Service (sitio landing page) del proyecto hijo.
+
+    Orden de precedencia (fuente mas confiable primero):
+        1. web_app_url     -> URL canonica persistida por el Control Plane.
+        2. azure_hostname  -> defaultHostName real reportado por Azure ARM
+                              (Azure normaliza el nombre quitando guiones, por lo
+                              que es la unica fuente fiable para nombres largos).
+        3. https://{web_app}.azurewebsites.net -> derivacion best-effort.
+
+    Devuelve "" cuando no hay informacion suficiente para construir un enlace.
+    """
+    url = str(datos.get("web_app_url") or "").strip()
+    if url:
+        return url if url.startswith("http") else f"https://{url}"
+
+    hostname = str(datos.get("azure_hostname") or "").strip()
+    if hostname:
+        return hostname if hostname.startswith("http") else f"https://{hostname}"
+
+    web_app = str(datos.get("web_app") or "").strip()
+    if web_app:
+        return f"https://{web_app}.azurewebsites.net"
+
+    return ""
+
+
+def resolver_url_repositorio(datos: Dict[str, Any]) -> str:
+    """
+    Resuelve la URL del repositorio GitHub del proyecto creado por la fabrica.
+
+    Orden de precedencia:
+        1. repository_url -> URL completa persistida por la trazabilidad GitHub.
+        2. repositorio    -> slug "owner/repo" -> https://github.com/owner/repo
+
+    Devuelve "" cuando no hay informacion suficiente.
+    """
+    url = str(datos.get("repository_url") or "").strip()
+    if url and url != "https://github.com/.git":
+        return url
+
+    slug = str(datos.get("repositorio") or "").strip().strip("/")
+    if slug and "/" in slug:
+        return f"https://github.com/{slug}"
+
+    return ""
+
+
 # ═══════════════════════════════════════════════════════════════
 # Clase SolicitudProyecto
 # ═══════════════════════════════════════════════════════════════
@@ -272,7 +321,7 @@ class SolicitudProyecto:
             except (ValueError, TypeError):
                 duracion = 0
 
-        return {
+        datos = {
             "id": self.id, "nombre_proyecto": self.nombre_proyecto,
             "descripcion": self.descripcion, "repositorio": self.repositorio,
             "web_app": self.web_app, "web_app_url": self.web_app_url,
@@ -361,6 +410,12 @@ class SolicitudProyecto:
             "fecha_fin": self.fecha_fin,
             "duracion_total_segundos": duracion
         }
+        # Enlaces resueltos para el portal y la vista de detalle:
+        #   app_service_url -> sitio landing page del proyecto creado/desplegado
+        #   github_repo_url -> repositorio GitHub creado por la fabrica
+        datos["app_service_url"] = resolver_url_app_service(datos)
+        datos["github_repo_url"] = resolver_url_repositorio(datos)
+        return datos
 
     @classmethod
     def desde_dict(cls, datos: Dict[str, Any]) -> "SolicitudProyecto":
@@ -822,6 +877,8 @@ class ServicioFabrica:
     ) -> bool:
         """Actualiza los campos de reconciliacion Azure en BD."""
         try:
+            hostname = str(resultado_azure.get("hostname") or "").strip()
+            web_app_url = f"https://{hostname}" if hostname else ""
             conn = sqlite3.connect(self.ruta_db)
             cursor = conn.cursor()
             cursor.execute("""
@@ -830,14 +887,17 @@ class ServicioFabrica:
                     azure_resource_check_status = ?,
                     azure_resource_checked_at = ?,
                     azure_resource_check_error = ?,
-                    azure_hostname = ?
+                    azure_hostname = ?,
+                    web_app_url = CASE WHEN ? <> '' THEN ? ELSE web_app_url END
                 WHERE deployment_id = ?
             """, (
                 resultado_azure.get("exists"),
                 resultado_azure.get("status", "NO_VERIFICADO"),
                 resultado_azure.get("checked_at", ""),
                 resultado_azure.get("error", ""),
-                resultado_azure.get("hostname", ""),
+                hostname,
+                web_app_url,
+                web_app_url,
                 deployment_id
             ))
             conn.commit()

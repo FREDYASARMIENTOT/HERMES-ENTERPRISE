@@ -34,6 +34,9 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 .trace-table tr:hover{background:rgba(255,255,255,0.03)}
 .vscode-btn{background:#007acc;color:#fff;border:none}
 .vscode-btn:hover{background:#005a9e;color:#fff}
+/* Hipervinculos del proyecto creado por la fabrica */
+.enlace-proyecto{color:#6ea8fe;border-bottom:1px dotted rgba(110,168,254,.6);font-size:.75rem;word-break:break-all}
+.enlace-proyecto:hover{color:#fff;border-bottom-color:#fff}
 .result-pass{color:var(--hermes-success)}
 .result-fail{color:var(--hermes-danger)}
 .result-pending{color:var(--hermes-warning)}
@@ -134,6 +137,8 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 <tr><td class="text-muted">Resultado</td><td class="text-end" id="proj-resultado">&mdash;</td></tr>
 <tr><td class="text-muted">Commit SHA</td><td class="text-end" id="proj-commit-sha" style="font-family:monospace;font-size:.75rem">&mdash;</td></tr>
 <tr><td class="text-muted">Repositorio</td><td class="text-end" id="proj-repositorio" style="font-size:.75rem">&mdash;</td></tr>
+<tr><td class="text-muted">Sitio (Landing Page)</td><td class="text-end" id="proj-sitio" style="font-size:.75rem">&mdash;</td></tr>
+<tr><td class="text-muted">App Service</td><td class="text-end" id="proj-app-service" style="font-size:.75rem">&mdash;</td></tr>
 <tr><td class="text-muted">Visibilidad</td><td class="text-end" id="proj-visibilidad">&mdash;</td></tr>
 </table></div>
 <div class="col-md-6"><table class="table table-borderless trace-table mb-0 small">
@@ -141,6 +146,7 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 <tr><td class="text-muted">Fin</td><td class="text-end" id="proj-fin">&mdash;</td></tr>
 <tr><td class="text-muted">Duraci&oacute;n total</td><td class="text-end" id="proj-duracion">&mdash;</td></tr>
 <tr><td class="text-muted">Actualizaci&oacute;n</td><td class="text-end" id="proj-actualizacion">&mdash;</td></tr>
+<tr><td class="text-muted">GitHub Proyecto</td><td class="text-end" id="proj-github" style="font-size:.75rem">&mdash;</td></tr>
 </table></div>
 </div></div></div>
 <!-- Validation Results Card -->
@@ -338,13 +344,13 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 </div>
 </div></div>
 <div class="card-body"><div class="row g-2" id="links-container">
-<div class="col-md-4 col-6"><a id="link-repo" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-github me-1"></i>GitHub Repository</a></div>
+<div class="col-md-4 col-6"><a id="link-repo" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none" title="Repositorio GitHub creado por la fabrica"><i class="bi bi-github me-1"></i>GitHub Proyecto</a></div>
 <div class="col-md-4 col-6"><a id="link-commit" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-git-commit me-1"></i>Commit</a></div>
 <div class="col-md-4 col-6"><a id="link-factory-run" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-gear me-1"></i>Factory Run</a></div>
 <div class="col-md-4 col-6"><a id="link-child-ci" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-github me-1"></i>Child CI</a></div>
 <div class="col-md-4 col-6"><a id="link-control-plane" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-diagram-3 me-1"></i>Control Plane</a></div>
 <div class="col-md-4 col-6"><a id="link-azure-plan" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-microsoft me-1"></i>Azure Portal</a></div>
-<div class="col-md-4 col-6"><a id="link-webapp" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-globe me-1"></i>Azure Web App</a></div>
+<div class="col-md-4 col-6"><a id="link-webapp" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none" title="Sitio landing page del proyecto creado y desplegado"><i class="bi bi-globe me-1"></i>Sitio / Landing Page</a></div>
 <div class="col-md-4 col-6"><a id="link-health" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-heart-pulse me-1"></i>Health</a></div>
 <div class="col-md-4 col-6"><a id="link-openapi" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-file-earmark-code me-1"></i>OpenAPI</a></div>
 <div class="col-md-4 col-6"><a id="link-docs" href="#" target="_blank" class="btn btn-sm btn-outline-secondary w-100 d-none"><i class="bi bi-book me-1"></i>Docs</a></div>
@@ -408,6 +414,15 @@ document.getElementById('proj-cid').textContent=data.correlation_id||'---';
 document.getElementById('proj-resultado').textContent=data.resultado||'---';
 document.getElementById('proj-commit-sha').textContent=data.commit_sha||'---';
 document.getElementById('proj-repositorio').textContent=data.repository_url||'---';
+// Hipervinculos del proyecto creado por la fabrica (App Service + GitHub)
+var appUrl=resolverAppUrl(data);
+var repoUrl=resolverRepoUrl(data);
+setEnlace('proj-name',appUrl,data.nombre_proyecto||'---');
+setEnlace('proj-repositorio',repoUrl,data.repository_url||data.repositorio||'---');
+setEnlace('proj-sitio',appUrl,appUrl);
+setEnlace('proj-github',repoUrl,data.github_repository||repoUrl);
+var asEl=document.getElementById('proj-app-service');
+if(asEl){asEl.textContent=(data.web_app||data.azure_hostname||'---')+(data.azure_state?' ['+data.azure_state+']':'')+(data.azure_hostname&&data.web_app?' | '+data.azure_hostname:'');}
 document.getElementById('proj-visibilidad').textContent=data.visibility||'---';
 // Populate validation results
 function setValBadge(id,val){var e=document.getElementById(id);if(!e)return;if(!val||val===''){e.textContent='---';e.className='counter-value result-pending';return;}
@@ -820,7 +835,11 @@ function verificarRuntimeAhora() {
         });
 }
 
-function renderLinks(data){var cfgs=[{id:'link-repo',url:data.repository_url},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:data.web_app_url},{id:'link-health',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:data.web_app_url?data.web_app_url.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=data.repository_url||''}
+function resolverAppUrl(data){var u=data.app_service_url||data.web_app_url||'';if(!u&&data.azure_hostname)u='https://'+data.azure_hostname;if(!u&&data.web_app)u='https://'+data.web_app+'.azurewebsites.net';return u}
+function resolverRepoUrl(data){var u=data.github_repo_url||data.repository_url||'';if(u&&u!=='https://github.com/.git')return u;var s=data.repositorio||'';return s.indexOf('/')>0?'https://github.com/'+s:''}
+function setEnlace(id,url,texto){var e=document.getElementById(id);if(!e)return;e.textContent='';if(!url){e.textContent=texto||'---';return}
+var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.className='text-decoration-none enlace-proyecto';a.title='Abrir '+url;a.textContent=texto||url;e.appendChild(a);e.title=url}
+function renderLinks(data){var appUrl=resolverAppUrl(data);var repoUrl=resolverRepoUrl(data);var cfgs=[{id:'link-repo',url:repoUrl},{id:'link-commit',url:data.commit_url},{id:'link-factory-run',url:data.factory_run_url},{id:'link-child-ci',url:data.child_ci_url},{id:'link-control-plane',url:data.control_plane_url},{id:'link-azure-plan',url:data.app_service_plan_id?'https://portal.azure.com/#resource/'+data.app_service_plan_id:null},{id:'link-webapp',url:appUrl},{id:'link-health',url:appUrl?appUrl.replace(/\/+$/,'')+'/health':null},{id:'link-openapi',url:appUrl?appUrl.replace(/\/+$/,'')+'/openapi.json':null},{id:'link-docs',url:appUrl?appUrl.replace(/\/+$/,'')+'/docs':null}];for(var i=0;i<cfgs.length;i++){var e=document.getElementById(cfgs[i].id);if(e&&cfgs[i].url){e.href=cfgs[i].url;e.title='Abrir '+cfgs[i].url;e.classList.remove('d-none')}}window._repoCloneUrl=repoUrl}
 function verJSON(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/json','_blank')}
 function verMarkdown(){window.open('/api/fabrica/proyectos/'+deploymentId+'/trace/md','_blank')}
 function descargarJSON(){var a=document.createElement('a');a.href='/api/fabrica/proyectos/'+deploymentId+'/trace/json';a.download='deployment-trace-'+deploymentId+'.json';a.click()}

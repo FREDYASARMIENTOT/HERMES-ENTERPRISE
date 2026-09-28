@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Sprint History
+- A.38: Portal — Hipervínculos App Service + GitHub del proyecto hijo (COMPLETED)
 - A.37: Portal — Gestión App Service (Iniciar/Detener/Eliminar) + RBAC Website Contributor (COMPLETED)
 - A.35: RC77-C4 — Adversarial E2E Validation & Startup Fix (COMPLETED)
 - A.36: RC77-C5 — Harden Hermes App Service E2E Deployment (COMPLETED)
@@ -39,6 +40,21 @@
 | `detener-app` sobre `as-crearproyectohijo` | `DETENIDO` (200) | `Stopped` |
 | `iniciar-app` sobre `as-crearproyectohijo` | `INICIADO` (200) | `Running` |
 | `eliminar-app` (proyecto ya eliminado) | `ELIMINADO` (204) | idempotente |
+### A.38 — Portal: Hipervínculos del proyecto hijo (App Service + GitHub) (2026-09-28)
+
+> **Status:** ✅ COMPLETED
+
+**Entregado**
+- `Hermes.Web/backend/servicio_fabrica.py` — helpers de dominio `resolver_url_app_service()` y `resolver_url_repositorio()` (fuente única de verdad de los enlaces); `a_dict()` expone `app_service_url` y `github_repo_url`; `_actualizar_estado_azure_en_bd()` persiste `web_app_url` (`https://{defaultHostName}`) sin sobrescribir una URL válida cuando Azure no reporta hostname.
+- `Hermes.Web/api/api_fabrica.py` — `GET /api/fabrica/proyectos/historial` devuelve `app_service_url`, `github_repo_url` y `azure_hostname`.
+- `Hermes.Web/templates/index.html` — en la tabla "Últimas 5 Creaciones de Proyectos Hijos": el **nombre del proyecto** es hipervínculo al App Service desplegado, el badge **App Service** es clicable y **Detalle / Paso** incluye los enlaces *Sitio* (landing page) y *GitHub*; icono de acceso al detalle de trazabilidad; auto-corrección de la URL vía `POST /azure-check` (una vez por sesión) cuando el recurso existe pero el `defaultHostName` aún no estaba persistido; helper `esc()` para escapar valores inyectados en HTML.
+- `Hermes.Web/templates/proyecto.html` — filas **Sitio (Landing Page)**, **App Service** y **GitHub Proyecto** con hipervínculos; `renderLinks()` usa la URL resuelta (antes los botones *Sitio / Health / OpenAPI / Docs* quedaban ocultos si `web_app_url` estaba vacío).
+- `Hermes.Web/backend/servicio_azure.py` — caché negativa (30 s) de fallo de token ARM: evita repetir la cadena de `DefaultAzureCredential` (~7–13 s) en cada operación cuando Managed Identity no está disponible.
+- Tests: `TestHipervinculosProyecto` (12 casos) en `test_e2e_app_service_gestion.py` + 2 casos de tokens de UI en `test_portal_canonico.py`.
+
+**Nota de arquitectura**
+- El hostname real lo reporta Azure (`properties.defaultHostName`) y Azure normaliza el nombre del recurso (p. ej. `as-hermes-e2e-b5-004` → `as-hermese2eb5004.azurewebsites.net`); por eso la URL se resuelve con precedencia `web_app_url` → `azure_hostname` → derivación del nombre del recurso.
+
 ### RC77-C4 — Adversarial E2E Validation & Startup Fix (2026-09-03)
 ### RC77-C5 — Harden Hermes App Service E2E Deployment (2026-09-03)
 

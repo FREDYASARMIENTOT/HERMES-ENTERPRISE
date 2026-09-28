@@ -35,7 +35,7 @@ document.getElementById('proj-actualizacion').textContent=formatTS(data.fecha_ac
 document.getElementById('total-duration-display').textContent=data.duracion_total_segundos?formatDuration(data.duracion_total_segundos):'---';
 if(data.fecha_solicitud&&['COMPLETADO','FALLIDO'].indexOf(est)<0){var st=new Date(data.fecha_solicitud);var elp=Math.floor((Date.now()-st.getTime())/1000);document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: '+formatDuration(elp)}
 else{document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: ---';}
-renderTimeline(pasos);renderLinks(data);actualizarFiltros();}
+renderTimeline(pasos);renderLinks(data);consoleUpdateFilters();}
 """
 
 with open('tools/build_js2.pkl', 'w', encoding='utf-8') as f:

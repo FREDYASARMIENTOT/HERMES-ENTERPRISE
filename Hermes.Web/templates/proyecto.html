@@ -416,7 +416,7 @@ document.getElementById('proj-actualizacion').textContent=formatTS(data.fecha_ac
 document.getElementById('total-duration-display').textContent=data.duracion_total_segundos?formatDuration(data.duracion_total_segundos):'---';
 if(data.fecha_solicitud&&['COMPLETADO','FALLIDO'].indexOf(est)<0){var st=new Date(data.fecha_solicitud);var elp=Math.floor((Date.now()-st.getTime())/1000);document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: '+formatDuration(elp)}
 else{document.getElementById('elapsed-time-text').textContent='Tiempo transcurrido: ---';}
-renderTimeline(pasos);renderLinks(data);actualizarFiltros();}
+renderTimeline(pasos);renderLinks(data);consoleUpdateFilters();}
 function renderTimeline(pasos){var con=document.getElementById('timeline-container');con.innerHTML='';
 if(!pasos||pasos.length===0){con.innerHTML='<div class="text-center text-muted py-3">No hay pasos registrados.</div>';return;}
 var pn={1:'SOLICITUD',2:'FACTORY',3:'GITHUB',4:'CI CHILD',5:'CONTROL PLANE',6:'AUTENTICACI\u00d3N',7:'AZURE',8:'DEPLOY',9:'READINESS',10:'PRUEBAS FUNC.',11:'EVIDENCIA',12:'PUBLICACI\u00d3N',13:'NAVEGADOR'};

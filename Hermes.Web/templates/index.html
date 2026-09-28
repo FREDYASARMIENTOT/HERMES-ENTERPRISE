@@ -1398,10 +1398,11 @@
                     }
                     var linkApp = !!appUrl && azureStatus !== 'NO_EXISTE';
 
-                    // Auto-correccion: el App Service existe pero aun no hay URL
-                    // canonica -> se dispara UNA verificacion Azure (persiste el
+                    // Auto-correccion: el recurso no esta verificado (o existe pero aun no hay
+                    // URL canonica) -> se dispara UNA verificacion Azure (persiste el
                     // defaultHostName real) y el siguiente polling ya pinta el enlace.
-                    if (azureStatus === 'EXISTE' && !appUrlCanonica && did && !autocorreccionAzure[did]) {
+                    var requiereVerificacionAzure = (azureStatus !== 'EXISTE') || !appUrlCanonica;
+                    if (azureStatus !== 'NO_EXISTE' && did && requiereVerificacionAzure && !autocorreccionAzure[did]) {
                         autocorreccionAzure[did] = true;
                         fetch('/api/fabrica/proyectos/' + did + '/azure-check', { method: 'POST' })
                             .catch(function() {});

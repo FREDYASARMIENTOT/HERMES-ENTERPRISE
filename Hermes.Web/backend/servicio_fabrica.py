@@ -1004,6 +1004,69 @@ class ServicioFabrica:
             }),
             evidencia=json.dumps({"azure_stop_result": resultado}),
         )
+
+        if resultado.get("exito"):
+            self._actualizar_estado_azure_en_bd(deployment_id, {
+                "exists": True, "status": "EXISTE", "checked_at": _ahora(),
+                "error": "", "hostname": solicitud.azure_hostname,
+            })
+
+        return resultado
+
+    def iniciar_app_service(self, deployment_id: str) -> Dict[str, Any]:
+        """
+        Inicia el App Service asociado a un deployment via Azure ARM.
+        Registra evento de auditoria en la bitacora.
+        """
+        solicitud = self.obtener_solicitud(deployment_id)
+        if not solicitud:
+            return {"deployment_id": deployment_id, "error": "Deployment no encontrado",
+                    "status": "NO_VERIFICADO", "exito": False}
+
+        web_app_name = solicitud.web_app
+        if not web_app_name:
+            return {"deployment_id": deployment_id, "error": "No hay Web App asociado",
+                    "status": "NO_VERIFICADO", "exito": False}
+
+        resource_group = solicitud.web_app_resource_group or "RG-Hermes-Proyectos"
+        subscription_id = solicitud.app_service_plan_subscription or "01bfad48-c092-4712-bc72-f141eb01a8d4"
+
+        from Hermes.Web.backend.servicio_azure import obtener_servicio_azure
+        servicio_azure = obtener_servicio_azure()
+
+        resultado = servicio_azure.iniciar_web_app(
+            web_app_name=web_app_name,
+            resource_group=resource_group,
+            subscription_id=subscription_id,
+        )
+
+        resultado["deployment_id"] = deployment_id
+        resultado["project_name"] = solicitud.nombre_proyecto
+        resultado["web_app_name"] = web_app_name
+
+        self._registrar_evento(
+            deployment_id=deployment_id, correlation_id=solicitud.correlation_id,
+            fase="GESTION", componente="AZURE",
+            tipo="INFO" if resultado.get("exito") else "ERROR",
+            mensaje=(
+                f"App Service {web_app_name} iniciado exitosamente"
+                if resultado.get("exito")
+                else f"Error iniciando App Service {web_app_name}: {resultado.get('error', '')}"
+            ),
+            detalle=json.dumps({
+                "accion": "INICIAR", "web_app": web_app_name,
+                "status": resultado.get("status", "?"),
+                "exito": resultado.get("exito", False),
+            }),
+            evidencia=json.dumps({"azure_start_result": resultado}),
+        )
+
+        if resultado.get("exito"):
+            self._actualizar_estado_azure_en_bd(deployment_id, {
+                "exists": True, "status": "EXISTE", "checked_at": _ahora(),
+                "error": "", "hostname": solicitud.azure_hostname,
+            })
+
         return resultado
 
     def eliminar_app_service(self, deployment_id: str) -> Dict[str, Any]:
@@ -1053,6 +1116,13 @@ class ServicioFabrica:
             }),
             evidencia=json.dumps({"azure_delete_result": resultado}),
         )
+
+        if resultado.get("exito"):
+            self._actualizar_estado_azure_en_bd(deployment_id, {
+                "exists": False, "status": "NO_EXISTE", "checked_at": _ahora(),
+                "error": "", "hostname": "",
+            })
+
         return resultado
 
     def verificar_y_actualizar_estado_github(

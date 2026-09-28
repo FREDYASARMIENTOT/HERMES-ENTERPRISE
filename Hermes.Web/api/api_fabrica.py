@@ -12,6 +12,7 @@ Endpoints:
     POST   /api/fabrica/proyectos/{id}/disparar -> Disparar Factory Runner remoto (GitHub Actions)
     POST   /api/fabrica/proyectos/{id}/paso     -> Actualizar paso (Control Plane)
     POST   /api/fabrica/proyectos/{id}/finalizar -> Finalizar solicitud
+    POST   /api/fabrica/proyectos/{id}/iniciar-app -> Iniciar App Service (Azure)
     POST   /api/fabrica/proyectos/{id}/detener-app -> Detener App Service (Azure)
     POST   /api/fabrica/proyectos/{id}/eliminar-app -> Eliminar App Service (Azure)
 ====================================================================
@@ -257,6 +258,18 @@ async def runtime_check_proyecto(request: Request, deployment_id: str):
     except Exception as e:
         logger.error(f"Error verificando Runtime: {e}")
         return {"error": str(e)}
+
+@router.post("/fabrica/proyectos/{deployment_id}/iniciar-app",
+             summary="Iniciar App Service del proyecto")
+async def iniciar_app_service(request: Request, deployment_id: str):
+    """Inicia (start) el App Service de Azure asociado al proyecto via ARM REST API."""
+    try:
+        servicio = request.app.state.servicio_fabrica
+        resultado = servicio.iniciar_app_service(deployment_id)
+        return resultado
+    except Exception as e:
+        logger.error(f"Error iniciando App Service {deployment_id}: {e}")
+        return {"error": str(e), "exito": False, "deployment_id": deployment_id}
 
 @router.post("/fabrica/proyectos/{deployment_id}/detener-app",
              summary="Detener App Service del proyecto")

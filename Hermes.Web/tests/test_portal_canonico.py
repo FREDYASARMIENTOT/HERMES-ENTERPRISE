@@ -746,3 +746,15 @@ class TestFrontendFeatures:
         for s in ["ghp_", "gho_", "pat_", "authorization"]:
             assert s not in c
 
+    def test_historial_botones_gestion_app_service(self):
+        """La tabla de historial permite gestionar el App Service (iniciar/detener/eliminar)."""
+        c = open(_HERMES_WEB_DIR / "templates" / "index.html", encoding="utf-8").read()
+        assert "confirmarGestionAppService" in c
+        assert "ejecutarGestionAppService" in c
+        assert "btn-iniciar" in c
+        assert "btn-detener" in c
+        assert "btn-eliminar" in c
+        assert "iniciar-app" in c
+        assert "detener-app" in c
+        assert "eliminar-app" in c
+        assert "gestionModal" in c

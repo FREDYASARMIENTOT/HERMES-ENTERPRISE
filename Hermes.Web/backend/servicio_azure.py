@@ -138,6 +138,66 @@ class ServicioAzure:
             logger.error(resultado["error"])
         return resultado
 
+    # ─── Iniciar Web App ───
+
+    def iniciar_web_app(
+        self,
+        web_app_name: str,
+        resource_group: str = RESOURCE_GROUP_AUTORIZADO,
+        subscription_id: str = SUBSCRIPTION_AUTORIZADA,
+    ) -> Dict[str, Any]:
+        """
+        Inicia (start) un Web App de Azure via ARM REST API.
+        """
+        resultado: Dict[str, Any] = {
+            "exito": False, "status": "NO_VERIFICADO",
+            "error": "", "web_app_name": web_app_name,
+        }
+        token = self._obtener_token()
+        if not token:
+            resultado["error"] = "No se pudo obtener token de Azure"
+            resultado["status"] = "ERROR_TOKEN"
+            return resultado
+        if not self._httpx_disponible:
+            resultado["error"] = "httpx no disponible"
+            resultado["status"] = "ERROR_LIBRERIA"
+            return resultado
+        url = (
+            f"{ARM_ENDPOINT}/subscriptions/{subscription_id}/"
+            f"resourceGroups/{resource_group}/"
+            f"providers/Microsoft.Web/sites/{web_app_name}/start"
+            f"?api-version={API_VERSION}"
+        )
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        try:
+            respuesta = self._httpx.post(url, headers=headers, timeout=30.0)
+            resultado["status_code"] = respuesta.status_code
+            if respuesta.status_code in (200, 202, 204):
+                resultado["exito"] = True
+                resultado["status"] = "INICIADO"
+                logger.info(f"Web App {web_app_name} iniciado (HTTP {respuesta.status_code})")
+            elif respuesta.status_code == 404:
+                resultado["status"] = "NO_EXISTE"
+                resultado["error"] = f"Web App {web_app_name} no existe en Azure"
+            elif respuesta.status_code == 403:
+                resultado["status"] = "ERROR_PERMISOS"
+                resultado["error"] = f"Azure ARM 403 para iniciar {web_app_name}"
+            else:
+                resultado["status"] = "ERROR_AZURE"
+                resultado["error"] = f"Azure ARM {respuesta.status_code} para start de {web_app_name}"
+        except self._httpx.TimeoutException:
+            resultado["status"] = "ERROR_CONEXION"
+            resultado["error"] = f"Timeout iniciando Web App {web_app_name} (30s)"
+        except self._httpx.ConnectError as e:
+            resultado["status"] = "ERROR_CONEXION"
+            resultado["error"] = f"Error conexion iniciar {web_app_name}: {str(e)[:200]}"
+        except Exception as e:
+            resultado["status"] = "ERROR_AZURE"
+            resultado["error"] = f"Error interno iniciando {web_app_name}: {str(e)[:300]}"
+        if resultado.get("error"):
+            logger.error(resultado["error"])
+        return resultado
+
     # ─── Eliminar Web App ───
 
     def eliminar_web_app(

@@ -213,6 +213,8 @@ class TestE2EAppServiceGestion:
         assert md.call_args.kwargs.get("web_app_name") == _PREFIX_WEBAPP
         evts = svc.obtener_eventos(did)
         assert any("DETENER" in json.dumps(e.get("detalle", "")) for e in evts)
+        # Estado Azure sincronizado en BD (el Web App sigue existiendo, solo detenido)
+        assert svc.obtener_solicitud(did).azure_resource_check_status == "EXISTE"
 
     def test_03b_detener_app_service_error(self, client, svc, clean_db):
         """Detener App Service con error 404."""
@@ -243,6 +245,8 @@ class TestE2EAppServiceGestion:
         assert me.call_args.kwargs.get("web_app_name") == _PREFIX_WEBAPP
         evts = svc.obtener_eventos(did)
         assert any("ELIMIN" in json.dumps(e.get("detalle", "")) for e in evts)
+        # Estado Azure sincronizado en BD: el Web App ya no existe
+        assert svc.obtener_solicitud(did).azure_resource_check_status == "NO_EXISTE"
 
     def test_04b_eliminar_app_service_error(self, client, svc, clean_db):
         """Eliminar App Service con error 403."""
@@ -257,6 +261,38 @@ class TestE2EAppServiceGestion:
         s = svc.obtener_solicitud(did)
         assert s.estado == "COMPLETADO"
         assert s.resultado == "PASS"
+# ---------------------------------------------------------------
+    # PARTE 3.5: Iniciar App Service
+    # ---------------------------------------------------------------
+
+    def test_04c_iniciar_app_service(self, client, svc, clean_db):
+        """Iniciar App Service via API con Azure mockeado."""
+        did = _preparar_proyecto_completado(client, svc)
+        mock_r = {"exito": True, "status": "INICIADO", "status_code": 200,
+                  "error": "", "web_app_name": _PREFIX_WEBAPP}
+        with patch.object(ServicioAzure, "iniciar_web_app", return_value=mock_r) as mi:
+            r = client.post(f"/api/fabrica/proyectos/{did}/iniciar-app")
+        assert r.status_code == 200
+        data = r.json()
+        assert data.get("exito") is True
+        assert data.get("status") == "INICIADO"
+        mi.assert_called_once()
+        assert mi.call_args.kwargs.get("web_app_name") == _PREFIX_WEBAPP
+        evts = svc.obtener_eventos(did)
+        assert any("INICIAR" in json.dumps(e.get("detalle", "")) for e in evts)
+        assert svc.obtener_solicitud(did).azure_resource_check_status == "EXISTE"
+
+    def test_04d_iniciar_app_service_error(self, client, svc, clean_db):
+        """Iniciar App Service con error 404."""
+        did = _preparar_proyecto_completado(client, svc)
+        mock_r = {"exito": False, "status": "NO_EXISTE", "status_code": 404,
+                  "error": "no existe", "web_app_name": _PREFIX_WEBAPP}
+        with patch.object(ServicioAzure, "iniciar_web_app", return_value=mock_r):
+            r = client.post(f"/api/fabrica/proyectos/{did}/iniciar-app")
+        assert r.status_code == 200
+        assert r.json().get("exito") is False
+        assert r.json().get("status") == "NO_EXISTE"
+
 # ---------------------------------------------------------------
     # PARTE 4: Persistencia del proyecto en BD (GitHub)
     # ---------------------------------------------------------------
@@ -330,6 +366,20 @@ class TestE2EAppServiceGestion:
                        "confirmarEliminarAppService", "confirmacionModal",
                        "progresoModal", "ejecutarAccionConfirmada",
                        "detener-app", "eliminar-app"]:
+            assert token in html, f"Falta: {token}"
+        lower = html.lower()
+        for sec in ["ghp_", "gho_", "pat_", "authorization", "bearer"]:
+            assert sec not in lower, f"Secreto: {sec}"
+
+    def test_08b_portal_index_tiene_botones_gestion(self):
+        """index.html (portal) expone botones Iniciar/Detener/Eliminar App Service."""
+        html = Path(_PROJECT_ROOT, "Hermes.Web", "templates",
+                    "index.html").read_text(encoding="utf-8")
+        for token in ["btn-iniciar", "btn-detener", "btn-eliminar",
+                      "gestion-btn", "confirmarGestionAppService",
+                      "ejecutarGestionAppService", "gestionModal",
+                      "gestionProgreso", "gestion-resultado",
+                      "iniciar-app", "detener-app", "eliminar-app"]:
             assert token in html, f"Falta: {token}"
         lower = html.lower()
         for sec in ["ghp_", "gho_", "pat_", "authorization", "bearer"]:
@@ -416,6 +466,42 @@ class TestServicioAzureMockeado:
         r = self.svc.eliminar_app_service("NONEXISTENT5678")
         assert r.get("exito") is False
         assert "no encontrado" in r.get("error", "").lower()
+
+    def test_iniciar_app_service_desde_servicio(self):
+        """servicio_fabrica.iniciar_app_service con Azure mock."""
+        sol = self.svc.crear_solicitud("hermes-e2e-direct-start",
+                                        descripcion="Direct start",
+                                        app_service_plan_id=_ASP_VALIDO)
+        did = sol.deployment_id
+        mr = {"exito": True, "status": "INICIADO", "status_code": 200,
+              "error": "", "web_app_name": sol.web_app}
+        with patch.object(ServicioAzure, "iniciar_web_app", return_value=mr):
+            r = self.svc.iniciar_app_service(did)
+        assert r["exito"] is True
+        assert r["status"] == "INICIADO"
+        assert r["project_name"] == "hermes-e2e-direct-start"
+        evts = self.svc.obtener_eventos(did)
+        assert any("INICIAR" in json.dumps(e.get("detalle", "")) for e in evts)
+
+    def test_iniciar_app_service_con_404(self):
+        """iniciar_app_service cuando Azure devuelve 404 (no existe)."""
+        sol = self.svc.crear_solicitud("hermes-e2e-404-start",
+                                        descripcion="404 start test",
+                                        app_service_plan_id=_ASP_VALIDO)
+        did = sol.deployment_id
+        mr = {"exito": False, "status": "NO_EXISTE", "status_code": 404,
+              "error": f"Web App {sol.web_app} no existe en Azure",
+              "web_app_name": sol.web_app}
+        with patch.object(ServicioAzure, "iniciar_web_app", return_value=mr):
+            r = self.svc.iniciar_app_service(did)
+        assert r.get("exito") is False
+        assert r.get("status") == "NO_EXISTE"
+
+    def test_iniciar_deployment_inexistente(self):
+        """iniciar_app_service con deployment_id que no existe."""
+        r = self.svc.iniciar_app_service("NONEXISTENT9012")
+        assert r.get("exito") is False
+        assert "no encontrado" in r.get("error", "").lower()
 # =====================================================================
 # Pruebas de bitácora (eventos de gestión)
 # =====================================================================
@@ -470,6 +556,31 @@ class TestBitacoraEventosGestion:
                and e.get("componente") == "AZURE"]
         assert len(hit) >= 1
         assert "Error deteniendo" in hit[0].get("mensaje", "")
+
+    def test_evento_iniciar_tiene_fase_gestion(self):
+        """Evento iniciar tiene fase=GESTION y componente=AZURE."""
+        mr = {"exito": True, "status": "INICIADO", "status_code": 200,
+              "error": "", "web_app_name": self.sol.web_app}
+        with patch.object(ServicioAzure, "iniciar_web_app", return_value=mr):
+            self.svc.iniciar_app_service(self.did)
+        evts = self.svc.obtener_eventos(self.did)
+        hit = [e for e in evts if e.get("fase") == "GESTION"
+               and e.get("componente") == "AZURE"
+               and "INICIAR" in json.dumps(e.get("detalle", ""))]
+        assert len(hit) >= 1
+        assert hit[0].get("tipo") == "INFO"
+
+    def test_evento_error_iniciar_tipo_error(self):
+        """Evento error al iniciar tiene tipo=ERROR."""
+        mr = {"exito": False, "status": "ERROR_PERMISOS", "status_code": 403,
+              "error": "Azure ARM 403", "web_app_name": self.sol.web_app}
+        with patch.object(ServicioAzure, "iniciar_web_app", return_value=mr):
+            self.svc.iniciar_app_service(self.did)
+        evts = self.svc.obtener_eventos(self.did)
+        hit = [e for e in evts if e.get("tipo") == "ERROR"
+               and e.get("componente") == "AZURE"]
+        assert len(hit) >= 1
+        assert "Error iniciando" in hit[0].get("mensaje", "")
 # =====================================================================
 # Pruebas de API endpoints (errores y casos borde)
 # =====================================================================
@@ -510,11 +621,24 @@ class TestAPIEndpointsGestion:
         r = self.client.get("/api/fabrica/proyectos/ID_TEST/eliminar-app")
         assert r.status_code in (405, 404)
 
+    def test_iniciar_proyecto_inexistente(self):
+        """Error al iniciar deployment que no existe."""
+        r = self.client.post("/api/fabrica/proyectos/ID_INEXISTENTE/iniciar-app")
+        assert r.status_code == 200
+        assert r.json().get("exito") is False
+        assert "no encontrado" in r.json().get("error", "").lower()
+
+    def test_iniciar_method_not_allowed(self):
+        """GET a /iniciar-app debe fallar (solo POST)."""
+        r = self.client.get("/api/fabrica/proyectos/ID_TEST/iniciar-app")
+        assert r.status_code in (405, 404)
+
     def test_openapi_incluye_endpoints_gestion(self):
-        """OpenAPI spec incluye /detener-app y /eliminar-app."""
+        """OpenAPI spec incluye /iniciar-app, /detener-app y /eliminar-app."""
         r = self.client.get("/openapi.json")
         assert r.status_code == 200
         paths = r.json().get("paths", {})
+        assert "/api/fabrica/proyectos/{deployment_id}/iniciar-app" in paths
         assert "/api/fabrica/proyectos/{deployment_id}/detener-app" in paths
         assert "/api/fabrica/proyectos/{deployment_id}/eliminar-app" in paths
 

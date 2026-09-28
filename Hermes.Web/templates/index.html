@@ -106,6 +106,42 @@
             background: #005a9e;
             color: #fff;
         }
+        .accion-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        .gestion-btn {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border: 1px solid;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .btn-iniciar {
+            border-color: var(--hermes-success);
+            color: var(--hermes-success);
+        }
+        .btn-iniciar:hover {
+            background: var(--hermes-success);
+            color: #fff;
+        }
+        .btn-detener {
+            border-color: var(--hermes-warning);
+            color: var(--hermes-warning);
+        }
+        .btn-detener:hover {
+            background: var(--hermes-warning);
+            color: #000;
+        }
+        .btn-eliminar {
+            border-color: var(--hermes-danger);
+            color: var(--hermes-danger);
+        }
+        .btn-eliminar:hover {
+            background: var(--hermes-danger);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -230,6 +266,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div id="gestion-resultado"></div>
                     </div>
                 </div>
             </div>
@@ -1099,6 +1136,112 @@
         }
 
         // ══════════════════════════════════════════════════
+        // Gestion App Service: Iniciar / Detener / Eliminar
+        // ══════════════════════════════════════════════════
+
+        var _gestionDeploymentId = '';
+        var _gestionAccion = '';
+
+        var _GESTION_CFG = {
+            iniciar: {
+                titulo: 'INICIAR', verbo: 'iniciar', endpoint: 'iniciar-app',
+                claseBtn: 'btn btn-success', icono: 'bi-play-circle',
+                mensaje: 'Esta accion INICIARA (start) el App Service en Azure. El proyecto volvera a estar accesible.',
+                alerta: 'alert-success'
+            },
+            detener: {
+                titulo: 'DETENER', verbo: 'detener', endpoint: 'detener-app',
+                claseBtn: 'btn btn-warning', icono: 'bi-stop-circle',
+                mensaje: 'Esta accion DETENDRA (stop) el App Service en Azure. El proyecto quedara inaccesible hasta reiniciarlo.',
+                alerta: 'alert-warning'
+            },
+            eliminar: {
+                titulo: 'ELIMINAR', verbo: 'eliminar', endpoint: 'eliminar-app',
+                claseBtn: 'btn btn-danger', icono: 'bi-trash3',
+                mensaje: 'ADVERTENCIA: Esta accion ELIMINARA permanentemente el App Service en Azure. No se puede recuperar.',
+                alerta: 'alert-danger'
+            }
+        };
+
+        function confirmarGestionAppService(deploymentId, accion, nombreProyecto) {
+            var cfg = _GESTION_CFG[accion];
+            if (!cfg || !deploymentId) return;
+            _gestionDeploymentId = deploymentId;
+            _gestionAccion = accion;
+
+            var nombre = nombreProyecto || deploymentId;
+            var texto = document.getElementById('gestionMensaje');
+            if (texto) texto.innerHTML = '\u00bfEsta seguro de ' + cfg.titulo +
+                ' el App Service del proyecto <strong>' + nombre + '</strong>?';
+            var detalle = document.getElementById('gestionDetalle');
+            if (detalle) detalle.textContent = cfg.mensaje;
+            var adv = document.getElementById('gestionAdvertencia');
+            if (adv) adv.className = 'alert py-2 small ' + cfg.alerta;
+            var btn = document.getElementById('btn-gestion-confirmar');
+            if (btn) {
+                btn.className = cfg.claseBtn;
+                btn.innerHTML = '<i class="bi ' + cfg.icono + ' me-1"></i>' + cfg.titulo + ' App Service';
+            }
+            var modalEl = document.getElementById('gestionModal');
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            } else if (confirm(texto ? texto.textContent : cfg.mensaje)) {
+                ejecutarGestionAppService();
+            }
+        }
+
+        function ejecutarGestionAppService() {
+            if (!_gestionDeploymentId || !_gestionAccion) return;
+            var cfg = _GESTION_CFG[_gestionAccion];
+            var did = _gestionDeploymentId;
+            var modalEl = document.getElementById('gestionModal');
+            if (modalEl && window.bootstrap) {
+                var m = bootstrap.Modal.getInstance(modalEl);
+                if (m) m.hide();
+            }
+            _gestionDeploymentId = '';
+            _gestionAccion = '';
+
+            var progEl = document.getElementById('gestionProgreso');
+            var progModal = null;
+            if (progEl && window.bootstrap) {
+                progModal = bootstrap.Modal.getOrCreateInstance(progEl);
+                var pm = document.getElementById('gestionProgresoMensaje');
+                if (pm) pm.textContent = cfg.titulo + ' App Service...';
+                progModal.show();
+            }
+
+            fetch('/api/fabrica/proyectos/' + encodeURIComponent(did) + '/' + cfg.endpoint, { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (progModal) progModal.hide();
+                    var cont = document.getElementById('gestion-resultado');
+                    if (cont) {
+                        var ok = !!res.exito;
+                        var cls = ok ? 'alert-success' : 'alert-danger';
+                        var ic = ok ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+                        var txt = ok
+                            ? 'Operacion exitosa: App Service ' + cfg.verbo + ' (' + (res.status || 'OK') + ')'
+                            : 'Error: ' + (res.error || 'desconocido') + ' (Status: ' + (res.status || '?') + ')';
+                        cont.innerHTML = '<div class="alert ' + cls + ' alert-dismissible fade show mt-2" role="alert">' +
+                            '<i class="bi ' + ic + ' me-2"></i><strong>' + cfg.titulo + ':</strong> ' + txt +
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>';
+                    }
+                    actualizarHistorial();
+                })
+                .catch(function(err) {
+                    if (progModal) progModal.hide();
+                    var cont = document.getElementById('gestion-resultado');
+                    if (cont) {
+                        cont.innerHTML = '<div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">' +
+                            '<i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Error de conexion:</strong> ' +
+                            (err && err.message ? err.message : 'desconocido') +
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>';
+                    }
+                });
+        }
+
+        // ══════════════════════════════════════════════════
         // Top 5 Historial - Actualizacion automatica
         // ══════════════════════════════════════════════════
 
@@ -1187,6 +1330,18 @@
                         vscodeBtn = '<button class="btn btn-sm vscode-btn" onclick="abrirVSCodePorURL(\'' + repoUrl.replace(/'/g, "\\'") + '\')" title="Abrir en Visual Studio Code"><i class="bi bi-windows me-1"></i>VS Code</button>';
                     }
 
+                    var did = p.deployment_id || '';
+                    var gestionBtn = '';
+                    if (did && azureStatus !== 'NO_EXISTE') {
+                        var nomArg = "'" + String(p.nombre_proyecto || did).replace(/'/g, "\\'") + "'";
+                        gestionBtn =
+                            '<button class="btn btn-sm gestion-btn btn-iniciar" onclick="confirmarGestionAppService(\'' + did + '\',\'iniciar\',' + nomArg + ')" title="Iniciar App Service (Azure start)"><i class="bi bi-play-circle me-1"></i>Iniciar</button>' +
+                            '<button class="btn btn-sm gestion-btn btn-detener" onclick="confirmarGestionAppService(\'' + did + '\',\'detener\',' + nomArg + ')" title="Detener App Service (Azure stop)"><i class="bi bi-stop-circle me-1"></i>Detener</button>' +
+                            '<button class="btn btn-sm gestion-btn btn-eliminar" onclick="confirmarGestionAppService(\'' + did + '\',\'eliminar\',' + nomArg + ')" title="Eliminar App Service (Azure delete)"><i class="bi bi-trash3 me-1"></i>Eliminar</button>';
+                    }
+                    var accionesCell = '<div class="accion-cell">' + vscodeBtn + gestionBtn + '</div>';
+                    if (!vscodeBtn && !gestionBtn) accionesCell = '<span class="text-muted small">--</span>';
+
                     html += '<tr>' +
                         '<td><a href="/proyectos/' + p.deployment_id + '" class="text-light text-decoration-none">' + nombreDisplay + '</a></td>' +
                         '<td>' + estadoBadge + '</td>' +
@@ -1196,7 +1351,7 @@
                         '<td>' + azureBadge + '</td>' +
                         '<td><small class="text-muted">' + (p.duracion || '--') + '</small></td>' +
                         '<td><small class="text-muted">' + (detalle || '--') + '</small></td>' +
-                        '<td>' + vscodeBtn + '</td>' +
+                        '<td>' + accionesCell + '</td>' +
                         '</tr>';
                 });
                 tbody.innerHTML = html;
@@ -1232,6 +1387,45 @@
                         <div class="col-3"><div class="text-center p-2 rounded" style="background:rgba(255,193,7,0.1);"><div class="small text-warning fw-bold">ACTIVOS</div><div class="h5 mb-0" id="trace-active">--</div></div></div>
                         <div class="col-3"><div class="text-center p-2 rounded" style="background:rgba(25,135,84,0.1);"><div class="small text-success fw-bold">COMPLETADOS</div><div class="h5 mb-0" id="trace-done">--</div></div></div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmacion para Gestion App Service (Iniciar/Detener/Eliminar) -->
+    <div class="modal fade" id="gestionModal" tabindex="-1" aria-labelledby="gestionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="gestionModalLabel"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirmar Accion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="gestionMensaje">&iquest;Esta seguro de realizar esta accion?</p>
+                    <div class="alert alert-warning py-2 small" id="gestionAdvertencia">
+                        <i class="bi bi-info-circle me-1"></i><span id="gestionDetalle"></span>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btn-gestion-cancelar">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-warning" id="btn-gestion-confirmar" onclick="ejecutarGestionAppService()">
+                        <i class="bi bi-check-circle me-1"></i>Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de progreso para Gestion App Service -->
+    <div class="modal fade" id="gestionProgreso" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark border-secondary text-center py-4">
+                <div class="modal-body">
+                    <div class="spinner-border text-info mb-3" role="status" style="width:3rem;height:3rem"></div>
+                    <h6 id="gestionProgresoMensaje">Ejecutando accion...</h6>
+                    <small class="text-muted">Por favor espere, esto puede tomar unos segundos...</small>
                 </div>
             </div>
         </div>

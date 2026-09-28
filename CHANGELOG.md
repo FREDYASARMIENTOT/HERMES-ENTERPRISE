@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Sprint History
+- A.37: Portal — Gestión App Service (Iniciar/Detener/Eliminar) + RBAC Website Contributor (COMPLETED)
 - A.35: RC77-C4 — Adversarial E2E Validation & Startup Fix (COMPLETED)
 - A.36: RC77-C5 — Harden Hermes App Service E2E Deployment (COMPLETED)
 - A.34: RC77-C3 — OIDC Identity: E2E Validation & Close (COMPLETED)
@@ -13,6 +14,31 @@
 - A.27: Auditoría de deuda técnica RC71-A
 - A.26: Memoria persistente y normalización documental
 ## RC77-C3 — OIDC Identity: Final Audit & Controlled Correction (2026-08-27)
+
+### A.37 — Portal: Gestión App Service (Iniciar / Detener / Eliminar) (2026-09-28)
+
+> **Status:** ✅ COMPLETED — desplegado y validado E2E en producción
+> **Commit:** `2f8988d` · **Run:** [Portal CI/CD 36459580358](https://github.com/FREDYASARMIENTOT/HERMES-ENTERPRISE/actions/runs/36459580358)
+
+**Entregado**
+- `Hermes.Web/backend/servicio_azure.py` — `iniciar_web_app()` (ARM `POST .../sites/{name}/start`).
+- `Hermes.Web/backend/servicio_fabrica.py` — `iniciar_app_service()` + bitácora `GESTION/AZURE`; detener/iniciar/eliminar sincronizan `azure_resource_check_status` en BD (`EXISTE` / `NO_EXISTE`).
+- `Hermes.Web/api/api_fabrica.py` — nuevo endpoint `POST /api/fabrica/proyectos/{id}/iniciar-app`.
+- `Hermes.Web/templates/index.html` — botones **Iniciar / Detener / Eliminar** por fila en la tabla "Últimas 5 Creaciones de Proyectos Hijos", con modal de confirmación, overlay de progreso y refresco automático del historial.
+- Tests: 34 casos en `test_e2e_app_service_gestion.py` + validación de botones en `test_portal_canonico.py`.
+
+**Prerrequisito de infraestructura (RBAC)**
+- La Managed Identity de `as-hermesportal` (`0aefeacd-4cb2-41f1-9476-982bc5a09618`) tenía solo `Reader` → los 3 endpoints devolvían `ERROR_PERMISOS` (ARM 403).
+- Se asignó **`Website Contributor`** (`Microsoft.Web/sites/*`, mínimo privilegio) en `RG-Hermes-Proyectos`.
+- Script reproducible: `scripts/assign-portal-mi-website-contributor.sh`.
+- Detalle y evidencia: `docs/RBAC-Portal-AppService-Gestion.md`.
+
+**Evidencia E2E (producción)**
+| Operación | Resultado | Estado Azure |
+|-----------|-----------|--------------|
+| `detener-app` sobre `as-crearproyectohijo` | `DETENIDO` (200) | `Stopped` |
+| `iniciar-app` sobre `as-crearproyectohijo` | `INICIADO` (200) | `Running` |
+| `eliminar-app` (proyecto ya eliminado) | `ELIMINADO` (204) | idempotente |
 ### RC77-C4 — Adversarial E2E Validation & Startup Fix (2026-09-03)
 ### RC77-C5 — Harden Hermes App Service E2E Deployment (2026-09-03)
 

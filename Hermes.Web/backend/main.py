@@ -139,6 +139,7 @@ logger_init.info(f"Raiz del proyecto en sys.path: {_PROJECT_ROOT}")
 
 # Importar módulos locales de Hermes.Web (el finder ya está activo)
 from Hermes.Web.backend.servicio_fabrica import obtener_servicio_fabrica
+from Hermes.Web.backend.control_plane_worker import iniciar_worker as iniciar_cp_worker, detener_worker as detener_cp_worker
 from Hermes.Web.backend.event_broker import obtener_broker
 
 # ──────────────────────────────────────────────────────────────
@@ -752,6 +753,18 @@ async def evento_inicio_aplicacion():
     except Exception as e:
         logger.warning(f"Error iniciando sweeper: {e}")
 
+    # Iniciar Control Plane Worker (cada 5 segundos)
+    try:
+        servicio_fabrica = app.state.servicio_fabrica
+        if servicio_fabrica:
+            import asyncio
+            await iniciar_cp_worker(servicio_fabrica)
+            logger.info("Control Plane Worker iniciado")
+        else:
+            logger.warning("ServicioFabrica no disponible, Control Plane Worker no iniciado")
+    except Exception as e:
+        logger.warning(f"Error iniciando Control Plane Worker: {e}")
+
     logger.info("=" * 60)
 
 
@@ -761,6 +774,8 @@ async def evento_cierre_aplicacion():
     global _sweeper_active
     _sweeper_active = False
     logger.info("Sweeper de despliegues atascados detenido")
+    detener_cp_worker()
+    logger.info("Control Plane Worker detenido")
     logger.info("Fábrica de Proyectos UR - Deteniendo servidor...")
 
 

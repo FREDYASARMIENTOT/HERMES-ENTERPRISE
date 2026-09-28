@@ -709,14 +709,30 @@ jobs:
           # on B1 plans (HTTP 502). Step 1 already cleans stale artifacts.
           # The zip deploy overwrites files without needing a full wipe.
           echo "=== Deploying via az webapp deploy (no --clean) ==="
-          az webapp deploy \
-            --name "${APP_NAME}" \
-            --resource-group "${APP_RG}" \
-            --src-path deploy.zip \
-            --type zip \
-            --track-status false \
-            --timeout 600000 \
-            --output none
+          MAX_RETRIES=5
+          RETRY_DELAY=20
+          DEPLOY_SUCCESS=false
+          for i in $(seq 1 ${MAX_RETRIES}); do
+            echo "--- Deploy attempt ${i}/${MAX_RETRIES} ---"
+            if az webapp deploy \
+              --name "${APP_NAME}" \
+              --resource-group "${APP_RG}" \
+              --src-path deploy.zip \
+              --type zip \
+              --track-status false \
+              --timeout 600000 \
+              --output none; then
+              echo "=== Deploy attempt ${i} SUCCEEDED ==="
+              DEPLOY_SUCCESS=true
+              break
+            fi
+            echo "=== Deploy attempt ${i} FAILED (Kudu HTTP 502), waiting ${RETRY_DELAY}s ==="
+            sleep ${RETRY_DELAY}
+          done
+          if [ "${DEPLOY_SUCCESS}" != "true" ]; then
+            echo "All ${MAX_RETRIES} deploy attempts failed"
+            exit 1
+          fi
           echo "=== Deployment Complete ==="
           echo "App          : ${APP_NAME}"
           echo "SHA          : ${{ needs.validate-inputs.outputs.commit_sha }}"

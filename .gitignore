@@ -20,6 +20,7 @@ $RECYCLE.BIN/
 .venv_*/
 .conda_env/
 __pycache__/
+.pytest_cache/
 fix_*.py
 *.pyc
 *.pyo
@@ -193,3 +194,16 @@ portal-js-v2.js
 package.json
 package-lock.json
 scripts/
+
+# ██████ ARTIFACTS LOCALES (diagnostico, nunca se publican) ██████
+# Arbol local de evidencias/logs/parches retirados de la raiz del repo.
+# Estructura: artifacts/{logs,reports,evidence,patches,diagnostics,archives,tmp}
+artifacts/
+
+# Artefactos que se ejecutan/generan en la raiz y NO deben versionarse
+test-results.xml
+EnvironmentReport.json
+e2e_output.txt
+factory_run_logs.txt
+error_screenshot.png
+run_status.json

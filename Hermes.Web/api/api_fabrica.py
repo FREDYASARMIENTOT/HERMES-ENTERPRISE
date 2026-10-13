@@ -33,6 +33,8 @@ from Hermes.Web.backend.servicio_fabrica import (
     resolver_url_app_service,
     resolver_url_repositorio,
 )
+from Hermes.Web.api.api_asistente import ConfiguracionIA
+from Hermes.Web.backend.servicio_asistente_ia import obtener_asistente_ia
 
 logger = logging.getLogger("Hermes.Web.API.Fabrica")
 router = APIRouter()
@@ -49,6 +51,11 @@ class SolicitudCrear(BaseModel):
     app_service_plan_id: str = Field(
         "",
         description="Resource ID completo del App Service Plan de destino (RG-Hermes-Proyectos)"
+    )
+    ia: Optional[ConfiguracionIA] = Field(
+        None,
+        description="Configuracion de IA del proyecto Child (proveedor, url base, api key, modelo) "
+                    "capturada por el Asistente IA"
     )
 
 class SolicitudResponse(BaseModel):
@@ -90,15 +97,34 @@ async def crear_proyecto(request: Request, solicitud: SolicitudCrear):
     """Crea una solicitud para crear un nuevo proyecto Child."""
     try:
         servicio = request.app.state.servicio_fabrica
+        ia_config = solicitud.ia.model_dump() if solicitud.ia else None
+        if ia_config:
+            # La validacion se AUDITA server-side: el flag nunca lo aporta el
+            # navegador, de modo que no puede declararse una validacion falsa.
+            asistente = obtener_asistente_ia()
+            if solicitud.ia.proveedor and solicitud.ia.modelo and asistente.validacion_reciente(ia_config):
+                ia_config["ia_validado"] = "CONECTADO"
+                ia_config["ia_validado_en"] = _ahora()
+                ia_config["ia_validacion_detalle"] = (
+                    "Credencial validada por el Asistente IA (chat completions OK)"
+                )
+            else:
+                ia_config["ia_validado"] = "NO_VERIFICADO"
+                ia_config["ia_validacion_detalle"] = (
+                    "Configuracion IA registrada sin validacion previa en esta sesion"
+                )
         resultado = servicio.crear_solicitud(
             nombre_proyecto=solicitud.nombre_proyecto,
             descripcion=solicitud.descripcion,
-            app_service_plan_id=solicitud.app_service_plan_id
+            app_service_plan_id=solicitud.app_service_plan_id,
+            ia_config=ia_config
         )
         logger.info(
             f"Proyecto solicitado: {resultado.nombre_proyecto} "
             f"(deployment: {resultado.deployment_id}) "
-            f"(plan: {solicitud.app_service_plan_id or 'NO_ESPECIFICADO'})"
+            f"(plan: {solicitud.app_service_plan_id or 'NO_ESPECIFICADO'}) "
+            f"(ia: {resultado.ia_proveedor or 'NO_ESPECIFICADO'}/"
+            f"{resultado.ia_modelo or 'NO_ESPECIFICADO'})"
         )
         return SolicitudResponse(
             id=resultado.id,

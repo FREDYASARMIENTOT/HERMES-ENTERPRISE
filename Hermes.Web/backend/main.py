@@ -385,6 +385,7 @@ _router_modules = [
     ("azure", "Azure"),
     ("sqlite", "SQLite"),
     ("despliegue", "Despliegue"),
+    ("asistente", "Asistente"),
     ("fabrica", "Fabrica"),
 ]
 

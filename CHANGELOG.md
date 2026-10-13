@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Sprint History
+- A.39: Portal — Asistente IA de configuración del modelo del proyecto hijo (COMPLETED)
 - A.38: Portal — Hipervínculos App Service + GitHub del proyecto hijo (COMPLETED)
 - A.37: Portal — Gestión App Service (Iniciar/Detener/Eliminar) + RBAC Website Contributor (COMPLETED)
 - A.35: RC77-C4 — Adversarial E2E Validation & Startup Fix (COMPLETED)
@@ -54,6 +55,35 @@
 
 **Nota de arquitectura**
 - El hostname real lo reporta Azure (`properties.defaultHostName`) y Azure normaliza el nombre del recurso (p. ej. `as-hermes-e2e-b5-004` → `as-hermese2eb5004.azurewebsites.net`); por eso la URL se resuelve con precedencia `web_app_url` → `azure_hostname` → derivación del nombre del recurso.
+
+### A.39 — Portal: Asistente IA de configuración del modelo del proyecto hijo (2026-12-10)
+
+> **Status:** ✅ COMPLETED — validado con prueba LOCAL antes de producción
+> **Proveedor de referencia:** Microsoft Foundry (Azure AI Foundry), deployment `Proyecto-ia-ur`
+
+**Entregado**
+- `Hermes.Web/backend/servicio_asistente_ia.py` — **nuevo**. Catálogo de proveedores (`msfoundry`, `azure-openai`, `openai`, `openrouter`, `ollama`, `custom`), normalización/validación de URL base, enmascarado y huella SHA-256 de la API key, resolución del endpoint de chat, clasificación de errores HTTP y `AsistenteIA` con máquina de estados conversacional (`responder()`) y validación **real** con `httpx` (`validar_conexion()`). El payload de prueba es mínimo (`{model, messages}`) para evitar rechazos por parámetros no soportados, y **siempre propaga el motivo real del proveedor** (`error.message` / `detail` / `reason`) en lugar de un mensaje genérico.
+- `Hermes.Web/backend/servicio_asistente_ia.py` — registro server-side de validaciones exitosas (`validacion_reciente()`, TTL 900 s) con la huella de la key: la validación **no puede declararse desde el navegador**.
+- `Hermes.Web/api/api_asistente.py` — **nuevo** router. `GET /api/asistente/proveedores|campos|estado`, `POST /api/asistente/chat` (un turno), `POST /api/asistente/validar` (validación real de la credencial). Modelos `ConfiguracionIA`, `ChatRequest/Response`, `ValidarResponse`.
+- `Hermes.Web/backend/main.py` — registro del router `("asistente", "Asistente")` **antes** de `fabrica` (el contrato de creación importa `ConfiguracionIA`).
+- `Hermes.Web/backend/servicio_fabrica.py` — 9 columnas nuevas en `solicitudes_proyecto` (`ia_proveedor`, `ia_url_base`, `ia_modelo`, `ia_api_key_enmascarada`, `ia_api_key_huella`, `ia_configurada`, `ia_validado`, `ia_validado_en`, `ia_validacion_detalle`) con migración aditiva; **tabla `ia_credenciales`** para la API key (la fila de la solicitud nunca la contiene, de modo que `a_dict()` no puede filtrarla); `crear_solicitud(..., ia_config=...)`; `guardar_credencial_ia()` / `obtener_credencial_ia()` / `eliminar_credencial_ia()`; bitácora de solicitud enriquecida sin secreto (solo huella truncada).
+- `Hermes.Web/api/api_fabrica.py` — `SolicitudCrear.ia` (opcional) y auditoría server-side del flag de validación antes de persistir.
+- `Hermes.Web/templates/index.html` — botón **Asistente IA** junto a *Crear Proyecto*, modal de chat (`asistenteIaModal`) con panel de resumen de los 4 campos, botones *Validar conexión* / *Usar esta configuración*, plantilla *Ejemplo MS Foundry*, indicador de IA validada y envío de `ia` en el POST de creación.
+- `Hermes.Web/templates/proyecto.html` — tarjeta **Modelo de IA del proyecto** (proveedor, URL base, modelo, API key enmascarada, estado y fecha de validación).
+- Tests: `test_asistente_ia.py` (**96 casos**, sin red: helpers, captura en lenguaje natural, conversación, validación con `httpx` mockeado, contrato del router, persistencia y flujo de creación con auditoría) y `test_asistente_ia_myfoundry_live.py` (**7 casos LIVE**, se saltan sin credenciales).
+- Prueba local previa a producción: `pruebas/asistente-ia/Test-AsistenteIAMyFoundry.ps1` + `Probar-AsistenteIA.py` (5 secciones, salida `[PASS]/[FAIL]`, códigos 0/1/2).
+
+**Decisión de diseño — el cliente es dueño del borrador**
+- El API es *stateless*: el navegador mantiene el borrador (incluida la API key) y lo reenvía en cada turno; el servidor **nunca** devuelve la key en claro, solo su máscara (`sk-a******7890`) y su huella. La key se persiste aislada en `ia_credenciales` y solo se recupera server-side para el Factory.
+
+**Criterio de aceptación (prueba local, NO producción)**
+```powershell
+python pruebas\asistente-ia\Probar-AsistenteIA.py `
+  --url-base "https://<recurso>.services.ai.azure.com/models" `
+  --api-key  "<api-key>" `
+  --modelo   "Proyecto-ia-ur"
+```
+- `RESULTADO: N PASS / 0 FAIL` y código de salida `0` antes de tocar producción.
 
 ### RC77-C4 — Adversarial E2E Validation & Startup Fix (2026-09-03)
 ### RC77-C5 — Harden Hermes App Service E2E Deployment (2026-09-03)

@@ -34,6 +34,11 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List, Union
 
 from Hermes.Web.backend.event_broker import obtener_broker
+from Hermes.Web.backend.servicio_asistente_ia import (
+    enmascarar_api_key,
+    huella_api_key,
+    normalizar_url_base,
+)
 
 logger = logging.getLogger("Hermes.Web.ServicioFabrica")
 
@@ -154,6 +159,9 @@ class SolicitudProyecto:
         control_plane_run_id, control_plane_run_url, control_plane_status, control_plane_duration
         readiness_result, functional_result, user_facing_result, evidence_result
         fecha_fin, duracion_total_segundos
+        ia_proveedor, ia_url_base, ia_modelo, ia_api_key_enmascarada,
+        ia_api_key_huella, ia_configurada, ia_validado, ia_validado_en,
+        ia_validacion_detalle
     """
 
     def __init__(
@@ -165,7 +173,8 @@ class SolicitudProyecto:
         correlation_id: str = "",
         deployment_id: str = "",
         estado: str = "SOLICITADO",
-        app_service_plan_id: str = ""
+        app_service_plan_id: str = "",
+        ia_config: Optional[Dict[str, Any]] = None
     ):
         self.id: str = _generar_id()
         self.nombre_proyecto: str = nombre_proyecto
@@ -262,6 +271,22 @@ class SolicitudProyecto:
         # Timing
         self.fecha_fin: str = ""
         self.duracion_total_segundos: int = 0
+        # Configuracion de IA del proyecto Child (capturada por el Asistente IA).
+        # El secreto se mantiene SOLO en memoria (atributo privado) y se
+        # persiste en la tabla ia_credenciales: nunca viaja en a_dict().
+        _ia = ia_config or {}
+        self.ia_proveedor: str = str(_ia.get("proveedor", "") or "").strip()
+        self.ia_url_base: str = normalizar_url_base(str(_ia.get("url_base", "") or ""))
+        self.ia_modelo: str = str(_ia.get("modelo", "") or "").strip()
+        self.ia_api_key_enmascarada: str = enmascarar_api_key(str(_ia.get("api_key", "") or ""))
+        self.ia_api_key_huella: str = huella_api_key(str(_ia.get("api_key", "") or ""))
+        self._ia_api_key_secreto: str = str(_ia.get("api_key", "") or "").strip()
+        self.ia_configurada: str = (
+            "SI" if (self.ia_proveedor and self.ia_url_base and self.ia_modelo) else "NO"
+        )
+        self.ia_validado: str = str(_ia.get("ia_validado", "") or "NO_VERIFICADO")
+        self.ia_validado_en: str = str(_ia.get("ia_validado_en", "") or "")
+        self.ia_validacion_detalle: str = str(_ia.get("ia_validacion_detalle", "") or "")
         self._inicializar_pasos()
 
     def _inicializar_pasos(self) -> None:
@@ -408,7 +433,18 @@ class SolicitudProyecto:
             "runtime_resource_check_error": self.runtime_resource_check_error,
             # Timing
             "fecha_fin": self.fecha_fin,
-            "duracion_total_segundos": duracion
+            "duracion_total_segundos": duracion,
+            # Configuracion de IA del proyecto Child (Asistente IA).
+            # NOTA: la api key NUNCA se incluye aqui; solo mascara y huella.
+            "ia_proveedor": self.ia_proveedor,
+            "ia_url_base": self.ia_url_base,
+            "ia_modelo": self.ia_modelo,
+            "ia_api_key_enmascarada": self.ia_api_key_enmascarada,
+            "ia_api_key_huella": self.ia_api_key_huella,
+            "ia_configurada": self.ia_configurada,
+            "ia_validado": self.ia_validado,
+            "ia_validado_en": self.ia_validado_en,
+            "ia_validacion_detalle": self.ia_validacion_detalle,
         }
         # Enlaces resueltos para el portal y la vista de detalle:
         #   app_service_url -> sitio landing page del proyecto creado/desplegado
@@ -522,6 +558,18 @@ class SolicitudProyecto:
         # Timing
         s.fecha_fin = datos.get("fecha_fin", "")
         s.duracion_total_segundos = datos.get("duracion_total_segundos", 0)
+        # Configuracion de IA del proyecto Child. El secreto NO vive en esta
+        # tabla: se resuelve con el metodo obtener_credencial_ia(deployment_id).
+        s.ia_proveedor = datos.get("ia_proveedor", "")
+        s.ia_url_base = datos.get("ia_url_base", "")
+        s.ia_modelo = datos.get("ia_modelo", "")
+        s.ia_api_key_enmascarada = datos.get("ia_api_key_enmascarada", "")
+        s.ia_api_key_huella = datos.get("ia_api_key_huella", "")
+        s._ia_api_key_secreto = ""
+        s.ia_configurada = datos.get("ia_configurada", "NO")
+        s.ia_validado = datos.get("ia_validado", "NO_VERIFICADO")
+        s.ia_validado_en = datos.get("ia_validado_en", "")
+        s.ia_validacion_detalle = datos.get("ia_validacion_detalle", "")
         pasos_json = datos.get("pasos_json")
         if pasos_json:
             try:
@@ -625,11 +673,36 @@ class ServicioFabrica:
                     azure_deployment_id TEXT DEFAULT '',
                     azure_deployment_status TEXT DEFAULT '',
                     evidence_url TEXT DEFAULT '',
-                    branch TEXT DEFAULT 'main'
+                    branch TEXT DEFAULT 'main',
+                    ia_proveedor TEXT DEFAULT '',
+                    ia_url_base TEXT DEFAULT '',
+                    ia_modelo TEXT DEFAULT '',
+                    ia_api_key_enmascarada TEXT DEFAULT '',
+                    ia_api_key_huella TEXT DEFAULT '',
+                    ia_configurada TEXT DEFAULT 'NO',
+                    ia_validado TEXT DEFAULT 'NO_VERIFICADO',
+                    ia_validado_en TEXT DEFAULT '',
+                    ia_validacion_detalle TEXT DEFAULT ''
                 )
             """)
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes_proyecto(estado)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_solicitudes_nombre ON solicitudes_proyecto(nombre_proyecto)")
+
+            # ── Credenciales IA: la api key vive SOLO aqui, nunca en la fila
+            #    de la solicitud, de modo que a_dict() jamas pueda filtrarla ──
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ia_credenciales (
+                    deployment_id TEXT PRIMARY KEY,
+                    proveedor TEXT DEFAULT '',
+                    url_base TEXT DEFAULT '',
+                    modelo TEXT DEFAULT '',
+                    api_key TEXT DEFAULT '',
+                    api_key_enmascarada TEXT DEFAULT '',
+                    api_key_huella TEXT DEFAULT '',
+                    fecha_creacion TEXT DEFAULT '',
+                    fecha_actualizacion TEXT DEFAULT ''
+                )
+            """)
 
             # ── Event Log table: immutable audit trail ──
             cursor.execute("""
@@ -730,6 +803,15 @@ class ServicioFabrica:
                 ("branch", "TEXT DEFAULT 'main'"),
                 ("azure_deployment_id", "TEXT DEFAULT ''"),
                 ("azure_deployment_status", "TEXT DEFAULT ''"),
+                ("ia_proveedor", "TEXT DEFAULT ''"),
+                ("ia_url_base", "TEXT DEFAULT ''"),
+                ("ia_modelo", "TEXT DEFAULT ''"),
+                ("ia_api_key_enmascarada", "TEXT DEFAULT ''"),
+                ("ia_api_key_huella", "TEXT DEFAULT ''"),
+                ("ia_configurada", "TEXT DEFAULT 'NO'"),
+                ("ia_validado", "TEXT DEFAULT 'NO_VERIFICADO'"),
+                ("ia_validado_en", "TEXT DEFAULT ''"),
+                ("ia_validacion_detalle", "TEXT DEFAULT ''"),
             ]:
                 try:
                     cursor.execute(f"ALTER TABLE solicitudes_proyecto ADD COLUMN {col_name} {col_type}")
@@ -751,7 +833,8 @@ class ServicioFabrica:
         self,
         nombre_proyecto: str,
         descripcion: str = "",
-        app_service_plan_id: str = ""
+        app_service_plan_id: str = "",
+        ia_config: Optional[Dict[str, Any]] = None
     ) -> SolicitudProyecto:
         """Crea una nueva solicitud de proyecto."""
         if not nombre_proyecto or len(nombre_proyecto) < 3:
@@ -783,22 +866,137 @@ class ServicioFabrica:
         solicitud = SolicitudProyecto(
             nombre_proyecto=nombre_proyecto,
             descripcion=descripcion,
-            app_service_plan_id=app_service_plan_id
+            app_service_plan_id=app_service_plan_id,
+            ia_config=ia_config
         )
         solicitud.iniciar_paso(1, f"Solicitud registrada para {nombre_proyecto}")
         self._guardar(solicitud)
+        # La api key vive en su propia tabla: nunca en la fila de la solicitud.
+        if solicitud.ia_proveedor or solicitud.ia_modelo:
+            self.guardar_credencial_ia(
+                deployment_id=solicitud.deployment_id,
+                proveedor=solicitud.ia_proveedor,
+                url_base=solicitud.ia_url_base,
+                modelo=solicitud.ia_modelo,
+                api_key=solicitud._ia_api_key_secreto,
+            )
         self._registrar_evento(
             deployment_id=solicitud.deployment_id,
             correlation_id=solicitud.correlation_id,
             fase="SOLICITUD", paso_numero=1, paso_nombre="SOLICITUD",
             estado_anterior="PENDIENTE", estado_nuevo="EN_PROCESO",
             tipo="INFO", mensaje=f"Solicitud creada para {nombre_proyecto}",
-            detalle=f"app_service_plan_id={app_service_plan_id}"
+            detalle=self._detalle_solicitud(solicitud, app_service_plan_id)
         )
         logger.info(f"Solicitud creada: {solicitud.id} / {solicitud.nombre_proyecto} "
                      f"(correlation: {solicitud.correlation_id}, "
-                     f"deployment: {solicitud.deployment_id})")
+                     f"deployment: {solicitud.deployment_id}, "
+                     f"ia: {solicitud.ia_proveedor or 'NO'}/"
+                     f"{solicitud.ia_modelo or 'NO'})")
         return solicitud
+
+    @staticmethod
+    def _detalle_solicitud(solicitud: SolicitudProyecto, app_service_plan_id: str) -> str:
+        """
+        Detalle del evento de solicitud. Incluye la configuracion IA pero
+        NUNCA la api key: solo su huella truncada, para trazabilidad.
+        """
+        partes = [f"app_service_plan_id={app_service_plan_id}"]
+        if solicitud.ia_proveedor:
+            partes.append(f"ia_proveedor={solicitud.ia_proveedor}")
+        if solicitud.ia_modelo:
+            partes.append(f"ia_modelo={solicitud.ia_modelo}")
+        if solicitud.ia_url_base:
+            partes.append(f"ia_url_base={solicitud.ia_url_base}")
+        if solicitud.ia_api_key_huella:
+            partes.append(f"ia_api_key_huella={solicitud.ia_api_key_huella[:12]}...")
+        return " | ".join(partes)
+
+    # ──────────────────────────────────────────────────────────
+    # Credenciales IA (secreto aislado de la solicitud)
+    # ──────────────────────────────────────────────────────────
+
+    def guardar_credencial_ia(
+        self,
+        deployment_id: str,
+        proveedor: str = "",
+        url_base: str = "",
+        modelo: str = "",
+        api_key: str = "",
+    ) -> bool:
+        """
+        Persiste la credencial de IA del proyecto Child en la tabla
+        ia_credenciales. Devuelve True si se guardo correctamente.
+        """
+        if not deployment_id:
+            return False
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            cursor = conn.cursor()
+            ahora = _ahora()
+            cursor.execute("""
+                INSERT OR REPLACE INTO ia_credenciales
+                (deployment_id, proveedor, url_base, modelo,
+                 api_key, api_key_enmascarada, api_key_huella,
+                 fecha_creacion, fecha_actualizacion)
+                VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(
+                    (SELECT fecha_creacion FROM ia_credenciales WHERE deployment_id = ?), ?
+                ), ?)
+            """, (
+                deployment_id, proveedor, url_base, modelo,
+                api_key, enmascarar_api_key(api_key), huella_api_key(api_key),
+                deployment_id, ahora, ahora,
+            ))
+            conn.commit()
+            conn.close()
+            logger.info(
+                f"Credencial IA guardada para {deployment_id} "
+                f"(proveedor={proveedor or 'NO'}, modelo={modelo or 'NO'}, "
+                f"api_key={enmascarar_api_key(api_key) or 'SIN_KEY'})"
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error guardando credencial IA: {e}")
+            return False
+
+    def obtener_credencial_ia(self, deployment_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Recupera la credencial de IA (incluida la api key) de un proyecto.
+        Uso EXCLUSIVAMENTE server-side: el resultado no debe serializarse
+        hacia el navegador.
+        """
+        if not deployment_id:
+            return None
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM ia_credenciales WHERE deployment_id = ?",
+                (deployment_id,)
+            )
+            fila = cursor.fetchone()
+            conn.close()
+            return dict(fila) if fila else None
+        except Exception as e:
+            logger.error(f"Error obteniendo credencial IA {deployment_id}: {e}")
+            return None
+
+    def eliminar_credencial_ia(self, deployment_id: str) -> bool:
+        """Elimina la credencial IA asociada a un proyecto Child."""
+        if not deployment_id:
+            return False
+        try:
+            conn = sqlite3.connect(self.ruta_db)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM ia_credenciales WHERE deployment_id = ?",
+                           (deployment_id,))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Error eliminando credencial IA {deployment_id}: {e}")
+            return False
 
     def obtener_solicitud(self, deployment_id: str) -> Optional[SolicitudProyecto]:
         """Obtiene una solicitud por deployment_id."""
@@ -1497,11 +1695,16 @@ class ServicioFabrica:
                  readiness_http_status, readiness_url, readiness_timestamp,
                  evidence_status, evidence_url,
                  azure_deployment_id, azure_deployment_status,
-                 branch)
+                 branch,
+                 ia_proveedor, ia_url_base, ia_modelo,
+                 ia_api_key_enmascarada, ia_api_key_huella,
+                 ia_configurada, ia_validado, ia_validado_en,
+                 ia_validacion_detalle)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 datos["id"], datos["nombre_proyecto"], datos["descripcion"],
                 datos["repositorio"], datos["web_app"], datos["web_app_url"],
@@ -1568,7 +1771,16 @@ class ServicioFabrica:
                 datos.get("evidence_url", ""),
                 datos.get("azure_deployment_id", ""),
                 datos.get("azure_deployment_status", ""),
-                datos.get("branch", "main")
+                datos.get("branch", "main"),
+                datos.get("ia_proveedor", ""),
+                datos.get("ia_url_base", ""),
+                datos.get("ia_modelo", ""),
+                datos.get("ia_api_key_enmascarada", ""),
+                datos.get("ia_api_key_huella", ""),
+                datos.get("ia_configurada", "NO"),
+                datos.get("ia_validado", "NO_VERIFICADO"),
+                datos.get("ia_validado_en", ""),
+                datos.get("ia_validacion_detalle", "")
             ))
             conn.commit()
             conn.close()

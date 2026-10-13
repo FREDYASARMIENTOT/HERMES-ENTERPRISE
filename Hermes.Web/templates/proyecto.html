@@ -149,6 +149,21 @@ body{background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 50%,#16213e 100%);min-
 <tr><td class="text-muted">GitHub Proyecto</td><td class="text-end" id="proj-github" style="font-size:.75rem">&mdash;</td></tr>
 </table></div>
 </div></div></div>
+<!-- IA del proyecto Child: configuracion capturada por el Asistente IA -->
+<div class="card mb-4"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-robot"></i></span>Modelo de IA del proyecto</div><div class="card-body"><div class="row">
+<div class="col-md-6"><table class="table table-borderless trace-table mb-0 small">
+<tr><td class="text-muted">Proveedor</td><td class="text-end" id="proj-ia-proveedor">&mdash;</td></tr>
+<tr><td class="text-muted">URL base</td><td class="text-end" id="proj-ia-url" style="font-family:monospace;font-size:.7rem;word-break:break-all">&mdash;</td></tr>
+<tr><td class="text-muted">Modelo / Deployment</td><td class="text-end" id="proj-ia-modelo">&mdash;</td></tr>
+</table></div>
+<div class="col-md-6"><table class="table table-borderless trace-table mb-0 small">
+<tr><td class="text-muted">API Key</td><td class="text-end" id="proj-ia-api-key" style="font-family:monospace;font-size:.75rem">&mdash;</td></tr>
+<tr><td class="text-muted">Validaci&oacute;n</td><td class="text-end" id="proj-ia-validado">&mdash;</td></tr>
+<tr><td class="text-muted">Validado en</td><td class="text-end" id="proj-ia-validado-en" style="font-size:.7rem">&mdash;</td></tr>
+</table></div>
+</div>
+<div class="small text-muted mt-2" id="proj-ia-detalle"></div>
+</div></div>
 <!-- Validation Results Card -->
 <div class="card mb-4" id="validation-card"><div class="card-header"><span class="section-icon bg-dark me-2"><i class="bi bi-check2-square"></i></span>Resultados de Validaci&oacute;n</div><div class="card-body">
 <div class="row g-3">
@@ -424,6 +439,19 @@ setEnlace('proj-github',repoUrl,data.github_repository||repoUrl);
 var asEl=document.getElementById('proj-app-service');
 if(asEl){asEl.textContent=(data.web_app||data.azure_hostname||'---')+(data.azure_state?' ['+data.azure_state+']':'')+(data.azure_hostname&&data.web_app?' | '+data.azure_hostname:'');}
 document.getElementById('proj-visibilidad').textContent=data.visibility||'---';
+// Modelo de IA del proyecto (configuracion capturada por el Asistente IA)
+var iaValores={'proj-ia-proveedor':data.ia_proveedor,'proj-ia-url':data.ia_url_base,
+'proj-ia-modelo':data.ia_modelo,'proj-ia-api-key':data.ia_api_key_enmascarada,
+'proj-ia-validado-en':data.ia_validado_en};
+for(var iaId in iaValores){if(!Object.prototype.hasOwnProperty.call(iaValores,iaId))continue;
+var iaEl=document.getElementById(iaId);if(iaEl){iaEl.textContent=iaValores[iaId]||'---';}}
+var iaBadge=document.getElementById('proj-ia-validado');
+if(iaBadge){var iaEstado=data.ia_validado||'NO_VERIFICADO';iaBadge.textContent=iaEstado;
+iaBadge.className='text-end '+(iaEstado==='CONECTADO'?'result-pass':'result-pending');}
+var iaDetalle=document.getElementById('proj-ia-detalle');
+if(iaDetalle){iaDetalle.textContent=(data.ia_configurada==='SI')
+?('Configuracion capturada por el Asistente IA. '+(data.ia_validacion_detalle||''))
+:'Sin configuracion de IA asociada a este proyecto.';}
 // Populate validation results
 function setValBadge(id,val){var e=document.getElementById(id);if(!e)return;if(!val||val===''){e.textContent='---';e.className='counter-value result-pending';return;}
 var v=String(val).toUpperCase();e.textContent=v;

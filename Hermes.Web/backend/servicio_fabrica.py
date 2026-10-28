@@ -68,6 +68,14 @@ PASOS_CANONICOS = [
     {"numero": 13, "nombre": "NAVEGADOR",       "descripcion": "Child accesible en navegador"}
 ]
 
+# Estados en los que el proyecto aun se esta creando: durante ellos un 404 de
+# Azure es esperado (el recurso no se ha aprovisionado todavia) y NUNCA debe
+# interpretarse como "el proyecto fue eliminado".
+_ESTADOS_EN_CURSO = frozenset({
+    "SOLICITADO", "CREANDO", "PUBLICANDO",
+    "CI_EN_PROGRESO", "DESPLEGANDO", "VALIDANDO",
+})
+
 
 def _generar_id() -> str:
     """Genera un UUID único para correlation_id o deployment_id."""
@@ -1077,6 +1085,19 @@ class ServicioFabrica:
         try:
             hostname = str(resultado_azure.get("hostname") or "").strip()
             web_app_url = f"https://{hostname}" if hostname else ""
+
+            # FIX (UC-FABRICA-002 / P14): solo dos estados afirman algo sobre la
+            # existencia. Cualquier otro (fallo de token, 401/403, 5xx, timeout)
+            # deja `azure_resource_exists` en NULL = desconocido, para que la UI
+            # no interprete "no pude verificar" como "fue eliminado".
+            status = str(resultado_azure.get("status") or "NO_VERIFICADO")
+            if status == "EXISTE":
+                exists = True
+            elif status == "NO_EXISTE":
+                exists = False
+            else:
+                exists = None
+
             conn = sqlite3.connect(self.ruta_db)
             cursor = conn.cursor()
             cursor.execute("""
@@ -1085,14 +1106,15 @@ class ServicioFabrica:
                     azure_resource_check_status = ?,
                     azure_resource_checked_at = ?,
                     azure_resource_check_error = ?,
-                    azure_hostname = ?,
+                    azure_hostname = CASE WHEN ? <> '' THEN ? ELSE azure_hostname END,
                     web_app_url = CASE WHEN ? <> '' THEN ? ELSE web_app_url END
                 WHERE deployment_id = ?
             """, (
-                resultado_azure.get("exists"),
-                resultado_azure.get("status", "NO_VERIFICADO"),
+                exists,
+                status,
                 resultado_azure.get("checked_at", ""),
                 resultado_azure.get("error", ""),
+                hostname,
                 hostname,
                 web_app_url,
                 web_app_url,
@@ -1200,6 +1222,21 @@ class ServicioFabrica:
         resultado["deployment_id"] = deployment_id
         resultado["project_name"] = solicitud.nombre_proyecto
         resultado["web_app_name"] = web_app_name
+
+        # FIX (UC-FABRICA-002): durante la creacion el App Service todavia no
+        # esta aprovisionado, asi que un 404 es ESPERADO y no significa que el
+        # proyecto se haya eliminado. Persistir ese NO_EXISTE dejaba el enlace
+        # muerto para siempre. Mientras el flujo esta en curso, el estado real
+        # es "aun no verificable".
+        if (resultado.get("status") == "NO_EXISTE"
+                and solicitud.estado in _ESTADOS_EN_CURSO):
+            resultado["status"] = "NO_VERIFICADO"
+            resultado["exists"] = None
+            resultado["error"] = (
+                f"El App Service aun no existe en Azure y el proyecto sigue "
+                f"en curso (estado: {solicitud.estado}). "
+                f"No se registra como eliminado."
+            )
 
         self._actualizar_estado_azure_en_bd(deployment_id, resultado)
         self._registrar_evento(

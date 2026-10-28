@@ -463,8 +463,13 @@ class ServicioAzure:
 
         token = self._obtener_token()
         if not token:
+            # FIX (UC-FABRICA-002 / P14): un fallo de autenticacion es un estado
+            # DESCONOCIDO, no una afirmacion de inexistencia. Antes se devolvia
+            # status="ERROR" con exists=False, y el portal lo interpretaba como
+            # "el recurso no existe", ocultando el enlace de proyectos sanos.
             resultado["error"] = "No se pudo autenticar con Azure"
-            resultado["status"] = "ERROR"
+            resultado["status"] = "NO_VERIFICADO"
+            resultado["exists"] = None  # desconocido, no False
             return resultado
 
         url = f"{ARM_ENDPOINT}{resource_id}?api-version={API_VERSION}"
@@ -492,7 +497,8 @@ class ServicioAzure:
                 resultado["status"] = "NO_EXISTE"
                 logger.info(f"Web App {web_app_name} NO existe en Azure (404)")
             elif respuesta.status_code == 403:
-                resultado["exists"] = False
+                # No es evidencia de inexistencia: es falta de permisos.
+                resultado["exists"] = None
                 resultado["status"] = "ERROR_PERMISOS"
                 resultado["error"] = (
                     f"Azure ARM respondio 403 (permisos insuficientes) "
@@ -500,7 +506,7 @@ class ServicioAzure:
                 )
                 logger.warning(resultado["error"])
             elif respuesta.status_code == 401:
-                resultado["exists"] = False
+                resultado["exists"] = None
                 resultado["status"] = "ERROR_PERMISOS"
                 resultado["error"] = (
                     f"Azure ARM respondio 401 (no autenticado) "
@@ -508,8 +514,8 @@ class ServicioAzure:
                 )
                 logger.warning(resultado["error"])
             else:
-                resultado["exists"] = False
-                resultado["status"] = "ERROR_AZURE"
+                resultado["exists"] = None
+                resultado["status"] = "NO_VERIFICADO"
                 resultado["error"] = (
                     f"Azure ARM respondio {respuesta.status_code} "
                     f"para {web_app_name}"
@@ -517,10 +523,12 @@ class ServicioAzure:
                 logger.error(resultado["error"])
 
         except self._httpx.TimeoutException:
+            resultado["exists"] = None
             resultado["status"] = "ERROR_CONEXION"
             resultado["error"] = f"Timeout consultando Web App {web_app_name} (15s)"
             logger.error(resultado["error"])
         except self._httpx.ConnectError as e:
+            resultado["exists"] = None
             resultado["status"] = "ERROR_CONEXION"
             resultado["error"] = (
                 f"Error de conexion a Azure ARM para {web_app_name}: "
@@ -528,7 +536,8 @@ class ServicioAzure:
             )
             logger.error(resultado["error"])
         except Exception as e:
-            resultado["status"] = "ERROR_AZURE"
+            resultado["exists"] = None
+            resultado["status"] = "NO_VERIFICADO"
             resultado["error"] = (
                 f"Error interno consultando Web App {web_app_name}: "
                 f"{str(e)[:300]}"

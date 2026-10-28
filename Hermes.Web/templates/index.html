@@ -1388,11 +1388,16 @@
                     if (p.resultado === 'PASS') resultadoBadge = '<span class="badge bg-success">PASS</span>';
                     else if (p.resultado === 'FAIL') resultadoBadge = '<span class="badge bg-danger">FAIL</span>';
 
-                    var azureBadge = '<span class="badge bg-secondary">NO_VERIFICADO</span>';
+                    // FIX (UC-FABRICA-002): "no pude verificar" ya NO se muestra como
+                    // "ELIMINADO". Solo un 404 autenticado de ARM afirma inexistencia;
+                    // cualquier fallo (token, permisos, red) es estado DESCONOCIDO gris.
+                    var azureErr = p.azure_resource_check_error || '';
+                    var badgeTitle = azureErr ? ' title="' + esc(azureErr) + '"' : '';
+                    var azureBadge = '<span class="badge bg-secondary"' + badgeTitle + '>NO_VERIF</span>';
                     var azureStatus = (p.azure_resource_check_status || 'NO_VERIFICADO');
                     if (azureStatus === 'EXISTE') azureBadge = '<span class="badge bg-success">EXISTE</span>';
-                    else if (azureStatus === 'NO_EXISTE') azureBadge = '<span class="badge bg-danger">ELIMINADO</span>';
-                    else if (azureStatus === 'ERROR_PERMISOS' || azureStatus === 'ERROR_CONEXION' || azureStatus === 'ERROR_AZURE' || azureStatus === 'ERROR') azureBadge = '<span class="badge bg-warning text-dark">' + azureStatus + '</span>';
+                    else if (azureStatus === 'NO_EXISTE') azureBadge = '<span class="badge bg-danger"' + badgeTitle + '>ELIMINADO</span>';
+                    else if (azureStatus === 'ERROR_PERMISOS' || azureStatus === 'ERROR_CONEXION' || azureStatus === 'ERROR_AZURE' || azureStatus === 'ERROR') azureBadge = '<span class="badge bg-warning text-dark"' + badgeTitle + '>NO_VERIF</span>';
 
                     var runtimeBadge = '<span class="badge bg-secondary">NO_VERIF</span>';
                     var runtimeStatus = (p.runtime_resource_check_status || 'NO_VERIFICADO');
@@ -1427,11 +1432,21 @@
                     }
                     var linkApp = !!appUrl && azureStatus !== 'NO_EXISTE';
 
-                    // Auto-correccion: el recurso no esta verificado (o existe pero aun no hay
-                    // URL canonica) -> se dispara UNA verificacion Azure (persiste el
-                    // defaultHostName real) y el siguiente polling ya pinta el enlace.
-                    var requiereVerificacionAzure = (azureStatus !== 'EXISTE') || !appUrlCanonica;
-                    if (azureStatus !== 'NO_EXISTE' && did && requiereVerificacionAzure && !autocorreccionAzure[did]) {
+                    // Auto-correccion: el estado Azure guardado es una FOTO del momento
+                    // en que se comprobo por primera vez. Esa foto se tomaba a los pocos
+                    // segundos de crear la solicitud, cuando el App Service aun no existia,
+                    // y se quedaba congelada para siempre porque las filas NO_EXISTE se
+                    // excluian de la reverificacion (y las EXISTE con URL tampoco se
+                    // refrescaban nunca).
+                    //
+                    // FIX (UC-FABRICA-002): se reverifica cuando el estado no es concluyente
+                    // O cuando la ultima comprobacion es mas antigua que el TTL. Asi el
+                    // estado se autocorrige en el siguiente ciclo de polling.
+                    var AZURE_CHECK_TTL_MS = 10 * 60 * 1000; // 10 minutos
+                    var tsCheck = Date.parse(p.azure_resource_checked_at || '');
+                    var checkCaducado = !tsCheck || isNaN(tsCheck) || (Date.now() - tsCheck) > AZURE_CHECK_TTL_MS;
+                    var requiereVerificacionAzure = (azureStatus !== 'EXISTE') || !appUrlCanonica || checkCaducado;
+                    if (did && requiereVerificacionAzure && !autocorreccionAzure[did]) {
                         autocorreccionAzure[did] = true;
                         fetch('/api/fabrica/proyectos/' + did + '/azure-check', { method: 'POST' })
                             .catch(function() {});

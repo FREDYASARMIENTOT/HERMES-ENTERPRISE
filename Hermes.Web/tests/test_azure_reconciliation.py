@@ -8,7 +8,7 @@ CASO 1: Azure 200 => EXISTE
 CASO 2: Azure 404 => NO_EXISTE
 CASO 3: Azure 403 => ERROR_PERMISOS
 CASO 4: Azure timeout => ERROR_CONEXION
-CASO 5: Azure 500 => ERROR_AZURE
+CASO 5: Azure 500 => NO_VERIFICADO (nunca "no existe"; FIX UC-FABRICA-002)
 CASO 6: sin web_app_name => NO_VERIFICADO
 CASO 7: PASS + Azure eliminado => PASS conservado
 CASO 8: FAIL + Azure existente => FAIL conservado
@@ -102,13 +102,19 @@ class TestServicioAzureWebAppCheck(unittest.TestCase):
         )
         self.assertEqual(resultado["status"], "ERROR_CONEXION")
 
-    def test_azure_500_devuelve_error_azure(self):
-        """CASO 5: Azure 500 => ERROR_AZURE."""
+    def test_azure_500_no_afirma_inexistencia(self):
+        """CASO 5 (FIX UC-FABRICA-002): Azure 500 => NO_VERIFICADO, nunca "no existe".
+
+        Un error del servidor no es evidencia de que el recurso haya sido borrado.
+        Antes se devolvia ERROR_AZURE con exists=False, y el portal lo mostraba
+        como recurso eliminado, ocultando el enlace a proyectos sanos.
+        """
         self._mock_httpx(500)
         resultado = self.servicio.verificar_existencia_web_app(
             self.web_app_name, self.resource_group, self.subscription
         )
-        self.assertEqual(resultado["status"], "ERROR_AZURE")
+        self.assertEqual(resultado["status"], "NO_VERIFICADO")
+        self.assertIsNone(resultado["exists"])
 
     def test_sin_web_app_name_devuelve_no_verificado(self):
         """CASO 6: Sin web_app_name => NO_VERIFICADO."""
@@ -216,6 +222,14 @@ class TestReconciliacionEnServicioFabrica(unittest.TestCase):
             return {"exists": False, "status_code": 0, "status": "NO_VERIFICADO",
                     "error": "Sin web_app", "resource_id": "", "hostname": "", "checked_at": _ahora()}
 
+        # FIX (UC-FABRICA-002): un 404 solo significa "eliminado" en un proyecto
+        # YA TERMINADO. En uno en curso el App Service aun no existe, asi que el
+        # 404 es esperado. Se marcan los proyectos como terminados para que la
+        # reconciliacion masiva pueda afirmar inexistencia.
+        for s in (sol1, sol2, sol3):
+            s.estado = "COMPLETADO"
+            self.svc._guardar(s)
+
         with patch.object(self.azure_svc, 'verificar_existencia_web_app', side_effect=mock_check):
             resultados = self.svc.reconciliar_todos_los_proyectos()
 
@@ -224,6 +238,34 @@ class TestReconciliacionEnServicioFabrica(unittest.TestCase):
         self.assertEqual(resultados["azure_eliminados"], 1)
         self.assertEqual(resultados["azure_no_verificados"], 1)
         self.assertEqual(resultados["azure_errores"], 0)
+
+    def test_404_en_proyecto_en_curso_no_marca_eliminado(self):
+        """REGRESION UC-FABRICA-002: el 404 durante la creacion NO es una eliminacion.
+
+        El portal comprobaba Azure a los pocos segundos de crear la solicitud,
+        cuando el App Service aun no estaba aprovisionado. Ese 404 legitimo se
+        guardaba como NO_EXISTE y dejaba el enlace al proyecto muerto para siempre
+        (caso real: gestioncontenidoflujosdetrabajo, viva pero marcada ELIMINADO).
+        """
+        sol = self._crear_solicitud("en-curso-01", "as-en-curso-01")
+        # crear_solicitud deja el proyecto en SOLICITADO (en curso)
+        self.assertIn(sol.estado, ("SOLICITADO", "CREANDO"))
+
+        with patch.object(self.azure_svc, 'verificar_existencia_web_app',
+                          return_value={
+                              "exists": False, "status_code": 404, "status": "NO_EXISTE",
+                              "error": "", "resource_id": "", "hostname": "",
+                              "checked_at": _ahora(),
+                          }):
+            resultado = self.svc.verificar_y_actualizar_estado_azure(sol.deployment_id)
+
+        # El 404 se degrada a "no verificable": el recurso aun no existe, no fue borrado
+        self.assertEqual(resultado["status"], "NO_VERIFICADO")
+        self.assertIsNone(resultado["exists"])
+
+        sol_act = self.svc.obtener_solicitud(sol.deployment_id)
+        self.assertEqual(sol_act.azure_resource_check_status, "NO_VERIFICADO")
+        self.assertIsNone(sol_act.azure_resource_exists)
 
     def test_actualizar_estado_azure_en_bd(self):
         """Actualizar estado Azure en BD debe persistir correctamente."""

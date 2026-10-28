@@ -84,31 +84,54 @@ Portal: `https://as-hermesportal.azurewebsites.net/`
 | D7 | Detener un App Service **no persiste** el estado detenido. | `servicio_fabrica.py:1266-1270` re-persiste `status = "EXISTE"` tras un stop. El badge sigue `EXISTE` y `Iniciar`/`Detener` no pueden ser mutuamente excluyentes sin un estado real. | Media |
 | D8 | `proyecto.html` **no tiene botón Iniciar** (sólo Detener y Eliminar). | `proyecto.html:238,243`. Un proyecto detenido no puede reiniciarse desde su página de detalle. | Media |
 
-### 1.2 Causa raíz (confirmada)
+### 1.2 Causa raíz (confirmada el 2026-10-28)
+
+> **Corrección de un diagnóstico previo.** La hipótesis inicial culpaba a la Managed Identity sin rol
+> *Reader*. Se verificó contra Azure y **era falsa**: la MI ya tenía `Reader` (asignado 2026-09-15) y
+> `Website Contributor` (2026-09-28) en `RG-Hermes-Proyectos`, y `GET /api/fabrica/app-service-plans`
+> responde `exito: true`. **El problema nunca fue de permisos.**
+
+La causa real combina una **carrera de tiempo** con un **estado congelado**:
 
 ```
-DefaultAzureCredential (MI) sin rol Reader en RG-Hermes-Proyectos
+t+0s    POST /api/fabrica/proyectos  → proyecto en SOLICITADO
+t+8s    la UI dispara POST /azure-check (la fila acaba de aparecer)
+        el App Service AÚN NO EXISTE
+        → ARM responde 404 (autenticado y legítimo)
         │
         ▼
-verificar_existencia_web_app() → falla la obtención de token
+        se persiste azure_resource_check_status = "NO_EXISTE"
         │
         ▼
-resultado.status = "NO_EXISTE"   (en vez de "NO_VERIFICADO" / error)
+        index.html excluía las filas NO_EXISTE de la reverificación:
+              if (azureStatus !== 'NO_EXISTE' && ...)   ← nunca se vuelve a comprobar
         │
         ▼
-_actualizar_estado_azure_en_bd() persiste azure_resource_exists = 0
-        │
-        ▼
-historial devuelve azure_resource_check_status = "NO_EXISTE"
-        │
-        ▼
-index.html: azureStatus === 'NO_EXISTE'  →  linkApp = false  →  SIN ENLACE
+        el estado queda CONGELADO para siempre
+        → sin enlace, badge "ELIMINADO", pese a que el sitio responde HTTP 200
 ```
 
-**Regla de diseño que se introduce (FIX-D1):** un **fallo de verificación nunca debe degradar la
-navegación**. Un error de credencial, red o permisos es `NO_VERIFICADO` (estado desconocido), **no**
-`NO_EXISTE` (afirmación de inexistencia). El enlace al hijo se deriva del nombre del recurso y sólo se
-oculta cuando existe **evidencia positiva** de borrado.
+El mismo mecanismo, en sentido inverso, produce el falso positivo: `crearproyectohijo` se verificó
+el 2026-09-29 cuando **sí** existía → `EXISTE`; el recurso se borró después y nadie volvió a comprobar
+(las filas `EXISTE` con URL tampoco se reverificaban).
+
+**Evidencia (2026-10-28):**
+
+| Proyecto | El portal decía | Realidad | Resultado |
+|----------|-----------------|----------|-----------|
+| `gestioncontenidoflujosdetrabajo` | `NO_EXISTE` | HTTP 200 (vivo) | falso negativo |
+| `crearproyectohijo` | `EXISTE` | host no resuelve | falso positivo |
+| 8 proyectos restantes | `NO_EXISTE` | host no resuelve | correctos |
+
+**Reglas de diseño que se introducen:**
+
+1. **FIX-D1** — Un **fallo de verificación nunca debe degradar la navegación**. Error de credencial,
+   red o permisos es `NO_VERIFICADO` (desconocido), **no** `NO_EXISTE`. Sólo un **404 autenticado**
+   afirma inexistencia.
+2. **FIX-02** — Un 404 durante la **creación** no es una eliminación: el recurso todavía no se ha
+   aprovisionado. Mientras el proyecto esté en curso, el estado es `NO_VERIFICADO`.
+3. **FIX-03** — El estado **caduca**: se reverifica cuando la última comprobación supera el TTL
+   (10 min), en lugar de congelarse en la primera observación.
 
 ---
 
@@ -635,34 +658,37 @@ determinista · P5 normalizar a 13 pasos.
 
 ### 9.2 Decisiones de segunda ronda
 
-#### P14 — RESUELTA (Managed Identity + regla defensiva)
+#### P14 — RESUELTA (regla defensiva + estado con caducidad)
 
-**Resolución:** se mantiene la verificación automática con Managed Identity, **corrigiendo los roles**
-y añadiendo una regla defensiva en el código.
+**Corrección importante:** se verificó contra Azure y los roles **ya estaban** asignados desde
+septiembre (`Reader` 2026-09-15, `Website Contributor` 2026-09-28). `GET /api/fabrica/app-service-plans`
+responde `exito: true`. **RBAC no era el problema.** La causa real está en §1.2 (carrera de creación +
+estado congelado).
 
-| Paso | Acción | Responsable |
-|------|--------|-------------|
-| 1 | Asignar `Reader` a la MI en `RG-Hermes-Proyectos` | Operador (`scripts/Diagnose-PortalMI.ps1 -Fix`) |
-| 2 | Asignar `Website Contributor` a la MI en `RG-Hermes-Proyectos` | Operador (mismo script) |
-| 3 | **Nunca** persistir `NO_EXISTE` sin un 404 autenticado de ARM | Código (defensivo) |
+**Resolución aplicada (desplegada en `f35f0f8`):**
 
-**Regla defensiva (obligatoria, independiente de RBAC):**
+| # | Medida | Archivo |
+|---|--------|---------|
+| 1 | Fallo de token / 401 / 403 / 5xx → `NO_VERIFICADO` con `exists=None` | `servicio_azure.py` |
+| 2 | Un 404 durante la creación **no** se persiste como eliminado | `servicio_fabrica.py` |
+| 3 | `_actualizar_estado_azure_en_bd` escribe `NULL` (desconocido) en vez de `False` | `servicio_fabrica.py` |
+| 4 | Badge `NO_VERIF` en vez de `ELIMINADO` ante fallo, con el error en tooltip | `index.html` |
+| 5 | Reverificación cada 10 min (antes: nunca) | `index.html` |
+
+**Regla de clasificación (vigente):**
 
 ```
 respuesta ARM:
   200 / 2xx           → EXISTE           (persistir)
-  404 AUTENTICADO     → NO_EXISTE        (persistir)
-  401 / 403           → NO_VERIFICADO    (persistir, NO degradar enlace)
-  5xx / timeout / red → NO_VERIFICADO    (persistir, NO degradar enlace)
+  404 AUTENTICADO     → NO_EXISTE        (persistir) — único caso que afirma inexistencia
+  401 / 403           → ERROR_PERMISOS   (no degradar enlace)
+  5xx / timeout / red → NO_VERIFICADO    (no degradar enlace)
+  proyecto en curso   → NO_VERIFICADO    (aunque ARM diga 404)
 ```
 
-**Racional:** incluso con los roles correctos, Azure puede fallar (MFA, token caducado, caída de
-ARM, cambio de RBAC). Un fallo transitorio **no debe reescribir la historia** de un proyecto sano.
-La corrección de RBAC resuelve la causa; la regla defensiva evita que el síntoma vuelva.
-
-> **Diagnóstico reproducible:** `scripts/Diagnose-PortalMI.ps1` (sólo lectura por defecto) contrasta
-> los App Services **reales** del RG contra lo que el portal **cree**, y con `-Fix` asigna los roles
-> que falten.
+> **Herramienta de diagnóstico:** `scripts/Diagnose-PortalMI.ps1` (sólo lectura por defecto) contrasta
+> los App Services **reales** del RG contra lo que el portal cree. Nota: vive en `scripts/`, que está
+> en `.gitignore`, así que no se versiona.
 
 #### P7 — OPCIONES AMPLIADAS (pendiente de elección)
 

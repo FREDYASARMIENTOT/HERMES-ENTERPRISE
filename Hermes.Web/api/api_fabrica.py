@@ -199,6 +199,14 @@ async def historial_proyectos(request: Request, limit: int = 5):
                 "azure_resource_exists": d.get("azure_resource_exists"),
                 "azure_resource_check_status": d.get("azure_resource_check_status", "NO_VERIFICADO"),
                 "azure_resource_checked_at": d.get("azure_resource_checked_at", ""),
+                # FIX (UC-FABRICA-002 / D6): la UI ya leia estas tres claves, pero
+                # la API no las enviaba, asi que los badges GitHub y VENV/Runtime
+                # se quedaban fijos en NO_VERIF y los contadores nunca subian.
+                "azure_resource_check_error": d.get("azure_resource_check_error", ""),
+                "github_resource_check_status": d.get("github_resource_check_status", "NO_VERIFICADO"),
+                "github_resource_checked_at": d.get("github_resource_checked_at", ""),
+                "runtime_resource_check_status": d.get("runtime_resource_check_status", "NO_VERIFICADO"),
+                "runtime_resource_checked_at": d.get("runtime_resource_checked_at", ""),
                 "commit_sha": d.get("commit_sha", ""),
                 "paso_final": paso_final["nombre"] if paso_final else None,
                 "paso_estado": paso_final["estado"] if paso_final else None,
